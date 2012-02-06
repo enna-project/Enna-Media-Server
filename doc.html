@@ -1,0 +1,134 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="keywords" content="">
+<meta name="description" content="">
+<title>Enna</title>
+<link rel="stylesheet" type="text/css" href="enna.css">
+
+<!-- Google Analytics stats -->
+<script type="text/javascript">
+  var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+  document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+  try {
+  var pageTracker = _gat._getTracker("UA-3497964-6");
+  pageTracker._trackPageview();
+  } catch(err) {}
+</script>
+<script type="text/javascript">
+  window.google_analytics_uacct = "UA-3497964-6";
+</script>
+
+</head>
+<body>
+<div id="body">
+  <div id="doc">
+    <div id="header">
+      <img src="imgs/banner.png" width="880" height="90"/>
+    </div>
+    <div id="menu" class="content">
+      <ul class="menu">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="screenshots.html">Screenshots</a></li>
+        <li><a href="features.html">Features</a></li>
+        <li class='selected'><a href="doc.html">Documentation</a></li>
+        <li><a href="developers.html">Developers</a></li>
+	<li><a href="http://captainigloo.wordpress.com">Blog</a></li>
+        <li><a href="http://enna.geexbox.org/trac/">Tracker</a></li>
+        <li><a href="download.html">Get it</a></li>
+      </ul>
+    </div>
+
+    <div id="middle">
+      <div id="content">
+	<h2>Documentation ...</h2>
+	 <p class="emp">
+	  Enna was designed to be as intuitive and naturally usable as possible
+          but still may want to customize a bit its default behavior to
+          perfectly fit your needs.
+        </p>
+
+	<p>
+        <h3>Configuration ...</h3>
+	Enna has a few default configuration settings which are stored in your <i>$HOME/.enna/enna.cfg</i> file.<br/>
+        If not existing, this file is created automatically the first time you start Enna.<br/>
+        <br/>
+        Multiple things can be configured here, the more important ones probably would be:
+        <ul>
+          <li>File extensions (for music, videos and photos): only those listed
+            here will be recognized under Enna.</li>
+          <li>Graphic rendering engine: X11, OpenGL, Framebuffer ...</li>
+          <li>Mediaplayer settings: prefred player, video and audio
+            output ...</li>
+          <li>Path to your media resources, for direct access to given
+            directories(i.e. shortcuts)</li>
+          <li>Media Database: locations to be parsed for multimedia contents.
+            If none is passed, Enna will proceed with on-demand file
+            information retrieval. You may also specify a list of blacklisted
+            keywords that your filename may contain and that are non relevant
+            for Internet information grabbing.</li>
+        </ul>
+        </p>
+
+	<p>
+        <h3>Inputs ...</h3>
+        Enna was designed to be controllable with the lowest keys as possible,
+        while it is still possible to bind keys to specific actions for quick
+        access. Currently supported input are: keyboard, mouse and
+        LIRC-compatible remotes.<br/>
+        <br/>
+        As for keyboard, Enna can be controlled with:
+	<ul>
+          <li><b>Arrow keys:</b> used to browse in menus and seek in
+            videos.</li>
+          <li><b>Enter key:</b> used to validate your choice and display video
+            controls menu.</li>
+          <li><b>BackSpace key:</b> used to cancel, browse back or quit
+            (Echap key also does)</li>
+	</ul>
+        Other key bindings are of course <a href="http://hg.geexbox.org/enna/file/35d6ab8d3531/src/modules/input/kbd/kbd.c#l39">available</a> as shortcuts.<br/>
+        <br/>
+        As for LIRC, you need to create yourself a <i>$HOME/.lircrc</i>
+        configuration file, properly setup to respond to <b>enna</b> program.
+        <br/>
+        Example of compatible file can be found <a href="http://hg.geexbox.org/geexbox/file/950622aeb504/packages/lirc/config/lircrc_atiusb#l358">here</a> and
+        LIRC keynames can found <a href="http://hg.geexbox.org/enna/file/35d6ab8d3531/src/modules/input/lirc/lirc.c#l60">there</a>.
+	</p>
+
+      </div>
+    </div>
+
+    </div>
+    <div id="footer">
+      <div id="ads">
+<script type="text/javascript"><!--
+google_ad_client = "pub-7442155524475665";
+/* 728x90, date de création 29/09/10 */
+google_ad_slot = "6389728892";
+google_ad_width = 728;
+google_ad_height = 90;
+//-->
+</script>
+<script type="text/javascript"
+src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+      </div>
+      <div id="content">
+        <a href="index.html">Home</a> |
+        <a href="screenshots.html">Screenshots</a> |
+        <a href="features.html">Features</a> |
+        <a href="doc.html">Documentation</a> |
+        <a href="developers.html">Developers</a> |
+	<a href="http://captainigloo.wordpress.com">Blog</a> |
+	<a href="http://enna.geexbox.org/trac/">Tracker</a> |
+        <a href="">Get it</a> <br />
+        © 2009 The Enna Project <br />
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

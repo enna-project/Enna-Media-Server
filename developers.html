@@ -1,0 +1,125 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="keywords" content="">
+<meta name="description" content="">
+<title>Enna</title>
+<link rel="stylesheet" type="text/css" href="enna.css">
+
+<!-- Google Analytics stats -->
+<script type="text/javascript">
+  var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+  document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+  try {
+  var pageTracker = _gat._getTracker("UA-3497964-6");
+  pageTracker._trackPageview();
+  } catch(err) {}
+</script>
+<script type="text/javascript">
+  window.google_analytics_uacct = "UA-3497964-6";
+</script>
+
+</head>
+<body>
+<div id="body">
+  <div id="doc">
+    <div id="header">
+      <img src="imgs/banner.png" width="880" height="90"/>
+    </div>
+    <div id="menu" class="content">
+      <ul class="menu">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="screenshots.html">Screenshots</a></li>
+        <li><a href="features.html">Features</a></li>
+        <li><a href="doc.html">Documentation</a></li>
+        <li class='selected'><a href="developers.html">Developers</a></li>
+	<li><a href="http://captainigloo.wordpress.com">Blog</a></li>
+        <li><a href="http://enna.geexbox.org/trac/">Tracker</a></li>
+        <li><a href="download.html">Get it</a></li>
+      </ul>
+    </div>
+    
+    <div id="middle">
+      <div id="content">
+	<h2>You want to help us ?</h2> 
+        <p class="emp"> 
+	  There are many ways to help with Enna development, by reporting bugs, working on user interface design, coding, or even working on internationalization.
+        </p> 
+	<p>
+	  <h3>Mailing Lists</h3>
+	  If you want to contact Enna's developpers or follow project's development you can subscribe to <a href="http://www.geexbox.org/sympa/info/devel">GeeXboX development mailing list</a>, and send us an e-mail.<br/>
+	  You can subscribe to <a href="http://www.geexbox.org/sympa/info/commits">GeeXboX commits mailing list</a> to be informed of all modifications that occured on Enna's mercurial repository. 
+	</p>
+	<p>
+          <h3>Development</h3>
+          We always lack of C developers and fully welcome new players to join the team. If you're interested in Enna's development, here are a few prerequisites:
+          <ul>
+            <li>Acquire EFL, through their latest <a href="http://download.enlightenment.org/releases/">releases</a> and <a href="http://download.enlightenment.org/snapshots/LATEST/">snapshots</a>. Right now, Enna only a few mandatory libs from EFL project, namely Eina, Eet, Evas, Ecore, Efreet, Embryo, Edje and E_Dbus.
+            </li>
+            <li>Acquire <a href="http://libnfo.geexbox.org/">libnfo</a> (optional but still recommended).</li>
+            <li>Acquire <a href="http://libvalhalla.geexbox.org/">libvalhalla</a></li>
+            <li>Acquire <a href="http://libplayer.geexbox.org/">libplayer</a></li>
+          </ul>
+          As a convenience, these librairies have already been packaged for Ubuntu 9.10 (Karmic) users. If you run on this distribution, the easiest for you might be to add the following line to your <i>/etc/apt/sources.list</i> file:<br/>
+          <br/>
+          <i>deb http://packages.geexbox.org/ karmic main</i><br/>
+          <br/>
+          Once done, you may just install the required librairies through the following command:<br/>
+          <br/>
+          <i>aptitude update</i><br/>
+          <i>aptitude install libeina-dev libeet-dev libevas-dev libevas-engines libevas-engines-extras libecore-dev libefreet-dev libembryo-dev libedje-dev libedje-bin libedbus-dev libhal-dev libhal-storage-dev libnfo-dev libplayer-dev libvalhalla-dev</i>
+        </p>
+        <p>
+	  <h3>Internationalization</h3>
+	  Enna's current user interface is available in English, French, German and Italian. If you want to add your native language create an account on <a href="http://www.transifex.net/">Transifex</a> and visit our <a href="https://transifex.net/projects/p/enna/c/trunk/">project page</a>. If you don't want to use Transifex please follow the instructions below: <br />
+	  <ul>
+	    <li>download the <a href="download.html">latest sources</a></li>
+	    <li>ensure you have autoconf, automake, libtool and gettext installed</li>
+	    <li>run ./autogen.sh</li>
+	    <li>run make update-pot</li>
+	    <li>run msginit -i po/enna.pot -l fr -o po/fr.po (substitute fr with your language code)</li>
+	    <li>add your language code to po/LINGUAS</li>
+	    <li>edit the newly created po file (e.g. with poedit) and fill in your translation</li>
+	    <li>send a patch to the devel mailing list</li>
+	    <li>thank you :)</li>
+	  </ul>
+	</p>
+	<p>
+	  <h3>Reporting bugs</h3>
+	  If you want report bugs, you can send an e-mail on GeeXboX development mailing list, or you can fill a bug in Enna's bug tracker : <a href="http://enna.geexbox.org/trac/report"> Here</a>
+	</p>
+      </div>
+    </div>
+    <div id="footer">
+      <div id="ads">
+<script type="text/javascript"><!--
+google_ad_client = "pub-7442155524475665";
+/* 728x90, date de création 29/09/10 */
+google_ad_slot = "6389728892";
+google_ad_width = 728;
+google_ad_height = 90;
+//-->
+</script>
+<script type="text/javascript"
+src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+      </div>
+      <div id="content">
+        <a href="index.html">Home</a> |
+        <a href="screenshots.html">Screenshots</a> |
+        <a href="features.html">Features</a> |
+        <a href="doc.html">Documentation</a> |
+        <a href="">Developers</a> |
+	<a href="http://captainigloo.wordpress.com">Blog</a> |
+	<a href="http://enna.geexbox.org/trac/">Tracker</a> |
+        <a href="download.html">Get it</a> <br />
+        © 2009 The Enna Project <br />
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
