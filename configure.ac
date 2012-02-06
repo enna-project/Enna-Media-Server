@@ -99,18 +99,12 @@ PKG_PROG_PKG_CONFIG
 
 ### Checks for libraries
 
-# Evil library for compilation on Windows CE
-
-EFL_EMS_BUILD=""
-case "$host_os" in
-   mingw*)
-      PKG_CHECK_MODULES([EVIL], [evil >= 1.0.0])
-      AC_DEFINE([HAVE_EVIL], [1], [Set to 1 if evil package is installed])
-      requirement_ems="${requirement_ems} evil"
-      EFL_EMS_BUILD="-DEFL_EMS_BUILD"
-   ;;
-esac
-AC_SUBST([EFL_EMS_BUILD])
+PKG_CHECK_MODULES([EMS], [
+                         eina >= 1.0.0
+                         eet >= 1.4.0
+                         ecore-file >= 1.0.0
+                         eio >= 0.0.1
+                         ])
 
 ### Checks for compiler characteristics
 AC_C_CONST
@@ -119,22 +113,6 @@ AC_C_INLINE
 AC_PROG_CC_STDC
 EFL_ATTRIBUTE_UNUSED
 
-have_wince="no"
-have_win32="no"
-EMS_CFLAGS=""
-case "$host_os" in
-   mingw32ce*)
-      EMS_CFLAGS="${EVIL_CFLAGS}"
-      have_win32="yes"
-      have_wince="yes"
-      ;;
-   mingw*)
-      EMS_CFLAGS="${EVIL_CFLAGS}"
-      have_win32="yes"
-      ;;
-esac
-AM_CONDITIONAL([EMS_HAVE_WINCE], [test "x$have_wince" = "xyes"])
-AM_CONDITIONAL([EMS_HAVE_WIN32], [test "x$have_win32" = "xyes"])
 
 m4_ifdef([v_mic],
    [
@@ -143,53 +121,6 @@ m4_ifdef([v_mic],
    ])
 
 EFL_COMPILER_FLAG([-Wshadow])
-
-case "$host_vendor" in
-  ps3*)
-      PKG_CHECK_MODULES([ESCAPE], [escape])
-      AC_DEFINE(HAVE_ESCAPE, 1, [Set to 1 if Escape package is installed])
-      requirement_ems="${requirement_ems} escape"
-      EMS_CFLAGS="${ESCAPE_CFLAGS} ${EMS_CFLAGS}"
-    ;;
-esac
-
-AC_SUBST([EMS_CFLAGS])
-
-
-### Checks for linker characteristics
-EMS_LIBS=
-lt_enable_auto_import=""
-case "${host_os}" in
-   mingw*)
-      EMS_LIBS="-ldl ${EVIL_LIBS} -lm"
-      lt_enable_auto_import="-Wl,--enable-auto-import"
-   ;;
-   dragonfly*|openbsd*)
-      EMS_LIBS="-lm"
-   ;;
-   freebsd*|netbsd*)
-      EMS_LIBS="-lrt -lm"
-   ;;
-   darwin*)
-      EMS_LIBS="-lm"
-   ;;
-   cygwin*)
-      EMS_LIBS="-ldl -lm"
-   ;;
-   *)
-      EMS_LIBS="-ldl -lrt -lm"
-   ;;
-esac
-case "$host_vendor" in
-  ps3*)
-      # Escape had already been checked to exist
-      EMS_LIBS="${ESCAPE_LIBS}"
-    ;;
-esac
-AC_SUBST([EMS_LIBS])
-AC_SUBST([lt_enable_auto_import])
-
-EFL_LINKER_FLAG([-fno-strict-aliasing])
 
 CFLAGS="${CFLAGS} ${EMS_CFLAGS}"
 LDFLAGS="${LDFLAGS} ${EMS_LDFLAGS}"
