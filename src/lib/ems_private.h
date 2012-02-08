@@ -39,6 +39,7 @@ extern int _ems_log_dom_global;
 
 
 #define EMS_CONFIG_FILE "enna-media-server.cfg"
+#define EMS_PORT 1337
 
 #define ENNA_CONFIG_DD_NEW(str, typ)                    \
   ems_config_descriptor_new(str, sizeof(typ))

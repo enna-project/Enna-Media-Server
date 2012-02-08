@@ -104,6 +104,7 @@ PKG_CHECK_MODULES([EMS], [
                          eet >= 1.4.0
                          ecore-file >= 1.0.0
                          eio >= 0.0.1
+                         avahi-client >= 0.6.0
                          ])
 
 ### Checks for compiler characteristics

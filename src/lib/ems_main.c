@@ -31,6 +31,7 @@ int ems_init(void)
    DBG("Config Init");
 
    ems_config_init();
+   ems_avahi_init();
 
    INF("Video Extensions :");
    EINA_LIST_FOREACH(ems_config->video_extensions, l, ext)

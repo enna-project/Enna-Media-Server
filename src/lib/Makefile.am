@@ -10,6 +10,7 @@ AM_CPPFLAGS = \
 lib_LTLIBRARIES = libems.la
 
 libems_la_SOURCES = \
+ems_avahi.c \
 ems_config.c \
 ems_main.c
 
