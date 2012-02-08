@@ -128,6 +128,7 @@ LDFLAGS="${LDFLAGS} ${EMS_LDFLAGS}"
 LIBS="${LIBS} ${EMS_LIBS}"
 
 AC_CONFIG_FILES([
+ems.pc
 Makefile
 src/Makefile
 src/lib/Makefile

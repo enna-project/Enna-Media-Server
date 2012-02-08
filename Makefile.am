@@ -30,6 +30,10 @@ AUTHORS \
 COPYING \
 README \
 autogen.sh \
+ems.pc.in \
 m4/common/efl_attribute.m4 \
 m4/common/efl_compiler_flag.m4 \
 m4/common/efl_path_max.m4
+
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = ems.pc

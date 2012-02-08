@@ -20,4 +20,7 @@ ems_main.c
 libems_la_LIBADD = \
 @EMS_LIBS@
 
+EXTRA_DIST = ems_private.h \
+	ems_config.h
+
 
