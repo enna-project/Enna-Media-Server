@@ -6,12 +6,53 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "config.h"
+
 #include "ems_private.h"
 #include "ems_config.h"
 
 static Eet_Data_Descriptor *conf_edd = NULL;
 static Eet_Data_Descriptor *video_directory_edd = NULL;
 static Eet_Data_Descriptor *video_extension_edd = NULL;
+
+static const char *
+ems_config_filename_get(void)
+{
+   static const char *filename = NULL;
+   char tmp[4096]; /* TODO : PATH_MAX */
+
+   if (filename)
+     return filename;
+
+   snprintf(tmp, sizeof(tmp), "%s/.config/enna-media-server/%s", getenv("HOME"), EMS_CONFIG_FILE);
+   return eina_stringshare_add(tmp);
+}
+
+static const char *
+ems_config_dirname_get(void)
+{
+   return ecore_file_dir_get(ems_config_filename_get());
+}
+
+static const char *
+ems_config_cache_filename_get(void)
+{
+   static const char *filename = NULL;
+   char tmp[4096]; /* TODO : PATH_MAX */
+
+   if (filename)
+     return filename;
+
+   snprintf(tmp, sizeof(tmp), "%s/.cache/enna-media-server/%s", getenv("HOME"), EMS_CONFIG_FILE);
+   return eina_stringshare_add(tmp);
+}
+
+static const char *
+ems_config_cache_dirname_get(void)
+{
+   return ecore_file_dir_get(ems_config_cache_filename_get());
+}
+
 
 static Eet_Data_Descriptor *
 ems_config_descriptor_new(const char *name, int size)
@@ -33,20 +74,21 @@ _make_config(void)
    int textlen;
    char *text;
 
-   if (!ecore_file_is_dir("/home/nico/.config/enna-media-server"))
-     ecore_file_mkdir("/home/nico/.config/enna-media-server");
+   if (!ecore_file_is_dir(ems_config_dirname_get()))
+     ecore_file_mkdir(ems_config_dirname_get());
 
-   if (!ecore_file_is_dir("/home/nico/.cache/enna-media-server"))
-     ecore_file_mkdir("/home/nico/.cache/enna-media-server");
-   ef = eet_open("/home/nico/.cache/enna-media-server/"EMS_CONFIG_FILE,
+   if (!ecore_file_is_dir(ems_config_cache_dirname_get()))
+     ecore_file_mkdir(ems_config_cache_dirname_get());
+
+   ef = eet_open(ems_config_cache_filename_get(),
                  EET_FILE_MODE_READ_WRITE);
    if (!ef)
-     ef = eet_open("/home/nico/.cache/enna-media-server/"EMS_CONFIG_FILE,
+     ef = eet_open(ems_config_cache_filename_get(),
                    EET_FILE_MODE_WRITE);
-   f = fopen("/home/nico/.config/enna-media-server/enna-media-server.conf", "rb");
+   f = fopen(ems_config_filename_get(), "rb");
    if (!f)
      {
-        ERR("Could not open /home/nico/.config/enna-media-server/enna-media-server.conf");
+        ERR("Could not open %s", ems_config_filename_get());
         return;
      }
 
@@ -82,9 +124,9 @@ _config_get(Eet_Data_Descriptor *edd)
    Ems_Config *config = NULL;
    Eet_File *file;
 
-   if (!ecore_file_is_dir("/home/nico/.cache/enna-media-server"))
-     ecore_file_mkdir("/home/nico/.cache/enna-media-server");
-   file = eet_open("/home/nico/.cache/enna-media-server/"EMS_CONFIG_FILE,
+   if (!ecore_file_is_dir(ems_config_cache_dirname_get()))
+     ecore_file_mkdir(ems_config_cache_dirname_get());
+   file = eet_open(ems_config_cache_filename_get(),
                    EET_FILE_MODE_READ_WRITE);
 
    config = eet_data_read(file, edd, "Ems_Config");
@@ -92,7 +134,7 @@ _config_get(Eet_Data_Descriptor *edd)
      {
         Ems_Directory *dir;
         Ems_Extension *ext;
-        WRN("Warning no configuration found! This must not append, we will go back to a void configuration");
+        WRN("Warning no configuration found! This must not happen, we will go back to a void configuration");
         config = calloc(1, sizeof(Ems_Config));
         /* dir = calloc(1, sizeof(Ems_Directory)); */
         /* dir->path = eina_stringshare_add("/home/nico/videos"); */
@@ -150,19 +192,18 @@ ems_config_init(void)
    ENNA_CONFIG_LIST(D, T, video_directories, video_directory_edd);
    ENNA_CONFIG_LIST(D, T, video_extensions, video_extension_edd);
 
-   if (stat("/home/nico/.cache/enna-media-server/"EMS_CONFIG_FILE, &cache) == -1)
+   if (stat(ems_config_cache_filename_get(), &cache) == -1)
      {
         _make_config();
      }
    else
      {
-        stat("/home/nico/.config/enna-media-server/enna-server.conf", &conf);
+        stat(ems_config_filename_get(), &conf);
         if (cache.st_mtime < conf.st_mtime)
           _make_config();
      }
 
    ems_config = _config_get(conf_edd);
-
 
 
 }
