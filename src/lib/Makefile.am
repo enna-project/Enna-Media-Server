@@ -7,6 +7,9 @@ AM_CPPFLAGS = \
 -DPACKAGE_DATA_DIR=\"$(datadir)/$(PACKAGE)\" \
 @EMS_CFLAGS@
 
+includes_HEADERS = Ems.h
+includesdir = $(includedir)/enna
+
 lib_LTLIBRARIES = libems.la
 
 libems_la_SOURCES = \
