@@ -136,6 +136,8 @@ _config_get(Eet_Data_Descriptor *edd)
         Ems_Extension *ext;
         WRN("Warning no configuration found! This must not happen, we will go back to a void configuration");
         config = calloc(1, sizeof(Ems_Config));
+        config->port = EMS_DEFAULT_PORT;
+        config->name = eina_stringshare_add(EMS_DEFAULT_NAME);
         /* dir = calloc(1, sizeof(Ems_Directory)); */
         /* dir->path = eina_stringshare_add("/home/nico/videos"); */
         /* dir->label = eina_stringshare_add("Videos Locales"); */

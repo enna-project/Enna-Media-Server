@@ -88,12 +88,9 @@ static void create_services(AvahiClient *c)
 
    if (avahi_entry_group_is_empty(group))
      {
-        INF("Adding service '%s'", name);
+        INF("Adding service '%s' on port %d", name, ems_config->port);
 
-        /* Create some random TXT data */
-        snprintf(r, sizeof(r), "random=%i", rand());
-
-        if ((ret = avahi_entry_group_add_service(group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, 0, name, "_enna-jsonrpc._tcp", NULL, NULL, EMS_PORT, "name=", r, NULL)) < 0) /* TODO : port needs to come from config */
+        if ((ret = avahi_entry_group_add_service(group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, 0, name, "_enna-jsonrpc._tcp", NULL, NULL, ems_config->port, "name=", ems_config->name, NULL)) < 0) /* TODO : port needs to come from config */
           {
 
              if (ret == AVAHI_ERR_COLLISION)
