@@ -7,12 +7,13 @@ AM_CPPFLAGS = \
 -DPACKAGE_DATA_DIR=\"$(datadir)/$(PACKAGE)\" \
 @EMS_CFLAGS@
 
-bin_PROGRAMS = enna-media-server
+lib_LTLIBRARIES = libems.la
 
-enna_media_server_SOURCES = \
-main.c \
-ems_config.c
+libems_la_SOURCES = \
+ems_config.c \
+ems_main.c
 
-enna_media_server_LDADD = \
+libems_la_LIBADD = \
 @EMS_LIBS@
+
 

@@ -10,9 +10,9 @@ AM_CPPFLAGS = \
 bin_PROGRAMS = enna-media-server
 
 enna_media_server_SOURCES = \
-main.c \
-ems_config.c
+main.c
 
 enna_media_server_LDADD = \
-@EMS_LIBS@
+@EMS_LIBS@ \
+$(top_builddir)/src/lib/libems.la
 
