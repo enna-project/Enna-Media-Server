@@ -1,0 +1,17 @@
+Configuration
+
+After installing enna media server the default configuration is installed in PREFIX/share/enna-media-server/enna-media-server.conf
+This file is the text version of an eet file.
+
+When ems starts, it searches for a text configuration file in $HOME/.config/enna-media-server/
+If it found enna-media-server.conf it serializes it into a eet file and saves it back in $HOME/.cache/enna-media-server
+If the text file is not found, the default one is copied in $HOME/.config/enna-media-server
+At startup if the mtime of the eet file is different than the text one, the eet file is regenerated.
+
+The configuration contains the following entries :
+
+version : Defines the current version of the configuration structure
+port : Defines the port on which the server will listen to.
+name : The name of the server, this name will be announced on the network
+video_extensions : A string which contains the list of extensions that the server will parse.
+video_directories : The list of directories you want the server parses.
