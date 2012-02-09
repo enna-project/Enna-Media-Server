@@ -38,9 +38,10 @@ extern int _ems_log_dom_global;
 
 
 
-#define EMS_CONFIG_FILE "enna-media-server.cfg"
+#define EMS_CONFIG_FILE "enna-media-server.conf"
 #define EMS_DEFAULT_PORT 1337
 #define EMS_DEFAULT_NAME "Enna Media Server"
+#define EMS_CONFIG_VERSION 1
 
 #define ENNA_CONFIG_DD_NEW(str, typ)            \
   ems_config_descriptor_new(str, sizeof(typ))
@@ -53,7 +54,6 @@ extern int _ems_log_dom_global;
 
 typedef struct _Ems_Config Ems_Config;
 typedef struct _Ems_Directory Ems_Directory;
-typedef struct _Ems_Extension Ems_Extension;
 
 struct _Ems_Directory
 {
@@ -61,16 +61,12 @@ struct _Ems_Directory
    const char *label;
 };
 
-struct _Ems_Extension
-{
-   const char *ext;
-};
-
 struct _Ems_Config
 {
+   unsigned int version;
    short port;
    const char *name;
-   Eina_List *video_extensions;
+   const char *video_extensions;
    Eina_List *video_directories;
 };
 

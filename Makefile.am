@@ -2,7 +2,7 @@
 
 ACLOCAL_AMFLAGS = -I m4 -I m4/common
 
-SUBDIRS = src
+SUBDIRS = src data
 
 MAINTAINERCLEANFILES = \
 Makefile.in \

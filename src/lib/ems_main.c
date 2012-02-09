@@ -14,7 +14,6 @@ int ems_init(void)
 {
    Eina_List *l;
    Ems_Directory *dir;
-   Ems_Extension *ext;
 
    eina_init();
    eet_init();
@@ -33,13 +32,10 @@ int ems_init(void)
    ems_config_init();
    ems_avahi_init();
 
-   INF("Video Extensions :");
-   EINA_LIST_FOREACH(ems_config->video_extensions, l, ext)
-     {
-        INF("%s", ext->ext);
-     }
+   INF("Name : %s", ems_config->name);
+   INF("Port : %d", ems_config->port);
+   INF("Video Extensions : %s", ems_config->video_extensions);
 
-   INF("Video Directories :");
    EINA_LIST_FOREACH(ems_config->video_directories, l, dir)
      {
         INF("%s: %s", dir->label, dir->path);

@@ -133,6 +133,7 @@ Makefile
 src/Makefile
 src/lib/Makefile
 src/bin/Makefile
+data/Makefile
 ])
 
 AC_OUTPUT

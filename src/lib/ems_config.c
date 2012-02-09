@@ -13,7 +13,6 @@
 
 static Eet_Data_Descriptor *conf_edd = NULL;
 static Eet_Data_Descriptor *video_directory_edd = NULL;
-static Eet_Data_Descriptor *video_extension_edd = NULL;
 
 static const char *
 ems_config_filename_get(void)
@@ -53,6 +52,19 @@ ems_config_cache_dirname_get(void)
    return ecore_file_dir_get(ems_config_cache_filename_get());
 }
 
+static const char *
+ems_config_default_filename_get(void)
+{
+   static const char *filename = NULL;
+   char tmp[4096]; /* TODO : PATH_MAX */
+
+   if (filename)
+     return filename;
+
+   snprintf(tmp, sizeof(tmp), "%s/%s", PACKAGE_DATA_DIR, EMS_CONFIG_FILE);
+
+   return eina_stringshare_add(tmp);
+}
 
 static Eet_Data_Descriptor *
 ems_config_descriptor_new(const char *name, int size)
@@ -88,8 +100,16 @@ _make_config(void)
    f = fopen(ems_config_filename_get(), "rb");
    if (!f)
      {
-        ERR("Could not open %s", ems_config_filename_get());
-        return;
+        WRN("Could not open '%s', setup default config.", ems_config_filename_get());
+        if (ecore_file_exists(ems_config_default_filename_get()))
+          {
+             ecore_file_cp(ems_config_default_filename_get(), ems_config_filename_get());
+             f = fopen(ems_config_filename_get(), "rb");
+             if (!f)
+               return;
+          }
+        else
+          return;
      }
 
    fseek(f, 0, SEEK_END);
@@ -112,7 +132,7 @@ _make_config(void)
      }
 
    fclose(f);
-   if (eet_data_undump(ef, "Ems_Config", text, textlen, 1))
+   if (eet_data_undump(ef, "config", text, textlen, 1))
      INF("Updating configuration");
    free(text);
    eet_close(ef);
@@ -129,32 +149,11 @@ _config_get(Eet_Data_Descriptor *edd)
    file = eet_open(ems_config_cache_filename_get(),
                    EET_FILE_MODE_READ_WRITE);
 
-   config = eet_data_read(file, edd, "Ems_Config");
+   config = eet_data_read(file, edd, "config");
    if (!config)
      {
-        Ems_Directory *dir;
-        Ems_Extension *ext;
         WRN("Warning no configuration found! This must not happen, we will go back to a void configuration");
-        config = calloc(1, sizeof(Ems_Config));
-        config->port = EMS_DEFAULT_PORT;
-        config->name = eina_stringshare_add(EMS_DEFAULT_NAME);
-        /* dir = calloc(1, sizeof(Ems_Directory)); */
-        /* dir->path = eina_stringshare_add("/home/nico/videos"); */
-        /* dir->label = eina_stringshare_add("Videos Locales"); */
-        /* config->video_directories = eina_list_append(config->video_directories, dir); */
-        /* dir = calloc(1, sizeof(Ems_Directory)); */
-        /* dir->path = eina_stringshare_add("/home/partage/videos"); */
-        /* dir->label = eina_stringshare_add("Videos Serveur"); */
-        /* config->video_directories = eina_list_append(config->video_directories, dir); */
-        /* ext = calloc(1, sizeof(Ems_Extension)); */
-        /* ext->ext = eina_stringshare_add(".avi"); */
-        /* config->video_extensions = eina_list_append(config->video_extensions, ext); */
-        /* ext = calloc(1, sizeof(Ems_Extension)); */
-        /* ext->ext = eina_stringshare_add(".mov"); */
-        /* config->video_extensions = eina_list_append(config->video_extensions, ext); */
-        /* printf("Write to file\n"); */
-        /* eet_data_write(file, edd, "Ems_Config", config, 1); */
-        //eet_data_text_dump(data, len, output, NULL);
+        return NULL;
      }
 
    eet_close(file);
@@ -178,21 +177,16 @@ ems_config_init(void)
    ENNA_CONFIG_VAL(D, T, label, EET_T_STRING);
 
 
-   video_extension_edd = ENNA_CONFIG_DD_NEW("Ems_Extension",
-                                            Ems_Extension);
-#undef T
-#undef D
-#define T Ems_Extension
-#define D video_extension_edd
-   ENNA_CONFIG_VAL(D, T, ext, EET_T_STRING);
-
-   conf_edd = ENNA_CONFIG_DD_NEW("Ems_Config", Ems_Config);
+   conf_edd = ENNA_CONFIG_DD_NEW("config", Ems_Config);
 #undef T
 #undef D
 #define T Ems_Config
 #define D conf_edd
+   ENNA_CONFIG_VAL(D, T, version, EET_T_UINT);
+   ENNA_CONFIG_VAL(D, T, port, EET_T_SHORT);
+   ENNA_CONFIG_VAL(D, T, name, EET_T_STRING);
    ENNA_CONFIG_LIST(D, T, video_directories, video_directory_edd);
-   ENNA_CONFIG_LIST(D, T, video_extensions, video_extension_edd);
+   ENNA_CONFIG_VAL(D, T, video_extensions, EET_T_STRING);
 
    if (stat(ems_config_cache_filename_get(), &cache) == -1)
      {
