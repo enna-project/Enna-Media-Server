@@ -1,8 +1,11 @@
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
 
-#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <time.h>
 
 #include <avahi-client/client.h>
 #include <avahi-client/publish.h>
@@ -214,7 +217,7 @@ int ems_avahi_init(void)
    return 0;
 }
 
-int ems_avahi_shutdown(void)
+void ems_avahi_shutdown(void)
 {
    if (client)
      avahi_client_free(client);
@@ -223,6 +226,4 @@ int ems_avahi_shutdown(void)
      avahi_simple_poll_free(simple_poll);
 
    avahi_free(name);
-
-   return 0;
 }
