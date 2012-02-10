@@ -6,6 +6,7 @@ AM_CPPFLAGS = \
 -DPACKAGE_LIB_DIR=\"$(libdir)\" \
 -DPACKAGE_DATA_DIR=\"$(datadir)/$(PACKAGE)\" \
 -I$(top_srcdir)/src/lib \
+-I$(top_builddir)/src/lib \
 @EMS_CFLAGS@
 
 bin_PROGRAMS = enna-media-server

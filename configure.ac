@@ -38,10 +38,8 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_GNU_SOURCE
 AC_SYS_LARGEFILE
 
-AC_LIBTOOL_WIN32_DLL
-define([AC_LIBTOOL_LANG_CXX_CONFIG], [:])dnl
-define([AC_LIBTOOL_LANG_F77_CONFIG], [:])dnl
-AC_PROG_LIBTOOL
+LT_PREREQ([2.2])
+LT_INIT([win32-dll])
 
 ##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##
 ##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##
@@ -92,26 +90,30 @@ AC_DEFINE_UNQUOTED(SHARED_LIB_SUFFIX, "${MODULE_EXT}", [Suffix for shared object
 
 ### Checks for programs
 AC_PROG_CC
-AC_PROG_CXX
 
 # pkg-config
 PKG_PROG_PKG_CONFIG
 
+# Check whether pkg-config supports Requires.private
+if $PKG_CONFIG --atleast-pkgconfig-version 0.22; then
+   pkgconfig_requires_private="Requires.private"
+else
+   pkgconfig_requires_private="Requires"
+fi
+AC_SUBST([pkgconfig_requires_private])
+
 ### Checks for libraries
 
-PKG_CHECK_MODULES([EMS], [
-                         eina >= 1.0.0
-                         eet >= 1.4.0
-                         ecore-file >= 1.0.0
-                         eio >= 0.0.1
-                         avahi-client >= 0.6.0
-                         ])
+requirements_ems="eina >= 1.0.0 eet >= 1.4.0 ecore-file >= 1.0.0 eio >= 0.0.1 avahi-client >= 0.6.0"
+
+PKG_CHECK_MODULES([EMS], [${requirements_ems}])
+
+AC_SUBST([requirements_ems])
 
 ### Checks for compiler characteristics
 AC_C_CONST
 AC_C_BIGENDIAN
 AC_C_INLINE
-AC_PROG_CC_STDC
 EFL_ATTRIBUTE_UNUSED
 
 
@@ -123,9 +125,22 @@ m4_ifdef([v_mic],
 
 EFL_COMPILER_FLAG([-Wshadow])
 
-CFLAGS="${CFLAGS} ${EMS_CFLAGS}"
-LDFLAGS="${LDFLAGS} ${EMS_LDFLAGS}"
-LIBS="${LIBS} ${EMS_LIBS}"
+
+### Checks for linker characteristics
+lt_enable_auto_import=""
+case "${host_os}" in
+   mingw*)
+      lt_enable_auto_import="-Wl,--enable-auto-import"
+   ;;
+esac
+AC_SUBST([lt_enable_auto_import])
+
+EFL_LINKER_FLAG([-fno-strict-aliasing])
+
+### Checks for header files
+AC_HEADER_ASSERT
+AC_CHECK_HEADERS([unistd.h])
+EFL_CHECK_PATH_MAX
 
 AC_CONFIG_FILES([
 ems.pc

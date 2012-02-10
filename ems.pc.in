@@ -6,6 +6,7 @@ includedir=@includedir@
 Name: ems
 Description: Enna Media Server library
 Version: @VERSION@
+@pkgconfig_requires_private@: @requirements_ems@
 Libs: -L${libdir} -lems
-Libs.private: @EMS_LIBS@
+Libs.private:
 Cflags: -I${includedir}/enna
