@@ -1,8 +1,9 @@
-#include <Eio.h>
+xdele#include <Eio.h>
 #include <Ecore.h>
 
 #include "ems_private.h"
 #include "ems_scanner.h"
+#include "ems_config.h"
 
 typedef struct _Ems_Scanner Ems_Scanner;
 
@@ -60,14 +61,14 @@ static Eina_Bool
 _file_filter_cb(void *data, Eio_File *handler, const Eina_File_Direct_Info *info)
 {
 
-    if (*(info->path + info->name_start) == '.' )
-        return EINA_FALSE;
+   if (*(info->path + info->name_start) == '.' )
+     return EINA_FALSE;
 
-    if ( info->type == EINA_FILE_DIR ||
-         _ems_util_has_suffix(info->path + info->name_start, ems_config->video_extensions))
-        return EINA_TRUE;
-    else
-        return EINA_FALSE;
+   if ( info->type == EINA_FILE_DIR ||
+        _ems_util_has_suffix(info->path + info->name_start, ems_config->video_extensions))
+     return EINA_TRUE;
+   else
+     return EINA_FALSE;
 }
 
 static void
@@ -76,6 +77,7 @@ _file_main_cb(void *data, Eio_File *handler, const Eina_File_Direct_Info *info)
    if (info->type == EINA_FILE_DIR)
      {
         DBG("Scanning : %s", info->path);
+        _scanner->is_running++;
         eio_file_direct_ls(info->path,
                            _file_filter_cb,
                            _file_main_cb,
@@ -96,20 +98,17 @@ _file_done_cb(void *data, Eio_File *handler)
 {
    const char *path = data;
    eina_stringshare_del(path);
-}
+   _scanner->is_running--;
 
-static void
-_scan_done_cb(void *data, Eio_File *handler)
-{
-   const char *path = data;
-   INF("Scan finished");
-   eina_stringshare_del(path);
-   _scanner->is_running = EINA_FALSE;
-   /* Schedule the next scan */
-   if (_scanner->schedule_timer)
-     ecore_timer_del(_scanner->schedule_timer);
+   if (!_scanner->is_running)
+     {
+        /* Schedule the next scan */
+        if (_scanner->schedule_timer)
+          ecore_timer_del(_scanner->schedule_timer);
 
-   _scanner->schedule_timer = ecore_timer_add(10.0, _schedule_timer_cb, NULL);
+        _scanner->schedule_timer = ecore_timer_add(10.0, _schedule_timer_cb, NULL);
+        INF("Scan finished, schedule next scan in %3.3f seconds", 10.0);
+     }
 }
 
 
@@ -117,17 +116,8 @@ static void
 _file_error_cb(void *data, Eio_File *handler, int error)
 {
    const char *path= data;
-
+   _scanner->is_running--;
    ERR("Unable to parse %s", path);
-}
-
-static void
-_scan_error_cb(void *data, Eio_File *handler, int error)
-{
-   const char *path= data;
-
-   ERR("Scan error, Unable to scan %s", path);
-   _scanner->is_running = EINA_FALSE;
 }
 
 int
@@ -167,7 +157,7 @@ ems_scanner_start(void)
         return;
      }
 
-   _scanner->is_running = EINA_TRUE;
+   _scanner->is_running++;
 
    INF("Scanning videos directories :");
    EINA_LIST_FOREACH(ems_config->video_directories, l, dir)
@@ -176,7 +166,7 @@ ems_scanner_start(void)
         eio_file_direct_ls(dir->path,
                            _file_filter_cb,
                            _file_main_cb,
-                           _scan_done_cb,
+                           _file_done_cb,
                            _file_error_cb,
                            eina_stringshare_add(dir->path));
      }
