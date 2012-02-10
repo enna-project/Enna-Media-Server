@@ -18,9 +18,11 @@ libems_la_SOURCES = \
 ems_avahi.c \
 ems_config.c \
 ems_main.c \
+ems_scanner.c \
 ems_avahi.h \
 ems_config.h \
-ems_private.h
+ems_private.h \
+ems_scanner.h
 
 libems_la_LIBADD = @EMS_LIBS@
 libems_la_LDFLAGS = -no-undefined @lt_enable_auto_import@ -version-info @version_info@ @release_info@
