@@ -2,6 +2,8 @@ MAINTAINERCLEANFILES = Makefile.in
 
 AM_CPPFLAGS = \
 -I. \
+-I$(top_srcdir)/src/lib \
+-I$(top_builddir)/src/lib \
 -DPACKAGE_BIN_DIR=\"$(bindir)\" \
 -DPACKAGE_LIB_DIR=\"$(libdir)\" \
 -DPACKAGE_DATA_DIR=\"$(pkgdatadir)\" \
@@ -16,8 +18,9 @@ libems_la_SOURCES = \
 ems_avahi.c \
 ems_config.c \
 ems_main.c \
-ems_private.h \
-ems_config.h
+ems_avahi.h \
+ems_config.h \
+ems_private.h
 
 libems_la_LIBADD = @EMS_LIBS@
 libems_la_LDFLAGS = -no-undefined @lt_enable_auto_import@ -version-info @version_info@ @release_info@
