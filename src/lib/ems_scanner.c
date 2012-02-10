@@ -1,4 +1,4 @@
-xdele#include <Eio.h>
+#include <Eio.h>
 #include <Ecore.h>
 
 #include "ems_private.h"
@@ -105,9 +105,16 @@ _file_done_cb(void *data, Eio_File *handler)
         /* Schedule the next scan */
         if (_scanner->schedule_timer)
           ecore_timer_del(_scanner->schedule_timer);
-
-        _scanner->schedule_timer = ecore_timer_add(10.0, _schedule_timer_cb, NULL);
-        INF("Scan finished, schedule next scan in %3.3f seconds", 10.0);
+        if (ems_config->scan_period)
+          {
+             _scanner->schedule_timer = ecore_timer_add(ems_config->scan_period, _schedule_timer_cb, NULL);
+             /* TODO: covert time into a human redeable value */
+             INF("Scan finished, schedule next scan in %d seconds", ems_config->scan_period);
+          }
+        else
+          {
+             INF("Scan finished, scan schedul disabled according to the configuration.");
+          }
      }
 }
 

@@ -192,6 +192,7 @@ ems_config_init(void)
    ENNA_CONFIG_VAL(D, T, name, EET_T_STRING);
    ENNA_CONFIG_LIST(D, T, video_directories, video_directory_edd);
    ENNA_CONFIG_VAL(D, T, video_extensions, EET_T_STRING);
+   ENNA_CONFIG_VAL(D, T, scan_period, EET_T_UINT);
 
    if (stat(ems_config_cache_filename_get(), &cache) == -1)
      {
