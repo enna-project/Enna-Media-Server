@@ -1,12 +1,17 @@
-#include <Eet.h>
-#include <Ecore.h>
-#include <Ecore_File.h>
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
 
-#include "config.h"
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
+
+#include <Eet.h>
+#include <Ecore.h>
+#include <Ecore_File.h>
 
 #include "ems_private.h"
 #include "ems_config.h"
@@ -18,7 +23,7 @@ static const char *
 ems_config_filename_get(void)
 {
    static const char *filename = NULL;
-   char tmp[4096]; /* TODO : PATH_MAX */
+   char tmp[PATH_MAX];
 
    if (filename)
      return filename;
@@ -37,7 +42,7 @@ static const char *
 ems_config_cache_filename_get(void)
 {
    static const char *filename = NULL;
-   char tmp[4096]; /* TODO : PATH_MAX */
+   char tmp[PATH_MAX];
 
    if (filename)
      return filename;
@@ -56,7 +61,7 @@ static const char *
 ems_config_default_filename_get(void)
 {
    static const char *filename = NULL;
-   char tmp[4096]; /* TODO : PATH_MAX */
+   char tmp[PATH_MAX];
 
    if (filename)
      return filename;
@@ -200,8 +205,6 @@ ems_config_init(void)
      }
 
    ems_config = _config_get(conf_edd);
-
-
 }
 
 void
