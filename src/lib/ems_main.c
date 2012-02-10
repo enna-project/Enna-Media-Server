@@ -78,6 +78,8 @@ int ems_shutdown(void)
    DBG("Shutdown");
 
    ems_config_shutdown();
+   ems_scanner_shutdown();
+
    eio_shutdown();
    eet_shutdown();
    eina_shutdown();
