@@ -34,7 +34,26 @@ _EMS_Config_Get_Ret(Azy_Client *client, Azy_Content *content, void *_response)
    printf("Port : %d\n", response->port);
    printf("Video Extensions : %s\n", response->video_extensions);
    
-   ecore_main_loop_quit();
+
+   EMS_Config *cfg;
+   Azy_Net *net;   
+   Azy_Content *err;
+   cfg  = EMS_Config_new();
+
+   cfg->name = eina_stringshare_add("Test new Name #1");
+   cfg->port = 1337;
+
+   net = azy_client_net_get(client);
+   content = azy_content_new(NULL);
+   err = azy_content_new(NULL);
+   azy_net_transport_set(net, AZY_NET_TRANSPORT_JSON);
+   EMS_Config_SetAll(client, cfg, err, NULL);
+
+   azy_content_free(content);
+
+
+
+   //ecore_main_loop_quit();
 
    //response is automaticaly free
    return AZY_ERROR_NONE;
@@ -63,11 +82,12 @@ connected(void *data, int type, Azy_Client *cli)
    net = azy_client_net_get(cli);
    content = azy_content_new(NULL);
    err = azy_content_new(NULL);
-
-   ret = EMS_Config_Get(cli, err, NULL);
+   azy_net_transport_set(net, AZY_NET_TRANSPORT_JSON);
+   ret = EMS_Config_GetAll(cli, err, NULL);
    CALL_CHECK(_EMS_Config_Get_Ret);
 
    azy_content_free(content);
+
    return ECORE_CALLBACK_RENEW;
 }
 
