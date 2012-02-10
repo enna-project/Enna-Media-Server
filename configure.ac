@@ -109,7 +109,6 @@ requirements_ems="eina >= 1.0.0 eet >= 1.4.0 ecore-file >= 1.0.0 eio >= 0.0.1 av
 PKG_CHECK_MODULES([EMS], [${requirements_ems}])
 
 AC_SUBST([requirements_ems])
->>>>>>> master
 
 ### Checks for compiler characteristics
 AC_C_CONST

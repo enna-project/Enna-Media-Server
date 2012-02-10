@@ -28,7 +28,7 @@ ems_avahi.c \
 ems_config.c \
 ems_main.c \
 ems_server.c \
-$(SERVER_SOURCES)
+$(SERVER_SOURCES) \
 ems_private.h \
 ems_config.h
 
