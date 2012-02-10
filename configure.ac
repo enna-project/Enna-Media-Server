@@ -148,6 +148,8 @@ Makefile
 src/Makefile
 src/lib/Makefile
 src/bin/Makefile
+src/modules/Makefile
+src/modules/tmdb/Makefile
 data/Makefile
 ])
 
