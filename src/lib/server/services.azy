@@ -48,8 +48,8 @@ Azy_Module Config
    Config SetAll(Config cfg)
    <%
    (void) module;
-        printf("Receive : %s\n", cfg->name);
-        printf("Receive: %d\n", cfg->port);
+        INF("Receive : %s", cfg->name);
+        INF("Receive: %d", cfg->port);
    %>
 
 }
