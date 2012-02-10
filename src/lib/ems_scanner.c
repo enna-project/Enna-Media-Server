@@ -113,7 +113,7 @@ _file_done_cb(void *data, Eio_File *handler)
           }
         else
           {
-             INF("Scan finished, scan schedul disabled according to the configuration.");
+             INF("Scan finished, scan schedule disabled according to the configuration.");
           }
      }
 }
