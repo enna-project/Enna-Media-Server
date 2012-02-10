@@ -70,6 +70,7 @@ struct _Ems_Config
    const char *name;
    const char *video_extensions;
    Eina_List *video_directories;
+   unsigned int scan_period;
 };
 
 extern Ems_Config *ems_config;

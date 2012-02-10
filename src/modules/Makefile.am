@@ -1,3 +1,3 @@
-SUBDIRS = lib bin modules
-
 MAINTAINERCLEANFILES = Makefile.in
+
+SUBDIRS = tmdb

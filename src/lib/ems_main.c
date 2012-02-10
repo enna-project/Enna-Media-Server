@@ -46,6 +46,9 @@ int ems_init(void)
    ems_config_init();
    ems_avahi_init();
    ems_server_init();
+   ems_scanner_init();
+   ems_scanner_start();
+
 
    INF("Name : %s", ems_config->name);
    INF("Port : %d", ems_config->port);
@@ -77,6 +80,8 @@ int ems_shutdown(void)
    DBG("Shutdown");
 
    ems_config_shutdown();
+   ems_scanner_shutdown();
+
    eio_shutdown();
    eet_shutdown();
    eina_shutdown();
