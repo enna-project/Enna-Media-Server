@@ -15,3 +15,4 @@ port : Defines the port on which the server will listen to.
 name : The name of the server, this name will be announced on the network
 video_extensions : A string which contains the list of extensions that the server will parse.
 video_directories : The list of directories you want the server parses.
+scan_period : (in seconds) time between two scans
