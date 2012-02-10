@@ -29,8 +29,11 @@ _EMS_Config_Get_Ret(Azy_Client *client, Azy_Content *content, void *_response)
      }
 
    //printf("%s: Success? %s!\n", __PRETTY_FUNCTION__, ret ? "YES" : "NO");
-   printf("Response : %s\n", response->version);
-
+   printf("Version : %s\n", response->version);
+   printf("Name : %s\n", response->name);
+   printf("Port : %d\n", response->port);
+   printf("Video Extensions : %s\n", response->video_extensions);
+   
    ecore_main_loop_quit();
 
    //response is automaticaly free
