@@ -1,3 +1,7 @@
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #include <Eina.h>
 #include <Eet.h>
 #include <Ecore.h>
@@ -6,6 +10,9 @@
 
 #include "ems_private.h"
 #include "ems_config.h"
+#include "ems_avahi.h"
+
+static int _ems_init_count = 0;
 
 int _ems_log_dom_global = -1;
 Ems_Config *ems_config = NULL;
@@ -15,17 +22,24 @@ int ems_init(void)
    Eina_List *l;
    Ems_Directory *dir;
 
-   eina_init();
-   eet_init();
-   eio_init();
+   if (++_ems_init_count != 1)
+     return _ems_init_count;
+
+   if (!eina_init())
+     return --_ems_init_count;
 
    _ems_log_dom_global = eina_log_domain_register("ems", EMS_DEFAULT_LOG_COLOR);
-
    if (_ems_log_dom_global < 0)
      {
         EINA_LOG_ERR("Enna-Server Can not create a general log domain.");
-        return -1;
+        goto shutdown_eina;
      }
+
+   if (!eet_init())
+     goto unregister_log_domain;
+
+   if (!eio_init())
+     goto shutdown_eet;
 
    DBG("Config Init");
 
@@ -42,17 +56,30 @@ int ems_init(void)
         INF("%s: %s", dir->label, dir->path);
      }
 
-   return 1;
+   return _ems_init_count;
+
+ shutdown_eet:
+   eet_shutdown();
+ unregister_log_domain:
+   eina_log_domain_unregister(_ems_log_dom_global);
+   _ems_log_dom_global = -1;
+ shutdown_eina:
+   eina_shutdown();
+   return --_ems_init_count;
 }
 
 
 int ems_shutdown(void)
 {
+   if (--_ems_init_count != 0)
+     return _ems_init_count;
+
    DBG("Shutdown");
 
    ems_config_shutdown();
    eio_shutdown();
    eet_shutdown();
    eina_shutdown();
-   return 0;
+
+   return _ems_init_count;
 }

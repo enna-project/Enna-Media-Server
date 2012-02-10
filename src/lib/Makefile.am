@@ -4,7 +4,7 @@ AM_CPPFLAGS = \
 -I. \
 -DPACKAGE_BIN_DIR=\"$(bindir)\" \
 -DPACKAGE_LIB_DIR=\"$(libdir)\" \
--DPACKAGE_DATA_DIR=\"$(datadir)/$(PACKAGE)\" \
+-DPACKAGE_DATA_DIR=\"$(pkgdatadir)\" \
 @EMS_CFLAGS@
 
 includes_HEADERS = Ems.h
@@ -29,7 +29,8 @@ ems_config.c \
 ems_main.c \
 ems_server.c \
 $(SERVER_SOURCES)
-
+ems_private.h \
+ems_config.h
 
 
 $(SERVER_SOURCES): server/services.azy
@@ -44,3 +45,5 @@ EXTRA_DIST = ems_private.h \
 	server/services.azy
 
 
+libems_la_LIBADD = @EMS_LIBS@
+libems_la_LDFLAGS = -no-undefined @lt_enable_auto_import@ -version-info @version_info@ @release_info@
