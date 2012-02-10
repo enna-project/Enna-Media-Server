@@ -1,3 +1,5 @@
+#ifndef _EMS_PRIVATE_H
+#define _EMS_PRIVATE_H
 
 #include <Eina.h>
 
@@ -71,3 +73,5 @@ struct _Ems_Config
 };
 
 extern Ems_Config *ems_config;
+
+#endif /* _EMS_PRIVATE_H_ */

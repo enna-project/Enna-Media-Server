@@ -31,6 +31,7 @@ int ems_init(void)
 
    ems_config_init();
    ems_avahi_init();
+   ems_server_init();
 
    INF("Name : %s", ems_config->name);
    INF("Port : %d", ems_config->port);

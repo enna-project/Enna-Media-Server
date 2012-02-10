@@ -1,0 +1,50 @@
+
+//The namespace is added before each method and file
+Azy_Namespace EMS;
+
+//struct send by the server with the response
+//Azy will create a new and free methods
+//Demo_Message_new() and Demo_Message_free()
+
+struct Directory
+{
+   string name;
+   string path;
+};
+
+struct Config
+{
+   string version;
+   int port;
+   string name;
+   string video_extensions;
+   array<Directory> video_directories;
+};
+
+//Our module, a module contains a list of methods
+Azy_Module Config
+{
+   <%
+   #include <config.h>
+   #include "ems_private.h"
+   %>
+   __version__(1.0);
+
+   Config Get()
+   <%
+   (void)module;
+    Azy_Net *net_ = azy_server_module_net_get(module);    
+    printf("Accepted connection from: %s\n", azy_net_ip_get(net_));
+    printf("Path : %s\n", azy_net_uri_get(net_));
+
+   printf("%s:%s:%d\n", __FILE__, __PRETTY_FUNCTION__, __LINE__);
+   retval = EMS_Config_new();
+   retval->version = eina_stringshare_add(PACKAGE_VERSION);
+   retval->port = ems_config->port;
+   retval->name = eina_stringshare_add(ems_config->name);
+   retval->video_extensions = eina_stringshare_add(ems_config->video_extensions);
+
+   return retval;
+   %>
+}
+
