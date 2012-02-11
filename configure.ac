@@ -41,22 +41,12 @@ AC_SYS_LARGEFILE
 LT_PREREQ([2.2])
 LT_INIT([win32-dll])
 
-##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##
-##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##
 m4_ifdef([v_rev], , [m4_define([v_rev], [0])])
 m4_ifdef([v_rel], , [m4_define([v_rel], [])])
-AC_DEFINE_UNQUOTED(VMAJ, [v_maj], [Major version])
-AC_DEFINE_UNQUOTED(VMIN, [v_min], [Minor version])
-AC_DEFINE_UNQUOTED(VMIC, [v_mic], [Micro version])
-AC_DEFINE_UNQUOTED(VREV, [v_rev], [Revison])
 version_info="lt_cur:lt_rev:lt_age"
 release_info="v_rel"
-AC_SUBST(version_info)
-AC_SUBST(release_info)
-##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##
-##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##
-VMAJ=v_maj
-AC_SUBST(VMAJ)
+AC_SUBST([version_info])
+AC_SUBST([release_info])
 
 
 ### Needed information
@@ -111,11 +101,9 @@ PKG_CHECK_MODULES([EMS], [${requirements_ems}])
 AC_SUBST([requirements_ems])
 
 ### Checks for compiler characteristics
-AC_C_CONST
 AC_C_BIGENDIAN
 AC_C_INLINE
 EFL_ATTRIBUTE_UNUSED
-
 
 m4_ifdef([v_mic],
    [
@@ -137,10 +125,12 @@ AC_SUBST([lt_enable_auto_import])
 
 EFL_LINKER_FLAG([-fno-strict-aliasing])
 
+
 ### Checks for header files
 AC_HEADER_ASSERT
 AC_CHECK_HEADERS([unistd.h])
 EFL_CHECK_PATH_MAX
+
 
 AC_CONFIG_FILES([
 ems.pc
@@ -166,5 +156,13 @@ echo "$PACKAGE $VERSION"
 echo "------------------------------------------------------------------------"
 echo
 echo
+echo "Configuration Options Summary:"
 echo
-
+echo "Compilation............: make (or gmake)"
+echo "  CPPFLAGS.............: $CPPFLAGS"
+echo "  CFLAGS...............: $CFLAGS"
+echo "  LDFLAGS..............: $LDFLAGS"
+echo
+echo "Installation...........: make install (as root if needed, with 'su' or 'sudo')"
+echo "  prefix...............: $prefix"
+echo
