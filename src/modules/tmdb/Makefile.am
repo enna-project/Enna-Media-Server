@@ -16,8 +16,6 @@ module_la_LIBADD = $(top_builddir)/src/lib/libems.la @EMS_LIBS@
 module_la_LDFLAGS = -no-undefined @lt_enable_auto_import@ -module -avoid-version
 module_la_LIBTOOLFLAGS = --tag=disable-static
 
-install-data-hook:
-	rm -f $(DESTDIR)$(controllerdir)/$(controller_LTLIBRARIES)
 uninstall-hook:
 	rm -f $(DESTDIR)$(controllerdir)/module.*
 
