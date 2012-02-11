@@ -9,6 +9,10 @@
 #include "ems_scanner.h"
 #include "ems_config.h"
 
+/*============================================================================*
+ *                                  Local                                     *
+ *============================================================================*/
+
 typedef struct _Ems_Scanner Ems_Scanner;
 
 struct _Ems_Scanner
@@ -64,7 +68,6 @@ _ems_util_has_suffix(const char *name, const char *extensions)
 static Eina_Bool
 _file_filter_cb(void *data, Eio_File *handler, const Eina_File_Direct_Info *info)
 {
-
    if (*(info->path + info->name_start) == '.' )
      return EINA_FALSE;
 
@@ -131,6 +134,10 @@ _file_error_cb(void *data, Eio_File *handler, int error)
    ERR("Unable to parse %s", path);
 }
 
+/*============================================================================*
+ *                                 Global                                     *
+ *============================================================================*/
+
 int
 ems_scanner_init(void)
 {
@@ -182,3 +189,7 @@ ems_scanner_start(void)
                            eina_stringshare_add(dir->path));
      }
 }
+
+/*============================================================================*
+ *                                   API                                      *
+ *============================================================================*/

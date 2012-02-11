@@ -1,5 +1,10 @@
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #include <Ecore.h>
 #include <Azy.h>
+
 #include "EMS_Config.azy_client.h"
 
 #define CALL_CHECK(X)                                                   \
@@ -33,10 +38,10 @@ _EMS_Config_Get_Ret(Azy_Client *client, Azy_Content *content, void *_response)
    printf("Name : %s\n", response->name);
    printf("Port : %d\n", response->port);
    printf("Video Extensions : %s\n", response->video_extensions);
-   
+
 
    EMS_Config *cfg;
-   Azy_Net *net;   
+   Azy_Net *net;
    Azy_Content *err;
    cfg  = EMS_Config_new();
 
@@ -50,8 +55,6 @@ _EMS_Config_Get_Ret(Azy_Client *client, Azy_Content *content, void *_response)
    EMS_Config_SetAll(client, cfg, err, NULL);
 
    azy_content_free(content);
-
-
 
    //ecore_main_loop_quit();
 
