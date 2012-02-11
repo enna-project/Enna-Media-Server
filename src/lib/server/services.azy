@@ -35,7 +35,7 @@ Azy_Module Config
    (void)module;
 
 
-    
+
     retval = EMS_Config_new();
     retval->version = eina_stringshare_add(PACKAGE_VERSION);
     retval->port = ems_config->port;

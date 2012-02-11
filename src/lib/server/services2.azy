@@ -172,7 +172,6 @@ Azy_Module Serve {
 			content = upload_lkt[i].func(given_param, (const char *)uploaded_data);
 			goto upload_end_uri;
 		}
-	
 	}
 
 	UPLOAD_ERROR;

@@ -137,6 +137,7 @@ ems.pc
 Makefile
 src/Makefile
 src/lib/Makefile
+src/lib/server/Makefile
 src/bin/Makefile
 src/modules/Makefile
 src/modules/tmdb/Makefile
