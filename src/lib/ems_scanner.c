@@ -1,5 +1,9 @@
-#include <Eio.h>
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #include <Ecore.h>
+#include <Eio.h>
 
 #include "ems_private.h"
 #include "ems_scanner.h"

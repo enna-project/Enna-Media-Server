@@ -2,8 +2,6 @@ MAINTAINERCLEANFILES = Makefile.in
 
 AM_CPPFLAGS = \
 -I. \
--I$(top_srcdir)/src/include \
--I$(top_builddir)/src/include \
 -I$(top_srcdir)/src/lib \
 -I$(top_builddir)/src/lib \
 @EMS_CFLAGS@
@@ -11,8 +9,7 @@ AM_CPPFLAGS = \
 controllerdir = $(libdir)/ems/grabbers/$(MODULE_ARCH)
 controller_LTLIBRARIES = module.la
 
-module_la_SOURCES = \
-ems_grabber_tmdb.c
+module_la_SOURCES = ems_grabber_tmdb.c
 
 module_la_CFLAGS = @EMS_CFLAGS@
 module_la_LIBADD = $(top_builddir)/src/lib/libems.la @EMS_LIBS@

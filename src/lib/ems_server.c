@@ -1,4 +1,9 @@
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #include <Azy.h>
+
 #include "EMS_Config.azy_server.h"
 
 
@@ -24,5 +29,4 @@ void ems_server_init(void)
      }
    INF("Start Azy server");
    azy_server_start(serv);
-
 }

@@ -42,13 +42,8 @@ $(SERVER_SOURCES): server/services.azy
 	@echo  "  GEN    $@"
 	@azy_parser -H -p -o ./ server/services.azy
 
-libems_la_LIBADD = \
-@EMS_LIBS@
-
-EXTRA_DIST = ems_private.h \
-	ems_config.h \
-	server/services.azy
-
 
 libems_la_LIBADD = @EMS_LIBS@
 libems_la_LDFLAGS = -no-undefined @lt_enable_auto_import@ -version-info @version_info@ @release_info@
+
+EXTRA_DIST = server/services.azy

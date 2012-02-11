@@ -1,7 +1,12 @@
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #include <Ecore.h>
 #include <Azy.h>
-#include "Demo_Message.azy_server.h"
 #include <Esskyuehl.h>
+
+#include "Demo_Message.azy_server.h"
 
 
 static Eina_Bool
