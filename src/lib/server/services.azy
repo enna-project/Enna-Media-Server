@@ -34,23 +34,62 @@ Azy_Module Config
    <%
    (void)module;
 
+   retval = EMS_Config_new();
+   retval->version = eina_stringshare_add(PACKAGE_VERSION);
+   retval->port = ems_config->port;
+   retval->name = eina_stringshare_add(ems_config->name);
+   retval->video_extensions = eina_stringshare_add(ems_config->video_extensions);
 
-
-    retval = EMS_Config_new();
-    retval->version = eina_stringshare_add(PACKAGE_VERSION);
-    retval->port = ems_config->port;
-    retval->name = eina_stringshare_add(ems_config->name);
-    retval->video_extensions = eina_stringshare_add(ems_config->video_extensions);
-
-    return retval;
+   return retval;
    %>
 
    Config SetAll(Config cfg)
    <%
    (void) module;
-        INF("Receive : %s", cfg->name);
-        INF("Receive: %d", cfg->port);
+   
+   INF("Receive : %s", cfg->name);
+   INF("Receive: %d", cfg->port);
    %>
 
 }
 
+
+struct File
+{
+   string path;
+   string friendly_name;
+   int type;
+};
+
+
+
+Azy_Module Browser
+{
+   <%
+   #include <config.h>
+   #include "ems_private.h"
+   %>
+
+   __version__(1.0);
+
+   array<File> GetSources()
+   <%
+   Eina_List *l;
+   Ems_Directory *dir;
+   EMS_File *f;
+   (void) module;
+
+   EINA_LIST_FOREACH(ems_config->video_directories, l, dir)
+   {
+     f = EMS_File_new();
+     f->path = eina_stringshare_add(dir->path);
+     retval = eina_list_append(retval, f);
+   }
+   return retval;
+   %>
+
+   array<File> GetDirectory(string path)
+   <%
+   INF("Browse %s", path);
+   %>
+}

@@ -5,12 +5,12 @@
 #include <Azy.h>
 
 #include "EMS_Config.azy_server.h"
-
+#include "EMS_Browser.azy_server.h"
 
 /*============================================================================*
  *                                  Local                                     *
  *============================================================================*/
-Azy_Server *_serv;
+static Azy_Server *_serv;
 
 /*============================================================================*
  *                                 Global                                     *
@@ -25,6 +25,7 @@ void ems_server_init(void)
    //Define the list of module used by the server.
    Azy_Server_Module_Def *modules[] = {
      EMS_Config_module_def(),
+     EMS_Browser_module_def(),
      NULL
    };
 

@@ -11,6 +11,8 @@ noinst_LTLIBRARIES = libems_server.la
 SERVER_SOURCES = \
 EMS_Config.azy_server.c \
 EMS_Config.azy_server.h \
+EMS_Browser.azy_server.c \
+EMS_Browser.azy_server.h \
 EMS_Common_Azy.c \
 EMS_Common_Azy.h \
 EMS_Common.c \

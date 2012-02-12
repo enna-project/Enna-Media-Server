@@ -6,6 +6,7 @@
 #include <Azy.h>
 
 #include "EMS_Config.azy_client.h"
+#include "EMS_Browser.azy_client.h"
 
 #define CALL_CHECK(X)                                                   \
   do                                                                    \
@@ -40,21 +41,6 @@ _EMS_Config_Get_Ret(Azy_Client *client, Azy_Content *content, void *_response)
    printf("Video Extensions : %s\n", response->video_extensions);
 
 
-   EMS_Config *cfg;
-   Azy_Net *net;
-   Azy_Content *err;
-   cfg  = EMS_Config_new();
-
-   cfg->name = eina_stringshare_add("Test new Name #1");
-   cfg->port = 1337;
-
-   net = azy_client_net_get(client);
-   content = azy_content_new(NULL);
-   err = azy_content_new(NULL);
-   azy_net_transport_set(net, AZY_NET_TRANSPORT_JSON);
-   EMS_Config_SetAll(client, cfg, err, NULL);
-
-   azy_content_free(content);
 
    //ecore_main_loop_quit();
 
@@ -86,10 +72,13 @@ connected(void *data, int type, Azy_Client *cli)
    content = azy_content_new(NULL);
    err = azy_content_new(NULL);
    azy_net_transport_set(net, AZY_NET_TRANSPORT_JSON);
-   ret = EMS_Config_GetAll(cli, err, NULL);
-   CALL_CHECK(_EMS_Config_Get_Ret);
+   /* ret = EMS_Config_GetAll(cli, err, NULL); */
+   /* CALL_CHECK(_EMS_Config_Get_Ret); */
 
-   azy_content_free(content);
+   //azy_content_free(content);
+
+   ret = EMS_Browser_GetSources(cli, err, NULL);
+
 
    return ECORE_CALLBACK_RENEW;
 }
