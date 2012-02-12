@@ -5,8 +5,8 @@
 #include <Ecore.h>
 #include <Azy.h>
 
-#include "EMS_Config.azy_client.h"
-#include "EMS_Browser.azy_client.h"
+#include "ems_rpc_Config.azy_client.h"
+#include "ems_rpc_Browser.azy_client.h"
 
 #define CALL_CHECK(X)                                                   \
   do                                                                    \
@@ -22,9 +22,9 @@
  * Here we receive the response and print it
  */
 static Eina_Error
-_EMS_Config_Get_Ret(Azy_Client *client, Azy_Content *content, void *_response)
+_ems_rpc_Config_Get_Ret(Azy_Client *client, Azy_Content *content, void *_response)
 {
-   EMS_Config *response = _response;
+   ems_rpc_Config *response = _response;
 
    if (azy_content_error_is_set(content))
      {
@@ -50,11 +50,11 @@ _EMS_Config_Get_Ret(Azy_Client *client, Azy_Content *content, void *_response)
 
 
 static Eina_Error
-_EMS_Browser_GetDirectory_Get_Ret(Azy_Client *client, Azy_Content *content, void *_response)
+_ems_rpc_Browser_GetDirectory_Get_Ret(Azy_Client *client, Azy_Content *content, void *_response)
 {
    Eina_List *files = _response;
    Eina_List *l;
-   EMS_File *f;
+   ems_rpc_File *f;
 
 
 
@@ -79,11 +79,11 @@ _EMS_Browser_GetDirectory_Get_Ret(Azy_Client *client, Azy_Content *content, void
  * Here we receive the response and print it
  */
 static Eina_Error
-_EMS_Browser_GetSources_Get_Ret(Azy_Client *cli, Azy_Content *content, void *_response)
+_ems_rpc_Browser_GetSources_Get_Ret(Azy_Client *cli, Azy_Content *content, void *_response)
 {
    Eina_List *files = _response;
    Eina_List *l;
-   EMS_File *f;
+   ems_rpc_File *f;
 
    unsigned int ret;
    Azy_Net *net;
@@ -109,8 +109,8 @@ _EMS_Browser_GetSources_Get_Ret(Azy_Client *cli, Azy_Content *content, void *_re
    EINA_LIST_FOREACH(files, l, f)
      {
         printf("%s\n", f->path);
-        ret = EMS_Browser_GetDirectory(cli, f->path, err, NULL);
-        CALL_CHECK(_EMS_Browser_GetDirectory_Get_Ret);
+        ret = ems_rpc_Browser_GetDirectory(cli, f->path, err, NULL);
+        CALL_CHECK(_ems_rpc_Browser_GetDirectory_Get_Ret);
      }
 
 
@@ -147,13 +147,13 @@ connected(void *data, int type, Azy_Client *cli)
    content = azy_content_new(NULL);
    err = azy_content_new(NULL);
    azy_net_transport_set(net, AZY_NET_TRANSPORT_JSON);
-   /* ret = EMS_Config_GetAll(cli, err, NULL); */
-   /* CALL_CHECK(_EMS_Config_Get_Ret); */
+   /* ret = ems_rpc_Config_GetAll(cli, err, NULL); */
+   /* CALL_CHECK(_ems_rpc_Config_Get_Ret); */
 
    //azy_content_free(content);
 
-   ret = EMS_Browser_GetSources(cli, err, NULL);
-   CALL_CHECK(_EMS_Browser_GetSources_Get_Ret);
+   ret = ems_rpc_Browser_GetSources(cli, err, NULL);
+   CALL_CHECK(_ems_rpc_Browser_GetSources_Get_Ret);
 
    return ECORE_CALLBACK_RENEW;
 }
