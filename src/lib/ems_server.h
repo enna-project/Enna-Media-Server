@@ -1,8 +1,3 @@
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
-
-#include <Azy.h>
 #ifndef _EMS_SERVER_H_
 #define _EMS_SERVER_H_
 
