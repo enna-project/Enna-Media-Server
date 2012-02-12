@@ -11,6 +11,8 @@
 #include "ems_private.h"
 #include "ems_config.h"
 #include "ems_avahi.h"
+#include "ems_scanner.h"
+#include "ems_server.h"
 
 /*============================================================================*
  *                                  Local                                     *
@@ -99,4 +101,9 @@ int ems_shutdown(void)
    eina_shutdown();
 
    return _ems_init_count;
+}
+
+void ems_run(void)
+{
+    ems_server_run();
 }

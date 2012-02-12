@@ -11,10 +11,10 @@
 
 int main(int argc, char **argv)
 {
-  if (!ems_init())
-    return EXIT_FAILURE;
+   if (!ems_init())
+     return EXIT_FAILURE;
 
-   ecore_main_loop_begin();
+   ems_run();
 
    ems_shutdown();
 

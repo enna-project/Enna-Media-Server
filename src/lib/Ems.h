@@ -4,4 +4,6 @@
 int ems_init(void);
 int ems_shutdown(void);
 
+void ems_run(void);
+
 #endif /* _EMS_H_ */
