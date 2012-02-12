@@ -48,6 +48,81 @@ _EMS_Config_Get_Ret(Azy_Client *client, Azy_Content *content, void *_response)
    return AZY_ERROR_NONE;
 }
 
+
+static Eina_Error
+_EMS_Browser_GetDirectory_Get_Ret(Azy_Client *client, Azy_Content *content, void *_response)
+{
+   Eina_List *files = _response;
+   Eina_List *l;
+   EMS_File *f;
+
+
+
+   if (azy_content_error_is_set(content))
+     {
+        printf("Error encountered: %s\n", azy_content_error_message_get(content));
+        azy_client_close(client);
+        ecore_main_loop_quit();
+        return azy_content_error_code_get(content);
+     }
+
+   EINA_LIST_FOREACH(files, l, f)
+     {
+        printf("[%s]%s - %s\n", f->type ? "FILE": "DIR", f->path, f->friendly_name);
+     }
+
+   return AZY_ERROR_NONE;
+}
+
+
+/**
+ * Here we receive the response and print it
+ */
+static Eina_Error
+_EMS_Browser_GetSources_Get_Ret(Azy_Client *cli, Azy_Content *content, void *_response)
+{
+   Eina_List *files = _response;
+   Eina_List *l;
+   EMS_File *f;
+
+   unsigned int ret;
+   Azy_Net *net;
+   Azy_Content *err;
+
+
+
+   if (azy_content_error_is_set(content))
+     {
+        printf("Error encountered: %s\n", azy_content_error_message_get(content));
+        azy_client_close(cli);
+        ecore_main_loop_quit();
+        return azy_content_error_code_get(content);
+     }
+
+
+   net = azy_client_net_get(cli);
+   content = azy_content_new(NULL);
+   err = azy_content_new(NULL);
+   azy_net_transport_set(net, AZY_NET_TRANSPORT_JSON);
+
+   printf("Sources : \n");
+   EINA_LIST_FOREACH(files, l, f)
+     {
+        printf("%s\n", f->path);
+        ret = EMS_Browser_GetDirectory(cli, f->path, err, NULL);
+        CALL_CHECK(_EMS_Browser_GetDirectory_Get_Ret);
+     }
+
+
+
+   azy_content_free(content);
+
+   
+
+   return AZY_ERROR_NONE;
+}
+
+
 /**
  * Bad we have been disconnected
  */
@@ -78,7 +153,7 @@ connected(void *data, int type, Azy_Client *cli)
    //azy_content_free(content);
 
    ret = EMS_Browser_GetSources(cli, err, NULL);
-
+   CALL_CHECK(_EMS_Browser_GetSources_Get_Ret);
 
    return ECORE_CALLBACK_RENEW;
 }
