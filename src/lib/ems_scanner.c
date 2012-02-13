@@ -83,18 +83,11 @@ _file_main_cb(void *data, Eio_File *handler, const Eina_File_Direct_Info *info)
 {
    if (info->type == EINA_FILE_DIR)
      {
-        DBG("Scanning : %s", info->path);
-        _scanner->is_running++;
-        eio_file_direct_ls(info->path,
-                           _file_filter_cb,
-                           _file_main_cb,
-                           _file_done_cb,
-                           _file_error_cb,
-                           eina_stringshare_add(info->path));
+        DBG("[DIR] %s", info->path);
      }
    else
      {
-        INF("Found %s", info->path);
+        INF("[FILE] %s", info->path);
         /* TODO: add this file in the database */
         /* TODO: Add this file in the scanner list */
      }
@@ -105,32 +98,32 @@ _file_done_cb(void *data, Eio_File *handler)
 {
    const char *path = data;
    eina_stringshare_del(path);
+
    _scanner->is_running--;
 
    if (!_scanner->is_running)
      {
-        /* Schedule the next scan */
-        if (_scanner->schedule_timer)
-          ecore_timer_del(_scanner->schedule_timer);
-        if (ems_config->scan_period)
-          {
-             _scanner->schedule_timer = ecore_timer_add(ems_config->scan_period, _schedule_timer_cb, NULL);
-             /* TODO: covert time into a human redeable value */
-             INF("Scan finished, schedule next scan in %d seconds", ems_config->scan_period);
-          }
-        else
-          {
-             INF("Scan finished, scan schedule disabled according to the configuration.");
-          }
+	/* Schedule the next scan */
+	if (_scanner->schedule_timer)
+	  ecore_timer_del(_scanner->schedule_timer);
+	if (ems_config->scan_period)
+	  {
+	     _scanner->schedule_timer = ecore_timer_add(ems_config->scan_period, _schedule_timer_cb, NULL);
+	     /* TODO: covert time into a human redeable value */
+	     INF("Scan finished, schedule next scan in %d seconds", ems_config->scan_period);
+	  }
+	else
+	  {
+	     INF("Scan finished, scan schedule disabled according to the configuration.");
+	  }
      }
 }
-
 
 static void
 _file_error_cb(void *data, Eio_File *handler, int error)
 {
    const char *path= data;
-   _scanner->is_running--;
+   /* _scanner->is_running--; */
    ERR("Unable to parse %s", path);
 }
 
@@ -181,12 +174,12 @@ ems_scanner_start(void)
    EINA_LIST_FOREACH(ems_config->video_directories, l, dir)
      {
         INF("Scanning %s: %s", dir->label, dir->path);
-        eio_file_direct_ls(dir->path,
-                           _file_filter_cb,
-                           _file_main_cb,
-                           _file_done_cb,
-                           _file_error_cb,
-                           eina_stringshare_add(dir->path));
+        eio_dir_stat_ls(dir->path,
+                        _file_filter_cb,
+                        _file_main_cb,
+                        _file_done_cb,
+                        _file_error_cb,
+                        eina_stringshare_add(dir->path));
      }
 }
 
