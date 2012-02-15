@@ -52,6 +52,7 @@ ems_config_cache_filename_get(void)
      return filename;
 
    snprintf(tmp, sizeof(tmp), "%s/.cache/enna-media-server/%s", getenv("HOME"), EMS_CONFIG_FILE);
+
    return eina_stringshare_add(tmp);
 }
 
@@ -96,10 +97,10 @@ _make_config(void)
    char *text;
 
    if (!ecore_file_is_dir(ems_config_dirname_get()))
-     ecore_file_mkdir(ems_config_dirname_get());
+     ecore_file_mkpath(ems_config_dirname_get());
 
    if (!ecore_file_is_dir(ems_config_cache_dirname_get()))
-     ecore_file_mkdir(ems_config_cache_dirname_get());
+     ecore_file_mkpath(ems_config_cache_dirname_get());
 
    ef = eet_open(ems_config_cache_filename_get(),
                  EET_FILE_MODE_READ_WRITE);
