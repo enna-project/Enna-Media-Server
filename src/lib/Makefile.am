@@ -19,15 +19,18 @@ includesdir = $(includedir)/enna
 lib_LTLIBRARIES = libems.la
 
 libems_la_SOURCES = \
-ems_avahi.c \
 ems_config.c \
 ems_main.c \
 ems_scanner.c \
-ems_avahi.h \
 ems_config.h \
 ems_private.h \
 ems_scanner.h \
 ems_server.c
+
+if HAVE_MACOSX
+else
+libems_la_SOURCES += ems_avahi.c ems_avahi.h
+endif
 
 
 libems_la_LIBADD = server/libems_server.la @EMS_LIBS@

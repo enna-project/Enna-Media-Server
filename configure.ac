@@ -56,6 +56,14 @@ AC_CANONICAL_HOST
 
 requirement_ems=""
 
+have_macosx="no"
+case "$host_os" in
+   darwin*)
+      have_macosx="yes"
+      ;;
+esac
+AM_CONDITIONAL([HAVE_MACOSX], [test "x${have_macosx}" = "xyes"])
+
 case "$host_os" in
    mingw32ce*)
       MODULE_ARCH="$host_os-$host_cpu"
