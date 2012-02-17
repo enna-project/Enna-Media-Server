@@ -208,7 +208,7 @@ void
 ems_scanner_state_get(Ems_Scanner_State *state, double *percent)
 {
 
-   if (!scanner)
+   if (!_scanner)
      return;
 
    if (_scanner->is_running && state)
@@ -217,7 +217,7 @@ ems_scanner_state_get(Ems_Scanner_State *state, double *percent)
      *state = EMS_SCANNER_STATE_IDLE;
 
    if (eina_list_count(_scanner->scan_files) && percent)
-     *percent = (double) _progress / eina_list_count(_scanner->scan_files);
+     *percent = (double) _scanner->progress / eina_list_count(_scanner->scan_files);
    else if (percent)
      *percent = 0.0;
 

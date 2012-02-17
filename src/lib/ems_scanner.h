@@ -6,7 +6,7 @@ typedef enum _Ems_Scanner_State Ems_Scanner_State;
 enum _Ems_Scanner_State
 {
     EMS_SCANNER_STATE_IDLE,
-    EMS_SCANNER_STATE_WORKING,
+    EMS_SCANNER_STATE_RUNNING,
 };
 
 Eina_Bool ems_scanner_init(void);
