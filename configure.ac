@@ -116,7 +116,7 @@ EFL_ATTRIBUTE_UNUSED
 m4_ifdef([v_mic],
    [
     EFL_COMPILER_FLAG([-Wall])
-    EFL_COMPILER_FLAG([-W])
+    EFL_COMPILER_FLAG([-Wextra])
    ])
 
 EFL_COMPILER_FLAG([-Wshadow])

@@ -1,7 +1,7 @@
 #ifndef _EMS_SCANNER_H_
 #define _EMS_SCANNER_H_
 
-int ems_scanner_init(void);
+Eina_Bool ems_scanner_init(void);
 void ems_scanner_shutdown(void);
 void ems_scanner_start(void);
 

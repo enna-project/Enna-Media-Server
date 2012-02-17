@@ -185,7 +185,7 @@ static void client_callback(AvahiClient *c, AvahiClientState state, AVAHI_GCC_UN
  *                                 Global                                     *
  *============================================================================*/
 
-int ems_avahi_init(void)
+Eina_Bool ems_avahi_init(void)
 {
    int error;
 
@@ -208,7 +208,7 @@ int ems_avahi_init(void)
         goto fail;
      }
 
-   return 1;
+   return EINA_TRUE;
 
  fail:
 
@@ -222,7 +222,7 @@ int ems_avahi_init(void)
 
      avahi_free(name);
 
-   return 0;
+   return EINA_FALSE;
 }
 
 void ems_avahi_shutdown(void)
