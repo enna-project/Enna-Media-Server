@@ -57,10 +57,15 @@ int ems_init(void)
 
    DBG("Config Init");
 
-   ems_config_init();
-   ems_avahi_init();
-   ems_server_init();
+   if (!ems_config_init())
+     goto shutdown_eio;
+   if (!ems_avahi_init())
+     goto shutdown_config;
+   if (!ems_server_init())
+     goto shutdown_avahi;
    ems_scanner_init();
+     goto shutdown_server;
+
    ems_scanner_start();
 
 
@@ -75,6 +80,14 @@ int ems_init(void)
 
    return _ems_init_count;
 
+ shutdown_server:
+   ems_server_shutdown();
+ shutdown_avahi:
+   ems_avahi_shutdown();
+ shutdown_config:
+   ems_config_shutdown();
+ shutdown_eio:
+   eio_shutdown();
  shutdown_eet:
    eet_shutdown();
  unregister_log_domain:
@@ -93,11 +106,15 @@ int ems_shutdown(void)
 
    DBG("Shutdown");
 
-   ems_config_shutdown();
    ems_scanner_shutdown();
+   ems_server_shutdown();
+   ems_avahi_shutdown();
+   ems_config_shutdown();
 
    eio_shutdown();
    eet_shutdown();
+   eina_log_domain_unregister(_ems_log_dom_global);
+   _ems_log_dom_global = -1;
    eina_shutdown();
 
    return _ems_init_count;

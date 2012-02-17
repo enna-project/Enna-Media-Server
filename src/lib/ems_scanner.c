@@ -26,7 +26,7 @@ static void _file_main_cb(void *data, Eio_File *handler, const Eina_File_Direct_
 static void _file_done_cb(void *data, Eio_File *handler);
 static void _file_error_cb(void *data, Eio_File *handler, int error);
 
-static Ems_Scanner *_scanner;
+static Ems_Scanner *_scanner = NULL;
 
 static Eina_Bool
 _schedule_timer_cb(void *data)
@@ -131,13 +131,14 @@ _file_error_cb(void *data, Eio_File *handler, int error)
  *                                 Global                                     *
  *============================================================================*/
 
-int
+Eina_Bool
 ems_scanner_init(void)
 {
    _scanner = calloc(1, sizeof(Ems_Scanner));
    if (!_scanner)
-     return 0;
-   return 1;
+     return EINA_FALSE;
+
+   return EINA_TRUE;
 }
 
 void

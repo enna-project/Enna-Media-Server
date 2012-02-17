@@ -175,7 +175,7 @@ _config_get(Eet_Data_Descriptor *edd)
  *                                 Global                                     *
  *============================================================================*/
 
-void
+Eina_Bool
 ems_config_init(void)
 {
    struct stat cache;
@@ -215,6 +215,8 @@ ems_config_init(void)
      }
 
    ems_config = _config_get(conf_edd);
+
+   return EINA_TRUE;
 }
 
 void
