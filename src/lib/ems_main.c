@@ -88,7 +88,7 @@ int ems_init(void)
      goto shutdown_config;
    if (!ems_server_init())
      goto shutdown_avahi;
-   ems_scanner_init();
+   if (!ems_scanner_init())
      goto shutdown_server;
 
    ems_scanner_start();

@@ -42,8 +42,10 @@ typedef struct _Ems_Scanner Ems_Scanner;
 
 struct _Ems_Scanner
 {
-   Eina_Bool is_running;
+   int is_running;
    Ecore_Timer *schedule_timer;
+   Eina_List *scan_files;
+   int progress;
 };
 
 static Eina_Bool _file_filter_cb(void *data, Eio_File *handler, const Eina_File_Direct_Info *info);
@@ -113,6 +115,9 @@ _file_main_cb(void *data, Eio_File *handler, const Eina_File_Direct_Info *info)
    else
      {
         INF("[FILE] %s", info->path);
+        /* TODO : add this file only if it doesn't exists in the db */
+        _scanner->scan_files = eina_list_append(_scanner->scan_files,
+                                                eina_stringshare_add(info->path));
         /* TODO: add this file in the database */
         /* TODO: Add this file in the scanner list */
      }
@@ -128,6 +133,8 @@ _file_done_cb(void *data, Eio_File *handler)
 
    if (!_scanner->is_running)
      {
+        const char *f;
+
 	/* Schedule the next scan */
 	if (_scanner->schedule_timer)
 	  ecore_timer_del(_scanner->schedule_timer);
@@ -141,6 +148,12 @@ _file_done_cb(void *data, Eio_File *handler)
 	  {
 	     INF("Scan finished, scan schedule disabled according to the configuration.");
 	  }
+
+        /* Free the scan list */
+        EINA_LIST_FREE(_scanner->scan_files, f)
+          eina_stringshare_del(f);
+        _scanner->scan_files = NULL;
+        _scanner->progress = 0;
      }
 }
 
@@ -196,6 +209,9 @@ ems_scanner_start(void)
 
    _scanner->is_running++;
 
+   /* TODO : get all files in the db and see if they exist on the disk */
+
+   /* Scann all files on the disk */
    INF("Scanning videos directories :");
    EINA_LIST_FOREACH(ems_config->video_directories, l, dir)
      {
@@ -212,3 +228,25 @@ ems_scanner_start(void)
 /*============================================================================*
  *                                   API                                      *
  *============================================================================*/
+
+void
+ems_scanner_state_get(Ems_Scanner_State *state, double *percent)
+{
+
+   if (!_scanner)
+     return;
+
+   if (_scanner->is_running && state)
+     *state = EMS_SCANNER_STATE_RUNNING;
+   else if (state)
+     *state = EMS_SCANNER_STATE_IDLE;
+
+   if (eina_list_count(_scanner->scan_files) && percent)
+     *percent = (double) _scanner->progress / eina_list_count(_scanner->scan_files);
+   else if (percent)
+     *percent = 0.0;
+
+   INF("Scanner is %s (%3.3f%%)", _scanner->is_running ? "running" : "in idle", (double) _scanner->progress * 100.0 / eina_list_count(_scanner->scan_files));
+
+}
+
