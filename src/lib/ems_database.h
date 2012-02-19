@@ -35,4 +35,5 @@ void ems_database_release(Ems_Database *db);
 void ems_database_file_insert(Ems_Database *db, const char *filename);
 void ems_database_transaction_begin(Ems_Database *db);
 void ems_database_transaction_end(Ems_Database *db);
+
 #endif /* _EMS_DATABASE_H_ */
