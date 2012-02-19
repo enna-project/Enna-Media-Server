@@ -46,7 +46,7 @@
  *============================================================================*/
 
 static Eet_Data_Descriptor *conf_edd = NULL;
-static Eet_Data_Descriptor *video_directory_edd = NULL;
+static Eet_Data_Descriptor *directory_edd = NULL;
 
 static const char *
 ems_config_filename_get(void)
@@ -206,14 +206,15 @@ ems_config_init(void)
    struct stat cache;
    struct stat conf;
 
-   video_directory_edd = ENNA_CONFIG_DD_NEW("Ems_Directory",
-                                            Ems_Directory);
+   directory_edd = ENNA_CONFIG_DD_NEW("Ems_Directory",
+                                      Ems_Directory);
 #undef T
 #undef D
 #define T Ems_Directory
-#define D video_directory_edd
+#define D directory_edd
    ENNA_CONFIG_VAL(D, T, path, EET_T_STRING);
    ENNA_CONFIG_VAL(D, T, label, EET_T_STRING);
+   ENNA_CONFIG_VAL(D, T, type, EET_T_UINT);
 
 
    conf_edd = ENNA_CONFIG_DD_NEW("config", Ems_Config);
@@ -224,8 +225,13 @@ ems_config_init(void)
    ENNA_CONFIG_VAL(D, T, version, EET_T_UINT);
    ENNA_CONFIG_VAL(D, T, port, EET_T_SHORT);
    ENNA_CONFIG_VAL(D, T, name, EET_T_STRING);
-   ENNA_CONFIG_LIST(D, T, video_directories, video_directory_edd);
+   ENNA_CONFIG_LIST(D, T, video_directories, directory_edd);
+   ENNA_CONFIG_LIST(D, T, tvshow_directories, directory_edd);
+   ENNA_CONFIG_LIST(D, T, music_directories, directory_edd);
+   ENNA_CONFIG_LIST(D, T, photo_directories, directory_edd);
    ENNA_CONFIG_VAL(D, T, video_extensions, EET_T_STRING);
+   ENNA_CONFIG_VAL(D, T, music_extensions, EET_T_STRING);
+   ENNA_CONFIG_VAL(D, T, photo_extensions, EET_T_STRING);
    ENNA_CONFIG_VAL(D, T, scan_period, EET_T_UINT);
 
    if (stat(ems_config_cache_filename_get(), &cache) == -1)

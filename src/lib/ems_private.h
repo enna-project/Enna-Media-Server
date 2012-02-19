@@ -82,10 +82,15 @@ extern int _ems_log_dom_global;
 typedef struct _Ems_Config Ems_Config;
 typedef struct _Ems_Directory Ems_Directory;
 
+#define EMS_MEDIA_TYPE_VIDEO 0x01
+#define EMS_MEDIA_TYPE_MUSIC 0x02
+#define EMS_MEDIA_TYPE_PHOTO 0x04
+
 struct _Ems_Directory
 {
    const char *path;
    const char *label;
+   int type;
 };
 
 struct _Ems_Config
@@ -94,7 +99,12 @@ struct _Ems_Config
    short port;
    const char *name;
    const char *video_extensions;
+   const char *music_extensions;
+   const char *photo_extensions;
    Eina_List *video_directories;
+   Eina_List *tvshow_directories;
+   Eina_List *music_directories;
+   Eina_List *photo_directories;
    unsigned int scan_period;
 };
 

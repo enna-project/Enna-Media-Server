@@ -46,6 +46,7 @@ struct _Ems_Scanner
    Ecore_Timer *schedule_timer;
    Eina_List *scan_files;
    int progress;
+   double start_time;
 };
 
 static Eina_Bool _file_filter_cb(void *data, Eio_File *handler, const Eina_File_Direct_Info *info);
@@ -95,11 +96,30 @@ _ems_util_has_suffix(const char *name, const char *extensions)
 static Eina_Bool
 _file_filter_cb(void *data, Eio_File *handler, const Eina_File_Direct_Info *info)
 {
+   const char *ext = NULL;
+   Ems_Directory *dir = data;
+
    if (*(info->path + info->name_start) == '.' )
      return EINA_FALSE;
 
+   switch (dir->type)
+     {
+      case EMS_MEDIA_TYPE_VIDEO:
+         ext = ems_config->video_extensions;
+         break;
+      case EMS_MEDIA_TYPE_MUSIC:
+         ext = ems_config->music_extensions;
+         break;
+      case EMS_MEDIA_TYPE_PHOTO:
+         ext = ems_config->photo_extensions;
+         break;
+      default:
+         ERR("Unknown type %d", dir->type);
+         return EINA_FALSE;
+     }
+
    if ( info->type == EINA_FILE_DIR ||
-        _ems_util_has_suffix(info->path + info->name_start, ems_config->video_extensions))
+        _ems_util_has_suffix(info->path + info->name_start, ext))
      return EINA_TRUE;
    else
      return EINA_FALSE;
@@ -108,13 +128,38 @@ _file_filter_cb(void *data, Eio_File *handler, const Eina_File_Direct_Info *info
 static void
 _file_main_cb(void *data, Eio_File *handler, const Eina_File_Direct_Info *info)
 {
+   Ems_Directory *dir = data;
+
+   if (*(info->path + info->name_start) == '.' )
+     return EINA_FALSE;
+
    if (info->type == EINA_FILE_DIR)
      {
-        DBG("[DIR] %s", info->path);
+        //DBG("[DIR] %s", info->path);
      }
    else
      {
-        INF("[FILE] %s", info->path);
+        const char *type;
+
+        switch (dir->type)
+          {
+           case EMS_MEDIA_TYPE_VIDEO:
+              type = eina_stringshare_add("video");
+              break;
+           case EMS_MEDIA_TYPE_MUSIC:
+              type = eina_stringshare_add("music");
+              break;
+           case EMS_MEDIA_TYPE_PHOTO:
+              type = eina_stringshare_add("photo");
+              break;
+           default:
+              ERR("Unknown type %d", dir->type);
+              type = NULL;
+              break;
+          }
+
+        INF("[FILE] [%s] %s", type, info->path);
+        eina_stringshare_del(type);
         /* TODO : add this file only if it doesn't exists in the db */
         _scanner->scan_files = eina_list_append(_scanner->scan_files,
                                                 eina_stringshare_add(info->path));
@@ -126,8 +171,7 @@ _file_main_cb(void *data, Eio_File *handler, const Eina_File_Direct_Info *info)
 static void
 _file_done_cb(void *data, Eio_File *handler)
 {
-   const char *path = data;
-   eina_stringshare_del(path);
+   Ems_Directory *dir = data;
 
    _scanner->is_running--;
 
@@ -146,23 +190,26 @@ _file_done_cb(void *data, Eio_File *handler)
 	  }
 	else
 	  {
-	     INF("Scan finished, scan schedule disabled according to the configuration.");
+	     INF("Scan finished in %3.3fs, scan schedule disabled according to the configuration.", ecore_time_get() - _scanner->start_time);
 	  }
+
+        INF("%d file scanned\n", eina_list_count(_scanner->scan_files));
 
         /* Free the scan list */
         EINA_LIST_FREE(_scanner->scan_files, f)
           eina_stringshare_del(f);
         _scanner->scan_files = NULL;
         _scanner->progress = 0;
+        _scanner->start_time = 0;
      }
 }
 
 static void
 _file_error_cb(void *data, Eio_File *handler, int error)
 {
-   const char *path= data;
+   Ems_Directory *dir = data;
    /* _scanner->is_running--; */
-   ERR("Unable to parse %s", path);
+   ERR("Unable to parse %s", dir->path);
 }
 
 /*============================================================================*
@@ -207,7 +254,8 @@ ems_scanner_start(void)
         return;
      }
 
-   _scanner->is_running++;
+   _scanner->start_time = ecore_time_get();
+
 
    /* TODO : get all files in the db and see if they exist on the disk */
 
@@ -215,14 +263,55 @@ ems_scanner_start(void)
    INF("Scanning videos directories :");
    EINA_LIST_FOREACH(ems_config->video_directories, l, dir)
      {
+        _scanner->is_running++;
         INF("Scanning %s: %s", dir->label, dir->path);
         eio_dir_stat_ls(dir->path,
                         _file_filter_cb,
                         _file_main_cb,
                         _file_done_cb,
                         _file_error_cb,
-                        eina_stringshare_add(dir->path));
+                        dir);
      }
+
+   INF("Scanning tvshow directories :");
+   EINA_LIST_FOREACH(ems_config->tvshow_directories, l, dir)
+     {
+        _scanner->is_running++;
+        INF("Scanning %s: %s", dir->label, dir->path);
+        eio_dir_stat_ls(dir->path,
+                        _file_filter_cb,
+                        _file_main_cb,
+                        _file_done_cb,
+                        _file_error_cb,
+                        dir);
+     }
+
+   INF("Scanning tvshow directories :");
+   EINA_LIST_FOREACH(ems_config->music_directories, l, dir)
+     {
+        _scanner->is_running++;
+        INF("Scanning %s: %s", dir->label, dir->path);
+        eio_dir_stat_ls(dir->path,
+                        _file_filter_cb,
+                        _file_main_cb,
+                        _file_done_cb,
+                        _file_error_cb,
+                        dir);
+     }
+
+   INF("Scanning photo directories :");
+   EINA_LIST_FOREACH(ems_config->photo_directories, l, dir)
+     {
+        _scanner->is_running++;
+        INF("Scanning %s: %s", dir->label, dir->path);
+        eio_dir_stat_ls(dir->path,
+                        _file_filter_cb,
+                        _file_main_cb,
+                        _file_done_cb,
+                        _file_error_cb,
+                        dir);
+     }
+
 }
 
 /*============================================================================*
