@@ -27,6 +27,8 @@
 # include <config.h>
 #endif
 
+#include <sys/stat.h>
+
 #include <Ecore.h>
 #include <Eio.h>
 
@@ -143,6 +145,7 @@ _file_main_cb(void *data, Eio_File *handler, const Eina_File_Direct_Info *info)
    else
      {
         const char *type;
+        struct stat st;
 
         switch (dir->type)
           {
@@ -167,7 +170,9 @@ _file_main_cb(void *data, Eio_File *handler, const Eina_File_Direct_Info *info)
         _scanner->scan_files = eina_list_append(_scanner->scan_files,
                                                 eina_stringshare_add(info->path));
 
-        ems_database_file_insert(_scanner->db, info->path);
+        lstat(info->path, &st);
+
+        ems_database_file_insert(_scanner->db, info->path, (int64_t)st.st_mtime);
         if (!eina_list_count(_scanner->scan_files) % 100)
           {
              ems_database_transaction_end(_scanner->db);
