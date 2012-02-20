@@ -81,10 +81,14 @@ extern int _ems_log_dom_global;
 
 typedef struct _Ems_Config Ems_Config;
 typedef struct _Ems_Directory Ems_Directory;
+typedef enum _Ems_Media_Type Ems_Media_Type;
 
-#define EMS_MEDIA_TYPE_VIDEO 0x01
-#define EMS_MEDIA_TYPE_MUSIC 0x02
-#define EMS_MEDIA_TYPE_PHOTO 0x04
+enum _Ems_Media_Type
+{
+  EMS_MEDIA_TYPE_VIDEO = 1 << 0,
+  EMS_MEDIA_TYPE_MUSIC = 1 << 1,
+  EMS_MEDIA_TYPE_PHOTO = 1 << 2,
+};
 
 struct _Ems_Directory
 {
