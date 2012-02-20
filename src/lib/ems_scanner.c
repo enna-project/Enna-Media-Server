@@ -229,7 +229,7 @@ _file_done_cb(void *data, Eio_File *handler)
 
         t = ecore_time_get();
         files = ems_database_files_get(_scanner->db);
-        INF("SELECT * from file :  %d files in %3.3fs",
+        INF("SELECT file_path,file_mtime FROM file:  %d files in %3.3fs",
             eina_list_count(files), ecore_time_get() - t);
         EINA_LIST_FREE(files, f)
           eina_stringshare_del(f);

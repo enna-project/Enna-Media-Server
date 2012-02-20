@@ -206,7 +206,7 @@ ems_database_files_get(Ems_Database *db)
    if (!db || !db->db)
      return NULL;
 
-   res = sqlite3_prepare_v2 (db->db, "SELECT * FROM file;", -1, &stmt, NULL);
+   res = sqlite3_prepare_v2 (db->db, "SELECT file_path,file_mtime FROM file;", -1, &stmt, NULL);
    if (res != SQLITE_OK)
      goto out;
 
