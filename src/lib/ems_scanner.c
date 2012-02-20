@@ -194,6 +194,9 @@ _file_done_cb(void *data, Eio_File *handler)
      {
         const char *f;
         Eio_File *eio_file;
+        double t;
+        Eina_List *files;
+
         ems_database_transaction_end(_scanner->db);
         ems_database_release(_scanner->db);
 
@@ -211,7 +214,7 @@ _file_done_cb(void *data, Eio_File *handler)
 	     INF("Scan finished in %3.3fs, scan schedule disabled according to the configuration.", ecore_time_get() - _scanner->start_time);
 	  }
 
-        INF("%d file scanned\n", eina_list_count(_scanner->scan_files));
+        INF("%d file scanned", eina_list_count(_scanner->scan_files));
         /* Free the scan list */
         EINA_LIST_FREE(_scanner->scan_files, f)
           eina_stringshare_del(f);
@@ -223,6 +226,14 @@ _file_done_cb(void *data, Eio_File *handler)
         _scanner->scan_files = NULL;
         _scanner->progress = 0;
         _scanner->start_time = 0;
+
+        t = ecore_time_get();
+        files = ems_database_files_get(_scanner->db);
+        INF("SELECT * from file :  %d files in %3.3fs",
+            eina_list_count(files), ecore_time_get() - t);
+        EINA_LIST_FREE(files, f)
+          eina_stringshare_del(f);
+
      }
 }
 

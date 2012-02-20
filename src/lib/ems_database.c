@@ -45,11 +45,11 @@
   "VALUES (?, ?);"
 
 #define CREATE_TABLE_FILE                                       \
-    "CREATE TABLE IF NOT EXISTS file ( "                        \
-    "file_id          INTEGER PRIMARY KEY AUTOINCREMENT, "      \
-    "file_path        TEXT    NOT NULL UNIQUE, "                \
-    "file_mtime       INTEGER NOT NULL "                        \
-    ");"
+  "CREATE TABLE IF NOT EXISTS file ( "                          \
+  "file_id          INTEGER PRIMARY KEY AUTOINCREMENT, "        \
+  "file_path        TEXT    NOT NULL UNIQUE, "                  \
+  "file_mtime       INTEGER NOT NULL "                          \
+  ");"
 
 struct _Ems_Database
 {
@@ -97,7 +97,7 @@ ems_database_new(const char *filename)
 
    db->filename = eina_stringshare_add(filename);
 
-    /* Create table in the new database*/
+   /* Create table in the new database*/
    if (!exists)
      {
         INF("Creating Database table");
@@ -196,3 +196,45 @@ ems_database_transaction_end(Ems_Database *db)
    sqlite3_reset(db->end_stmt);
 }
 
+Eina_List *
+ems_database_files_get(Ems_Database *db)
+{
+   Eina_List *files = NULL;
+   sqlite3_stmt *stmt = NULL;
+   int res;
+
+   if (!db || !db->db)
+     return NULL;
+
+   res = sqlite3_prepare_v2 (db->db, "SELECT * FROM file;", -1, &stmt, NULL);
+   if (res != SQLITE_OK)
+     goto out;
+
+   while (1)
+     {
+
+        res = sqlite3_step (stmt);
+        if (res == SQLITE_ROW)
+          {
+             int bytes;
+             const unsigned char * text;
+             bytes = sqlite3_column_bytes(stmt, 1);
+             text  = sqlite3_column_text (stmt, 1);
+             files = eina_list_append(files, eina_stringshare_add(text));
+          }
+        else if (res == SQLITE_DONE)
+          {
+             DBG("Request End");
+             break;
+          }
+        else
+          {
+             ERR("Request failed");
+          }
+     }
+
+   return files;
+
+ out:
+   return NULL;
+}
