@@ -81,7 +81,26 @@ extern int _ems_log_dom_global;
 
 typedef struct _Ems_Config Ems_Config;
 typedef struct _Ems_Directory Ems_Directory;
-typedef enum _Ems_Media_Type Ems_Media_Type;
+
+struct _Ems_Observer
+{
+   int dummy;
+};
+
+struct _Ems_Collection
+{
+   int dummy;
+};
+
+struct _Ems_Media
+{
+   int dummy;
+};
+
+struct _Ems_Media_Info
+{
+   int dummy;
+};
 
 enum _Ems_Media_Type
 {
