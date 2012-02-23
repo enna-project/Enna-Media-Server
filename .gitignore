@@ -29,3 +29,7 @@ depcomp
 install-sh
 libtool
 ltmain.sh
+ems_rpc_*.[ch]
+massif.out.*
+enna-media-server*.tar.gz
+enna-media-server*.tar.bz2
