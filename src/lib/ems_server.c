@@ -225,3 +225,12 @@ ems_server_cb_del(Ems_Server_Add_Cb server_add_cb,
           }
      }
 }
+
+const char *
+ems_server_name_get(Ems_Server *server)
+{
+   if (!server)
+     return NULL;
+
+   return server->name;
+}
