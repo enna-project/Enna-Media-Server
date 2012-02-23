@@ -76,7 +76,7 @@ void ems_player_cb_set(Ems_Player_Add_Cb player_add_cb,
 /* Unset callbacks */
 void ems_player_cb_del(Ems_Player_Add_Cb player_add_cb,
                        Ems_Player_Del_Cb player_del_cb,
-                       Ems_Player_Update_Cb player_uddate_cb);
+                       Ems_Player_Update_Cb player_update_cb);
 
 /* No need to be asyncrhonous here as name, icons, local and type are already set */
 

@@ -41,8 +41,19 @@
  *                                  Local                                     *
  *============================================================================*/
 
+typedef struct _Ems_Server_Cb Ems_Server_Cb;
+
+struct _Ems_Server_Cb
+{
+   void (*add_cb)(void *data, Ems_Server *server);
+   void (*del_cb)(void *data, Ems_Server *server);
+   void (*update_cb)(void *data, Ems_Server *server);
+   void *data;
+};
+
 static Azy_Server *_ems_server_serv = NULL;
 static Eina_List *_servers = NULL;
+static Eina_List *_servers_cb = NULL;
 
 /*============================================================================*
  *                                 Global                                     *
@@ -102,11 +113,22 @@ void ems_server_run(void)
 
 void ems_server_add(Ems_Server *server)
 {
+   Eina_List *l_cb;
+   Ems_Server_Cb *cb;
+
    if (!server || !server->name)
      return;
 
    INF("Adding %s to the list of detected server", server->name);
+
+   EINA_LIST_FOREACH(_servers_cb, l_cb, cb)
+     {
+        if (cb->add_cb)
+          cb->add_cb(cb->data, server);
+     }
+
    _servers = eina_list_append(_servers, server);
+
 }
 
 void ems_server_del(const char *name)
@@ -122,7 +144,17 @@ void ems_server_del(const char *name)
         if (!server) continue;
         if (!strcmp(name, server->name))
           {
+             Eina_List *l_cb;
+             Ems_Server_Cb *cb;
+
              INF("Remove %s from the list of detected servers", server->name);
+
+             EINA_LIST_FOREACH(_servers_cb, l_cb, cb)
+               {
+                  if (cb->del_cb)
+                    cb->del_cb(cb->data, server);
+               }
+
              _servers = eina_list_remove(_servers, server);
              eina_stringshare_del(server->name);
              if (server->ip) eina_stringshare_del(server->ip);
@@ -138,4 +170,58 @@ Eina_List *
 ems_server_list_get(void)
 {
    return _servers;
+}
+
+void
+ems_server_cb_set(Ems_Server_Add_Cb server_add_cb,
+                  Ems_Server_Del_Cb server_del_cb,
+                  Ems_Server_Update_Cb server_update_cb,
+                  void *data)
+{
+   Ems_Server_Cb *cb;
+
+   cb = calloc(1, sizeof(Ems_Server_Cb));
+   if (!cb)
+     return;
+
+   cb->add_cb = server_add_cb;
+   cb->del_cb = server_del_cb;
+   cb->update_cb = server_update_cb;
+   cb->data = data;
+
+   _servers_cb = eina_list_append(_servers_cb, cb);
+}
+
+void
+ems_server_cb_del(Ems_Server_Add_Cb server_add_cb,
+                  Ems_Server_Del_Cb server_del_cb,
+                  Ems_Server_Update_Cb server_update_cb)
+{
+   Eina_List *l;
+   Ems_Server_Cb *cb;
+
+   EINA_LIST_FOREACH(_servers_cb, l, cb)
+     {
+        int cnt = 0;
+        if (server_add_cb == cb->add_cb)
+          {
+             cb->add_cb = NULL;
+             cnt++;
+          }
+        if (server_del_cb == cb->del_cb)
+          {
+             cb->del_cb = NULL;
+             cnt++;
+          }
+        if (server_update_cb == cb->update_cb)
+          {
+             cb->add_cb = NULL;
+             cnt++;
+          }
+        if (cnt == 3)
+          {
+             _servers_cb = eina_list_remove(_servers_cb, cb);
+             free(cb);
+          }
+     }
 }
