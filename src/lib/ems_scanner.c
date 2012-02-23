@@ -319,12 +319,12 @@ ems_scanner_start(void)
      {
         _scanner->is_running++;
         INF("Scanning %s: %s", dir->label, dir->path);
-        f = eio_dir_stat_ls(dir->path,
-                            _file_filter_cb,
-                            _file_main_cb,
-                            _file_done_cb,
-                            _file_error_cb,
-                            dir);
+        f = eio_dir_direct_ls(dir->path,
+                              _file_filter_cb,
+                              _file_main_cb,
+                              _file_done_cb,
+                              _file_error_cb,
+                              dir);
         _scanner->eio_files = eina_list_append(_scanner->eio_files, f);
      }
 
@@ -333,11 +333,11 @@ ems_scanner_start(void)
      {
         _scanner->is_running++;
         INF("Scanning %s: %s", dir->label, dir->path);
-        f = eio_dir_stat_ls(dir->path,
-                            _file_filter_cb,
-                            _file_main_cb,
-                            _file_done_cb,
-                            _file_error_cb,
+        f = eio_dir_direct_ls(dir->path,
+                              _file_filter_cb,
+                              _file_main_cb,
+                              _file_done_cb,
+                              _file_error_cb,
                             dir);
         _scanner->eio_files = eina_list_append(_scanner->eio_files, f);
      }
@@ -347,12 +347,12 @@ ems_scanner_start(void)
      {
         _scanner->is_running++;
         INF("Scanning %s: %s", dir->label, dir->path);
-        f = eio_dir_stat_ls(dir->path,
-                            _file_filter_cb,
-                            _file_main_cb,
-                            _file_done_cb,
-                            _file_error_cb,
-                            dir);
+        f = eio_dir_direct_ls(dir->path,
+                              _file_filter_cb,
+                              _file_main_cb,
+                              _file_done_cb,
+                              _file_error_cb,
+                              dir);
         _scanner->eio_files = eina_list_append(_scanner->eio_files, f);
      }
 
@@ -361,12 +361,12 @@ ems_scanner_start(void)
      {
         _scanner->is_running++;
         INF("Scanning %s: %s", dir->label, dir->path);
-        f = eio_dir_stat_ls(dir->path,
-                            _file_filter_cb,
-                            _file_main_cb,
-                            _file_done_cb,
-                            _file_error_cb,
-                            dir);
+        f = eio_dir_direct_ls(dir->path,
+                              _file_filter_cb,
+                              _file_main_cb,
+                              _file_done_cb,
+                              _file_error_cb,
+                              dir);
         _scanner->eio_files = eina_list_append(_scanner->eio_files, f);
      }
 
