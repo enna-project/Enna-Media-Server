@@ -26,8 +26,14 @@
 #ifndef _EMS_SERVER_H_
 #define _EMS_SERVER_H_
 
+#include "Ems.h"
+
 Eina_Bool ems_server_init(void);
 void ems_server_shutdown();
 void ems_server_run(void);
+
+void ems_server_add(Ems_Server *server);
+void ems_server_del(const char *name);
+void ems_server_update(const char *name, Ems_Server *server);
 
 #endif /* _EMS_SERVER_H_ */

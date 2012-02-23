@@ -27,7 +27,12 @@
 # include <config.h>
 #endif
 
+#include <Eina.h>
 #include <Azy.h>
+
+#include "Ems.h"
+#include "ems_private.h"
+#include "ems_server.h"
 
 #include "ems_rpc_Config.azy_server.h"
 #include "ems_rpc_Browser.azy_server.h"
@@ -37,6 +42,7 @@
  *============================================================================*/
 
 static Azy_Server *_ems_server_serv = NULL;
+static Eina_List *_servers = NULL;
 
 /*============================================================================*
  *                                 Global                                     *
@@ -82,6 +88,7 @@ Eina_Bool ems_server_init(void)
 
 void ems_server_shutdown()
 {
+
   /* FIXME: something else to do ? */
    azy_server_free(_ems_server_serv);
    azy_shutdown();
@@ -93,6 +100,42 @@ void ems_server_run(void)
    azy_server_run(_ems_server_serv);
 }
 
+void ems_server_add(Ems_Server *server)
+{
+   if (!server || !server->name)
+     return;
+
+   INF("Adding %s to the list of detected server", server->name);
+   _servers = eina_list_append(_servers, server);
+}
+
+void ems_server_del(const char *name)
+{
+   Eina_List *l;
+   Ems_Server *server;
+
+   if (!_servers || !name)
+     return;
+
+   EINA_LIST_FOREACH(_servers, l, server)
+     {
+        if (!server) continue;
+        if (!strcmp(name, server->name))
+          {
+             INF("Remove %s from the list of detected servers", server->name);
+             _servers = eina_list_remove(_servers, server);
+             eina_stringshare_del(server->name);
+             if (server->ip) eina_stringshare_del(server->ip);
+             free(server);
+          }
+     }
+}
+
 /*============================================================================*
  *                                   API                                      *
  *============================================================================*/
+Eina_List *
+ems_server_list_get(void)
+{
+   return _servers;
+}
