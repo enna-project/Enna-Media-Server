@@ -70,6 +70,8 @@ extern int _ems_log_dom_global;
 #define EMS_DEFAULT_NAME "Enna Media Server"
 #define EMS_CONFIG_VERSION 1
 
+#define EMS_SERVER_JSONRPC_API_NAME "_enna_server-jsonrpc._tcp"
+
 #define ENNA_CONFIG_DD_NEW(str, typ)            \
   ems_config_descriptor_new(str, sizeof(typ))
 #define ENNA_CONFIG_DD_FREE(eed) if (eed) { eet_data_descriptor_free((eed)); (eed) = NULL; }
@@ -100,6 +102,15 @@ struct _Ems_Media
 struct _Ems_Media_Info
 {
    int dummy;
+};
+
+struct _Ems_Server
+{
+   const char *name;
+   const char *ip;
+   unsigned int port;
+   Eina_Bool is_ipv6;
+   Eina_Bool is_local;
 };
 
 enum _Ems_Media_Type
