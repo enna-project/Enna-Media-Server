@@ -49,7 +49,7 @@
 
 #include "Ems.h"
 #include "ems_private.h"
-
+#include "ems_server.h"
 
 /*============================================================================*
  *                                  Local                                     *
@@ -354,7 +354,7 @@ Eina_Bool ems_avahi_init(void)
         goto fail;
      }
 
-   server_name = avahi_strdup("Enna Media Server");
+   server_name = avahi_strdup(ems_config->name);
 
    /* Allocate a new client */
    client = avahi_client_new(poll_api, 0, client_callback, NULL, &error);
