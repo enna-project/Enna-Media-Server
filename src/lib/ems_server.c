@@ -234,3 +234,12 @@ ems_server_name_get(Ems_Server *server)
 
    return server->name;
 }
+
+Eina_Bool
+ems_server_is_local(Ems_Server *server)
+{
+   if (server)
+     return server->is_local;
+   else
+     return EINA_TRUE;
+}
