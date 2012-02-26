@@ -109,6 +109,12 @@ Eina_Bool ems_server_is_local(Ems_Server *server);
 /* Return EINA_TRUE if the specified player is a local one, EINA_FALSE otherwise */
 Eina_Bool ems_player_is_local(Ems_Player *player);
 
+/* Return EINA_TRUE if we are connected to the specified player, EINA_FALSE otherwise */
+Eina_Bool ems_server_is_connected(Ems_Server *server);
+
+/* Try to connect to server, return EINA_TRUE if connection is in progress, EINA_FALSE if an error occured */
+Eina_Bool ems_server_connect(Ems_Server *server);
+
 /* Return the type of the specified player */
 Ems_Media_Type ems_player_type_get(Ems_Player *player);
 

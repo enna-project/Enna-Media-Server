@@ -63,32 +63,58 @@ static Eina_List *_servers_cb = NULL;
 static Eina_Bool
 _ems_connected_cb(void *data, int type, Azy_Client *cli)
 {
+   Ems_Server *server = azy_client_data_get(cli);
+   Eina_List *l_cb;
+   Ems_Server_Cb *cb;
+
    INF("Info connected to %s:%d", azy_client_addr_get(cli), azy_client_port_get(cli));
+
+   server->is_connected = EINA_TRUE;
+
+   EINA_LIST_FOREACH(_servers_cb, l_cb, cb)
+     {
+        if (cb->add_cb)
+          cb->connected_cb(cb->data, server);
+     }
+   return EINA_TRUE;
 }
 
 static Eina_Bool
 _ems_disconnected_cb(void *data, int type, Azy_Client *cli)
 {
-   INF("Info connected to %s:%d", azy_client_addr_get(cli), azy_client_port_get(cli));
+   Ems_Server *server = azy_client_data_get(cli);
+   Eina_List *l_cb;
+   Ems_Server_Cb *cb;
+
+   INF("Info disconnected from %s:%d", azy_client_addr_get(cli), azy_client_port_get(cli));
+
+   server->is_connected = EINA_FALSE;
+
+   EINA_LIST_FOREACH(_servers_cb, l_cb, cb)
+     {
+        if (cb->add_cb)
+          cb->disconnected_cb(cb->data, server);
+     }
+   return EINA_TRUE;
 }
 
-static void
+static Eina_Bool
 _ems_server_connect(Ems_Server *server)
 {
    Azy_Client *cli;
    Ecore_Event_Handler *handler;
 
-   INF("try to connect to %s:%d\n", server->name, server->port); 
+   INF("try to connect to %s:%d\n", server->name, server->port);
 
    if (server->is_connected)
-     return;
+     return EINA_TRUE;
 
    cli = azy_client_new();
-
+   azy_client_data_set(cli, server);
    if (!azy_client_host_set(cli, server->ip, server->port))
      {
         ERR("Unable to set host %s:%d", server->ip, server->port);
-        return;
+        return EINA_FALSE;
      }
 
    handler = ecore_event_handler_add(AZY_CLIENT_CONNECTED, (Ecore_Event_Handler_Cb)_ems_connected_cb, server);
@@ -97,8 +123,10 @@ _ems_server_connect(Ems_Server *server)
    if (!azy_client_connect(cli, EINA_FALSE))
      {
         ERR("Unable to connect to %s:%d", server->ip, server->port);
-        return;
+        return EINA_FALSE;
      }
+
+   return EINA_TRUE;
 }
 
 
@@ -293,6 +321,27 @@ ems_server_is_local(Ems_Server *server)
      return server->is_local;
    else
      return EINA_TRUE;
+}
+
+Eina_Bool
+ems_server_is_connected(Ems_Server *server)
+{
+   if (server)
+     return server->is_connected;
+   else
+     return EINA_TRUE;
+}
+
+Eina_Bool
+ems_server_connect(Ems_Server *server)
+{
+   if (!server)
+     return EINA_FALSE;
+
+   if (server->is_connected)
+     return EINA_TRUE;
+
+    return _ems_server_connect(server);
 }
 
 Ems_Observer *
