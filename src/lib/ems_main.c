@@ -56,7 +56,7 @@ Ems_Config *ems_config = NULL;
  *                                   API                                      *
  *============================================================================*/
 
-int ems_init(void)
+int ems_init(const char *config_file)
 {
    Eina_List *l;
    Ems_Directory *dir;
@@ -82,7 +82,7 @@ int ems_init(void)
 
    DBG("Config Init");
 
-   if (!ems_config_init())
+   if (!ems_config_init(config_file))
      goto shutdown_eio;
    if (!ems_avahi_init())
      goto shutdown_config;
@@ -90,9 +90,6 @@ int ems_init(void)
      goto shutdown_avahi;
    if (!ems_scanner_init())
      goto shutdown_server;
-
-   ems_scanner_start();
-
 
    INF("Name : %s", ems_config->name);
    INF("Port : %d", ems_config->port);
