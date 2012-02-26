@@ -36,7 +36,6 @@ enum _Ems_Scanner_State
 
 Eina_Bool ems_scanner_init(void);
 void ems_scanner_shutdown(void);
-void ems_scanner_start(void);
 void ems_scanner_state_get(Ems_Scanner_State *state, double *percent);
 
 
