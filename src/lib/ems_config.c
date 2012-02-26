@@ -114,25 +114,37 @@ ems_config_descriptor_new(const char *name, int size)
 
 
 static void
-_make_config(void)
+_make_config(const char *config_file)
 {
    Eet_File *ef;
    FILE *f;
    int textlen;
    char *text;
-
-   if (!ecore_file_is_dir(ems_config_dirname_get()))
-     ecore_file_mkpath(ems_config_dirname_get());
+   const char *config;
 
    if (!ecore_file_is_dir(ems_config_cache_dirname_get()))
      ecore_file_mkpath(ems_config_cache_dirname_get());
+
+   if (config_file)
+     {
+        config = config_file;
+     }
+   else
+     {
+        if (!ecore_file_is_dir(ems_config_dirname_get()))
+          ecore_file_mkpath(ems_config_dirname_get());
+        config = ems_config_filename_get();
+     }
+
+   INF("Config file : %s", config);
 
    ef = eet_open(ems_config_cache_filename_get(),
                  EET_FILE_MODE_READ_WRITE);
    if (!ef)
      ef = eet_open(ems_config_cache_filename_get(),
                    EET_FILE_MODE_WRITE);
-   f = fopen(ems_config_filename_get(), "rb");
+
+   f = fopen(config, "rb");
    if (!f)
      {
         WRN("Could not open '%s', setup default config.", ems_config_filename_get());
@@ -168,7 +180,7 @@ _make_config(void)
 
    fclose(f);
    if (eet_data_undump(ef, "config", text, textlen, 1))
-     INF("Updating configuration");
+     INF("Updating configuration %s", config);
    free(text);
    eet_close(ef);
 }
@@ -201,11 +213,8 @@ _config_get(Eet_Data_Descriptor *edd)
  *============================================================================*/
 
 Eina_Bool
-ems_config_init(void)
+ems_config_init(const char *config_file)
 {
-   struct stat cache;
-   struct stat conf;
-
    directory_edd = ENNA_CONFIG_DD_NEW("Ems_Directory",
                                       Ems_Directory);
 #undef T
@@ -234,16 +243,10 @@ ems_config_init(void)
    ENNA_CONFIG_VAL(D, T, photo_extensions, EET_T_STRING);
    ENNA_CONFIG_VAL(D, T, scan_period, EET_T_UINT);
 
-   if (stat(ems_config_cache_filename_get(), &cache) == -1)
-     {
-        _make_config();
-     }
+   if (ecore_file_exists(config_file))
+     _make_config(config_file);
    else
-     {
-        stat(ems_config_filename_get(), &conf);
-        if (cache.st_mtime < conf.st_mtime)
-          _make_config();
-     }
+     _make_config(NULL);
 
    ems_config = _config_get(conf_edd);
 
