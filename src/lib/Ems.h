@@ -21,6 +21,9 @@ typedef struct _Ems_Server_Dir Ems_Server_Dir;
 typedef void (*Ems_Server_Add_Cb)(void *data, Ems_Server *server);
 typedef void (*Ems_Server_Del_Cb)(void *data, Ems_Server *server);
 typedef void (*Ems_Server_Update_Cb)(void *data, Ems_Server *server);
+typedef void (*Ems_Server_Connected_Cb)(void *data, Ems_Server *server);
+typedef void (*Ems_Server_Disconnected_Cb)(void *data, Ems_Server *server);
+
 typedef void (*Ems_Player_Add_Cb)(void *data, Ems_Player *player);
 typedef void (*Ems_Player_Del_Cb)(void *data, Ems_Player *player);
 typedef void (*Ems_Player_Update_Cb)(void *data, Ems_Player *player);
@@ -40,8 +43,14 @@ typedef void (*Ems_Media_Info_Del_Cb)(void *data, Ems_Server *server,
 typedef void (*Ems_Media_Info_Update_Cb)(void *data, Ems_Server *server,
                                          Ems_Media *media);
 
+enum _Ems_Media_Type
+{
+  EMS_MEDIA_TYPE_VIDEO = 1 << 0,
+  EMS_MEDIA_TYPE_MUSIC = 1 << 1,
+  EMS_MEDIA_TYPE_PHOTO = 1 << 2,
+};
 
-int ems_init(void);
+int ems_init(const char *config_file);
 int ems_shutdown(void);
 
 void ems_run(void);
@@ -61,6 +70,8 @@ Eina_List *ems_player_list_get(void);
 void ems_server_cb_set(Ems_Server_Add_Cb server_add_cb,
                        Ems_Server_Del_Cb server_del_cb,
                        Ems_Server_Update_Cb server_update_cb,
+                       Ems_Server_Connected_Cb server_connected_cb,
+                       Ems_Server_Disconnected_Cb server_disconnected_cb,
                        void *data);
 
 /* Unset callbacks */
@@ -163,6 +174,10 @@ void ems_player_prev(Ems_Player *player);
 void ems_player_playlist_add(Ems_Player *player, Ems_Media *media);
 void ems_player_playlist_del(Ems_Player *player, Ems_Media *media);
 Eina_List *ems_player_playlist_get(Ems_Player *player);
+
+void ems_scanner_start(void);
+Eina_Bool ems_avahi_start(void);
+
 
 /* More ideas */
 void ems_player_synchronise(Ems_Player *master, Ems_Player *slave);
