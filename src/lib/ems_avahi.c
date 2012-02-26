@@ -57,8 +57,9 @@
 
 static AvahiEntryGroup *group = NULL;
 static AvahiClient *client = NULL;
-char *server_name = NULL;
+static char *server_name = NULL;
 static AvahiGLibPoll *glib_poll = NULL;
+static AvahiServiceBrowser *sb = NULL;
 
 static void create_services(AvahiClient *c);
 
@@ -108,68 +109,19 @@ static void entry_group_callback(AvahiEntryGroup *g, AvahiEntryGroupState state,
 
 static void create_services(AvahiClient *c)
 {
-   char *n;
    int ret;
-   assert(c);
 
-   /* If this is the first time we're called, let's create a new
-    * entry group if necessary */
-
-   if (!group)
-     if (!(group = avahi_entry_group_new(c, entry_group_callback, NULL)))
-       {
-          ERR("avahi_entry_group_new() failed: %s", avahi_strerror(avahi_client_errno(c)));
-          goto fail;
-       }
-
-   /* If the group is empty (either because it was just created, or
-    * because it was reset previously, add our entries.  */
-
-   if (avahi_entry_group_is_empty(group))
+   if (group && !avahi_entry_group_is_empty(group))
      {
-        const char *name;
-
-        DBG("Adding service '%s' on port %d", server_name, ems_config->port);
-
-        name = eina_stringshare_printf("name=%s", ems_config->name);
-
-        if ((ret = avahi_entry_group_add_service(group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, 0, server_name, EMS_SERVER_JSONRPC_API_NAME, NULL, NULL, ems_config->port, name, NULL)) < 0) /* TODO : port needs to come from config */
-          {
-
-             if (ret == AVAHI_ERR_COLLISION)
-               goto collision;
-
-             ERR("Failed to add _ipp._tcp service: %s", avahi_strerror(ret));
-             goto fail;
-          }
-
         /* Tell the server to register the service */
         if ((ret = avahi_entry_group_commit(group)) < 0)
           {
              ERR("Failed to commit entry group: %s", avahi_strerror(ret));
-             goto fail;
+             return;
           }
      }
 
-   return;
 
- collision:
-
-   /* A service name collision with a local service happened. Let's
-    * pick a new name */
-   n = avahi_alternative_service_name(server_name);
-   avahi_free(server_name);
-   server_name = n;
-
-   ERR("Service name collision, renaming service to '%s'", server_name);
-
-   avahi_entry_group_reset(group);
-
-   create_services(c);
-   return;
-
- fail:
-   return;
 }
 
 static void client_callback(AvahiClient *c, AvahiClientState state, AVAHI_GCC_UNUSED void * userdata)
@@ -338,7 +290,6 @@ Eina_Bool ems_avahi_init(void)
 {
    int error;
    const AvahiPoll *poll_api;
-   AvahiServiceBrowser *sb = NULL;
 
    /* We are using avahi_glib here so we need to integrate glib mainloop into ecore */
    ecore_main_loop_glib_integrate();
@@ -365,6 +316,7 @@ Eina_Bool ems_avahi_init(void)
         ERR("Failed to create client: %s", avahi_strerror(error));
         goto fail;
      }
+
    /* Create the service browser */
    if (
        !(sb = avahi_service_browser_new(client,
@@ -378,6 +330,8 @@ Eina_Bool ems_avahi_init(void)
             avahi_strerror(avahi_client_errno(client)));
         goto fail;
      }
+
+
    return EINA_TRUE;
 
  fail:
@@ -396,11 +350,14 @@ Eina_Bool ems_avahi_init(void)
 
    return EINA_FALSE;
 }
-
+ 
 void ems_avahi_shutdown(void)
 {
    if (client)
      avahi_client_free(client);
+
+   if (sb)
+     avahi_service_browser_free(sb);
 
    if (glib_poll)
      avahi_glib_poll_free(glib_poll);
@@ -408,6 +365,82 @@ void ems_avahi_shutdown(void)
    avahi_free(server_name);
 }
 
+
 /*============================================================================*
  *                                   API                                      *
  *============================================================================*/
+
+Eina_Bool
+ems_avahi_start(void)
+{
+   char *n;
+   int ret;
+
+   if (!client)
+     return EINA_FALSE;
+
+   /* If this is the first time we're called, let's create a new
+    * entry group if necessary */
+
+   if (!group)
+     if (!(group = avahi_entry_group_new(client, entry_group_callback, NULL)))
+       {
+          ERR("avahi_entry_group_new() failed: %s", avahi_strerror(avahi_client_errno(client)));
+          goto fail;
+       }
+
+   /* If the group is empty (either because it was just created, or
+    * because it was reset previously, add our entries.  */
+
+   if (avahi_entry_group_is_empty(group))
+     {
+        const char *name;
+
+        DBG("Adding service '%s' on port %d", server_name, ems_config->port);
+
+        name = eina_stringshare_printf("name=%s", ems_config->name);
+
+        if ((ret = avahi_entry_group_add_service(group,
+                                                 AVAHI_IF_UNSPEC,
+                                                 AVAHI_PROTO_UNSPEC,
+                                                 0, server_name,
+                                                 EMS_SERVER_JSONRPC_API_NAME,
+                                                 NULL, NULL,
+                                                 ems_config->port, name, NULL)) < 0)
+          {
+
+             if (ret == AVAHI_ERR_COLLISION)
+               goto collision;
+
+             ERR("Failed to add _ipp._tcp service: %s", avahi_strerror(ret));
+             goto fail;
+          }
+
+        /* Tell the server to register the service */
+        if ((ret = avahi_entry_group_commit(group)) < 0)
+          {
+             ERR("Failed to commit entry group: %s", avahi_strerror(ret));
+             goto fail;
+          }
+     }
+
+   return;
+
+ collision:
+
+   /* A service name collision with a local service happened. Let's
+    * pick a new name */
+   n = avahi_alternative_service_name(server_name);
+   avahi_free(server_name);
+   server_name = n;
+
+   ERR("Service name collision, renaming service to '%s'", server_name);
+
+   avahi_entry_group_reset(group);
+
+   ems_avahi_start();
+   return EINA_TRUE;
+
+ fail:
+   return EINA_FALSE;
+}
