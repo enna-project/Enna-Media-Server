@@ -52,10 +52,9 @@ struct _Ems_Scanner
    int progress;
    double start_time;
    Ems_Database *db;
-   Eina_List *eio_files;
 };
 
-static Eina_Bool _file_filter_cb(void *data, Eio_File *handler, const Eina_File_Direct_Info *info);
+static Eina_Bool _file_filter_cb(void *data, Eio_File *handler, Eina_File_Direct_Info *info);
 static void _file_main_cb(void *data, Eio_File *handler, const Eina_File_Direct_Info *info);
 static void _file_done_cb(void *data, Eio_File *handler);
 static void _file_error_cb(void *data, Eio_File *handler, int error);
@@ -100,7 +99,7 @@ _ems_util_has_suffix(const char *name, const char *extensions)
 
 
 static Eina_Bool
-_file_filter_cb(void *data, Eio_File *handler, const Eina_File_Direct_Info *info)
+_file_filter_cb(void *data, Eio_File *handler, Eina_File_Direct_Info *info)
 {
    const char *ext = NULL;
    Ems_Directory *dir = data;
@@ -220,10 +219,6 @@ _file_done_cb(void *data, Eio_File *handler)
         EINA_LIST_FREE(_scanner->scan_files, f)
           eina_stringshare_del(f);
 
-        EINA_LIST_FREE(_scanner->eio_files, eio_file)
-          eio_file_cancel(eio_file);
-
-        _scanner->eio_files = NULL;
         _scanner->scan_files = NULL;
         _scanner->progress = 0;
         _scanner->start_time = 0;
@@ -280,9 +275,6 @@ ems_scanner_shutdown(void)
         if (_scanner->scan_files)
           EINA_LIST_FREE(_scanner->scan_files, f)
             eina_stringshare_del(f);
-        if (_scanner->eio_files)
-          EINA_LIST_FREE(_scanner->eio_files, eio_file)
-            eio_file_cancel(eio_file);
 
 	if (_scanner->schedule_timer)
 	  ecore_timer_del(_scanner->schedule_timer);
@@ -300,7 +292,6 @@ ems_scanner_start(void)
 {
    Eina_List *l;
    Ems_Directory *dir;
-   Eio_File *f;
 
    if (!_scanner)
      {
@@ -313,8 +304,8 @@ ems_scanner_start(void)
         return;
      }
 
-   /* Disable scan for now : EIO is broken */
-   return;
+   /* /\* Disable scan for now : EIO is broken *\/ */
+   /* return; */
 
    _scanner->start_time = ecore_time_get();
    ems_database_prepare(_scanner->db);
@@ -327,13 +318,13 @@ ems_scanner_start(void)
      {
         _scanner->is_running++;
         INF("Scanning %s: %s", dir->label, dir->path);
-        f = eio_dir_direct_ls(dir->path,
-                              _file_filter_cb,
-                              _file_main_cb,
-                              _file_done_cb,
-                              _file_error_cb,
-                              dir);
-        _scanner->eio_files = eina_list_append(_scanner->eio_files, f);
+        eio_dir_stat_ls(dir->path,
+                        _file_filter_cb,
+                        _file_main_cb,
+                        _file_done_cb,
+                        _file_error_cb,
+                        dir);
+
      }
 
    INF("Scanning tvshow directories :");
@@ -341,13 +332,13 @@ ems_scanner_start(void)
      {
         _scanner->is_running++;
         INF("Scanning %s: %s", dir->label, dir->path);
-        f = eio_dir_direct_ls(dir->path,
-                              _file_filter_cb,
-                              _file_main_cb,
-                              _file_done_cb,
-                              _file_error_cb,
-                            dir);
-        _scanner->eio_files = eina_list_append(_scanner->eio_files, f);
+        eio_dir_stat_ls(dir->path,
+                        _file_filter_cb,
+                        _file_main_cb,
+                        _file_done_cb,
+                        _file_error_cb,
+                        dir);
+
      }
 
    INF("Scanning tvshow directories :");
@@ -355,13 +346,12 @@ ems_scanner_start(void)
      {
         _scanner->is_running++;
         INF("Scanning %s: %s", dir->label, dir->path);
-        f = eio_dir_direct_ls(dir->path,
-                              _file_filter_cb,
-                              _file_main_cb,
-                              _file_done_cb,
-                              _file_error_cb,
-                              dir);
-        _scanner->eio_files = eina_list_append(_scanner->eio_files, f);
+        eio_dir_stat_ls(dir->path,
+                        _file_filter_cb,
+                        _file_main_cb,
+                        _file_done_cb,
+                        _file_error_cb,
+                        dir);
      }
 
    INF("Scanning photo directories :");
@@ -369,13 +359,12 @@ ems_scanner_start(void)
      {
         _scanner->is_running++;
         INF("Scanning %s: %s", dir->label, dir->path);
-        f = eio_dir_direct_ls(dir->path,
-                              _file_filter_cb,
-                              _file_main_cb,
-                              _file_done_cb,
-                              _file_error_cb,
-                              dir);
-        _scanner->eio_files = eina_list_append(_scanner->eio_files, f);
+        eio_dir_stat_ls(dir->path,
+                        _file_filter_cb,
+                        _file_main_cb,
+                        _file_done_cb,
+                        _file_error_cb,
+                        dir);
      }
 
 }
