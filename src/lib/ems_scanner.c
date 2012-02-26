@@ -32,6 +32,7 @@
 #include <Ecore.h>
 #include <Eio.h>
 
+#include "Ems.h"
 #include "ems_private.h"
 #include "ems_scanner.h"
 #include "ems_config.h"
@@ -290,6 +291,10 @@ ems_scanner_shutdown(void)
      }
 }
 
+/*============================================================================*
+ *                                   API                                      *
+ *============================================================================*/
+
 void
 ems_scanner_start(void)
 {
@@ -307,6 +312,9 @@ ems_scanner_start(void)
         WRN("Scanner is already running, did you try to run the scanner twice ?");
         return;
      }
+
+   /* Disable scan for now : EIO is broken */
+   return;
 
    _scanner->start_time = ecore_time_get();
    ems_database_prepare(_scanner->db);
@@ -372,9 +380,7 @@ ems_scanner_start(void)
 
 }
 
-/*============================================================================*
- *                                   API                                      *
- *============================================================================*/
+
 
 void
 ems_scanner_state_get(Ems_Scanner_State *state, double *percent)
