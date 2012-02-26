@@ -11,8 +11,11 @@
 
 int main(int argc, char **argv)
 {
-   if (!ems_init())
+   if (!ems_init(NULL))
      return EXIT_FAILURE;
+
+   ems_scanner_start();
+   ems_avahi_start();
 
    ems_run();
 
