@@ -28,6 +28,7 @@
 #endif
 
 #include <Eina.h>
+#include <Ecore.h>
 #include <Azy.h>
 
 #include "Ems.h"
@@ -36,6 +37,8 @@
 
 #include "ems_rpc_Config.azy_server.h"
 #include "ems_rpc_Browser.azy_server.h"
+#include "ems_rpc_Browser.azy_client.h"
+
 
 /*============================================================================*
  *                                  Local                                     *
@@ -48,12 +51,56 @@ struct _Ems_Server_Cb
    void (*add_cb)(void *data, Ems_Server *server);
    void (*del_cb)(void *data, Ems_Server *server);
    void (*update_cb)(void *data, Ems_Server *server);
+   void (*connected_cb)(void *data, Ems_Server *server);
+   void (*disconnected_cb)(void *data, Ems_Server *server);
    void *data;
 };
 
 static Azy_Server *_ems_server_serv = NULL;
 static Eina_List *_servers = NULL;
 static Eina_List *_servers_cb = NULL;
+
+static Eina_Bool
+_ems_connected_cb(void *data, int type, Azy_Client *cli)
+{
+   INF("Info connected to %s:%d", azy_client_addr_get(cli), azy_client_port_get(cli));
+}
+
+static Eina_Bool
+_ems_disconnected_cb(void *data, int type, Azy_Client *cli)
+{
+   INF("Info connected to %s:%d", azy_client_addr_get(cli), azy_client_port_get(cli));
+}
+
+static void
+_ems_server_connect(Ems_Server *server)
+{
+   Azy_Client *cli;
+   Ecore_Event_Handler *handler;
+
+   INF("try to connect to %s:%d\n", server->name, server->port); 
+
+   if (server->is_connected)
+     return;
+
+   cli = azy_client_new();
+
+   if (!azy_client_host_set(cli, server->ip, server->port))
+     {
+        ERR("Unable to set host %s:%d", server->ip, server->port);
+        return;
+     }
+
+   handler = ecore_event_handler_add(AZY_CLIENT_CONNECTED, (Ecore_Event_Handler_Cb)_ems_connected_cb, server);
+   handler = ecore_event_handler_add(AZY_CLIENT_DISCONNECTED, (Ecore_Event_Handler_Cb)_ems_disconnected_cb, server);
+
+   if (!azy_client_connect(cli, EINA_FALSE))
+     {
+        ERR("Unable to connect to %s:%d", server->ip, server->port);
+        return;
+     }
+}
+
 
 /*============================================================================*
  *                                 Global                                     *
@@ -176,6 +223,8 @@ void
 ems_server_cb_set(Ems_Server_Add_Cb server_add_cb,
                   Ems_Server_Del_Cb server_del_cb,
                   Ems_Server_Update_Cb server_update_cb,
+                  Ems_Server_Connected_Cb server_connected_cb,
+                  Ems_Server_Disconnected_Cb server_disconnected_cb,
                   void *data)
 {
    Ems_Server_Cb *cb;
@@ -187,6 +236,8 @@ ems_server_cb_set(Ems_Server_Add_Cb server_add_cb,
    cb->add_cb = server_add_cb;
    cb->del_cb = server_del_cb;
    cb->update_cb = server_update_cb;
+   cb->connected_cb = server_connected_cb;
+   cb->disconnected_cb = server_disconnected_cb;
    cb->data = data;
 
    _servers_cb = eina_list_append(_servers_cb, cb);
@@ -242,4 +293,24 @@ ems_server_is_local(Ems_Server *server)
      return server->is_local;
    else
      return EINA_TRUE;
+}
+
+Ems_Observer *
+ems_server_dir_get(Ems_Server *server,
+                   const char *path,
+                   Ems_Media_Type type,
+                   Ems_Media_Add_Cb media_add,
+                   Ems_Media_Del_Cb media_del,
+                   Ems_Media_Done_Cb media_done,
+                   Ems_Media_Error_Cb media_error,
+                   void *data)
+{
+   if (!server || !path)
+     return NULL;
+
+   if (!server->is_connected)
+     _ems_server_connect(server);
+
+   return NULL;
+
 }
