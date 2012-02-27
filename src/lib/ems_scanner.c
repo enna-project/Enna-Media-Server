@@ -318,12 +318,12 @@ ems_scanner_start(void)
      {
         _scanner->is_running++;
         INF("Scanning %s: %s", dir->label, dir->path);
-        eio_dir_stat_ls(dir->path,
-                        _file_filter_cb,
-                        _file_main_cb,
-                        _file_done_cb,
-                        _file_error_cb,
-                        dir);
+        eio_dir_direct_ls(dir->path,
+                          _file_filter_cb,
+                          _file_main_cb,
+                          _file_done_cb,
+                          _file_error_cb,
+                          dir);
 
      }
 
@@ -332,12 +332,12 @@ ems_scanner_start(void)
      {
         _scanner->is_running++;
         INF("Scanning %s: %s", dir->label, dir->path);
-        eio_dir_stat_ls(dir->path,
-                        _file_filter_cb,
-                        _file_main_cb,
-                        _file_done_cb,
-                        _file_error_cb,
-                        dir);
+        eio_dir_direct_ls(dir->path,
+                          _file_filter_cb,
+                          _file_main_cb,
+                          _file_done_cb,
+                          _file_error_cb,
+                          dir);
 
      }
 
@@ -346,12 +346,12 @@ ems_scanner_start(void)
      {
         _scanner->is_running++;
         INF("Scanning %s: %s", dir->label, dir->path);
-        eio_dir_stat_ls(dir->path,
-                        _file_filter_cb,
-                        _file_main_cb,
-                        _file_done_cb,
-                        _file_error_cb,
-                        dir);
+        eio_dir_direct_ls(dir->path,
+                          _file_filter_cb,
+                          _file_main_cb,
+                          _file_done_cb,
+                          _file_error_cb,
+                          dir);
      }
 
    INF("Scanning photo directories :");
@@ -359,12 +359,12 @@ ems_scanner_start(void)
      {
         _scanner->is_running++;
         INF("Scanning %s: %s", dir->label, dir->path);
-        eio_dir_stat_ls(dir->path,
-                        _file_filter_cb,
-                        _file_main_cb,
-                        _file_done_cb,
-                        _file_error_cb,
-                        dir);
+        eio_dir_direct_ls(dir->path,
+                          _file_filter_cb,
+                          _file_main_cb,
+                          _file_done_cb,
+                          _file_error_cb,
+                          dir);
      }
 
 }
