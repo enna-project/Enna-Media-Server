@@ -27,7 +27,8 @@ ems_private.h \
 ems_scanner.h \
 ems_server.c \
 ems_database.c \
-ems_database.h
+ems_database.h \
+ems_parser.c
 
 if HAVE_MACOSX
 else

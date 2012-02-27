@@ -90,6 +90,9 @@ int ems_init(const char *config_file)
      goto shutdown_avahi;
    if (!ems_scanner_init())
      goto shutdown_server;
+   if (!ems_parser_init())
+     goto shutdown_parser;
+
 
    INF("Name : %s", ems_config->name);
    INF("Port : %d", ems_config->port);
@@ -102,6 +105,8 @@ int ems_init(const char *config_file)
 
    return _ems_init_count;
 
+ shutdown_parser:
+   ems_parser_shutdown();
  shutdown_server:
    ems_server_shutdown();
  shutdown_avahi:
