@@ -29,6 +29,7 @@
 
 #include <sys/stat.h>
 
+#include <Eina.h>
 #include <Ecore.h>
 #include <Eio.h>
 
@@ -103,6 +104,7 @@ _file_filter_cb(void *data, Eio_File *handler, Eina_File_Direct_Info *info)
 {
    const char *ext = NULL;
    Ems_Directory *dir = data;
+   struct stat *buffer;
 
    if (*(info->path + info->name_start) == '.' )
      return EINA_FALSE;
@@ -123,17 +125,27 @@ _file_filter_cb(void *data, Eio_File *handler, Eina_File_Direct_Info *info)
          return EINA_FALSE;
      }
 
-   if ( info->type == EINA_FILE_DIR ||
+    buffer = malloc(sizeof (struct stat));
+    if (eina_file_statat(eio_file_container_get(handler), info, buffer))
+      {
+         free(buffer);
+         return EINA_FALSE;
+      }
+
+    eio_file_associate_direct_add(handler, "stat", buffer, free);
+
+    if (info->type == EINA_FILE_DIR ||
         _ems_util_has_suffix(info->path + info->name_start, ext))
-     return EINA_TRUE;
-   else
-     return EINA_FALSE;
+        return EINA_TRUE;
+    else
+        return EINA_FALSE;
 }
 
 static void
 _file_main_cb(void *data, Eio_File *handler, const Eina_File_Direct_Info *info)
 {
    Ems_Directory *dir = data;
+   struct stat *buffer;
 
    if (*(info->path + info->name_start) == '.' )
      return;
@@ -170,15 +182,14 @@ _file_main_cb(void *data, Eio_File *handler, const Eina_File_Direct_Info *info)
         _scanner->scan_files = eina_list_append(_scanner->scan_files,
                                                 eina_stringshare_add(info->path));
 
-        lstat(info->path, &st);
-
-        ems_database_file_insert(_scanner->db, info->path, (int64_t)st.st_mtime);
+        buffer = eio_file_associate_find(handler, "stat");
+        ems_database_file_insert(_scanner->db, info->path, (int64_t)buffer->st_mtime);
         if (!eina_list_count(_scanner->scan_files) % 100)
           {
              ems_database_transaction_end(_scanner->db);
              ems_database_transaction_begin(_scanner->db);
           }
-        /* TODO: add this file in the database */
+            /* TODO: add this file in the database */
         /* TODO: Add this file in the scanner list */
      }
 }
