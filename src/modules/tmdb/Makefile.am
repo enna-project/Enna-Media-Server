@@ -6,7 +6,7 @@ AM_CPPFLAGS = \
 -I$(top_builddir)/src/lib \
 @EMS_CFLAGS@
 
-controllerdir = $(libdir)/ems/grabbers/$(MODULE_ARCH)
+controllerdir = $(libdir)/ems/grabbers/tmdb/$(MODULE_ARCH)
 controller_LTLIBRARIES = module.la
 
 module_la_SOURCES = ems_grabber_tmdb.c
