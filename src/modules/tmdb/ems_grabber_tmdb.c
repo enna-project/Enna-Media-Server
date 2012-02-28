@@ -31,6 +31,8 @@
  *                                  Local                                     *
  *============================================================================*/
 
+#define EMS_TMDB_API_KEY "ba2eed549e5c84e712931fef2b69bfb1"
+
 static void
 _grabber_init(void)
 {
