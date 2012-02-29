@@ -241,6 +241,7 @@ ems_config_init(const char *config_file)
    ENNA_CONFIG_VAL(D, T, video_extensions, EET_T_STRING);
    ENNA_CONFIG_VAL(D, T, music_extensions, EET_T_STRING);
    ENNA_CONFIG_VAL(D, T, photo_extensions, EET_T_STRING);
+   ENNA_CONFIG_VAL(D, T, blacklist, EET_T_STRING);
    ENNA_CONFIG_VAL(D, T, scan_period, EET_T_UINT);
 
    if (ecore_file_exists(config_file))
