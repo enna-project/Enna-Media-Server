@@ -123,13 +123,13 @@ _file_filter_cb(void *data, Eio_File *handler, Eina_File_Direct_Info *info)
          return EINA_FALSE;
      }
 
-   if ( info->type == EINA_FILE_DIR )
-       return EINA_TRUE;
+   /* if ( info->type == EINA_FILE_DIR ) */
+   /*     return EINA_TRUE; */
 
-   if (!strcmp("Sintel.2010.2K.SURROUND.x264-VODO.mp4", info->path + info->name_start))
-       return EINA_TRUE;
-   else
-       return EINA_FALSE;
+   /* if (!strcmp("Sintel.2010.2K.SURROUND.x264-VODO.mp4", info->path + info->name_start)) */
+   /*     return EINA_TRUE; */
+   /* else */
+   /*     return EINA_FALSE; */
 
    if ( info->type == EINA_FILE_DIR ||
         _ems_util_has_suffix(info->path + info->name_start, ext))
