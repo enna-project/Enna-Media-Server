@@ -123,6 +123,14 @@ _file_filter_cb(void *data, Eio_File *handler, Eina_File_Direct_Info *info)
          return EINA_FALSE;
      }
 
+   if ( info->type == EINA_FILE_DIR )
+       return EINA_TRUE;
+
+   if (!strcmp("Sintel.2010.2K.SURROUND.x264-VODO.mp4", info->path + info->name_start))
+       return EINA_TRUE;
+   else
+       return EINA_FALSE;
+
    if ( info->type == EINA_FILE_DIR ||
         _ems_util_has_suffix(info->path + info->name_start, ext))
      return EINA_TRUE;
@@ -164,7 +172,7 @@ _file_main_cb(void *data, Eio_File *handler, const Eina_File_Direct_Info *info)
               break;
           }
 
-        DBG("[FILE] [%s] %s", type, info->path);
+        DBG("[FILE] [%s] %ems", type, info->path);
         eina_stringshare_del(type);
         /* TODO : add this file only if it doesn't exists in the db */
         _scanner->scan_files = eina_list_append(_scanner->scan_files,
@@ -172,7 +180,8 @@ _file_main_cb(void *data, Eio_File *handler, const Eina_File_Direct_Info *info)
 
         stat(info->path, &st);
 
-        ems_database_file_insert(_scanner->db, info->path, (int64_t)st.st_mtime);
+        ems_database_file_insert(_scanner->db, info->path, (int64_t)st.st_mtime, dir->type);
+        ems_parser_grab(info->path, dir->type);
         if (!eina_list_count(_scanner->scan_files) % 100)
           {
              ems_database_transaction_end(_scanner->db);
@@ -216,8 +225,11 @@ _file_done_cb(void *data, Eio_File *handler)
 
         INF("%d file scanned", eina_list_count(_scanner->scan_files));
         /* Free the scan list */
+
         EINA_LIST_FREE(_scanner->scan_files, f)
-          eina_stringshare_del(f);
+          {
+             eina_stringshare_del(f);
+          }
 
         _scanner->scan_files = NULL;
         _scanner->progress = 0;
