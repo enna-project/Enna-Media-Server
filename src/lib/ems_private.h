@@ -129,6 +129,7 @@ struct _Ems_Config
    const char *video_extensions;
    const char *music_extensions;
    const char *photo_extensions;
+   const char *blacklist;
    Eina_List *video_directories;
    Eina_List *tvshow_directories;
    Eina_List *music_directories;
