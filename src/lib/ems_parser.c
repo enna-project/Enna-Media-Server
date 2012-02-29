@@ -53,14 +53,7 @@ ems_parser_init(void)
                                         PACKAGE_LIB_DIR "/ems/grabbers",
                                         MODULE_ARCH);
 
-
-
    eina_module_list_load(_modules);
-
-   EINA_ARRAY_ITER_NEXT(_modules, i, m, iterator)
-     INF("loading module : %s", eina_module_file_get(m));
-
-
 
    return EINA_TRUE;
 }
@@ -76,3 +69,21 @@ ems_parser_shutdown(void)
 /*============================================================================*
  *                                   API                                      *
  *============================================================================*/
+
+void
+ems_parser_grab(const char *filename, Ems_Media_Type type)
+{
+    Eina_Array_Iterator iterator;
+    Eina_Module *m;
+    unsigned int i;
+    void (*grab)(const char *filename, Ems_Media_Type type);
+
+    DBG("Parse : %s", filename);
+
+    EINA_ARRAY_ITER_NEXT(_modules, i, m, iterator)
+      {
+         grab = eina_module_symbol_get(m, "ems_grabber_grab");
+         if (grab)
+           grab(filename, type);
+      }
+}
