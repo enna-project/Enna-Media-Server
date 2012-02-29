@@ -41,14 +41,16 @@
 #define STMT_INSERT_FILE                        \
   "INSERT "                                     \
   "INTO file (file_path, "                      \
-  "           file_mtime)"                      \
-  "VALUES (?, ?);"
+  "           file_mtime,"                      \
+  "           type)"                            \
+  "VALUES (?, ?, ?);"
 
 #define CREATE_TABLE_FILE                                       \
   "CREATE TABLE IF NOT EXISTS file ( "                          \
   "file_id          INTEGER PRIMARY KEY AUTOINCREMENT, "        \
   "file_path        TEXT    NOT NULL UNIQUE, "                  \
-  "file_mtime       INTEGER NOT NULL "                          \
+  "file_mtime       INTEGER NOT NULL, "                         \
+  "type             INTEGER NOT NULL "                          \
   ");"
 
 struct _Ems_Database
@@ -164,13 +166,14 @@ ems_database_release(Ems_Database *db)
 }
 
 void
-ems_database_file_insert(Ems_Database *db, const char *filename, int64_t mtime)
+ems_database_file_insert(Ems_Database *db, const char *filename, int64_t mtime, Ems_Media_Type type)
 {
    if (!db || !db->db || !filename)
      return;
 
    sqlite3_bind_text(db->file_stmt, 1, filename, -1, SQLITE_STATIC);
    sqlite3_bind_int(db->file_stmt, 2, mtime);
+   sqlite3_bind_int(db->file_stmt, 3, type);
    sqlite3_step(db->file_stmt);
    sqlite3_reset(db->file_stmt);
    sqlite3_clear_bindings(db->file_stmt);
@@ -206,7 +209,7 @@ ems_database_files_get(Ems_Database *db)
    if (!db || !db->db)
      return NULL;
 
-   res = sqlite3_prepare_v2 (db->db, "SELECT file_path,file_mtime FROM file;", -1, &stmt, NULL);
+   res = sqlite3_prepare_v2 (db->db, "SELECT file_path,file_mtime,type FROM file;", -1, &stmt, NULL);
    if (res != SQLITE_OK)
      goto out;
 
@@ -216,10 +219,9 @@ ems_database_files_get(Ems_Database *db)
         res = sqlite3_step (stmt);
         if (res == SQLITE_ROW)
           {
-             int bytes;
-             const unsigned char * text;
-             bytes = sqlite3_column_bytes(stmt, 1);
-             text  = sqlite3_column_text (stmt, 1);
+             const char * text;
+
+             text  = (const char*)sqlite3_column_text (stmt, 1);
              files = eina_list_append(files, eina_stringshare_add(text));
           }
         else if (res == SQLITE_DONE)
