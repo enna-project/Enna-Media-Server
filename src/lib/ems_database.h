@@ -37,5 +37,6 @@ void ems_database_release(Ems_Database *db);
 void ems_database_file_insert(Ems_Database *db, const char *filename, int64_t mtime, Ems_Media_Type type);
 void ems_database_transaction_begin(Ems_Database *db);
 void ems_database_transaction_end(Ems_Database *db);
+Eina_List *ems_database_files_get(Ems_Database *db);
 
 #endif /* _EMS_DATABASE_H_ */

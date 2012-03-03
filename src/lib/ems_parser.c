@@ -44,11 +44,6 @@ static Eina_Array *_modules = NULL;
 Eina_Bool
 ems_parser_init(void)
 {
-   Eina_Array_Iterator iterator;
-   Eina_Module *m;
-   unsigned int i;
-   const char *s;
-
    _modules = eina_module_arch_list_get(NULL,
                                         PACKAGE_LIB_DIR "/ems/grabbers",
                                         MODULE_ARCH);

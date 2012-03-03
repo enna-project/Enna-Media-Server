@@ -61,7 +61,7 @@ static Eina_List *_servers = NULL;
 static Eina_List *_servers_cb = NULL;
 
 static Eina_Bool
-_ems_connected_cb(void *data, int type, Azy_Client *cli)
+_ems_connected_cb(void *data __UNUSED__, int type __UNUSED__, Azy_Client *cli)
 {
    Ems_Server *server = azy_client_data_get(cli);
    Eina_List *l_cb;
@@ -80,7 +80,7 @@ _ems_connected_cb(void *data, int type, Azy_Client *cli)
 }
 
 static Eina_Bool
-_ems_disconnected_cb(void *data, int type, Azy_Client *cli)
+_ems_disconnected_cb(void *data __UNUSED__, int type __UNUSED__, Azy_Client *cli)
 {
    Ems_Server *server = azy_client_data_get(cli);
    Eina_List *l_cb;
@@ -102,7 +102,6 @@ static Eina_Bool
 _ems_server_connect(Ems_Server *server)
 {
    Azy_Client *cli;
-   Ecore_Event_Handler *handler;
 
    INF("try to connect to %s:%d\n", server->name, server->port);
 
@@ -117,8 +116,8 @@ _ems_server_connect(Ems_Server *server)
         return EINA_FALSE;
      }
 
-   handler = ecore_event_handler_add(AZY_CLIENT_CONNECTED, (Ecore_Event_Handler_Cb)_ems_connected_cb, server);
-   handler = ecore_event_handler_add(AZY_CLIENT_DISCONNECTED, (Ecore_Event_Handler_Cb)_ems_disconnected_cb, server);
+   ecore_event_handler_add(AZY_CLIENT_CONNECTED, (Ecore_Event_Handler_Cb)_ems_connected_cb, server);
+   ecore_event_handler_add(AZY_CLIENT_DISCONNECTED, (Ecore_Event_Handler_Cb)_ems_disconnected_cb, server);
 
    if (!azy_client_connect(cli, EINA_FALSE))
      {
@@ -347,12 +346,12 @@ ems_server_connect(Ems_Server *server)
 Ems_Observer *
 ems_server_dir_get(Ems_Server *server,
                    const char *path,
-                   Ems_Media_Type type,
-                   Ems_Media_Add_Cb media_add,
-                   Ems_Media_Del_Cb media_del,
-                   Ems_Media_Done_Cb media_done,
-                   Ems_Media_Error_Cb media_error,
-                   void *data)
+                   Ems_Media_Type type __UNUSED__,
+                   Ems_Media_Add_Cb media_add __UNUSED__,
+                   Ems_Media_Del_Cb media_del __UNUSED__,
+                   Ems_Media_Done_Cb media_done __UNUSED__,
+                   Ems_Media_Error_Cb media_error __UNUSED__,
+                   void *data __UNUSED__)
 {
    if (!server || !path)
      return NULL;

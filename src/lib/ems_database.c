@@ -198,7 +198,7 @@ ems_database_release(Ems_Database *db)
 }
 
 void
-ems_database_file_insert(Ems_Database *db, const char *filename, int64_t mtime, Ems_Media_Type type)
+ems_database_file_insert(Ems_Database *db, const char *filename, int64_t mtime, Ems_Media_Type type __UNUSED__)
 {
    if (!db || !db->db || !filename)
      return;
