@@ -1,6 +1,6 @@
 MAINTAINERCLEANFILES = Makefile.in
 
-SUBDIRS = server
+SUBDIRS = server extras
 
 AM_CPPFLAGS = \
 -I. \
