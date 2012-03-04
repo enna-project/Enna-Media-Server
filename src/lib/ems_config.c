@@ -233,6 +233,7 @@ ems_config_init(const char *config_file)
 #define D conf_edd
    ENNA_CONFIG_VAL(D, T, version, EET_T_UINT);
    ENNA_CONFIG_VAL(D, T, port, EET_T_SHORT);
+   ENNA_CONFIG_VAL(D, T, port_stream, EET_T_SHORT);
    ENNA_CONFIG_VAL(D, T, name, EET_T_STRING);
    ENNA_CONFIG_LIST(D, T, video_directories, directory_edd);
    ENNA_CONFIG_LIST(D, T, tvshow_directories, directory_edd);

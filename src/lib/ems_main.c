@@ -33,11 +33,15 @@
 #include <Ecore_File.h>
 #include <Eio.h>
 
+#include "Ems.h"
+
 #include "ems_private.h"
 #include "ems_config.h"
 #include "ems_avahi.h"
 #include "ems_scanner.h"
+#include "ems_parser.h"
 #include "ems_server.h"
+#include "ems_stream_server.h"
 
 /*============================================================================*
  *                                  Local                                     *
@@ -92,6 +96,8 @@ int ems_init(const char *config_file)
      goto shutdown_server;
    if (!ems_parser_init())
      goto shutdown_parser;
+   if (!ems_stream_server_init())
+     goto shutdown_stream_server;
 
 
    INF("Name : %s", ems_config->name);
@@ -105,6 +111,8 @@ int ems_init(const char *config_file)
 
    return _ems_init_count;
 
+ shutdown_stream_server:
+   ems_stream_server_shutdown();
  shutdown_parser:
    ems_parser_shutdown();
  shutdown_server:

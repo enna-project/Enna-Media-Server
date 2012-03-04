@@ -31,7 +31,9 @@ ems_database.h \
 ems_parser.c \
 ems_parser.h \
 ems_utils.c \
-ems_utils.h
+ems_utils.h \
+ems_stream_server.c \
+ems_stream_server.h
 
 if HAVE_MACOSX
 else

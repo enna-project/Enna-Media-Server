@@ -125,6 +125,7 @@ struct _Ems_Config
 {
    unsigned int version;
    short port;
+   short port_stream;
    const char *name;
    const char *video_extensions;
    const char *music_extensions;

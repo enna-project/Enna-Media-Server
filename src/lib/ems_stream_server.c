@@ -28,6 +28,8 @@
 #endif
 
 #include <Eina.h>
+#include <Ecore.h>
+#include <Ecore_Con.h>
 
 #include "Ems.h"
 #include "ems_private.h"
@@ -35,55 +37,80 @@
 /*============================================================================*
  *                                  Local                                     *
  *============================================================================*/
-static Eina_Array *_modules = NULL;
+static Ecore_Con_Server *_server = NULL;
+
+static Ecore_Event_Handler *_handler_add = NULL;
+static Ecore_Event_Handler *_handler_del= NULL;
+static Ecore_Event_Handler *_handler_data = NULL;
+
+static Eina_Bool
+_client_add(void *data, int type, Ecore_Con_Event_Client_Add *ev)
+{
+   if (ev && (_server != ecore_con_client_server_get(ev->client)))
+     return ECORE_CALLBACK_PASS_ON;
+
+   //TODO
+
+   INF("New client from :%s\n", ecore_con_client_ip_get(ev->client));
+
+   return ECORE_CALLBACK_RENEW;
+}
+
+static Eina_Bool
+_client_del(void *data, int type, Ecore_Con_Event_Client_Del *ev)
+{
+   if (ev && (_server != ecore_con_client_server_get(ev->client)))
+     return ECORE_CALLBACK_PASS_ON;
+
+   //TODO
+
+   INF("Connection from %s closed by remote host\n", ecore_con_client_ip_get(ev->client));
+
+   return ECORE_CALLBACK_RENEW;
+}
+
+static Eina_Bool
+_client_data(void *data, int type, Ecore_Con_Event_Client_Data *ev)
+{
+   if (ev && (_server != ecore_con_client_server_get(ev->client)))
+     return ECORE_CALLBACK_PASS_ON;
+
+   //TODO
+
+   DBG("Got data from client :%s\n%s\n", ecore_con_client_ip_get(ev->client), ev->data);
+
+   return ECORE_CALLBACK_RENEW;
+}
 
 /*============================================================================*
  *                                 Global                                     *
  *============================================================================*/
 
 Eina_Bool
-ems_parser_init(void)
+ems_stream_server_init(void)
 {
-   Eina_Array_Iterator iterator;
-   Eina_Module *m;
-   unsigned int i;
-   const char *s;
+   _server = ecore_con_server_add(ECORE_CON_REMOTE_TCP, "0.0.0.0", ems_config->port_stream, NULL);
 
-   _modules = eina_module_arch_list_get(NULL,
-                                        PACKAGE_LIB_DIR "/ems/grabbers",
-                                        MODULE_ARCH);
+   _handler_add = ecore_event_handler_add(ECORE_CON_EVENT_CLIENT_ADD, 
+                           (Ecore_Event_Handler_Cb)_client_add, NULL);
+   _handler_del = ecore_event_handler_add(ECORE_CON_EVENT_CLIENT_DEL,
+                           (Ecore_Event_Handler_Cb)_client_del, NULL);
+   _handler_data = ecore_event_handler_add(ECORE_CON_EVENT_CLIENT_DATA,
+                           (Ecore_Event_Handler_Cb)_client_data, NULL);
 
-   eina_module_list_load(_modules);
+   INF("Listening to port %d\n", ems_config->port_stream);
 
    return EINA_TRUE;
 }
 
 void
-ems_parser_shutdown(void)
+ems_stream_server_shutdown(void)
 {
-   eina_module_list_free(_modules);
-   if (_modules)
-      eina_array_free(_modules);
+   ecore_con_server_del(_server);
+
+   ecore_event_handler_del(_handler_add);
+   ecore_event_handler_del(_handler_del);
+   ecore_event_handler_del(_handler_data);
 }
 
-/*============================================================================*
- *                                   API                                      *
- *============================================================================*/
 
-void
-ems_parser_grab(const char *filename, Ems_Media_Type type)
-{
-    Eina_Array_Iterator iterator;
-    Eina_Module *m;
-    unsigned int i;
-    void (*grab)(const char *filename, Ems_Media_Type type);
-
-    DBG("Parse : %s", filename);
-return;
-    EINA_ARRAY_ITER_NEXT(_modules, i, m, iterator)
-      {
-         grab = eina_module_symbol_get(m, "ems_grabber_grab");
-         if (grab)
-           grab(filename, type);
-      }
-}
