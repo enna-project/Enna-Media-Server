@@ -39,8 +39,8 @@
 #include "ems_config.h"
 #include "ems_avahi.h"
 #include "ems_scanner.h"
-#include "ems_parser.h"
 #include "ems_server.h"
+#include "ems_parser.h"
 #include "ems_stream_server.h"
 
 /*============================================================================*

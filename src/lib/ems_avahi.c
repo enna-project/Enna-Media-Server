@@ -107,7 +107,7 @@ static void entry_group_callback(AvahiEntryGroup *g, AvahiEntryGroupState state,
      }
 }
 
-static void create_services(AvahiClient *c)
+static void create_services(AvahiClient *c __UNUSED__)
 {
    int ret;
 
@@ -424,7 +424,7 @@ ems_avahi_start(void)
           }
      }
 
-   return;
+   return EINA_TRUE;
 
  collision:
 

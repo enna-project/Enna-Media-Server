@@ -32,26 +32,12 @@
 #include <Ecore_File.h>
 
 #include "ems_private.h"
+#include "ems_database_statements.h"
 #include "ems_database.h"
 
 /*============================================================================*
  *                                  Local                                     *
  *============================================================================*/
-
-#define STMT_INSERT_FILE                        \
-  "INSERT "                                     \
-  "INTO file (file_path, "                      \
-  "           file_mtime,"                      \
-  "           type)"                            \
-  "VALUES (?, ?, ?);"
-
-#define CREATE_TABLE_FILE                                       \
-  "CREATE TABLE IF NOT EXISTS file ( "                          \
-  "file_id          INTEGER PRIMARY KEY AUTOINCREMENT, "        \
-  "file_path        TEXT    NOT NULL UNIQUE, "                  \
-  "file_mtime       INTEGER NOT NULL, "                         \
-  "type             INTEGER NOT NULL "                          \
-  ");"
 
 struct _Ems_Database
 {
@@ -126,13 +112,59 @@ ems_database_table_create(Ems_Database *db)
    if (!db)
      return;
 
-   sqlite3_exec(db->db, "BEGIN;", NULL, NULL, &m);
+   sqlite3_exec(db->db, BEGIN_TRANSACTION, NULL, NULL, &m);
+   if (m)
+     goto err;
+   sqlite3_exec(db->db, CREATE_TABLE_INFO, NULL, NULL, &m);
    if (m)
      goto err;
    sqlite3_exec(db->db, CREATE_TABLE_FILE, NULL, NULL, &m);
    if (m)
      goto err;
-   sqlite3_exec(db->db, "COMMIT;", NULL, NULL, &m);
+   sqlite3_exec(db->db, CREATE_TABLE_TYPE, NULL, NULL, &m);
+   if (m)
+     goto err;
+   sqlite3_exec(db->db, CREATE_TABLE_META, NULL, NULL, &m);
+   if (m)
+       goto err;
+   sqlite3_exec(db->db, CREATE_TABLE_DATA, NULL, NULL, &m);
+   if (m)
+       goto err;
+   sqlite3_exec(db->db, CREATE_TABLE_LANG, NULL, NULL, &m);
+   if (m)
+       goto err;
+   sqlite3_exec(db->db, CREATE_TABLE_GRABBER, NULL, NULL, &m);
+   if (m)
+     goto err;
+   sqlite3_exec(db->db, CREATE_TABLE_DLCONTEXT, NULL, NULL, &m);
+   if (m)
+     goto err;
+   sqlite3_exec(db->db, CREATE_TABLE_ASSOC_FILE_METADATA, NULL, NULL, &m);
+   if (m)
+     goto err;
+   sqlite3_exec(db->db, CREATE_TABLE_ASSOC_FILE_GRABBER, NULL, NULL, &m);
+   if (m)
+       goto err;
+   sqlite3_exec(db->db, CREATE_INDEX_CHECKED, NULL, NULL, &m);
+   if (m)
+       goto err;
+   sqlite3_exec(db->db, CREATE_INDEX_INTERRUPTED, NULL, NULL, &m);
+   if (m)
+       goto err;
+   sqlite3_exec(db->db, CREATE_INDEX_OUTOFPATH, NULL, NULL, &m);
+   if (m)
+       goto err;
+   sqlite3_exec(db->db, CREATE_INDEX_ASSOC, NULL, NULL, &m);
+   if (m)
+       goto err;
+   sqlite3_exec(db->db, CREATE_INDEX_FK_FILE, NULL, NULL, &m);
+   if (m)
+       goto err;
+   sqlite3_exec(db->db, CREATE_INDEX_FK_ASSOC, NULL, NULL, &m);
+   if (m)
+       goto err;
+
+   sqlite3_exec(db->db, END_TRANSACTION, NULL, NULL, &m);
    if (m)
      goto err;
 
@@ -149,9 +181,9 @@ ems_database_prepare(Ems_Database *db)
    if (!db || !db->db)
      return;
 
-   sqlite3_prepare_v2(db->db, STMT_INSERT_FILE, -1, &db->file_stmt, NULL);
-   sqlite3_prepare_v2(db->db, "BEGIN;", -1, &db->begin_stmt, NULL);
-   sqlite3_prepare_v2(db->db, "END;", -1, &db->end_stmt, NULL);
+   sqlite3_prepare_v2(db->db, INSERT_FILE, -1, &db->file_stmt, NULL);
+   sqlite3_prepare_v2(db->db, BEGIN_TRANSACTION, -1, &db->begin_stmt, NULL);
+   sqlite3_prepare_v2(db->db, END_TRANSACTION, -1, &db->end_stmt, NULL);
 }
 
 void
@@ -166,14 +198,13 @@ ems_database_release(Ems_Database *db)
 }
 
 void
-ems_database_file_insert(Ems_Database *db, const char *filename, int64_t mtime, Ems_Media_Type type)
+ems_database_file_insert(Ems_Database *db, const char *filename, int64_t mtime, Ems_Media_Type type __UNUSED__)
 {
    if (!db || !db->db || !filename)
      return;
 
    sqlite3_bind_text(db->file_stmt, 1, filename, -1, SQLITE_STATIC);
    sqlite3_bind_int(db->file_stmt, 2, mtime);
-   sqlite3_bind_int(db->file_stmt, 3, type);
    sqlite3_step(db->file_stmt);
    sqlite3_reset(db->file_stmt);
    sqlite3_clear_bindings(db->file_stmt);
@@ -209,7 +240,7 @@ ems_database_files_get(Ems_Database *db)
    if (!db || !db->db)
      return NULL;
 
-   res = sqlite3_prepare_v2 (db->db, "SELECT file_path,file_mtime,type FROM file;", -1, &stmt, NULL);
+   res = sqlite3_prepare_v2 (db->db, "SELECT file_path,file_mtime FROM file;", -1, &stmt, NULL);
    if (res != SQLITE_OK)
      goto out;
 

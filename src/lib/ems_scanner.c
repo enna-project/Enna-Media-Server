@@ -37,6 +37,7 @@
 #include "ems_scanner.h"
 #include "ems_config.h"
 #include "ems_database.h"
+#include "ems_parser.h"
 
 /*============================================================================*
  *                                  Local                                     *
@@ -62,7 +63,7 @@ static void _file_error_cb(void *data, Eio_File *handler, int error);
 static Ems_Scanner *_scanner = NULL;
 
 static Eina_Bool
-_schedule_timer_cb(void *data)
+_schedule_timer_cb(void *data __UNUSED__)
 {
 
    ems_scanner_start();
@@ -77,7 +78,6 @@ _ems_util_has_suffix(const char *name, const char *extensions)
 {
    Eina_Bool ret = EINA_FALSE;
    int i;
-   char *ext;
    char **arr = eina_str_split(extensions, ",", 0);
 
    if (!arr)
@@ -99,7 +99,7 @@ _ems_util_has_suffix(const char *name, const char *extensions)
 
 
 static Eina_Bool
-_file_filter_cb(void *data, Eio_File *handler, Eina_File_Direct_Info *info)
+_file_filter_cb(void *data, Eio_File *handler __UNUSED__, Eina_File_Direct_Info *info)
 {
    const char *ext = NULL;
    Ems_Directory *dir = data;
@@ -123,13 +123,13 @@ _file_filter_cb(void *data, Eio_File *handler, Eina_File_Direct_Info *info)
          return EINA_FALSE;
      }
 
-   /* if ( info->type == EINA_FILE_DIR ) */
-   /*     return EINA_TRUE; */
+   if ( info->type == EINA_FILE_DIR )
+       return EINA_TRUE;
 
-   /* if (!strcmp("Sintel.2010.2K.SURROUND.x264-VODO.mp4", info->path + info->name_start)) */
-   /*     return EINA_TRUE; */
-   /* else */
-   /*     return EINA_FALSE; */
+   if (!strcmp("Sintel.2010.2K.SURROUND.x264-VODO.mp4", info->path + info->name_start))
+       return EINA_TRUE;
+   else
+       return EINA_FALSE;
 
    if ( info->type == EINA_FILE_DIR ||
         _ems_util_has_suffix(info->path + info->name_start, ext))
@@ -139,7 +139,7 @@ _file_filter_cb(void *data, Eio_File *handler, Eina_File_Direct_Info *info)
 }
 
 static void
-_file_main_cb(void *data, Eio_File *handler, const Eina_File_Direct_Info *info)
+_file_main_cb(void *data, Eio_File *handler __UNUSED__, const Eina_File_Direct_Info *info)
 {
    Ems_Directory *dir = data;
 
@@ -172,7 +172,7 @@ _file_main_cb(void *data, Eio_File *handler, const Eina_File_Direct_Info *info)
               break;
           }
 
-        DBG("[FILE] [%s] %ems", type, info->path);
+        DBG("[FILE] [%s] %s", type, info->path);
         eina_stringshare_del(type);
         /* TODO : add this file only if it doesn't exists in the db */
         _scanner->scan_files = eina_list_append(_scanner->scan_files,
@@ -193,16 +193,13 @@ _file_main_cb(void *data, Eio_File *handler, const Eina_File_Direct_Info *info)
 }
 
 static void
-_file_done_cb(void *data, Eio_File *handler)
+_file_done_cb(void *data __UNUSED__, Eio_File *handler __UNUSED__)
 {
-   Ems_Directory *dir = data;
-
    _scanner->is_running--;
 
    if (!_scanner->is_running)
      {
         const char *f;
-        Eio_File *eio_file;
         double t;
         Eina_List *files;
 
@@ -216,7 +213,7 @@ _file_done_cb(void *data, Eio_File *handler)
 	  {
 	     _scanner->schedule_timer = ecore_timer_add(ems_config->scan_period, _schedule_timer_cb, NULL);
 	     /* TODO: covert time into a human redeable value */
-	     INF("Scan finished in %3.3fs, schedule next scan in %d seconds", ems_config->scan_period, ecore_time_get() - _scanner->start_time);
+	     INF("Scan finished in %3.3fs, schedule next scan in %d seconds", ecore_time_get() - _scanner->start_time, ems_config->scan_period);
 	  }
 	else
 	  {
@@ -246,7 +243,7 @@ _file_done_cb(void *data, Eio_File *handler)
 }
 
 static void
-_file_error_cb(void *data, Eio_File *handler, int error)
+_file_error_cb(void *data, Eio_File *handler __UNUSED__, int error __UNUSED__)
 {
    Ems_Directory *dir = data;
    /* _scanner->is_running--; */
@@ -279,7 +276,6 @@ ems_scanner_shutdown(void)
    if (_scanner)
      {
         const char *f;
-        Eio_File *eio_file;
 
         if (_scanner->schedule_timer)
           ecore_timer_del(_scanner->schedule_timer);
