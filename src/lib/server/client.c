@@ -147,8 +147,8 @@ connected(void *data, int type, Azy_Client *cli)
    content = azy_content_new(NULL);
    err = azy_content_new(NULL);
    azy_net_transport_set(net, AZY_NET_TRANSPORT_JSON);
-   /* ret = ems_rpc_Config_GetAll(cli, err, NULL); */
-   /* CALL_CHECK(_ems_rpc_Config_Get_Ret); */
+   ret = ems_rpc_Config_GetAll(cli, err, NULL); 
+   CALL_CHECK(_ems_rpc_Config_Get_Ret); 
 
    //azy_content_free(content);
 

@@ -8,6 +8,7 @@ AM_CPPFLAGS = \
 -I$(top_builddir)/src/lib \
 -I$(top_srcdir)/src/lib/server \
 -I$(top_builddir)/src/lib/server \
+-I$(top_srcdir)/src/lib/extras \
 -DPACKAGE_BIN_DIR=\"$(bindir)\" \
 -DPACKAGE_LIB_DIR=\"$(libdir)\" \
 -DPACKAGE_DATA_DIR=\"$(pkgdatadir)\" \
@@ -33,7 +34,8 @@ ems_parser.h \
 ems_utils.c \
 ems_utils.h \
 ems_stream_server.c \
-ems_stream_server.h
+ems_stream_server.h \
+extras/http_parser.c
 
 if HAVE_MACOSX
 else
