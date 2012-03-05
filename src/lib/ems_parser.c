@@ -53,19 +53,17 @@ void _end_grab_cb(void *data __UNUSED__, const char *filename)
    if (!filename)
      return;
 
-   INF("Try to remove %s", filename);
    EINA_LIST_FOREACH(_files, l, file)
      {
         if (!strcmp(file, filename))
           {
              _files = eina_list_remove(_files, file);
              eina_stringshare_del(file);
-             INF("Remove from list %s", filename);
              break;
           }
      }
 
-   INF("Still %d to grab", eina_list_count(_files));
+   DBG("Still %d to grab", eina_list_count(_files));
    if (eina_list_count(_files))
      {
         EINA_ARRAY_ITER_NEXT(_modules, i, m, iterator)
@@ -129,7 +127,6 @@ ems_parser_grab(const char *filename, Ems_Media_Type type)
     EINA_ARRAY_ITER_NEXT(_modules, i, m, iterator)
       {
          grab = eina_module_symbol_get(m, "ems_grabber_grab");
-         INF("Add to list %s\n", filename);
          _files = eina_list_append(_files, eina_stringshare_add(filename));
          if (grab && eina_list_count(_files) == 1)
            grab(filename, type, _end_grab_cb, NULL);
