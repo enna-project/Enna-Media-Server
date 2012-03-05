@@ -9,7 +9,7 @@
 #include <Ems.h>
 
 
-int main(int argc, char **argv)
+int main(int argc __UNUSED__, char **argv __UNUSED__)
 {
    if (!ems_init(NULL))
      return EXIT_FAILURE;
