@@ -298,7 +298,7 @@ ems_grabber_grab(const char *filename, Ems_Media_Type type, Ems_Grabber_End_Cb e
    if (type != EMS_MEDIA_TYPE_VIDEO)
      return;
 
-   INF("Grab %s of type %d", filename, type);
+   DBG("Grab %s of type %d", filename, type);
 
    tmp = ems_utils_decrapify(filename);
    search = ems_utils_escape_string(tmp);
