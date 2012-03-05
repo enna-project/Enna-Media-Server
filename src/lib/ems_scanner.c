@@ -123,13 +123,13 @@ _file_filter_cb(void *data, Eio_File *handler __UNUSED__, Eina_File_Direct_Info 
          return EINA_FALSE;
      }
 
-   if ( info->type == EINA_FILE_DIR )
-       return EINA_TRUE;
+   /* if ( info->type == EINA_FILE_DIR ) */
+   /*     return EINA_TRUE; */
 
-   if (!strcmp("Sintel.2010.2K.SURROUND.x264-VODO.mp4", info->path + info->name_start))
-       return EINA_TRUE;
-   else
-       return EINA_FALSE;
+   /* if (!strcmp("Sintel.2010.2K.SURROUND.x264-VODO.mp4", info->path + info->name_start)) */
+   /*     return EINA_TRUE; */
+   /* else */
+   /*     return EINA_FALSE; */
 
    if ( info->type == EINA_FILE_DIR ||
         _ems_util_has_suffix(info->path + info->name_start, ext))
@@ -172,7 +172,7 @@ _file_main_cb(void *data, Eio_File *handler __UNUSED__, const Eina_File_Direct_I
               break;
           }
 
-        DBG("[FILE] [%s] %s", type, info->path);
+        //DBG("[FILE] [%s] %s", type, info->path);
         eina_stringshare_del(type);
         /* TODO : add this file only if it doesn't exists in the db */
         _scanner->scan_files = eina_list_append(_scanner->scan_files,
