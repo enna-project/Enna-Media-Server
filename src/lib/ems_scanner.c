@@ -246,7 +246,8 @@ static void
 _file_error_cb(void *data, Eio_File *handler __UNUSED__, int error __UNUSED__)
 {
    Ems_Directory *dir = data;
-   /* _scanner->is_running--; */
+
+   _scanner->is_running--;
    ERR("Unable to parse %s", dir->path);
 }
 
