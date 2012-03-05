@@ -36,6 +36,56 @@
  *                                  Local                                     *
  *============================================================================*/
 static Eina_Array *_modules = NULL;
+static Eina_List *_files = NULL;
+
+void _end_grab_cb(void *data __UNUSED__, const char *filename)
+{
+   Eina_Array_Iterator iterator;
+   Eina_Module *m;
+   unsigned int i;
+   Eina_List *l;
+   const char *file;
+   void (*grab)(const char *filename, Ems_Media_Type type,
+                void (*Ems_Grabber_End_Cb)(void *data, const char *filename),
+                void *data
+       );
+
+   if (!filename)
+     return;
+
+   INF("Try to remove %s", filename);
+   EINA_LIST_FOREACH(_files, l, file)
+     {
+        if (!strcmp(file, filename))
+          {
+             _files = eina_list_remove(_files, file);
+             eina_stringshare_del(file);
+             INF("Remove from list %s", filename);
+             break;
+          }
+     }
+
+   INF("Still %d to grab", eina_list_count(_files));
+   if (eina_list_count(_files))
+     {
+        EINA_ARRAY_ITER_NEXT(_modules, i, m, iterator)
+          {
+             grab = eina_module_symbol_get(m, "ems_grabber_grab");
+             if (grab)
+               {
+                  const char *f = eina_list_nth(_files, 0);
+                  grab(f,
+                       EMS_MEDIA_TYPE_VIDEO,
+                       _end_grab_cb, NULL);
+               }
+             break;
+          }
+     }
+   else
+     {
+        DBG("%s was the last file to parse", filename);
+     }
+}
 
 /*============================================================================*
  *                                 Global                                     *
@@ -71,14 +121,18 @@ ems_parser_grab(const char *filename, Ems_Media_Type type)
     Eina_Array_Iterator iterator;
     Eina_Module *m;
     unsigned int i;
-    void (*grab)(const char *filename, Ems_Media_Type type);
+    void (*grab)(const char *filename, Ems_Media_Type type,
+                 void (*Ems_Grabber_End_Cb)(void *data, const char *filename),
+                 void *data
+        );
 
-    DBG("Parse : %s", filename);
-return;
     EINA_ARRAY_ITER_NEXT(_modules, i, m, iterator)
       {
          grab = eina_module_symbol_get(m, "ems_grabber_grab");
-         if (grab)
-           grab(filename, type);
+         INF("Add to list %s\n", filename);
+         _files = eina_list_append(_files, eina_stringshare_add(filename));
+         if (grab && eina_list_count(_files) == 1)
+           grab(filename, type, _end_grab_cb, NULL);
+         break;
       }
 }
