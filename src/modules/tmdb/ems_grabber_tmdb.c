@@ -63,49 +63,53 @@ enum _Ems_Request_State
 
 struct _Ems_Tmdb_Req
 {
+   const char *filename;
    const char *search;
    Eina_Strbuf *buf;
    Ecore_Con_Url *ec_url;
    Ems_Request_State state;
-
+   void (*end_cb)(void *data, const char *filename);
+   void *data;
 };
 
 struct _Ems_Tmdb_Movie
 {
-   double score;
-   char popularity;
-   Eina_Bool translated;
-   Eina_Bool adult;
-   const char *language;
-   const char *original_name;
-   const char *name;
-   const char *alternative_name;
-   const char *type;
-   int id;
-   int imdb_id;
-   const char *url;
-   int votes;
-   float rating;
-   const char *certification;
-   const char *overview;
-   const char *released;
-   const char *poster;
-   const char backdrop;
-   int version;
-   const char *last_modified_at;
+   Eina_Value score;
+   Eina_Value popularity;
+   Eina_Value translated;
+   Eina_Value adult;
+   Eina_Value language;
+   Eina_Value original_name;
+   Eina_Value name;
+   Eina_Value alternative_name;
+   Eina_Value type;
+   Eina_Value id;
+   Eina_Value imdb_id;
+   Eina_Value url;
+   Eina_Value votes;
+   Eina_Value rating;
+   Eina_Value certification;
+   Eina_Value overview;
+   Eina_Value released;
+   Eina_Value poster;
+   Eina_Value backdrop;
+   Eina_Value version;
+   Eina_Value last_modified_at;
 };
 
-static void
-_request_free(void *data)
-{
-   Ems_Tmdb_Req *req = data;
+typedef void (*Ems_Grabber_End_Cb)(void *data, const char *filename);
 
+static Eina_Hash *_hash_req = NULL;
+
+static void
+_request_free_cb(Ems_Tmdb_Req *req)
+{
    if (!req)
      return;
-
+   if (req->filename) eina_stringshare_del(req->filename);
    if (req->search) eina_stringshare_del(req->search);
    if (req->buf) eina_strbuf_free(req->buf);
-   //free(req);
+   free(req);
 }
 
 
@@ -116,6 +120,8 @@ _grabber_tmdb_init(void)
    ecore_con_init();
    ecore_con_url_init();
 
+   _hash_req = eina_hash_pointer_new((Eina_Free_Cb)_request_free_cb);
+
    return EINA_TRUE;
 }
 
@@ -124,57 +130,69 @@ static void
 _grabber_tmdb_shutdown(void)
 {
    INF("Shutdown TMDb grabber");
+   eina_hash_free(_hash_req);
    ecore_con_url_shutdown();
    ecore_con_shutdown();
 }
 
 
 Eina_Bool
-_search_data_cb(void *data, int type, Ecore_Con_Event_Url_Data *ev)
+_search_data_cb(void *data __UNUSED__, int type __UNUSED__, Ecore_Con_Event_Url_Data *ev)
 {
-   Ems_Tmdb_Req *req = ecore_con_url_data_get(ev->url_con);
+   Ems_Tmdb_Req *req = eina_hash_find(_hash_req, ev->url_con);
 
    if (!req || ev->url_con != req->ec_url)
      return ECORE_CALLBACK_RENEW;
 
    if (req->buf)
      eina_strbuf_append_length(req->buf, (char*)&ev->data[0], ev->size);
-   else
-     {
-        req->buf = eina_strbuf_new();
-        eina_strbuf_append_length(req->buf, (char*)&ev->data[0], ev->size);
-     }
 
    return ECORE_CALLBACK_RENEW;
 }
 
-#define GETVAL(val, type)                       \
-  do {                                          \
-     cJSON *it;                                 \
-     it = cJSON_GetObjectItem(m, #val);         \
-     if (it)                                    \
-       movie->val = it->type;                   \
-  } while(0);                                   \
+#define GETVAL(val, type, eina_type)                                    \
+  do {                                                                  \
+     cJSON *it;                                                         \
+     it = cJSON_GetObjectItem(m, #val);                                 \
+     eina_value_setup(&movie->val, eina_type);                          \
+     if (it) {                                                          \
+        eina_value_set(&movie->val, it->type);                          \
+     }                                                                  \
+  } while(0);                                                           \
 
-#define GETVALSTR(val)                                          \
-  do {                                                          \
-     cJSON *it;                                                 \
-     it = cJSON_GetObjectItem(m, #val);                         \
-     if (it)                                                    \
-       movie->val = eina_stringshare_add(it->valuestring);      \
-  } while(0);                                                   \
+#define GETVALSTR(val, type, eina_type)                                 \
+  do {                                                                  \
+     cJSON *it;                                                         \
+     it = cJSON_GetObjectItem(m, #val);                                 \
+     eina_value_setup(&movie->val, eina_type);                          \
+     if (it) {                                                          \
+        eina_value_set(&movie->val, eina_stringshare_add(it->type));    \
+     }                                                                  \
+  } while(0);                                                           \
+
 
 static Eina_Bool
-_search_complete_cb(void *data, int type, void *event_info)
+_search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info)
 {
    Ecore_Con_Event_Url_Complete *url_complete = event_info;
 
-   Ems_Tmdb_Req *req = ecore_con_url_data_get(url_complete->url_con);
+   Ems_Tmdb_Req *req = eina_hash_find(_hash_req, url_complete->url_con);
 
    if (!req || url_complete->url_con != req->ec_url)
-     return EINA_TRUE;
+     {
+        ERR("There is maybe a problem here ?");
+        return EINA_TRUE;
+     }
 
-   DBG("download completed with status code: %d", url_complete->status);
+   DBG("download completed for %s with status code: %d", req->filename, url_complete->status);
+   if (url_complete->status != 200)
+     {
+        if (req->end_cb)
+          req->end_cb(req->data, req->filename);
+        eina_hash_del(_hash_req, req->ec_url, req);
+        return EINA_FALSE;
+     }
+
 
    switch(req->state)
      {
@@ -184,18 +202,20 @@ _search_complete_cb(void *data, int type, void *event_info)
               cJSON *root;
               cJSON *m;
               Ems_Tmdb_Movie *movie;
-              int size;
+              int size = 0;
 
-              DBG("Search request data : %s", eina_strbuf_string_get(req->buf));
+              //DBG("Search request data : %s", eina_strbuf_string_get(req->buf));
               root = cJSON_Parse(eina_strbuf_string_get(req->buf));
-              size = cJSON_GetArraySize(root);
+              if (root)
+                size = cJSON_GetArraySize(root);
 
-              DBG("Size %d", size);
+              //DBG("Size %d", size);
 
               if (!size)
                 {
                    DBG("No result found");
-                   return EINA_TRUE;
+                   goto end_req;
+                   return EINA_FALSE;
                 }
               else if (size > 1)
                 {
@@ -206,40 +226,57 @@ _search_complete_cb(void *data, int type, void *event_info)
               if (!m)
                 {
                    ERR("Unable to get movie info");
-                   return EINA_TRUE;
+                   goto end_req;
                 }
 
               movie = calloc(1, sizeof(Ems_Tmdb_Movie));
-              GETVAL(score, valuedouble);
-              GETVAL(popularity, valueint);
-              GETVAL(translated, valueint);
-              GETVAL(adult, valueint);
-              GETVALSTR(language);
-              GETVALSTR(original_name);
-              GETVALSTR(name);
-              GETVALSTR(alternative_name);
-              GETVAL(id, valueint);
-              GETVAL(imdb_id, valueint);
-              GETVALSTR(type);
-              GETVALSTR(url);
-              GETVAL(votes, valueint);
-              GETVAL(rating, valuedouble);
-              GETVALSTR(certification);
-              GETVALSTR(overview);
-              GETVALSTR(released);
-              GETVAL(version, valueint);
-              GETVALSTR(last_modified_at);
+              GETVAL(score, valuedouble, EINA_VALUE_TYPE_DOUBLE);
+              GETVAL(popularity, valueint, EINA_VALUE_TYPE_INT);
+              GETVAL(translated, valueint, EINA_VALUE_TYPE_INT);
+              GETVAL(adult, valueint, EINA_VALUE_TYPE_INT);
+              GETVALSTR(language, valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+              GETVALSTR(original_name, valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+              GETVALSTR(name, valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+              GETVALSTR(alternative_name, valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+              GETVAL(id, valueint, EINA_VALUE_TYPE_INT);
+              GETVAL(imdb_id, valueint, EINA_VALUE_TYPE_INT);
+              GETVALSTR(type, valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+              GETVALSTR(url, valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+              GETVAL(votes, valueint, EINA_VALUE_TYPE_INT);
+              GETVAL(rating, valuedouble, EINA_VALUE_TYPE_DOUBLE);
+              GETVALSTR(certification, valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+              GETVALSTR(overview, valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+              GETVALSTR(released, valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+              GETVAL(version, valueint, EINA_VALUE_TYPE_INT);
+              GETVALSTR(last_modified_at, valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+              const char *str;
+
+              eina_value_get(&(movie->overview), &str);
+              DBG("Overview %s", str);
+
               cJSON_Delete(root);
+           end_req:
+              if (req->end_cb)
+                  req->end_cb(req->data, req->filename);
+              eina_hash_del(_hash_req, req->ec_url, req);
+              return EINA_FALSE;
+           }
+         else
+           {
+              if (req->end_cb)
+                req->end_cb(req->data, req->filename);
            }
          break;
-      case EMS_REQUEST_STATE_INFO:
-         break;
+      case EMS_REQUEST_STATE_INFO:;
       default:
-         _request_free(req);
          break;
      }
 
-   return EINA_TRUE;
+   if (req->end_cb)
+     req->end_cb(req->data, req->filename);
+   eina_hash_del(_hash_req, req->ec_url, req);
+
+   return EINA_FALSE;
 }
 
 
@@ -250,7 +287,7 @@ _search_complete_cb(void *data, int type, void *event_info)
  *============================================================================*/
 
 EAPI void
-ems_grabber_grab(const char *filename, Ems_Media_Type type)
+ems_grabber_grab(const char *filename, Ems_Media_Type type, Ems_Grabber_End_Cb end_cb, void *data)
 {
    char url[PATH_MAX];
    Ecore_Con_Url *ec_url = NULL;
@@ -280,17 +317,23 @@ ems_grabber_grab(const char *filename, Ems_Media_Type type)
      }
 
    req = calloc(1, sizeof(Ems_Tmdb_Req));
+   req->filename = eina_stringshare_add(filename);
    req->search = eina_stringshare_add(search);
    req->ec_url = ec_url;
-   req->buf = NULL;
-   ecore_con_url_data_set(ec_url, req);
+   req->end_cb = end_cb;
+   req->data = data;
+   req->buf = eina_strbuf_new();
+
    ecore_event_handler_add(ECORE_CON_EVENT_URL_COMPLETE, (Ecore_Event_Handler_Cb)_search_complete_cb, NULL);
    ecore_event_handler_add(ECORE_CON_EVENT_URL_DATA, (Ecore_Event_Handler_Cb)_search_data_cb, NULL);
    req->state = EMS_REQUEST_STATE_SEARCH;
+
+   eina_hash_add(_hash_req, ec_url, req);
+
    if (!ecore_con_url_get(ec_url))
      {
         ERR("could not realize request.");
-        _request_free(req);
+        eina_hash_del(_hash_req, ec_url, req);
         ecore_con_url_free(ec_url);
      }
 }
