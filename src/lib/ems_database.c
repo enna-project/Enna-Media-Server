@@ -39,14 +39,126 @@
  *                                  Local                                     *
  *============================================================================*/
 
+
+#define EMS_DB_BIND_TEXT_OR_GOTO(stmt, col, value, label)               \
+  do                                                                    \
+    {                                                                   \
+       res = sqlite3_bind_text(stmt, col, value, -1, SQLITE_STATIC);    \
+       if (res != SQLITE_OK)                                            \
+         goto label;                                                    \
+    }                                                                   \
+  while (0)
+#define EMS_DB_BIND_INT_OR_GOTO(stmt, col, value, label)        \
+  do                                                            \
+    {                                                           \
+       res = sqlite3_bind_int(stmt, col, value);                \
+       if (res != SQLITE_OK)                                    \
+         goto label;                                            \
+    }                                                           \
+  while (0)
+#define EMS_DB_BIND_INT64_OR_GOTO(stmt, col, value, label)      \
+  do                                                            \
+    {                                                           \
+       res = sqlite3_bind_int64(stmt, col, value);              \
+       if (res != SQLITE_OK)                                    \
+         goto label;                                            \
+    }                                                           \
+  while (0)
+
 struct _Ems_Database
 {
    sqlite3 *db;
    const char *filename;
    sqlite3_stmt *file_stmt;
+   sqlite3_stmt *file_get_stmt;
+   sqlite3_stmt *data_stmt;
+   sqlite3_stmt *meta_stmt;
+   sqlite3_stmt *assoc_file_meta_stmt;
    sqlite3_stmt *begin_stmt;
    sqlite3_stmt *end_stmt;
 };
+
+static int64_t
+_step_rowid (Ems_Database *db,
+             sqlite3_stmt *stmt, int *res)
+{
+   int64_t val = 0;
+
+   val = sqlite3_last_insert_rowid(db->db);
+   *res = sqlite3_step (stmt);
+   return val;
+}
+
+static int64_t
+_data_insert(Ems_Database *db, Eina_Value *value, int64_t lang_id)
+{
+   int res, err = -1;
+   int64_t val = 0;
+   char *str;
+
+   str = eina_value_to_string(value);
+   if (!str)
+     return 0;
+
+   EMS_DB_BIND_TEXT_OR_GOTO(db->data_stmt, 1, str, out);
+   EMS_DB_BIND_INT64_OR_GOTO(db->data_stmt, 2, lang_id, out_clear);
+
+   val = _step_rowid(db, db->data_stmt, &res);
+   sqlite3_reset(db->data_stmt);
+ out_clear:
+   sqlite3_clear_bindings(db->data_stmt);
+ out:
+   if (res != SQLITE_CONSTRAINT) /* ignore constraint violation */
+     ERR("%s", sqlite3_errmsg(db->db));
+   free(str);
+   return val;
+}
+
+static int64_t
+_meta_insert(Ems_Database *db, const char *meta)
+{
+   int res, err = -1;
+   int64_t val = 0;
+
+   if (!db || !db->db || !meta)
+     return 0;
+
+   EMS_DB_BIND_TEXT_OR_GOTO(db->meta_stmt, 1, meta, out);
+
+   val = _step_rowid(db, db->meta_stmt, &res);
+   sqlite3_reset(db->meta_stmt);
+   sqlite3_clear_bindings(db->meta_stmt);
+
+ out:
+   if (res != SQLITE_CONSTRAINT) /* ignore constraint violation */
+     ERR("%s", sqlite3_errmsg (db->db));
+
+   return val;
+}
+
+static int64_t
+_file_get(Ems_Database *db, const char *filename)
+{
+   int res, err = -1;
+   int64_t val = 0;
+
+   if (!db || !db->db || !filename)
+     return 0;
+
+   EMS_DB_BIND_TEXT_OR_GOTO(db->file_get_stmt, 1, filename, out);
+   res = sqlite3_step(db->file_get_stmt);
+   if (res == SQLITE_ROW)
+     val = sqlite3_column_int64(db->file_get_stmt, 0);
+   else
+     goto out;
+   sqlite3_reset(db->file_get_stmt);
+   sqlite3_clear_bindings(db->file_get_stmt);
+   err = 0;
+ out:
+   if (err < 0)
+     ERR("%s", sqlite3_errmsg(db->db));
+   return val;
+}
 
 /*============================================================================*
  *                                 Global                                     *
@@ -115,55 +227,21 @@ ems_database_table_create(Ems_Database *db)
    sqlite3_exec(db->db, BEGIN_TRANSACTION, NULL, NULL, &m);
    if (m)
      goto err;
-   sqlite3_exec(db->db, CREATE_TABLE_INFO, NULL, NULL, &m);
-   if (m)
-     goto err;
    sqlite3_exec(db->db, CREATE_TABLE_FILE, NULL, NULL, &m);
-   if (m)
-     goto err;
-   sqlite3_exec(db->db, CREATE_TABLE_TYPE, NULL, NULL, &m);
    if (m)
      goto err;
    sqlite3_exec(db->db, CREATE_TABLE_META, NULL, NULL, &m);
    if (m)
-       goto err;
-   sqlite3_exec(db->db, CREATE_TABLE_DATA, NULL, NULL, &m);
-   if (m)
-       goto err;
-   sqlite3_exec(db->db, CREATE_TABLE_LANG, NULL, NULL, &m);
-   if (m)
-       goto err;
-   sqlite3_exec(db->db, CREATE_TABLE_GRABBER, NULL, NULL, &m);
-   if (m)
      goto err;
-   sqlite3_exec(db->db, CREATE_TABLE_DLCONTEXT, NULL, NULL, &m);
+   sqlite3_exec(db->db, CREATE_TABLE_DATA, NULL, NULL, &m);
    if (m)
      goto err;
    sqlite3_exec(db->db, CREATE_TABLE_ASSOC_FILE_METADATA, NULL, NULL, &m);
    if (m)
      goto err;
-   sqlite3_exec(db->db, CREATE_TABLE_ASSOC_FILE_GRABBER, NULL, NULL, &m);
-   if (m)
-       goto err;
-   sqlite3_exec(db->db, CREATE_INDEX_CHECKED, NULL, NULL, &m);
-   if (m)
-       goto err;
-   sqlite3_exec(db->db, CREATE_INDEX_INTERRUPTED, NULL, NULL, &m);
-   if (m)
-       goto err;
-   sqlite3_exec(db->db, CREATE_INDEX_OUTOFPATH, NULL, NULL, &m);
-   if (m)
-       goto err;
    sqlite3_exec(db->db, CREATE_INDEX_ASSOC, NULL, NULL, &m);
    if (m)
-       goto err;
-   sqlite3_exec(db->db, CREATE_INDEX_FK_FILE, NULL, NULL, &m);
-   if (m)
-       goto err;
-   sqlite3_exec(db->db, CREATE_INDEX_FK_ASSOC, NULL, NULL, &m);
-   if (m)
-       goto err;
-
+     goto err;
    sqlite3_exec(db->db, END_TRANSACTION, NULL, NULL, &m);
    if (m)
      goto err;
@@ -178,12 +256,53 @@ ems_database_table_create(Ems_Database *db)
 void
 ems_database_prepare(Ems_Database *db)
 {
+   int res;
+
    if (!db || !db->db)
      return;
 
-   sqlite3_prepare_v2(db->db, INSERT_FILE, -1, &db->file_stmt, NULL);
-   sqlite3_prepare_v2(db->db, BEGIN_TRANSACTION, -1, &db->begin_stmt, NULL);
-   sqlite3_prepare_v2(db->db, END_TRANSACTION, -1, &db->end_stmt, NULL);
+   res = sqlite3_prepare_v2(db->db, INSERT_FILE, -1, &db->file_stmt, NULL);
+   if (res != SQLITE_OK)
+     {
+        ERR("%s", sqlite3_errmsg (db->db));
+        return;
+     }
+   res = sqlite3_prepare_v2(db->db, SELECT_FILE_ID, -1, &db->file_get_stmt, NULL);
+   if (res != SQLITE_OK)
+     {
+        ERR("%s", sqlite3_errmsg (db->db));
+        return;
+     }
+   res = sqlite3_prepare_v2(db->db, INSERT_META, -1, &db->meta_stmt, NULL);
+   if (res != SQLITE_OK)
+     {
+        ERR("%s", sqlite3_errmsg (db->db));
+        return;
+     }
+   res = sqlite3_prepare_v2(db->db, INSERT_DATA, -1, &db->data_stmt, NULL);
+   if (res != SQLITE_OK)
+     {
+        ERR("%s", sqlite3_errmsg (db->db));
+        return;
+     }
+   res = sqlite3_prepare_v2(db->db, INSERT_ASSOC_FILE_METADATA, -1, &db->assoc_file_meta_stmt, NULL);
+   if (res != SQLITE_OK)
+     {
+        ERR("%s", sqlite3_errmsg (db->db));
+        return;
+     }
+   res = sqlite3_prepare_v2(db->db, BEGIN_TRANSACTION, -1, &db->begin_stmt, NULL);
+   if (res != SQLITE_OK)
+     {
+        ERR("%s", sqlite3_errmsg (db->db));
+        return;
+     }
+   res = sqlite3_prepare_v2(db->db, END_TRANSACTION, -1, &db->end_stmt, NULL);
+   if (res != SQLITE_OK)
+     {
+        ERR("%s", sqlite3_errmsg (db->db));
+        return;
+     }
 }
 
 void
@@ -193,6 +312,10 @@ ems_database_release(Ems_Database *db)
      return;
 
    sqlite3_finalize(db->file_stmt);
+   sqlite3_finalize(db->file_get_stmt);
+   sqlite3_finalize(db->data_stmt);
+   sqlite3_finalize(db->meta_stmt);
+   sqlite3_finalize(db->assoc_file_meta_stmt);
    sqlite3_finalize(db->begin_stmt);
    sqlite3_finalize(db->end_stmt);
 }
@@ -200,15 +323,59 @@ ems_database_release(Ems_Database *db)
 void
 ems_database_file_insert(Ems_Database *db, const char *filename, int64_t mtime, Ems_Media_Type type __UNUSED__)
 {
+   int res, err = -1;
+   sqlite3_stmt *stmt = db->file_stmt;
+
    if (!db || !db->db || !filename)
      return;
 
-   sqlite3_bind_text(db->file_stmt, 1, filename, -1, SQLITE_STATIC);
-   sqlite3_bind_int(db->file_stmt, 2, mtime);
-   if (sqlite3_step(db->file_stmt) != SQLITE_DONE)
-     ERR("SQLite error: %s", sqlite3_errmsg(db->db));
-   sqlite3_reset(db->file_stmt);
-   sqlite3_clear_bindings(db->file_stmt);
+   EMS_DB_BIND_TEXT_OR_GOTO(stmt, 1, filename,  out);
+   EMS_DB_BIND_INT64_OR_GOTO(stmt, 2, mtime, out_clear);
+
+   res = sqlite3_step (stmt);
+   if (res == SQLITE_DONE)
+     err = 0;
+
+   sqlite3_reset (stmt);
+ out_clear:
+   sqlite3_clear_bindings (stmt);
+ out:
+   if (err < 0)
+     ERR("%s", sqlite3_errmsg(db->db));
+}
+
+void
+ems_database_meta_insert(Ems_Database *db, const char *filename, const char *meta, Eina_Value *value)
+{
+   int res = -1, err = -1;
+   int64_t meta_id = 0;
+   int64_t data_id = 0;
+   int64_t file_id = 0;
+
+   if (!db || !db->db || !filename || !meta || !value)
+     return;
+
+
+   file_id = _file_get(db, filename);
+   meta_id = _meta_insert(db, meta);
+   data_id = _data_insert(db, value, 0); /* TODO : handle lang correctly */
+
+
+
+   EMS_DB_BIND_INT64_OR_GOTO(db->assoc_file_meta_stmt, 1, file_id, out);
+   EMS_DB_BIND_INT64_OR_GOTO(db->assoc_file_meta_stmt, 2, meta_id, out_clear);
+   EMS_DB_BIND_INT64_OR_GOTO(db->assoc_file_meta_stmt, 3, data_id, out_clear);
+
+   res = sqlite3_step(db->assoc_file_meta_stmt);
+   if (res == SQLITE_DONE)
+     err = 0;
+   sqlite3_reset(db->assoc_file_meta_stmt);
+ out_clear:
+   sqlite3_clear_bindings (db->assoc_file_meta_stmt);
+ out:
+   if (err < 0 && res != SQLITE_CONSTRAINT) /* ignore constraint violation */
+     ERR("%s", sqlite3_errmsg(db->db));
+
 }
 
 void

@@ -33,6 +33,7 @@
 #include "Ems.h"
 #include "ems_private.h"
 #include "ems_utils.h"
+#include "ems_database.h"
 #include "cJSON.h"
 
 /*============================================================================*
@@ -53,7 +54,6 @@
 
 typedef struct _Ems_Tmdb_Req Ems_Tmdb_Req;
 typedef enum _Ems_Request_State Ems_Request_State;
-typedef struct _Ems_Tmdb_Movie Ems_Tmdb_Movie;
 
 enum _Ems_Request_State
   {
@@ -70,31 +70,6 @@ struct _Ems_Tmdb_Req
    Ems_Request_State state;
    void (*end_cb)(void *data, const char *filename);
    void *data;
-};
-
-struct _Ems_Tmdb_Movie
-{
-   Eina_Value score;
-   Eina_Value popularity;
-   Eina_Value translated;
-   Eina_Value adult;
-   Eina_Value language;
-   Eina_Value original_name;
-   Eina_Value name;
-   Eina_Value alternative_name;
-   Eina_Value type;
-   Eina_Value id;
-   Eina_Value imdb_id;
-   Eina_Value url;
-   Eina_Value votes;
-   Eina_Value rating;
-   Eina_Value certification;
-   Eina_Value overview;
-   Eina_Value released;
-   Eina_Value poster;
-   Eina_Value backdrop;
-   Eina_Value version;
-   Eina_Value last_modified_at;
 };
 
 typedef void (*Ems_Grabber_End_Cb)(void *data, const char *filename);
@@ -153,21 +128,27 @@ _search_data_cb(void *data __UNUSED__, int type __UNUSED__, Ecore_Con_Event_Url_
 #define GETVAL(val, type, eina_type)                                    \
   do {                                                                  \
      cJSON *it;                                                         \
+     Eina_Value v;                                                      \
      it = cJSON_GetObjectItem(m, #val);                                 \
-     eina_value_setup(&movie->val, eina_type);                          \
+     eina_value_setup(&v, eina_type);                                   \
      if (it) {                                                          \
-        eina_value_set(&movie->val, it->type);                          \
+         eina_value_set(&v, it->type);                                  \
+         ems_database_meta_insert(ems_config->db, req->filename, #val, &v); \
      }                                                                  \
+     eina_value_flush(&v);                                              \
   } while(0);                                                           \
 
 #define GETVALSTR(val, type, eina_type)                                 \
   do {                                                                  \
      cJSON *it;                                                         \
+     Eina_Value v;                                                      \
      it = cJSON_GetObjectItem(m, #val);                                 \
-     eina_value_setup(&movie->val, eina_type);                          \
+     eina_value_setup(&v, eina_type);                                   \
      if (it) {                                                          \
-        eina_value_set(&movie->val, eina_stringshare_add(it->type));    \
+         eina_value_set(&v, eina_stringshare_add(it->type));            \
+         ems_database_meta_insert(ems_config->db, req->filename, #val, &v); \
      }                                                                  \
+     eina_value_flush(&v);                                              \
   } while(0);                                                           \
 
 
@@ -201,7 +182,6 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
            {
               cJSON *root;
               cJSON *m;
-              Ems_Tmdb_Movie *movie;
               int size = 0;
 
               //DBG("Search request data : %s", eina_strbuf_string_get(req->buf));
@@ -229,7 +209,6 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
                    goto end_req;
                 }
 
-              movie = calloc(1, sizeof(Ems_Tmdb_Movie));
               GETVAL(score, valuedouble, EINA_VALUE_TYPE_DOUBLE);
               GETVAL(popularity, valueint, EINA_VALUE_TYPE_INT);
               GETVAL(translated, valueint, EINA_VALUE_TYPE_INT);
@@ -249,11 +228,6 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
               GETVALSTR(released, valuestring, EINA_VALUE_TYPE_STRINGSHARE);
               GETVAL(version, valueint, EINA_VALUE_TYPE_INT);
               GETVALSTR(last_modified_at, valuestring, EINA_VALUE_TYPE_STRINGSHARE);
-              const char *str;
-
-              eina_value_get(&(movie->overview), &str);
-              DBG("Overview %s", str);
-
               cJSON_Delete(root);
            end_req:
               if (req->end_cb)

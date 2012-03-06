@@ -27,7 +27,7 @@
 #define _EMS_PRIVATE_H
 
 #include <Eina.h>
-
+#include "ems_database.h"
 /*
  * variable and macros used for the eina_log module
  */
@@ -136,6 +136,7 @@ struct _Ems_Config
    Eina_List *music_directories;
    Eina_List *photo_directories;
    unsigned int scan_period;
+   Ems_Database *db;
 };
 
 extern Ems_Config *ems_config;

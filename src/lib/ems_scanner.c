@@ -52,7 +52,6 @@ struct _Ems_Scanner
    Eina_List *scan_files;
    int progress;
    double start_time;
-   Ems_Database *db;
 };
 
 static Eina_Bool _file_filter_cb(void *data, Eio_File *handler, Eina_File_Direct_Info *info);
@@ -180,12 +179,12 @@ _file_main_cb(void *data, Eio_File *handler __UNUSED__, const Eina_File_Direct_I
 
         stat(info->path, &st);
 
-        ems_database_file_insert(_scanner->db, info->path, (int64_t)st.st_mtime, dir->type);
+        ems_database_file_insert(ems_config->db, info->path, (int64_t)st.st_mtime, dir->type);
         ems_parser_grab(info->path, dir->type);
         if (!eina_list_count(_scanner->scan_files) % 100)
           {
-             ems_database_transaction_end(_scanner->db);
-             ems_database_transaction_begin(_scanner->db);
+             ems_database_transaction_end(ems_config->db);
+             ems_database_transaction_begin(ems_config->db);
           }
         /* TODO: add this file in the database */
         /* TODO: Add this file in the scanner list */
@@ -203,8 +202,8 @@ _file_done_cb(void *data __UNUSED__, Eio_File *handler __UNUSED__)
         double t;
         Eina_List *files;
 
-        ems_database_transaction_end(_scanner->db);
-        ems_database_release(_scanner->db);
+        ems_database_transaction_end(ems_config->db);
+        //ems_database_release(ems_config->db);
 
 	/* Schedule the next scan */
 	if (_scanner->schedule_timer)
@@ -233,7 +232,7 @@ _file_done_cb(void *data __UNUSED__, Eio_File *handler __UNUSED__)
         _scanner->start_time = 0;
 
         t = ecore_time_get();
-        files = ems_database_files_get(_scanner->db);
+        files = ems_database_files_get(ems_config->db);
         INF("SELECT file_path,file_mtime FROM file:  %d files in %3.3fs",
             eina_list_count(files), ecore_time_get() - t);
         EINA_LIST_FREE(files, f)
@@ -262,10 +261,14 @@ ems_scanner_init(void)
    if (!_scanner)
      return EINA_FALSE;
 
-   _scanner->db = ems_database_new("test.db");
+   if (!ems_config->db)
+       ems_config->db = ems_database_new("test.db");
 
-   if (!_scanner->db)
-     return EINA_FALSE;
+   if (!ems_config->db)
+     {
+        ERR("Unable to create database");
+        return EINA_FALSE;
+     }
 
 
    return EINA_TRUE;
@@ -317,8 +320,8 @@ ems_scanner_start(void)
    /* return; */
 
    _scanner->start_time = ecore_time_get();
-   ems_database_prepare(_scanner->db);
-   ems_database_transaction_begin(_scanner->db);
+   ems_database_prepare(ems_config->db);
+   ems_database_transaction_begin(ems_config->db);
    /* TODO : get all files in the db and see if they exist on the disk */
 
    /* Scann all files on the disk */
