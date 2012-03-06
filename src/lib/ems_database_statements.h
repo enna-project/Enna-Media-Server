@@ -412,9 +412,8 @@
  "INTO file (file_path, "     \
  "           file_mtime, "    \
  "           checked__, "     \
- "           interrupted__, " \
- "           outofpath__) "   \
- "VALUES (?, ?, 1, -1, ?);"
+ "           interrupted) "   \
+ "VALUES (?, ?, 1, -1);"
 
 #define INSERT_TYPE        \
  "INSERT "                 \

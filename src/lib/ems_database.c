@@ -205,7 +205,6 @@ ems_database_file_insert(Ems_Database *db, const char *filename, int64_t mtime, 
 
    sqlite3_bind_text(db->file_stmt, 1, filename, -1, SQLITE_STATIC);
    sqlite3_bind_int(db->file_stmt, 2, mtime);
-   sqlite3_bind_int(db->file_stmt, 3, 0); //what is outofpath??
    if (sqlite3_step(db->file_stmt) != SQLITE_DONE)
      ERR("SQLite error: %s", sqlite3_errmsg(db->db));
    sqlite3_reset(db->file_stmt);
