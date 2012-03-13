@@ -353,11 +353,13 @@ Eina_Bool ems_avahi_init(void)
  
 void ems_avahi_shutdown(void)
 {
-   if (client)
-     avahi_client_free(client);
+
 
    if (sb)
      avahi_service_browser_free(sb);
+
+   if (client)
+     avahi_client_free(client);
 
    if (glib_poll)
      avahi_glib_poll_free(glib_poll);
