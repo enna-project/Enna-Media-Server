@@ -281,9 +281,6 @@ ems_scanner_shutdown(void)
      {
         const char *f;
 
-        if (_scanner->schedule_timer)
-          ecore_timer_del(_scanner->schedule_timer);
-
         if (_scanner->scan_files)
           EINA_LIST_FREE(_scanner->scan_files, f)
             eina_stringshare_del(f);
