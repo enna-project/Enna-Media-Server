@@ -230,6 +230,7 @@ ems_utils_decrapify(const char *file)
 {
    char *it, *filename, *res;
    char *file_tmp = strdup (file);
+   char **items;
 
    if (!file_tmp)
      return NULL;
@@ -253,7 +254,10 @@ ems_utils_decrapify(const char *file)
      if (IS_TO_DECRAPIFY (*it))
        *it = ' ';
 
-   _decrapify_blacklist(eina_str_split(ems_config->blacklist, ",", 0), filename);
+   items = eina_str_split(ems_config->blacklist, ",", 0);
+   _decrapify_blacklist(items, filename);
+   free(*items);
+   free(items);
    _decrapify_cleanup (filename);
 
    res = strdup (filename);
