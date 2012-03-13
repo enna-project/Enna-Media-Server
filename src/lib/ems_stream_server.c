@@ -402,6 +402,8 @@ _stream_server_request_process(Ems_Stream_Client *client)
         ecore_con_client_send(client->client, error400, strlen(error400));
         // close connection after data has been sent
         client->request_state = REQ_CLOSE;
+        if (file_path)
+          eina_stringshare_del(file_path);
 
         return;
      }
