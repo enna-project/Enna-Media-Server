@@ -28,6 +28,7 @@
 #endif
 
 #include <Eina.h>
+#include <Ecore.h>
 
 #include "Ems.h"
 #include "ems_private.h"
@@ -37,29 +38,34 @@
  *============================================================================*/
 static Eina_Array *_modules = NULL;
 static Eina_List *_files = NULL;
+static Ecore_Idler *_queue_idler = NULL;
 
-void _end_grab_cb(void *data __UNUSED__, const char *filename)
+static void _end_grab_cb(void *data, const char *filename);
+
+static Eina_Bool
+_idler_cb(void *data)
 {
    Eina_Array_Iterator iterator;
    Eina_Module *m;
    unsigned int i;
    Eina_List *l;
    const char *file;
+   const char *filename = data;
    void (*grab)(const char *filename, Ems_Media_Type type,
                 void (*Ems_Grabber_End_Cb)(void *data, const char *filename),
                 void *data
-       );
+                );
 
-   if (!filename)
-     return;
-
-   EINA_LIST_FOREACH(_files, l, file)
+   if (filename)
      {
-        if (!strcmp(file, filename))
+        EINA_LIST_FOREACH(_files, l, file)
           {
-             _files = eina_list_remove(_files, file);
-             eina_stringshare_del(file);
-             break;
+             if (!strcmp(file, filename))
+               {
+                  _files = eina_list_remove(_files, file);
+                  eina_stringshare_del(file);
+                  break;
+               }
           }
      }
 
@@ -72,9 +78,11 @@ void _end_grab_cb(void *data __UNUSED__, const char *filename)
              if (grab)
                {
                   const char *f = eina_list_nth(_files, 0);
+                  INF("Before Grab");
                   grab(f,
                        EMS_MEDIA_TYPE_VIDEO,
                        _end_grab_cb, NULL);
+                  INF("After Grab");
                }
              break;
           }
@@ -82,7 +90,16 @@ void _end_grab_cb(void *data __UNUSED__, const char *filename)
    else
      {
         DBG("%s was the last file to parse", filename);
+        _queue_idler = NULL;
      }
+
+   return EINA_FALSE;
+}
+
+static void
+_end_grab_cb(void *data __UNUSED__, const char *filename)
+{
+   _queue_idler = ecore_idler_add(_idler_cb, filename);
 }
 
 /*============================================================================*
@@ -104,6 +121,14 @@ ems_parser_init(void)
 void
 ems_parser_shutdown(void)
 {
+   const char *filename;
+
+   EINA_LIST_FREE(_files, filename)
+     eina_stringshare_del(filename);
+
+   if (_queue_idler)
+     ecore_idler_del(_queue_idler);
+
    eina_module_list_free(_modules);
    if (_modules)
       eina_array_free(_modules);
@@ -124,12 +149,16 @@ ems_parser_grab(const char *filename, Ems_Media_Type type)
                  void *data
         );
 
-    EINA_ARRAY_ITER_NEXT(_modules, i, m, iterator)
-      {
-         grab = eina_module_symbol_get(m, "ems_grabber_grab");
-         _files = eina_list_append(_files, eina_stringshare_add(filename));
-         if (grab && eina_list_count(_files) == 1)
-           grab(filename, type, _end_grab_cb, NULL);
-         break;
-      }
+
+    _files = eina_list_append(_files, eina_stringshare_add(filename));
+    if (!_queue_idler)
+        _queue_idler = ecore_idler_add(_idler_cb, NULL);
+
+    /* EINA_ARRAY_ITER_NEXT(_modules, i, m, iterator) */
+    /*   { */
+    /*      grab = eina_module_symbol_get(m, "ems_grabber_grab"); */
+    /*      if (grab && eina_list_count(_files) == 1) */
+    /*        grab(filename, type, _end_grab_cb, NULL); */
+    /*      break; */
+    /*   } */
 }
