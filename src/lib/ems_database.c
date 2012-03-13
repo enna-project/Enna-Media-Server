@@ -218,6 +218,15 @@ ems_database_new(const char *filename)
 }
 
 void
+ems_database_free(Ems_Database *db)
+{
+    eina_stringshare_del(db->filename);
+    sqlite3_close(db->db);
+    free(db);
+    sqlite3_shutdown();
+}
+
+void
 ems_database_table_create(Ems_Database *db)
 {
    char *m;

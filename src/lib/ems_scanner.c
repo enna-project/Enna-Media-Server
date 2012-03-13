@@ -291,6 +291,8 @@ ems_scanner_shutdown(void)
 	if (_scanner->schedule_timer)
 	  ecore_timer_del(_scanner->schedule_timer);
 
+        ems_database_free(ems_config->db);
+
         free(_scanner);
      }
 }

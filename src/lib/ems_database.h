@@ -31,6 +31,8 @@
 typedef struct _Ems_Database Ems_Database;
 
 Ems_Database *ems_database_new(const char *filename);
+void ems_database_free(Ems_Database *db);
+
 void ems_database_table_create(Ems_Database *db);
 void ems_database_prepare(Ems_Database *db);
 void ems_database_release(Ems_Database *db);
