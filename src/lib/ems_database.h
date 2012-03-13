@@ -39,5 +39,6 @@ void ems_database_meta_insert(Ems_Database *db, const char *filename, const char
 void ems_database_transaction_begin(Ems_Database *db);
 void ems_database_transaction_end(Ems_Database *db);
 Eina_List *ems_database_files_get(Ems_Database *db);
+const char *ems_database_file_get(Ems_Database *db, int item_id);
 
 #endif /* _EMS_DATABASE_H_ */

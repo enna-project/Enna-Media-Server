@@ -71,6 +71,7 @@ struct _Ems_Database
    const char *filename;
    sqlite3_stmt *file_stmt;
    sqlite3_stmt *file_get_stmt;
+   sqlite3_stmt *fileid_get_stmt;
    sqlite3_stmt *data_stmt;
    sqlite3_stmt *meta_stmt;
    sqlite3_stmt *assoc_file_meta_stmt;
@@ -92,7 +93,7 @@ _step_rowid (Ems_Database *db,
 static int64_t
 _data_insert(Ems_Database *db, Eina_Value *value, int64_t lang_id)
 {
-   int res, err = -1;
+   int res;
    int64_t val = 0;
    char *str;
 
@@ -108,7 +109,7 @@ _data_insert(Ems_Database *db, Eina_Value *value, int64_t lang_id)
  out_clear:
    sqlite3_clear_bindings(db->data_stmt);
  out:
-   if (res != SQLITE_CONSTRAINT) /* ignore constraint violation */
+   if (res != SQLITE_CONSTRAINT && res != SQLITE_DONE) /* ignore constraint violation */
      ERR("%s", sqlite3_errmsg(db->db));
    free(str);
    return val;
@@ -130,7 +131,7 @@ _meta_insert(Ems_Database *db, const char *meta)
    sqlite3_clear_bindings(db->meta_stmt);
 
  out:
-   if (res != SQLITE_CONSTRAINT) /* ignore constraint violation */
+   if (res != SQLITE_CONSTRAINT && res != SQLITE_DONE) /* ignore constraint violation */
      ERR("%s", sqlite3_errmsg (db->db));
 
    return val;
@@ -268,6 +269,12 @@ ems_database_prepare(Ems_Database *db)
         return;
      }
    res = sqlite3_prepare_v2(db->db, SELECT_FILE_ID, -1, &db->file_get_stmt, NULL);
+   if (res != SQLITE_OK)
+     {
+        ERR("%s", sqlite3_errmsg (db->db));
+        return;
+     }
+   res = sqlite3_prepare_v2(db->db, SELECT_FILE_FROM_ID, -1, &db->fileid_get_stmt, NULL);
    if (res != SQLITE_OK)
      {
         ERR("%s", sqlite3_errmsg (db->db));
@@ -439,3 +446,46 @@ ems_database_files_get(Ems_Database *db)
  out:
    return NULL;
 }
+
+const char *
+ems_database_file_get(Ems_Database *db, int item_id)
+{
+   const char *file = NULL;
+   sqlite3_stmt *stmt = NULL;
+   int res = -1, err = -1;
+
+   if (!db || !db->db)
+     return NULL;
+
+   stmt = db->fileid_get_stmt;
+
+   EMS_DB_BIND_INT64_OR_GOTO(stmt, 1, item_id, out);
+
+   while (1)
+     {
+
+        res = sqlite3_step (stmt);
+        if (res == SQLITE_ROW)
+          {
+             file = (const char*)sqlite3_column_text (stmt, 0);
+          }
+        else if (res == SQLITE_DONE)
+          {
+             err = 0;
+             break;
+          }
+        else
+          {
+             err = res;
+          }
+     }
+
+   sqlite3_reset (stmt);
+   sqlite3_clear_bindings (stmt);
+ out:
+   if (err < 0)
+     ERR("%s", sqlite3_errmsg(db->db));
+
+   return file;
+}
+

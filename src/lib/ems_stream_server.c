@@ -33,6 +33,7 @@
 
 #include "Ems.h"
 #include "ems_private.h"
+#include "ems_database.h"
 
 #include "http_parser.h"
 
@@ -53,11 +54,19 @@ static const char *error400 = "HTTP/1.1 400 Bad Request\r\n"
                               "</body>"
                               "</html>";
 
+static const char *responseData = "HTTP/1.0 200 OK\r\n"
+                                  "Content-Type: %s\r\n"
+//                                  "Accept-Ranges: bytes\r\n"
+                                  "Content-Length: %ld\r\n"
+                                  "Connection: Close\r\n"
+                                  "Server: Enna-Media-Server\r\n\r\n";
+
 static Ecore_Con_Server *_server = NULL;
 
 static Ecore_Event_Handler *_handler_add = NULL;
 static Ecore_Event_Handler *_handler_del= NULL;
 static Ecore_Event_Handler *_handler_data = NULL;
+static Ecore_Event_Handler *_handler_write = NULL;
 
 typedef struct _Ems_Stream_Client Ems_Stream_Client;
 
@@ -65,6 +74,7 @@ struct _Ems_Stream_Client
 {
    Ecore_Con_Client *client;
 
+   //This is for the request parsing
    Eina_Hash *request_headers;
 
    http_parser *parser;
@@ -76,9 +86,14 @@ struct _Ems_Stream_Client
    Eina_Strbuf *header_value;
    Eina_List *request_path;
    unsigned char request_method;
-};
 
-Eina_Hash *_stream_clients = NULL;
+   //this is for the current request state
+   enum { REQ_NONE = 0, REQ_CLOSE, REQ_SEND_DATA } request_state;
+   Eina_File *file_stream;
+   void *file_map;
+   long file_size;
+   int data_offset;
+};
 
 static http_parser_settings _parser_settings;
 
@@ -89,6 +104,7 @@ static int _parser_message_complete(http_parser *parser);
 
 static void _stream_client_free(Ems_Stream_Client *client);
 static void _stream_server_request_process(Ems_Stream_Client *client);
+static void _stream_request_data_send(Ems_Stream_Client *client);
 
 static void
 _header_free(void *data)
@@ -97,7 +113,7 @@ _header_free(void *data)
 }
 
 static Eina_Bool
-_client_add(void *data, int type, Ecore_Con_Event_Client_Add *ev)
+_client_add(void *data __UNUSED__, int type __UNUSED__, Ecore_Con_Event_Client_Add *ev)
 {
    Ems_Stream_Client *client;
 
@@ -111,22 +127,22 @@ _client_add(void *data, int type, Ecore_Con_Event_Client_Add *ev)
    client->parser->data = client;
    client->request_headers = eina_hash_string_superfast_new((Eina_Free_Cb)_header_free);
 
-   eina_hash_add(_stream_clients, ev->client, client);
+   ecore_con_client_data_set(client->client, client);
 
-   INF("New client from : %s", ecore_con_client_ip_get(ev->client));
+   INF("New client from : %s (%p)", ecore_con_client_ip_get(ev->client), client);
 
    return ECORE_CALLBACK_RENEW;
 }
 
 static Eina_Bool
-_client_del(void *data, int type, Ecore_Con_Event_Client_Del *ev)
+_client_del(void *data __UNUSED__, int type __UNUSED__, Ecore_Con_Event_Client_Del *ev)
 {
    Ems_Stream_Client *client;
 
    if (ev && (_server != ecore_con_client_server_get(ev->client)))
      return ECORE_CALLBACK_PASS_ON;
 
-   client = eina_hash_find(_stream_clients, ev->client);
+   client = ecore_con_client_data_get(ev->client);
 
    if (!client)
      {
@@ -134,16 +150,16 @@ _client_del(void *data, int type, Ecore_Con_Event_Client_Del *ev)
      }
    else
      {
-        eina_hash_del(_stream_clients, ev->client, NULL);
+        _stream_client_free(client);
      }
 
-   INF("Connection from %s closed by remote host", ecore_con_client_ip_get(ev->client));
+   INF("Connection from %s closed by remote host (%p)", ecore_con_client_ip_get(ev->client), client);
 
    return ECORE_CALLBACK_RENEW;
 }
 
 static Eina_Bool
-_client_data(void *data, int type, Ecore_Con_Event_Client_Data *ev)
+_client_data(void *data __UNUSED__, int type __UNUSED__, Ecore_Con_Event_Client_Data *ev)
 {
    Ems_Stream_Client *client;
    int nparsed;
@@ -151,9 +167,9 @@ _client_data(void *data, int type, Ecore_Con_Event_Client_Data *ev)
    if (ev && (_server != ecore_con_client_server_get(ev->client)))
      return ECORE_CALLBACK_PASS_ON;
 
-   DBG("Got data from client : %s\n%s\n", ecore_con_client_ip_get(ev->client), ev->data);
+   client = ecore_con_client_data_get(ev->client);
 
-   client = eina_hash_find(_stream_clients, ev->client);
+   DBG("Got data from client : %s (%p)\n%s\n", ecore_con_client_ip_get(ev->client), client, (char *)ev->data);
 
    if (!client)
      {
@@ -185,18 +201,114 @@ _client_data(void *data, int type, Ecore_Con_Event_Client_Data *ev)
    return ECORE_CALLBACK_RENEW;
 }
 
+/**
+ * Called when data has been sent to the client so we can send more
+ * data.
+ */
+static Eina_Bool
+_client_data_written(void *data __UNUSED__, int type __UNUSED__, Ecore_Con_Event_Client_Write *ev)
+{
+   Ems_Stream_Client *client;
+
+   if (ev && (_server != ecore_con_client_server_get(ev->client)))
+     return ECORE_CALLBACK_PASS_ON;
+
+   client = ecore_con_client_data_get(ev->client);
+
+   DBG("Data has been written to client (%s) (%p) : %d bytes", ecore_con_client_ip_get(ev->client), client, ev->size);
+
+   if (!client)
+     {
+        ERR("Can't find Ems_Stream_Client !");
+        return ECORE_CALLBACK_RENEW;
+     }
+
+   if (client->request_state == REQ_CLOSE)
+     ecore_con_client_del(client->client);
+   else if (client->request_state == REQ_SEND_DATA) //send next chunk of data
+     _stream_request_data_send(client);
+
+   return ECORE_CALLBACK_RENEW;
+}
+
 void
 _stream_server_request_process(Ems_Stream_Client *client)
 {
+   Eina_List *l;
+   const char *path, *file_path = NULL;
+   int cpt = 0;
+   long file_id = -1;
+   Eina_Bool err = EINA_FALSE;
+   Eina_Strbuf *headers;
+
    if (!client)
      return;
 
-   
+   //check request path
+   EINA_LIST_FOREACH(client->request_path, l, path)
+     {
+        if (cpt == 0)
+          {
+             if (strcmp(path, "item") != 0)
+               {
+                  err = EINA_TRUE;
+                  break;
+               }
+          }
+        else if (cpt == 1)
+          {
+             file_id = atol(path);
+             file_path = ems_database_file_get(ems_config->db, file_id);
+          }
+        else
+        {
+           err = EINA_TRUE;
+        }
 
-   ecore_con_client_send(client->client, error400, strlen(error400));
+        cpt++;
+     }
+       
+   if (err || !file_path)
+     {
+        ecore_con_client_send(client->client, error400, strlen(error400));
+        // close connection after data has been sent
+        client->request_state = REQ_CLOSE;
 
-   //Use a timer to close the connection after data has been sent?
-   ecore_timer_add(0.00001, (Ecore_Task_Cb)ecore_con_client_del, client->client);
+        return;
+     }
+
+   DBG("Requested file: %s", file_path);
+   client->file_stream = eina_file_open(file_path, EINA_FALSE);
+   client->file_map = eina_file_map_all(client->file_stream, EINA_FILE_SEQUENTIAL);
+   client->file_size = eina_file_size_get(client->file_stream);
+
+   //prepare headers and send them
+   headers = eina_strbuf_new();
+   //FIXME: get correct file mime type
+   eina_strbuf_append_printf(headers, responseData, "video/x-msvideo", client->file_size);
+   ecore_con_client_send(client->client, eina_strbuf_string_get(headers), eina_strbuf_length_get(headers));
+   eina_strbuf_free(headers);
+
+   _stream_request_data_send(client);
+}
+
+void
+_stream_request_data_send(Ems_Stream_Client *client)
+{
+   int data_size;
+
+   //send the next chunk of data
+   data_size = 65536;
+   client->request_state = REQ_SEND_DATA;
+   if (client->data_offset + data_size >= client->file_size)
+   {
+     data_size = client->file_size - client->data_offset;
+     client->request_state = REQ_CLOSE; //this is the last chunk of data
+   }
+   DBG("Sending %d bytes of data to client (%p), map: %p offset: %d", data_size, client, client->file_map, client->data_offset);
+   ecore_con_client_send(client->client, client->file_map + client->data_offset, data_size);
+
+   client->data_offset += data_size;
 }
 
 void
@@ -204,13 +316,17 @@ _stream_client_free(Ems_Stream_Client *client)
 {
    const char *data;
 
-   if (!client) 
+   if (!client)
      return;
 
    free(client->parser);
    eina_hash_free(client->request_headers);
    EINA_LIST_FREE(client->request_path, data)
       eina_stringshare_del(data);
+   if (client->file_map && client->file_stream)
+     eina_file_map_free(client->file_stream, client->file_map);
+   if (client->file_stream)
+     eina_file_close(client->file_stream);
    free(client);
 }
 
@@ -338,7 +454,10 @@ _parser_message_complete(http_parser *parser)
 Eina_Bool
 ems_stream_server_init(void)
 {
-   _server = ecore_con_server_add(ECORE_CON_REMOTE_TCP, "0.0.0.0", ems_config->port_stream, NULL);
+   _server = ecore_con_server_add(ECORE_CON_REMOTE_TCP,
+                                  "0.0.0.0", 
+                                  ems_config->port_stream, 
+                                  NULL);
 
    _handler_add = ecore_event_handler_add(ECORE_CON_EVENT_CLIENT_ADD, 
                            (Ecore_Event_Handler_Cb)_client_add, NULL);
@@ -346,8 +465,8 @@ ems_stream_server_init(void)
                            (Ecore_Event_Handler_Cb)_client_del, NULL);
    _handler_data = ecore_event_handler_add(ECORE_CON_EVENT_CLIENT_DATA,
                            (Ecore_Event_Handler_Cb)_client_data, NULL);
-
-   _stream_clients = eina_hash_pointer_new((Eina_Free_Cb)_stream_client_free);
+   _handler_write = ecore_event_handler_add(ECORE_CON_EVENT_CLIENT_WRITE,
+                           (Ecore_Event_Handler_Cb)_client_data_written, NULL);
 
    //set up callbacks for the parser
    _parser_settings.on_message_begin = NULL;

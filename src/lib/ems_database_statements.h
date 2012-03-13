@@ -113,6 +113,10 @@
  "FROM file "            \
  "WHERE file_path = ?;"
 
+#define SELECT_FILE_FROM_ID \
+ "SELECT file_path "        \
+ "FROM file "               \
+ "WHERE file_id = ?;"
 
 /******************************************************************************/
 /*                                                                            */
