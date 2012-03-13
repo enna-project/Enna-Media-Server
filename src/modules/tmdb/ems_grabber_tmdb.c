@@ -171,6 +171,7 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
         if (req->end_cb)
           req->end_cb(req->data, req->filename);
         eina_hash_del(_hash_req, req->ec_url, req);
+        ecore_con_url_free(req->ec_url);
         return EINA_FALSE;
      }
 
@@ -233,6 +234,7 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
               if (req->end_cb)
                   req->end_cb(req->data, req->filename);
               eina_hash_del(_hash_req, req->ec_url, req);
+              ecore_con_url_free(req->ec_url);
               return EINA_FALSE;
            }
          else
@@ -248,6 +250,7 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
 
    if (req->end_cb)
      req->end_cb(req->data, req->filename);
+   ecore_con_url_free(req->ec_url);
    eina_hash_del(_hash_req, req->ec_url, req);
 
    return EINA_FALSE;
