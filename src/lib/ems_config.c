@@ -58,13 +58,23 @@ ems_config_filename_get(void)
      return filename;
 
    snprintf(tmp, sizeof(tmp), "%s/.config/enna-media-server/%s", getenv("HOME"), EMS_CONFIG_FILE);
-   return eina_stringshare_add(tmp);
+   filename =  eina_stringshare_add(tmp);
+   return filename;
 }
 
 static const char *
 ems_config_dirname_get(void)
 {
-   return ecore_file_dir_get(ems_config_filename_get());
+   static const char *dirname = NULL;
+   char *tmp;
+   if (dirname)
+       return dirname;
+
+   tmp = ecore_file_dir_get(ems_config_filename_get());
+   dirname = eina_stringshare_add(tmp);
+   free(tmp);
+
+   return tmp;
 }
 
 static const char *
@@ -77,14 +87,24 @@ ems_config_cache_filename_get(void)
      return filename;
 
    snprintf(tmp, sizeof(tmp), "%s/.cache/enna-media-server/%s", getenv("HOME"), EMS_CONFIG_FILE);
+   filename = eina_stringshare_add(tmp);
 
-   return eina_stringshare_add(tmp);
+   return filename;
 }
 
 static const char *
 ems_config_cache_dirname_get(void)
 {
-   return ecore_file_dir_get(ems_config_cache_filename_get());
+   static const char *dirname = NULL;
+   char *tmp;
+   if (dirname)
+       return dirname;
+
+   tmp = ecore_file_dir_get(ems_config_cache_filename_get());
+   dirname = eina_stringshare_add(tmp);
+   free(tmp);
+
+   return tmp;
 }
 
 static const char *
@@ -97,8 +117,9 @@ ems_config_default_filename_get(void)
      return filename;
 
    snprintf(tmp, sizeof(tmp), "%s/%s", PACKAGE_DATA_DIR, EMS_CONFIG_FILE);
+   filename = eina_stringshare_add(tmp);
 
-   return eina_stringshare_add(tmp);
+   return filename;
 }
 
 static Eet_Data_Descriptor *
