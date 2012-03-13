@@ -490,6 +490,7 @@ ems_stream_server_shutdown(void)
    ecore_event_handler_del(_handler_add);
    ecore_event_handler_del(_handler_del);
    ecore_event_handler_del(_handler_data);
+   ecore_event_handler_del(_handler_write);
 }
 
 
