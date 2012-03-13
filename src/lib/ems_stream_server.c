@@ -310,7 +310,7 @@ _client_data(void *data __UNUSED__, int type __UNUSED__, Ecore_Con_Event_Client_
           {
              /* handle new protocol */
              INF("Protocol Upgrade not supported");
-          } 
+          }
         else if (nparsed != ev->size)
           {
              /* Handle error. Usually just close the connection. */
@@ -396,7 +396,7 @@ _stream_server_request_process(Ems_Stream_Client *client)
 
         cpt++;
      }
-       
+
    if (err || !file_path)
      {
         ecore_con_client_send(client->client, error400, strlen(error400));
@@ -437,7 +437,7 @@ _stream_server_request_process(Ems_Stream_Client *client)
 
              return;
           }
- 
+
         ret = _parse_range(range + 6, &range_start, &range_end, client->file_size);
 
         if (ret == 1)
@@ -529,7 +529,7 @@ _parser_header_field(http_parser *parser, const char *at, size_t length)
 
    if (client->header_value && client->header_field)
      {
-        eina_hash_add(client->request_headers, 
+        eina_hash_add(client->request_headers,
                       eina_strbuf_string_get(client->header_field),
                       eina_stringshare_add(eina_strbuf_string_get(client->header_value)));
 
@@ -572,7 +572,7 @@ _parser_headers_complete(http_parser *parser)
 
    if (client->header_value && client->header_field)
      {
-        eina_hash_add(client->request_headers, 
+        eina_hash_add(client->request_headers,
                       eina_strbuf_string_get(client->header_field),
                       eina_stringshare_add(eina_strbuf_string_get(client->header_value)));
 
@@ -651,11 +651,11 @@ Eina_Bool
 ems_stream_server_init(void)
 {
    _server = ecore_con_server_add(ECORE_CON_REMOTE_TCP,
-                                  "0.0.0.0", 
-                                  ems_config->port_stream, 
+                                  "0.0.0.0",
+                                  ems_config->port_stream,
                                   NULL);
 
-   _handler_add = ecore_event_handler_add(ECORE_CON_EVENT_CLIENT_ADD, 
+   _handler_add = ecore_event_handler_add(ECORE_CON_EVENT_CLIENT_ADD,
                            (Ecore_Event_Handler_Cb)_client_add, NULL);
    _handler_del = ecore_event_handler_add(ECORE_CON_EVENT_CLIENT_DEL,
                            (Ecore_Event_Handler_Cb)_client_del, NULL);
