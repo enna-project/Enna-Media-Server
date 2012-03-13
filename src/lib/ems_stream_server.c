@@ -54,12 +54,33 @@ static const char *error400 = "HTTP/1.1 400 Bad Request\r\n"
                               "</body>"
                               "</html>";
 
+static const char *error416 = "HTTP/1.1 416 Requested Range Not Satisfiable\r\n"
+                              "Connection: close\r\n"
+                              "Content-Type: text/html\r\n\r\n"
+                              "<html>"
+                              "<head>"
+                              "<title>416 Requested Range Not Satisfiable</title>"
+                              "</head>"
+                              "<body>"
+                              "<h1>Enna Media Server - Bad Range Request</h1>"
+                              "<p>The requested range is not satisfiable.</p>"
+                              "</body>"
+                              "</html>";
+
 static const char *responseData = "HTTP/1.0 200 OK\r\n"
                                   "Content-Type: %s\r\n"
-//                                  "Accept-Ranges: bytes\r\n"
+                                  "Accept-Ranges: bytes\r\n"
                                   "Content-Length: %ld\r\n"
                                   "Connection: Close\r\n"
                                   "Server: Enna-Media-Server\r\n\r\n";
+
+static const char *responseRange = "HTTP/1.1 206 Partial Content\r\n"
+                                   "Content-Type: %s\r\n"
+                                   "Accept-Ranges: bytes\r\n"
+                                   "Content-Range: %ld-%ld/%ld\r\n"
+                                   "Content-Length: %ld\r\n"
+                                   "Connection: Close\r\n"
+                                   "Server: Enna-Media-Server\r\n\r\n";
 
 static Ecore_Con_Server *_server = NULL;
 
@@ -105,6 +126,112 @@ static int _parser_message_complete(http_parser *parser);
 static void _stream_client_free(Ems_Stream_Client *client);
 static void _stream_server_request_process(Ems_Stream_Client *client);
 static void _stream_request_data_send(Ems_Stream_Client *client);
+
+/**
+ * partly took from lighttp
+ * modified for ems
+ */
+static int
+_parse_range(const char *s, long int *start, long int *end, long int filesize)
+{
+   int error = 0;
+   const char *minus;
+
+   for (;*s && !error && (minus = strchr(s, '-')) != NULL;)
+     {
+        char *err;
+        long int la, le;
+
+        /* -<end> */
+        if (s == minus)
+          {
+             le = strtoll(s, &err, 10);
+
+             if (*err == '\0' && le != 0)
+               {
+                  s = err;
+
+                  *start = filesize + le;
+                  *end = filesize - 1;
+               }
+             else
+               {
+                  error = 1;
+               }
+          }
+        /* <start>- */
+        else if (*(minus + 1) == '\0')
+          {
+             la = strtoll(s, &err, 10);
+
+             if (err == minus)
+               {
+                  if (*(err + 1) == '\0')
+                    {
+                       s = err + 1;
+
+                       *start = la;
+                       *end = filesize - 1;
+                    }
+                  else
+                    {
+                       error = 1;
+                    }
+               }
+             else
+               {
+                  error = 1;
+               }
+          }
+        /* <start>-<stop> */
+        else
+          {
+             la = strtoll(s, &err, 10);
+
+             if (err == minus)
+               {
+                  le = strtoll(minus+1, &err, 10);
+
+                  if (la > le)
+                    {
+                       error = 1;
+                       continue;
+                    }
+
+                  if (*err == '\0')
+                    {
+                       s = err;
+
+                       *start = la;
+                       *end = le;
+                    }
+                  else
+                    {
+                       error = 1;
+                    }
+               }
+             else
+               {
+                  error = 1;
+               }
+          }
+     }
+
+   /* check boundaries */
+   if (!error)
+     {
+        if (*start < 0)
+          *start = 0;
+
+        if (*end > filesize - 1)
+          *end = filesize - 1;
+
+        if (*start > filesize - 1)
+          error = 1;
+     }
+
+   return error;
+}
 
 static void
 _header_free(void *data)
@@ -236,10 +363,12 @@ _stream_server_request_process(Ems_Stream_Client *client)
 {
    Eina_List *l;
    const char *path, *file_path = NULL;
-   int cpt = 0;
+   int cpt = 0, ret;
    long file_id = -1;
    Eina_Bool err = EINA_FALSE;
    Eina_Strbuf *headers;
+   long int range_start = 0, range_end = 0;
+   const char *range;
 
    if (!client)
      return;
@@ -278,17 +407,67 @@ _stream_server_request_process(Ems_Stream_Client *client)
      }
 
    DBG("Requested file: %s", file_path);
+
    client->file_stream = eina_file_open(file_path, EINA_FALSE);
-   client->file_map = eina_file_map_all(client->file_stream, EINA_FILE_SEQUENTIAL);
    client->file_size = eina_file_size_get(client->file_stream);
+   client->file_map = eina_file_map_all(client->file_stream, EINA_FILE_SEQUENTIAL);
 
-   //prepare headers and send them
-   headers = eina_strbuf_new();
-   //FIXME: get correct file mime type
-   eina_strbuf_append_printf(headers, responseData, "video/x-msvideo", client->file_size);
-   ecore_con_client_send(client->client, eina_strbuf_string_get(headers), eina_strbuf_length_get(headers));
-   eina_strbuf_free(headers);
+   //Check if that's a Range request
+   range = eina_hash_find(client->request_headers, "range");
+   if (range)
+     {
+        if (!eina_str_has_prefix(range, "bytes=") ||
+            strchr(range + 6, '-') == NULL)
+          {
+             ecore_con_client_send(client->client, error416, strlen(error416));
+             // close connection after data has been sent
+             client->request_state = REQ_CLOSE;
 
+             return;
+          }
+ 
+        ret = _parse_range(range + 6, &range_start, &range_end, client->file_size);
+
+        if (ret == 1)
+          {
+             ecore_con_client_send(client->client, error416, strlen(error416));
+             // close connection after data has been sent
+             client->request_state = REQ_CLOSE;
+
+             return;
+          }
+
+        //prepare headers and send them
+        headers = eina_strbuf_new();
+        //FIXME: get correct file mime type
+        eina_strbuf_append_printf(headers,
+                                  responseRange,
+                                  "video/x-msvideo",
+                                  range_start,
+                                  range_end,
+                                  client->file_size,
+                                  range_end - range_start - 1);
+        DBG("Headers: \n%s", eina_strbuf_string_get(headers));
+        ecore_con_client_send(client->client, eina_strbuf_string_get(headers), eina_strbuf_length_get(headers));
+        eina_strbuf_free(headers);
+
+        //Go to the requested offset
+        client->data_offset += range_start;
+     }
+   else
+     {
+        //prepare headers and send them
+        headers = eina_strbuf_new();
+        //FIXME: get correct file mime type
+        eina_strbuf_append_printf(headers,
+                                  responseData,
+                                  "video/x-msvideo",
+                                  client->file_size);
+        ecore_con_client_send(client->client, eina_strbuf_string_get(headers), eina_strbuf_length_get(headers));
+        eina_strbuf_free(headers);
+     }
+
+   //Send next chunk of data
    _stream_request_data_send(client);
 }
 
@@ -333,6 +512,7 @@ _stream_client_free(Ems_Stream_Client *client)
 int
 _parser_header_field(http_parser *parser, const char *at, size_t length)
 {
+   char *field;
    Ems_Stream_Client *client = parser->data;
 
    if (client->header_value && client->header_field)
@@ -351,6 +531,10 @@ _parser_header_field(http_parser *parser, const char *at, size_t length)
      client->header_field = eina_strbuf_new();
 
    eina_strbuf_append_length(client->header_field, at, length);
+   field = eina_strbuf_string_steal(client->header_field);
+   eina_str_tolower(&field);
+   eina_strbuf_append(client->header_field, field);
+   free(field);
 
    return 0;
 }
