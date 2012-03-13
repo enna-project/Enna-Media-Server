@@ -275,14 +275,19 @@ ems_grabber_grab(const char *filename, Ems_Media_Type type, Ems_Grabber_End_Cb e
    DBG("Grab %s of type %d", filename, type);
 
    tmp = ems_utils_decrapify(filename);
-   search = ems_utils_escape_string(tmp);
-   free(tmp);
+   if (tmp)
+     {
+        search = ems_utils_escape_string(tmp);
+        free(tmp);
+        if (!search)
+          return;
+     }
 
    snprintf(url, sizeof (url), EMS_TMDB_QUERY_SEARCH,
             EMS_TMDB_API_KEY, search);
-   free(search);
 
    DBG("Search for %s", url);
+
    ec_url = ecore_con_url_new(url);
    if (!ec_url)
      {
@@ -293,6 +298,8 @@ ems_grabber_grab(const char *filename, Ems_Media_Type type, Ems_Grabber_End_Cb e
    req = calloc(1, sizeof(Ems_Tmdb_Req));
    req->filename = eina_stringshare_add(filename);
    req->search = eina_stringshare_add(search);
+   if (search)
+     free(search);
    req->ec_url = ec_url;
    req->end_cb = end_cb;
    req->data = data;
