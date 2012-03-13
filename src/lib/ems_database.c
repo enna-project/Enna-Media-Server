@@ -467,7 +467,7 @@ ems_database_file_get(Ems_Database *db, int item_id)
         res = sqlite3_step (stmt);
         if (res == SQLITE_ROW)
           {
-             file = (const char*)sqlite3_column_text (stmt, 0);
+              file = eina_stringshare_add(sqlite3_column_text (stmt, 0));
           }
         else if (res == SQLITE_DONE)
           {
@@ -486,6 +486,6 @@ ems_database_file_get(Ems_Database *db, int item_id)
    if (err < 0)
      ERR("%s", sqlite3_errmsg(db->db));
 
-   return eina_stringshare_add(file);
+   return file;
 }
 
