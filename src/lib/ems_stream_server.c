@@ -409,6 +409,18 @@ _stream_server_request_process(Ems_Stream_Client *client)
    DBG("Requested file: %s", file_path);
 
    client->file_stream = eina_file_open(file_path, EINA_FALSE);
+   if (!client->file_stream)
+     {
+        perror("eina_file_open");
+        ERR("Failed to open file '%s'", file_path);
+
+        ecore_con_client_send(client->client, error400, strlen(error400));
+        // close connection after data has been sent
+        client->request_state = REQ_CLOSE;
+
+        return;
+     }
+
    client->file_size = eina_file_size_get(client->file_stream);
    client->file_map = eina_file_map_all(client->file_stream, EINA_FILE_SEQUENTIAL);
 

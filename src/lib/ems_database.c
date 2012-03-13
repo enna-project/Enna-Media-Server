@@ -486,6 +486,6 @@ ems_database_file_get(Ems_Database *db, int item_id)
    if (err < 0)
      ERR("%s", sqlite3_errmsg(db->db));
 
-   return file;
+   return eina_stringshare_add(file);
 }
 
