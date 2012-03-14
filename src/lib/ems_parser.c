@@ -78,11 +78,9 @@ _idler_cb(void *data)
              if (grab)
                {
                   const char *f = eina_list_nth(_files, 0);
-                  INF("Before Grab");
                   grab(f,
                        EMS_MEDIA_TYPE_VIDEO,
                        _end_grab_cb, NULL);
-                  INF("After Grab");
                }
              break;
           }

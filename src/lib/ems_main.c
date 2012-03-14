@@ -71,6 +71,7 @@ int ems_init(const char *config_file)
    if (!eina_init())
      return --_ems_init_count;
 
+
    _ems_log_dom_global = eina_log_domain_register("ems", EMS_DEFAULT_LOG_COLOR);
    if (_ems_log_dom_global < 0)
      {

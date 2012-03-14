@@ -66,7 +66,8 @@
  "CREATE TABLE IF NOT EXISTS file ( "                     \
    "file_id          INTEGER PRIMARY KEY AUTOINCREMENT, " \
    "file_path        TEXT    NOT NULL UNIQUE, "           \
-   "file_mtime       INTEGER NOT NULL"                    \
+   "file_mtime       INTEGER NOT NULL,"                   \
+   "scan_magic       INTEGER NOT NULL"                    \
  ");"
 
 #define CREATE_TABLE_META                                 \
@@ -118,6 +119,11 @@
  "FROM file "               \
  "WHERE file_id = ?;"
 
+#define SELECT_FILE_MTIME                       \
+  "SELECT file_mtime "                          \
+  "FROM file "                                  \
+  "WHERE file_path = ?;"
+
 /******************************************************************************/
 /*                                                                            */
 /*                                  Insert                                    */
@@ -132,8 +138,9 @@
 #define INSERT_FILE           \
  "INSERT "                    \
  "INTO file (file_path, "     \
- "           file_mtime) "    \
- "VALUES (?, ?);"
+ "           file_mtime,"     \
+ "           scan_magic) "    \
+ "VALUES (?, ?, ?);"
 
 #define INSERT_META        \
  "INSERT "                 \
@@ -151,5 +158,16 @@
     "INTO assoc_file_metadata (file_id, meta_id, data_id) "             \
     "VALUES (?, ?, ?);"
 
+/******************************************************************************/
+/*                                                                            */
+/*                                  Update                                    */
+/*                                                                            */
+/******************************************************************************/
+
+#define UPDATE_FILE                             \
+  "UPDATE file "                                \
+  "SET file_mtime      = ?, "                   \
+  "    scan_magic      = ? "                    \
+  "WHERE file_path = ?;"
 
 #endif /* _EMS_DATABASE_STATEMENTS_H_ */

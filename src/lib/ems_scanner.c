@@ -153,7 +153,7 @@ _file_main_cb(void *data, Eio_File *handler __UNUSED__, const Eina_File_Direct_I
      {
         const char *type;
         struct stat st;
-
+        int64_t mtime;
         switch (dir->type)
           {
            case EMS_MEDIA_TYPE_VIDEO:
@@ -171,23 +171,40 @@ _file_main_cb(void *data, Eio_File *handler __UNUSED__, const Eina_File_Direct_I
               break;
           }
 
-        //DBG("[FILE] [%s] %s", type, info->path);
         eina_stringshare_del(type);
-        /* TODO : add this file only if it doesn't exists in the db */
-        _scanner->scan_files = eina_list_append(_scanner->scan_files,
-                                                eina_stringshare_add(info->path));
-
         stat(info->path, &st);
 
-        ems_database_file_insert(ems_config->db, info->path, (int64_t)st.st_mtime, dir->type);
-        ems_parser_grab(info->path, dir->type);
+        mtime = ems_database_file_mtime_get(ems_config->db, info->path);
+
+        if (mtime < 0)
+          {
+             /* File doesn't exists in the db, insert a new one, start time is here a markup, once the scan is finished we do a request on on this value to see which files changed, these files can be then removed from the db, as they are removed on the filesystem*/
+             DBG("Insert new file %s", info->path);
+             ems_database_file_insert(ems_config->db, info->path, (int64_t)st.st_mtime, dir->type, _scanner->start_time);
+             ems_parser_grab(info->path, dir->type);
+          }
+        else
+          {
+             DBG("Update new file %s", info->path);
+             ems_database_file_update(ems_config->db, info->path, (int64_t)st.st_mtime, dir->type, _scanner->start_time);
+             /* we grab only file who changed since the last scan */
+             if (mtime != (int64_t)st.st_mtime)
+               {
+                  INF("File changed on disk %s", info->path);
+                  ems_parser_grab(info->path, dir->type);
+               }
+
+          }
+
+        /* Keep track of files, this list should be remobed */
+        _scanner->scan_files = eina_list_append(_scanner->scan_files,
+                                                eina_stringshare_add(info->path));
+        /* Commit db each 100 files ? does it really works ?*/
         if (!eina_list_count(_scanner->scan_files) % 100)
           {
              ems_database_transaction_end(ems_config->db);
              ems_database_transaction_begin(ems_config->db);
           }
-        /* TODO: add this file in the database */
-        /* TODO: Add this file in the scanner list */
      }
 }
 
@@ -203,7 +220,8 @@ _file_done_cb(void *data __UNUSED__, Eio_File *handler __UNUSED__)
         Eina_List *files;
 
         ems_database_transaction_end(ems_config->db);
-        //ems_database_release(ems_config->db);
+        /* TODO: get the list of deleted file */
+        
 
 	/* Schedule the next scan */
 	if (_scanner->schedule_timer)

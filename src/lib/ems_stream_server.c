@@ -522,7 +522,7 @@ _stream_request_data_send(Ems_Stream_Client *client)
                  client->file_map_end - client->file_map_start,
                  client->file_size);
 
-        client->file_map = eina_file_map_new(client->file_stream, 
+        client->file_map = eina_file_map_new(client->file_stream,
                                              EINA_FILE_SEQUENTIAL,
                                              client->file_map_start,
                                              client->file_map_end - client->file_map_start);
