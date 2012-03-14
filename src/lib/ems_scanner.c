@@ -181,7 +181,7 @@ _file_main_cb(void *data, Eio_File *handler __UNUSED__, const Eina_File_Direct_I
              /* File doesn't exists in the db, insert a new one, start time is here a markup, once the scan is finished we do a request on on this value to see which files changed, these files can be then removed from the db, as they are removed on the filesystem*/
              DBG("Insert new file %s", info->path);
              ems_database_file_insert(ems_config->db, info->path, (int64_t)st.st_mtime, dir->type, _scanner->start_time);
-             ems_parser_grab(info->path, dir->type);
+             ems_parser_grab(info->path);
           }
         else
           {
@@ -191,7 +191,7 @@ _file_main_cb(void *data, Eio_File *handler __UNUSED__, const Eina_File_Direct_I
              if (mtime != (int64_t)st.st_mtime)
                {
                   INF("File changed on disk %s", info->path);
-                  ems_parser_grab(info->path, dir->type);
+                  ems_parser_grab(info->path);
                }
 
           }

@@ -137,26 +137,10 @@ ems_parser_shutdown(void)
  *============================================================================*/
 
 void
-ems_parser_grab(const char *filename, Ems_Media_Type type)
+ems_parser_grab(const char *filename)
 {
-    Eina_Array_Iterator iterator;
-    Eina_Module *m;
-    unsigned int i;
-    void (*grab)(const char *filename, Ems_Media_Type type,
-                 void (*Ems_Grabber_End_Cb)(void *data, const char *filename),
-                 void *data
-        );
-
-
     _files = eina_list_append(_files, eina_stringshare_add(filename));
     if (!_queue_idler)
         _queue_idler = ecore_idler_add(_idler_cb, NULL);
 
-    /* EINA_ARRAY_ITER_NEXT(_modules, i, m, iterator) */
-    /*   { */
-    /*      grab = eina_module_symbol_get(m, "ems_grabber_grab"); */
-    /*      if (grab && eina_list_count(_files) == 1) */
-    /*        grab(filename, type, _end_grab_cb, NULL); */
-    /*      break; */
-    /*   } */
 }

@@ -34,6 +34,7 @@
 #include "ems_private.h"
 #include "ems_database_statements.h"
 #include "ems_database.h"
+#include "ems_config.h"
 
 /*============================================================================*
  *                                  Local                                     *
@@ -120,7 +121,7 @@ _data_insert(Ems_Database *db, Eina_Value *value, int64_t lang_id)
 static int64_t
 _meta_insert(Ems_Database *db, const char *meta)
 {
-   int res, err = -1;
+   int res;
    int64_t val = 0;
 
    if (!db || !db->db || !meta)
@@ -523,7 +524,7 @@ ems_database_file_get(Ems_Database *db, int item_id)
         res = sqlite3_step (stmt);
         if (res == SQLITE_ROW)
           {
-              file = eina_stringshare_add(sqlite3_column_text (stmt, 0));
+             file = eina_stringshare_add((const char *)sqlite3_column_text(stmt, 0));
           }
         else if (res == SQLITE_DONE)
           {
