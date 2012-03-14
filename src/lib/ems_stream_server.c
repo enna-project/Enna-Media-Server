@@ -37,6 +37,9 @@
 
 #include "http_parser.h"
 
+#define EMS_STREAM_CHUNK_SIZE   65536   //64Kb
+#define EMS_FILE_MAP_SIZE       262144*1024  //256Mb
+
 /*============================================================================*
  *                                  Local                                     *
  *============================================================================*/
@@ -112,6 +115,8 @@ struct _Ems_Stream_Client
    enum { REQ_NONE = 0, REQ_CLOSE, REQ_SEND_DATA } request_state;
    Eina_File *file_stream;
    void *file_map;
+   long file_map_start;
+   long file_map_end;
    long file_size;
    int data_offset;
 };
@@ -424,7 +429,6 @@ _stream_server_request_process(Ems_Stream_Client *client)
      }
    eina_stringshare_del(file_path);
    client->file_size = eina_file_size_get(client->file_stream);
-   client->file_map = eina_file_map_all(client->file_stream, EINA_FILE_SEQUENTIAL);
 
    //Check if that's a Range request
    range = eina_hash_find(client->request_headers, "range");
@@ -490,16 +494,65 @@ _stream_request_data_send(Ems_Stream_Client *client)
 {
    int data_size;
 
+   long int end = client->data_offset + EMS_STREAM_CHUNK_SIZE;
+   if (end >= client->file_size)
+     end = client->file_size;
+
+   if (client->data_offset < client->file_map_start ||
+       client->data_offset >= client->file_map_end ||
+       end >= client->file_map_end ||
+       !client->file_map)
+     {
+        //Mapping is not in the requested range, get a new map
+        if (client->file_map)
+          {
+             eina_file_map_free(client->file_stream, client->file_map);
+             client->file_map = NULL;
+          }
+
+        //Calc new map boundaries
+        client->file_map_start = client->data_offset;
+        client->file_map_end = client->file_map_start + EMS_FILE_MAP_SIZE;
+        if (client->file_map_start < 0) client->file_map_start = 0;
+        if (client->file_map_start >= client->file_size - 1) client->file_map_start = client->file_size - 2;
+        if (client->file_map_end >= client->file_size) client->file_map_end = client->file_size - 1;
+        
+        DBG("Try to map file at offset: %ld, for size: %ld (filesize: %ld)",
+                 client->file_map_start,
+                 client->file_map_end - client->file_map_start,
+                 client->file_size);
+
+        client->file_map = eina_file_map_new(client->file_stream, 
+                                             EINA_FILE_SEQUENTIAL,
+                                             client->file_map_start,
+                                             client->file_map_end - client->file_map_start);
+
+        if (!client->file_map)
+          {
+             ERR("Error mapping file at offset: %ld, for size: %ld (filesize: %ld)",
+                 client->file_map_start,
+                 client->file_map_end - client->file_map_start,
+                 client->file_size);
+
+             //Just close the connection
+             ecore_con_client_del(client->client);
+
+             return;
+          }
+     }
+
    //send the next chunk of data
-   data_size = 65536;
+   data_size = EMS_STREAM_CHUNK_SIZE;
    client->request_state = REQ_SEND_DATA;
    if (client->data_offset + data_size >= client->file_size)
    {
-     data_size = client->file_size - client->data_offset;
-     client->request_state = REQ_CLOSE; //this is the last chunk of data
+      data_size = client->file_size - client->data_offset;
+      client->request_state = REQ_CLOSE; //this is the last chunk of data
    }
    DBG("Sending %d bytes of data to client (%p), map: %p offset: %d", data_size, client, client->file_map, client->data_offset);
-   ecore_con_client_send(client->client, client->file_map + client->data_offset, data_size);
+   ecore_con_client_send(client->client,
+                         client->file_map + (client->data_offset - client->file_map_start),
+                         data_size);
 
    client->data_offset += data_size;
 }
