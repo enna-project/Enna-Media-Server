@@ -262,7 +262,7 @@ ems_scanner_init(void)
      return EINA_FALSE;
 
    if (!ems_config->db)
-       ems_config->db = ems_database_new("test.db");
+       ems_config->db = ems_database_new(NULL);
 
    if (!ems_config->db)
      {

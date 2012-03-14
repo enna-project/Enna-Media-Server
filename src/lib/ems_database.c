@@ -176,9 +176,6 @@ ems_database_new(const char *filename)
    int res;
    Eina_Bool exists;
 
-   if (!filename)
-     return NULL;
-
    db = calloc(1, sizeof(Ems_Database));
    if (!db)
      return NULL;
@@ -187,16 +184,28 @@ ems_database_new(const char *filename)
    if (res != SQLITE_OK)
      return NULL;
 
-   exists = ecore_file_exists(filename);
+   if (!filename)
+     {
+        char tmp[PATH_MAX];
+        snprintf(tmp, sizeof(tmp), "%s/%s", ems_config_cache_dirname_get(), EMS_DATABASE_FILE);
+        db->filename = eina_stringshare_add(tmp);
+     }
+   else
+     {
+        db->filename = eina_stringshare_add(filename);
+     }
 
-   res = sqlite3_open(filename, &db->db);
+
+   exists = ecore_file_exists(db->filename);
+
+   INF("Database file : %s", db->filename);
+
+   res = sqlite3_open(db->filename, &db->db);
    if (res)
      {
         ERR("Unable to open database: %s", sqlite3_errmsg(db->db));
         goto err;
      }
-
-   db->filename = eina_stringshare_add(filename);
 
    /* Create table in the new database*/
    if (!exists)

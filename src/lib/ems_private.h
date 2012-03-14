@@ -66,6 +66,7 @@ extern int _ems_log_dom_global;
 
 
 #define EMS_CONFIG_FILE "enna-media-server.conf"
+#define EMS_DATABASE_FILE "medias.db"
 #define EMS_DEFAULT_PORT 1337
 #define EMS_DEFAULT_NAME "Enna Media Server"
 #define EMS_CONFIG_VERSION 1
@@ -131,6 +132,7 @@ struct _Ems_Config
    const char *music_extensions;
    const char *photo_extensions;
    const char *blacklist;
+   const char *cache_path;
    Eina_List *video_directories;
    Eina_List *tvshow_directories;
    Eina_List *music_directories;
