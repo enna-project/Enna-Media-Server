@@ -74,7 +74,9 @@ struct _Ems_Database
    sqlite3_stmt *file_update_stmt;
    sqlite3_stmt *file_get_stmt;
    sqlite3_stmt *fileid_get_stmt;
+   sqlite3_stmt *file_delete_stmt;
    sqlite3_stmt *filemtime_stmt;
+   sqlite3_stmt *filemagic_stmt;
    sqlite3_stmt *data_stmt;
    sqlite3_stmt *meta_stmt;
    sqlite3_stmt *assoc_file_meta_stmt;
@@ -301,6 +303,12 @@ ems_database_prepare(Ems_Database *db)
         ERR("%s", sqlite3_errmsg (db->db));
         return;
      }
+   res = sqlite3_prepare_v2(db->db, DELETE_FILE, -1, &db->file_delete_stmt, NULL);
+   if (res != SQLITE_OK)
+     {
+        ERR("%s", sqlite3_errmsg (db->db));
+        return;
+     }
    res = sqlite3_prepare_v2(db->db, SELECT_FILE_FROM_ID, -1, &db->fileid_get_stmt, NULL);
    if (res != SQLITE_OK)
      {
@@ -308,6 +316,12 @@ ems_database_prepare(Ems_Database *db)
         return;
      }
    res = sqlite3_prepare_v2(db->db, SELECT_FILE_MTIME, -1, &db->filemtime_stmt, NULL);
+   if (res != SQLITE_OK)
+     {
+        ERR("%s", sqlite3_errmsg (db->db));
+        return;
+     }
+   res = sqlite3_prepare_v2(db->db, SELECT_FILE_SCAN_MAGIC, -1, &db->filemagic_stmt, NULL);
    if (res != SQLITE_OK)
      {
         ERR("%s", sqlite3_errmsg (db->db));
@@ -354,10 +368,12 @@ ems_database_release(Ems_Database *db)
    sqlite3_finalize(db->file_stmt);
    sqlite3_finalize(db->file_update_stmt);
    sqlite3_finalize(db->file_get_stmt);
+   sqlite3_finalize(db->file_delete_stmt);
    sqlite3_finalize(db->data_stmt);
    sqlite3_finalize(db->meta_stmt);
    sqlite3_finalize(db->assoc_file_meta_stmt);
    sqlite3_finalize(db->filemtime_stmt);
+   sqlite3_finalize(db->filemagic_stmt);
    sqlite3_finalize(db->begin_stmt);
    sqlite3_finalize(db->end_stmt);
 }
@@ -568,4 +584,83 @@ ems_database_file_mtime_get(Ems_Database *db, const char *filename)
   if (err < 0)
     ERR("%s", sqlite3_errmsg(db->db));
   return val;
+}
+
+int64_t
+ems_database_file_delete(Ems_Database *db, const char *filename)
+{
+  int res, err = -1;
+  int64_t val = -1;
+
+  if (!filename || !db || !db->db)
+    return -1;
+
+  EMS_DB_BIND_TEXT_OR_GOTO(db->file_delete_stmt, 1, filename, out);
+
+  res = sqlite3_step(db->file_delete_stmt);
+  if (res == SQLITE_ROW)
+    val = sqlite3_column_int64(db->file_delete_stmt, 0);
+
+  sqlite3_reset(db->file_delete_stmt);
+  sqlite3_clear_bindings(db->file_delete_stmt);
+  err = 0;
+ out:
+  if (err < 0)
+    ERR("%s", sqlite3_errmsg(db->db));
+  return val;
+}
+
+
+void
+ems_database_deleted_files_remove(Ems_Database *db, int64_t magic)
+{
+   int res, err = -1;
+   sqlite3_stmt *stmt;
+   Eina_List *files = NULL;
+   Eina_List *l;
+   const char *file;
+
+   if (!db || !db->db)
+     return;
+
+   stmt= db->filemagic_stmt;
+
+
+   EMS_DB_BIND_INT64_OR_GOTO(stmt, 1, magic, out);
+
+   while (1)
+     {
+
+        res = sqlite3_step (stmt);
+        if (res == SQLITE_ROW)
+          {
+             file = eina_stringshare_add((const char *)sqlite3_column_text(stmt, 0));
+             files = eina_list_append(files, file);
+          }
+        else if (res == SQLITE_DONE)
+          {
+             err = 0;
+             break;
+          }
+        else
+          {
+             err = res;
+          }
+     }
+
+   sqlite3_reset(stmt);
+   sqlite3_clear_bindings(stmt);
+   err = 0;
+   ems_database_transaction_begin(db);
+   INF("Cleanup DB :");
+   EINA_LIST_FOREACH(files, l, file)
+     {
+        ems_database_file_delete(db, file);
+        INF("Removed %s", file);
+     }
+   ems_database_transaction_end(db);
+ out:
+   if (err < 0)
+     ERR("%s", sqlite3_errmsg(db->db));
+   return;
 }

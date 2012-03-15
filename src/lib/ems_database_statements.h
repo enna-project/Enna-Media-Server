@@ -124,6 +124,11 @@
   "FROM file "                                  \
   "WHERE file_path = ?;"
 
+#define SELECT_FILE_SCAN_MAGIC                  \
+  "SELECT file_path,file_id "                   \
+  "FROM file "                                  \
+  "WHERE scan_magic <> ?;"
+
 /******************************************************************************/
 /*                                                                            */
 /*                                  Insert                                    */
@@ -169,5 +174,17 @@
   "SET file_mtime      = ?, "                   \
   "    scan_magic      = ? "                    \
   "WHERE file_path = ?;"
+
+/******************************************************************************/
+/*                                                                            */
+/*                                  Delete                                    */
+/*                                                                            */
+/******************************************************************************/
+
+#define DELETE_FILE  \
+ "DELETE FROM file " \
+ "WHERE file_path = ?;"
+
+
 
 #endif /* _EMS_DATABASE_STATEMENTS_H_ */
