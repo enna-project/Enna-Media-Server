@@ -210,6 +210,7 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
                    goto end_req;
                 }
 
+              ems_database_transaction_begin(ems_config->db);
               GETVAL(score, valuedouble, EINA_VALUE_TYPE_DOUBLE);
               GETVAL(popularity, valueint, EINA_VALUE_TYPE_INT);
               GETVAL(translated, valueint, EINA_VALUE_TYPE_INT);
@@ -229,6 +230,7 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
               GETVALSTR(released, valuestring, EINA_VALUE_TYPE_STRINGSHARE);
               GETVAL(version, valueint, EINA_VALUE_TYPE_INT);
               GETVALSTR(last_modified_at, valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+              ems_database_transaction_end(ems_config->db);
               cJSON_Delete(root);
            end_req:
               if (req->end_cb)
