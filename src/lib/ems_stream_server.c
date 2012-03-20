@@ -27,6 +27,8 @@
 # include <config.h>
 #endif
 
+#include <unistd.h>
+
 #include <Eina.h>
 #include <Ecore.h>
 #include <Ecore_Con.h>
@@ -39,6 +41,8 @@
 
 #define EMS_STREAM_CHUNK_SIZE   65536   //64Kb
 #define EMS_FILE_MAP_SIZE       262144*1024  //256Mb
+
+static long _page_size;
 
 /*============================================================================*
  *                                  Local                                     *
@@ -119,6 +123,7 @@ struct _Ems_Stream_Client
    long file_map_end;
    long file_size;
    int data_offset;
+   long map_offset; //offset from memory page size
 };
 
 static http_parser_settings _parser_settings;
@@ -511,15 +516,18 @@ _stream_request_data_send(Ems_Stream_Client *client)
           }
 
         //Calc new map boundaries
-        client->file_map_start = client->data_offset;
+        client->map_offset = client->data_offset % _page_size;
+        client->file_map_start = client->data_offset - client->map_offset;
         client->file_map_end = client->file_map_start + EMS_FILE_MAP_SIZE;
         if (client->file_map_start < 0) client->file_map_start = 0;
         if (client->file_map_start >= client->file_size - 1) client->file_map_start = client->file_size - 2;
         if (client->file_map_end >= client->file_size) client->file_map_end = client->file_size - 1;
         
-        DBG("Try to map file at offset: %ld, for size: %ld (filesize: %ld)",
+        DBG("Try to map file at offset: %d, map window [%ld (%ld)] (map_offset: %ld) (filesize: %ld)",
+                 client->data_offset,
                  client->file_map_start,
                  client->file_map_end - client->file_map_start,
+                 client->map_offset,
                  client->file_size);
 
         client->file_map = eina_file_map_new(client->file_stream,
@@ -533,6 +541,7 @@ _stream_request_data_send(Ems_Stream_Client *client)
                  client->file_map_start,
                  client->file_map_end - client->file_map_start,
                  client->file_size);
+             ERR("eina_file_map_new: %s", strerror(errno));
 
              //Just close the connection
              ecore_con_client_del(client->client);
@@ -549,7 +558,13 @@ _stream_request_data_send(Ems_Stream_Client *client)
       data_size = client->file_size - client->data_offset;
       client->request_state = REQ_CLOSE; //this is the last chunk of data
    }
-   DBG("Sending %d bytes of data to client (%p), map: %p offset: %d", data_size, client, client->file_map, client->data_offset);
+   DBG("Sending %d bytes at offset %d, map window [%ld (%ld)] (map_offset: %ld)",
+       data_size,
+       client->data_offset,
+       client->file_map_start,
+       client->file_map_end - client->file_map_start,
+       client->map_offset);
+
    ecore_con_client_send(client->client,
                          client->file_map + (client->data_offset - client->file_map_start),
                          data_size);
@@ -705,6 +720,8 @@ _parser_message_complete(http_parser *parser)
 Eina_Bool
 ems_stream_server_init(void)
 {
+   _page_size = sysconf(_SC_PAGESIZE);
+
    _server = ecore_con_server_add(ECORE_CON_REMOTE_TCP,
                                   "0.0.0.0",
                                   ems_config->port_stream,
