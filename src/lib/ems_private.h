@@ -70,7 +70,7 @@ extern int _ems_log_dom_global;
 #define EMS_DEFAULT_PORT 1337
 #define EMS_DEFAULT_NAME "Enna Media Server"
 #define EMS_CONFIG_VERSION 1
-
+#define EMS_DATABASE_VERSION "1"
 #define EMS_SERVER_JSONRPC_API_NAME "_enna_server-jsonrpc._tcp"
 
 #define ENNA_CONFIG_DD_NEW(str, typ)            \
