@@ -42,6 +42,7 @@
 #include "ems_server.h"
 #include "ems_parser.h"
 #include "ems_stream_server.h"
+#include "ems_downloader.h"
 
 /*============================================================================*
  *                                  Local                                     *
@@ -99,7 +100,8 @@ int ems_init(const char *config_file)
      goto shutdown_parser;
    if (!ems_stream_server_init())
      goto shutdown_stream_server;
-
+   if (!ems_downloader_init())
+     goto shutdown_downloader;
 
    INF("Name : %s", ems_config->name);
    INF("Port : %d", ems_config->port);
@@ -112,6 +114,7 @@ int ems_init(const char *config_file)
 
    return _ems_init_count;
 
+ shutdown_downloader:
  shutdown_stream_server:
    ems_stream_server_shutdown();
  shutdown_parser:
