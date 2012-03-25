@@ -28,5 +28,5 @@
 
 char *ems_utils_decrapify(const char *file);
 char *ems_utils_escape_string(const char *string);
-
+Eina_Bool ems_utils_hash_compute(const char *filename, uint64_t *hash, uint64_t *fsize);
 #endif /* _EMS_UTILS_H_ */
