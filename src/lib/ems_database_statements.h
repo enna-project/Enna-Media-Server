@@ -50,10 +50,10 @@
 /******************************************************************************/
 
 #define BEGIN_TRANSACTION                       \
-  "BEGIN;"
+    "BEGIN;"
 
 #define END_TRANSACTION                         \
-  "COMMIT;"
+    "COMMIT;"
 
 /******************************************************************************/
 /*                                                                            */
@@ -61,35 +61,41 @@
 /*                                                                            */
 /******************************************************************************/
 
+#define CREATE_TABLE_INFO                       \
+    "CREATE TABLE IF NOT EXISTS info ( "        \
+    "info_name          TEXT NOT NULL UNIQUE, " \
+    "info_value         TEXT NOT NULL "         \
+    ");"
 
 #define CREATE_TABLE_FILE                                       \
-  "CREATE TABLE IF NOT EXISTS file ( "                          \
-  "file_id          INTEGER PRIMARY KEY AUTOINCREMENT, "        \
-  "file_path        TEXT    NOT NULL UNIQUE, "                  \
-  "file_mtime       INTEGER NOT NULL,"                          \
-  "scan_magic       INTEGER NOT NULL"                           \
-  ");"
+    "CREATE TABLE IF NOT EXISTS file ( "                        \
+    "file_id          INTEGER PRIMARY KEY AUTOINCREMENT, "      \
+    "file_path        TEXT    NOT NULL UNIQUE, "                \
+    "file_uuid        TEXT    NOT NULL, "                       \
+    "file_mtime       INTEGER NOT NULL,"                        \
+    "scan_magic       INTEGER NOT NULL"                         \
+    ");"
 
 #define CREATE_TABLE_META                                       \
-  "CREATE TABLE IF NOT EXISTS meta ( "                          \
-  "meta_id          INTEGER PRIMARY KEY AUTOINCREMENT, "        \
-  "meta_name        TEXT    NOT NULL UNIQUE "                   \
-  ");"
+    "CREATE TABLE IF NOT EXISTS meta ( "                        \
+    "meta_id          INTEGER PRIMARY KEY AUTOINCREMENT, "      \
+    "meta_name        TEXT    NOT NULL UNIQUE "                 \
+    ");"
 
 #define CREATE_TABLE_DATA                                       \
-  "CREATE TABLE IF NOT EXISTS data ( "                          \
-  "data_id          INTEGER PRIMARY KEY AUTOINCREMENT, "        \
-  "data_value       TEXT    NOT NULL UNIQUE, "                  \
-  "_lang_id         INTEGER NULL "                              \
-  ");"
+    "CREATE TABLE IF NOT EXISTS data ( "                        \
+    "data_id          INTEGER PRIMARY KEY AUTOINCREMENT, "      \
+    "data_value       TEXT    NOT NULL UNIQUE, "                \
+    "_lang_id         INTEGER NULL "                            \
+    ");"
 
 #define CREATE_TABLE_ASSOC_FILE_METADATA                \
-  "CREATE TABLE IF NOT EXISTS assoc_file_metadata ( "   \
-  "file_id          INTEGER NOT NULL, "                 \
-  "meta_id          INTEGER NOT NULL, "                 \
-  "data_id          INTEGER NOT NULL, "                 \
-  "PRIMARY KEY (file_id, meta_id, data_id) "            \
-  ");"
+    "CREATE TABLE IF NOT EXISTS assoc_file_metadata ( " \
+    "file_id          INTEGER NOT NULL, "               \
+    "meta_id          INTEGER NOT NULL, "               \
+    "data_id          INTEGER NOT NULL, "               \
+    "PRIMARY KEY (file_id, meta_id, data_id) "          \
+    ");"
 
 
 /******************************************************************************/
@@ -99,8 +105,8 @@
 /******************************************************************************/
 
 #define CREATE_INDEX_ASSOC                                      \
-  "CREATE INDEX IF NOT EXISTS "                                 \
-  "assoc_idx ON assoc_file_metadata (meta_id, data_id);"
+    "CREATE INDEX IF NOT EXISTS "                               \
+    "assoc_idx ON assoc_file_metadata (meta_id, data_id);"
 
 
 /******************************************************************************/
@@ -110,24 +116,29 @@
 /******************************************************************************/
 
 #define SELECT_FILE_ID                          \
-  "SELECT file_id "                             \
-  "FROM file "                                  \
-  "WHERE file_path = ?;"
+    "SELECT file_id "                           \
+    "FROM file "                                \
+    "WHERE file_path = ?;"
 
 #define SELECT_FILE_FROM_ID                     \
-  "SELECT file_path "                           \
-  "FROM file "                                  \
-  "WHERE file_id = ?;"
+    "SELECT file_path "                         \
+    "FROM file "                                \
+    "WHERE file_id = ?;"
 
 #define SELECT_FILE_MTIME                       \
-  "SELECT file_mtime "                          \
-  "FROM file "                                  \
-  "WHERE file_path = ?;"
+    "SELECT file_mtime "                        \
+    "FROM file "                                \
+    "WHERE file_path = ?;"
 
 #define SELECT_FILE_SCAN_MAGIC                  \
-  "SELECT file_path,file_id "                   \
-  "FROM file "                                  \
-  "WHERE scan_magic <> ?;"
+    "SELECT file_path,file_id "                 \
+    "FROM file "                                \
+    "WHERE scan_magic <> ?;"
+
+#define SELECT_INFO_VALUE                       \
+    "SELECT info_value "                        \
+    "FROM info "                                \
+    "WHERE info_name = ?;"
 
 /******************************************************************************/
 /*                                                                            */
@@ -136,32 +147,33 @@
 /******************************************************************************/
 
 #define INSERT_INFO                             \
-  "INSERT OR REPLACE "                          \
-  "INTO info (info_name, info_value) "          \
-  "VALUES (?, ?);"
+    "INSERT OR REPLACE "                        \
+    "INTO info (info_name, info_value) "        \
+    "VALUES (?, ?);"
 
 #define INSERT_FILE                             \
-  "INSERT "                                     \
-  "INTO file (file_path, "                      \
-  "           file_mtime,"                      \
-  "           scan_magic) "                     \
-  "VALUES (?, ?, ?);"
+    "INSERT "                                   \
+    "INTO file (file_path, "                    \
+    "           file_uuid,"                     \
+    "           file_mtime,"                    \
+    "           scan_magic) "                   \
+    "VALUES (?, ?, ?);"
 
 #define INSERT_META                             \
-  "INSERT "                                     \
-  "INTO meta (meta_name) "                      \
-  "VALUES (?);"
+    "INSERT "                                   \
+    "INTO meta (meta_name) "                    \
+    "VALUES (?);"
 
 #define INSERT_DATA                             \
-  "INSERT "                                     \
-  "INTO data (data_value, "                     \
-  "           _lang_id) "                       \
-  "VALUES (?, ?);"
+    "INSERT "                                   \
+    "INTO data (data_value, "                   \
+    "           _lang_id) "                     \
+    "VALUES (?, ?);"
 
 #define INSERT_ASSOC_FILE_METADATA                              \
-  "INSERT "                                                     \
-  "INTO assoc_file_metadata (file_id, meta_id, data_id) "       \
-  "VALUES (?, ?, ?);"
+    "INSERT "                                                   \
+    "INTO assoc_file_metadata (file_id, meta_id, data_id) "     \
+    "VALUES (?, ?, ?);"
 
 /******************************************************************************/
 /*                                                                            */
@@ -170,10 +182,10 @@
 /******************************************************************************/
 
 #define UPDATE_FILE                             \
-  "UPDATE file "                                \
-  "SET file_mtime      = ?, "                   \
-  "    scan_magic      = ? "                    \
-  "WHERE file_path = ?;"
+    "UPDATE file "                              \
+    "SET file_mtime      = ?, "                 \
+    "    scan_magic      = ? "                  \
+    "WHERE file_path = ?;"
 
 /******************************************************************************/
 /*                                                                            */
@@ -181,9 +193,9 @@
 /*                                                                            */
 /******************************************************************************/
 
-#define DELETE_FILE  \
- "DELETE FROM file " \
- "WHERE file_path = ?;"
+#define DELETE_FILE                             \
+    "DELETE FROM file "                         \
+    "WHERE file_path = ?;"
 
 
 
