@@ -71,7 +71,7 @@
     "CREATE TABLE IF NOT EXISTS file ( "                        \
     "file_id          INTEGER PRIMARY KEY AUTOINCREMENT, "      \
     "file_path        TEXT    NOT NULL UNIQUE, "                \
-    "file_uuid        TEXT    NOT NULL, "                       \
+    "file_hash        TEXT    NOT NULL, "                       \
     "file_mtime       INTEGER NOT NULL,"                        \
     "scan_magic       INTEGER NOT NULL"                         \
     ");"
@@ -130,6 +130,11 @@
     "FROM file "                                \
     "WHERE file_path = ?;"
 
+#define SELECT_FILE_HASH                        \
+    "SELECT file_hash "                         \
+    "FROM file "                                \
+    "WHERE file_path = ?;"
+
 #define SELECT_FILE_SCAN_MAGIC                  \
     "SELECT file_path,file_id "                 \
     "FROM file "                                \
@@ -163,10 +168,10 @@
 #define INSERT_FILE                             \
     "INSERT "                                   \
     "INTO file (file_path, "                    \
-    "           file_uuid,"                     \
+    "           file_hash,"                     \
     "           file_mtime,"                    \
     "           scan_magic) "                   \
-    "VALUES (?, ?, ?);"
+    "VALUES (?, ?, ?, ?);"
 
 #define INSERT_META                             \
     "INSERT "                                   \

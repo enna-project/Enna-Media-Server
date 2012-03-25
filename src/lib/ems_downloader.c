@@ -40,6 +40,7 @@
 #include "ems_private.h"
 #include "ems_downloader.h"
 #include "ems_config.h"
+#include "ems_database.h"
 
 /*============================================================================*
  *                                  Local                                     *
@@ -113,13 +114,14 @@ ems_downloader_init(void)
 }
 
 Eina_Bool
-ems_downloader_url_download(const char *url, /* const char *file, */
+ems_downloader_url_download(const char *url, const char *file,
                             Ems_Downloader_End_Cb end_cb, void *data )
 {
    Ems_Downloader_Req *req;
    char filename[PATH_MAX];
+   char directory[PATH_MAX];
    const char *tmp;
-
+   const char *hash;
    if (!url)
      return EINA_FALSE;
 
@@ -138,9 +140,22 @@ ems_downloader_url_download(const char *url, /* const char *file, */
 
    DBG("Url : %s\n", url);
 
+   hash = ems_database_file_hash_get(ems_config->db, file);
+   if (!hash)
+     goto err1;
+
+
+   snprintf(directory, sizeof(directory), "%s/%s",
+            ems_config_cache_dirname_get(), hash);
+   eina_stringshare_del(hash);
+
+   if (!ecore_file_is_dir(directory))
+     ecore_file_mkdir(directory);
+
    tmp = ecore_file_file_get(url);
    snprintf(filename, sizeof(filename), "%s/%s",
-            ems_config_cache_dirname_get(), tmp);
+            directory, tmp);
+
    req->filename = eina_stringshare_add(filename);
 
    DBG("save file to : %s\n", filename);

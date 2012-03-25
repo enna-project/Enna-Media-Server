@@ -227,7 +227,7 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
                                        eina_value_setup(&v, EINA_VALUE_TYPE_STRINGSHARE);
                                        eina_value_set(&v, eina_stringshare_add(it->valuestring));
                                        ems_database_meta_insert(ems_config->db, req->filename, "poster_url", &v);
-                                       ems_downloader_url_download(it->valuestring, NULL, NULL);
+                                       ems_downloader_url_download(it->valuestring, req->filename, NULL, NULL);
                                        DBG("%s", it->valuestring);
                                        break;
 

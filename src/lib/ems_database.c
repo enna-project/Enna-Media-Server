@@ -78,6 +78,7 @@ struct _Ems_Database
    sqlite3_stmt *fileid_get_stmt;
    sqlite3_stmt *file_delete_stmt;
    sqlite3_stmt *filemtime_stmt;
+   sqlite3_stmt *filehash_stmt;
    sqlite3_stmt *filemagic_stmt;
    sqlite3_stmt *data_stmt;
    sqlite3_stmt *meta_stmt;
@@ -402,6 +403,12 @@ ems_database_prepare(Ems_Database *db)
         ERR("%s", sqlite3_errmsg (db->db));
         return;
      }
+   res = sqlite3_prepare_v2(db->db, SELECT_FILE_HASH, -1, &db->filehash_stmt, NULL);
+   if (res != SQLITE_OK)
+     {
+        ERR("%s", sqlite3_errmsg (db->db));
+        return;
+     }
    res = sqlite3_prepare_v2(db->db, SELECT_FILE_SCAN_MAGIC, -1, &db->filemagic_stmt, NULL);
    if (res != SQLITE_OK)
      {
@@ -454,6 +461,7 @@ ems_database_release(Ems_Database *db)
    sqlite3_finalize(db->meta_stmt);
    sqlite3_finalize(db->assoc_file_meta_stmt);
    sqlite3_finalize(db->filemtime_stmt);
+   sqlite3_finalize(db->filehash_stmt);
    sqlite3_finalize(db->filemagic_stmt);
    sqlite3_finalize(db->begin_stmt);
    sqlite3_finalize(db->end_stmt);
@@ -663,6 +671,30 @@ ems_database_file_mtime_get(Ems_Database *db, const char *filename)
 
   sqlite3_reset(db->filemtime_stmt);
   sqlite3_clear_bindings(db->filemtime_stmt);
+  err = 0;
+ out:
+  if (err < 0)
+    ERR("%s", sqlite3_errmsg(db->db));
+  return val;
+}
+
+const char *
+ems_database_file_hash_get(Ems_Database *db, const char *filename)
+{
+  int res, err = -1;
+  const char *val = NULL;
+
+  if (!filename || !db || !db->db)
+    return NULL;
+
+  EMS_DB_BIND_TEXT_OR_GOTO(db->filehash_stmt, 1, filename, out);
+
+  res = sqlite3_step(db->filehash_stmt);
+  if (res == SQLITE_ROW)
+    val = eina_stringshare_add((const char*)sqlite3_column_text(db->filehash_stmt, 0));
+
+  sqlite3_reset(db->filehash_stmt);
+  sqlite3_clear_bindings(db->filehash_stmt);
   err = 0;
  out:
   if (err < 0)
