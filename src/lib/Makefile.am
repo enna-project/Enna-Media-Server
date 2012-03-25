@@ -35,6 +35,8 @@ ems_utils.c \
 ems_utils.h \
 ems_stream_server.c \
 ems_stream_server.h \
+ems_downloader.c \
+ems_downloader.h \
 extras/http_parser.c
 
 if HAVE_MACOSX
