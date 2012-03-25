@@ -27,6 +27,8 @@
 # include <config.h>
 #endif
 
+#include <uuid/uuid.h>
+
 #include <sqlite3.h>
 #include <Eina.h>
 #include <Ecore_File.h>
@@ -166,6 +168,62 @@ _file_get(Ems_Database *db, const char *filename)
    return val;
 }
 
+static void
+_table_info_set(Ems_Database *db, const char *name, const char *value)
+{
+  int res, err = -1;
+  sqlite3_stmt *stmt;
+
+  res = sqlite3_prepare_v2(db->db, INSERT_INFO, -1, &stmt, NULL);
+  if (res != SQLITE_OK)
+    goto out_err;
+
+  EMS_DB_BIND_TEXT_OR_GOTO(stmt, 1, name,  out_free);
+  EMS_DB_BIND_TEXT_OR_GOTO(stmt, 2, value, out_free);
+
+  res = sqlite3_step(stmt);
+  if (res == SQLITE_DONE)
+    err = 0;
+
+ out_free:
+  sqlite3_finalize(stmt);
+ out_err:
+  if (err < 0)
+    ERR("%s", sqlite3_errmsg(db->db));
+}
+
+static char *
+_table_info_get(Ems_Database *db, const char *name)
+{
+  char *ret = NULL;
+  int res, err = -1;
+  sqlite3_stmt *stmt;
+
+  res = sqlite3_prepare_v2(db->db, SELECT_INFO_VALUE, -1, &stmt, NULL);
+  if (res != SQLITE_OK)
+    goto out_err;
+
+  EMS_DB_BIND_TEXT_OR_GOTO(stmt, 1, name, out_free);
+
+  res = sqlite3_step(stmt);
+  if (res == SQLITE_ROW)
+  {
+    const char *val;
+    val = (const char *) sqlite3_column_text(stmt, 0);
+    ret = strdup (val);
+  }
+
+  sqlite3_clear_bindings (stmt);
+  err = 0;
+
+ out_free:
+  sqlite3_finalize (stmt);
+ out_err:
+  if (err < 0)
+    ERR("%s", sqlite3_errmsg(db->db));
+  return ret;
+}
+
 /*============================================================================*
  *                                 Global                                     *
  *============================================================================*/
@@ -215,8 +273,28 @@ ems_database_new(const char *filename)
    /* Create table in the new database*/
    if (!exists)
      {
+        uuid_t u;
+        char uuid[37];
+
         INF("Creating Database table");
         ems_database_table_create(db);
+        _table_info_set(db, "version", EMS_DATABASE_VERSION);
+        uuid_generate(u);
+        uuid_unparse(u, uuid);
+        INF("Generate UUID for database : %s", uuid);
+        _table_info_set(db, "uuid", uuid);
+     }
+   else
+     {
+        char *version = _table_info_get(db, "version");
+        DBG("Database in version %s", version);
+        if (!version || strcmp(version, EMS_DATABASE_VERSION))
+          {
+             ERR("BAD sqlite databse version (%s), please remove the database file %s", version, db->filename);
+             free(version);
+             goto err;
+          }
+        free(version);
      }
 
    return db;
@@ -248,6 +326,9 @@ ems_database_table_create(Ems_Database *db)
    if (!db)
      return;
 
+   sqlite3_exec(db->db, CREATE_TABLE_INFO, NULL, NULL, &m);
+   if (m)
+     goto err;
    sqlite3_exec(db->db, BEGIN_TRANSACTION, NULL, NULL, &m);
    if (m)
      goto err;
@@ -379,7 +460,9 @@ ems_database_release(Ems_Database *db)
 }
 
 void
-ems_database_file_insert(Ems_Database *db, const char *filename, int64_t mtime, Ems_Media_Type type __UNUSED__, int64_t magic)
+ems_database_file_insert(Ems_Database *db, const char *filename,
+                         const char *uuid, int64_t mtime,
+                         Ems_Media_Type type __UNUSED__, int64_t magic)
 {
    int res, err = -1;
    sqlite3_stmt *stmt = db->file_stmt;
@@ -388,8 +471,9 @@ ems_database_file_insert(Ems_Database *db, const char *filename, int64_t mtime, 
      return;
 
    EMS_DB_BIND_TEXT_OR_GOTO(stmt, 1, filename,  out);
-   EMS_DB_BIND_INT64_OR_GOTO(stmt, 2, mtime, out_clear);
-   EMS_DB_BIND_INT64_OR_GOTO(stmt, 3, magic, out_clear);
+   EMS_DB_BIND_TEXT_OR_GOTO(stmt, 2, uuid,  out_clear);
+   EMS_DB_BIND_INT64_OR_GOTO(stmt, 3, mtime, out_clear);
+   EMS_DB_BIND_INT64_OR_GOTO(stmt, 4, magic, out_clear);
 
    res = sqlite3_step (stmt);
    if (res == SQLITE_DONE)
@@ -663,4 +747,17 @@ ems_database_deleted_files_remove(Ems_Database *db, int64_t magic)
    if (err < 0)
      ERR("%s", sqlite3_errmsg(db->db));
    return;
+}
+
+const char *
+ems_database_uuid_get(Ems_Database *db)
+{
+   static const char *uuid = NULL;
+
+   if(uuid)
+     return uuid;
+
+   uuid = (const char*)_table_info_get(db, "uuid");
+
+   return uuid;
 }
