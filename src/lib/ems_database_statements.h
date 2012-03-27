@@ -140,6 +140,15 @@
     "FROM info "                                \
     "WHERE info_name = ?;"
 
+#define SELECT_FILE_METADATA                    \
+    "SELECT meta_name, data_value "             \
+    "FROM FILE, META AS M, DATA AS D, "         \
+    "ASSOC_FILE_METADATA AS AFM "               \
+    "WHERE M.meta_id = AFM.meta_id "            \
+    "AND D.data_id = AFM.data_id "              \
+    "AND F.file_id = AFM.file_id "              \
+    "AND F.file_id = ?;"
+
 /******************************************************************************/
 /*                                                                            */
 /*                                  Insert                                    */
