@@ -147,7 +147,7 @@
 
 #define SELECT_FILE_METADATA                    \
     "SELECT meta_name, data_value "             \
-    "FROM FILE, META AS M, DATA AS D, "         \
+    "FROM FILE, FILE AS F, META AS M, DATA AS D, "      \
     "ASSOC_FILE_METADATA AS AFM "               \
     "WHERE M.meta_id = AFM.meta_id "            \
     "AND D.data_id = AFM.data_id "              \
