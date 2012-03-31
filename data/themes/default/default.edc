@@ -1,0 +1,23 @@
+
+images{
+   image: "background.png" COMP;
+
+}
+
+fonts{
+
+}
+
+collections
+{
+   group { name: "main/layout";
+      parts {
+         part {
+            name: "background";
+            description {
+               image.normal: "background.png";
+            }
+         }
+      }
+   }
+}

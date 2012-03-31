@@ -1,0 +1,34 @@
+MAINTAINERCLEANFILES = Makefile.in
+
+EDJE_CC = edje_cc
+
+EDJE_FLAGS = \
+-id $(top_srcdir)/data/themes/default/images \
+-fd $(top_srcdir)/data/themes/default/fonts
+
+EDJE_VERB = $(EDJE_VERB_$(V))
+EDJE_VERB_ = $(EDJE_VERB_$(AM_DEFAULT_VERBOSITY))
+EDJE_VERB_1 = -v
+
+defaultdir = $(pkgdatadir)/theme
+
+default_DATA = default.edj
+
+IMG = \
+images/background.png
+
+EDC = \
+default.edc
+
+EXTRA_DIST = \
+  $(IMG) \
+  $(EDC)
+
+default.edj: Makefile $(EXTRA_DIST)
+	$(AM_V_GEN)$(EDJE_CC) $(EDJE_VERB) $(EDJE_FLAGS) \
+	$(top_srcdir)/data/themes/default/default.edc \
+	$(top_builddir)/data/themes/default/default.edj
+
+clean-local:
+	rm -f *.edj
+
