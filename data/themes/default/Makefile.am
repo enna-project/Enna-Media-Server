@@ -4,6 +4,7 @@ EDJE_CC = edje_cc
 
 EDJE_FLAGS = \
 -id $(top_srcdir)/data/themes/default/images \
+-id $(top_srcdir)/data/themes/default/elm/images \
 -fd $(top_srcdir)/data/themes/default/fonts
 
 EDJE_VERB = $(EDJE_VERB_$(V))
@@ -15,10 +16,23 @@ defaultdir = $(pkgdatadir)/theme
 default_DATA = default.edj
 
 IMG = \
-images/background.png
+images/background.png \
+elm/images/list_bg.png \
+elm/images/list_selected.png \
+elm/images/scroll_bg_h.png \
+elm/images/scroll_bg_v.png \
+elm/images/scroll_h.png \
+elm/images/scroll_v.png \
+elm/images/tree_arrow_left.png \
+elm/images/tree_arrow_right.png \
+elm/images/tree_arrow_down.png
+
 
 EDC = \
-default.edc
+default.edc \
+elm/elm.edc \
+elm/genlist.edc \
+elm/scroller.edc
 
 EXTRA_DIST = \
   $(IMG) \

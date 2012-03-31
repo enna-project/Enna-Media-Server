@@ -14,6 +14,8 @@ enna_SOURCES = \
 main.c \
 enna_config.c \
 enna_config.h \
+enna_mainmenu.c \
+enna_mainmenu.h \
 enna_private.h
 
 enna_LDADD = \

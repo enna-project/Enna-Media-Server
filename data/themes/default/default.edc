@@ -1,4 +1,6 @@
 
+
+
 images{
    image: "background.png" COMP;
 
@@ -10,6 +12,9 @@ fonts{
 
 collections
 {
+
+#include "elm/elm.edc"
+
    group { name: "main/layout";
       parts {
          part {
@@ -18,6 +23,66 @@ collections
                image.normal: "background.png";
             }
          }
+         part {
+            name: "mainmenu.clip";
+            type: RECT;
+            description {
+               state: "default" 0.0;
+               color: 0 0 0 0;
+               visible: 0;
+            }
+            description {
+               state: "visible" 0.0;
+               color: 255 255 255 255;
+               visible: 1;
+            }
+         }
+         part {
+            name: "mainmenu.swallow";
+            type: SWALLOW;
+            clip_to: "mainmenu.clip";
+            description {
+               color: 255 255 255 128;
+            }
+         }
+      }
+      programs {
+         program {
+            name: "on_show";
+            in: 2.0 0.0;
+            signal: "show";
+            after: "mainmenu,show";
+         }
+         program { name: "mainmenu,show";
+            signal: "mainmenu,show";
+            source: "enna";
+            action: STATE_SET "visible" 0.0;
+            transition: ACCELERATE 1.0;
+            target: "mainmenu.clip";
+         }
+         program { name: "mainmenu,hide";
+            signal: "mainmenu,hide";
+            source: "enna";
+            action: STATE_SET "default" 0.0;
+            transition: DECELERATE 1.0;
+            target: "mainmenu.clip";
+         }
       }
    }
+
+   group { name: "mainmenu/layout";
+      parts {
+         part {
+            name: "list.swallow";
+            type: SWALLOW;
+            description {
+               align: 0 0.5;
+               rel1.offset: 0 80;
+               rel2.relative: 0.3 1.0;
+               rel2.offset: 0 -81;
+            }
+         }
+      }
+   }
+
 }
