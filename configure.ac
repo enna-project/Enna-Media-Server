@@ -103,10 +103,13 @@ AC_SUBST([pkgconfig_requires_private])
 ### Checks for libraries
 
 requirements_ems="eina >= 1.1.0 eet >= 1.4.0 ecore >= 1.0.0 ecore-file >= 1.0.0 eio >= 0.0.1 avahi-client >= 0.6.0 avahi-glib >= 0.6.0 azy sqlite3 uuid"
-
 PKG_CHECK_MODULES([EMS], [${requirements_ems}])
-
 AC_SUBST([requirements_ems])
+
+requirements_enna="elementary >= 0.9.0"
+PKG_CHECK_MODULES([ENNA], [${requirements_enna}])
+AC_SUBST([requirements_enna])
+
 
 ### Checks for compiler characteristics
 AC_C_BIGENDIAN
@@ -148,6 +151,8 @@ src/lib/Makefile
 src/lib/server/Makefile
 src/lib/extras/Makefile
 src/bin/Makefile
+src/bin/ems/Makefile
+src/bin/enna/Makefile
 src/modules/Makefile
 src/modules/tmdb/Makefile
 src/tests/Makefile
