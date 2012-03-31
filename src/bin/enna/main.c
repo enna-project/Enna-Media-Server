@@ -50,9 +50,12 @@ enna_window_init(void)
 
    ly = elm_layout_add(win);
    elm_layout_file_set(ly, enna_config_theme_get(), "main/layout");
+   evas_object_size_hint_weight_set(ly, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    elm_win_resize_object_add(win, ly);
    evas_object_show(ly);
 
+   //   evas_object_size_hint_min_set(ly, 1280, 720);
+   evas_object_resize(win, 1280, 720);
    evas_object_show(win);
 
    return EINA_TRUE;

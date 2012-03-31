@@ -4,7 +4,7 @@ AM_CPPFLAGS = \
 -I. \
 -DPACKAGE_BIN_DIR=\"$(bindir)\" \
 -DPACKAGE_LIB_DIR=\"$(libdir)\" \
--DPACKAGE_DATA_DIR=\"$(datadir)/enna\" \
+-DPACKAGE_DATA_DIR=\"$(datadir)/enna-media-server\" \
 -I$(top_builddir)/src/lib \
 @ENNA_CFLAGS@
 

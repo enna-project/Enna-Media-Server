@@ -157,6 +157,8 @@ src/modules/Makefile
 src/modules/tmdb/Makefile
 src/tests/Makefile
 data/Makefile
+data/themes/Makefile
+data/themes/default/Makefile
 ])
 
 AC_OUTPUT
