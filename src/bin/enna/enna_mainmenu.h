@@ -23,77 +23,9 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+#ifndef _ENNA_MAINMENU_H
+#define _ENNA_MAINMENU_H
 
-#include <Eina.h>
-#include <Ecore_File.h>
+Evas_Object *enna_mainmenu_add(Evas_Object *parent);
 
-#include "enna_private.h"
-#include "enna_config.h"
-
-Eina_Bool
-enna_config_init(void)
-{
-    const char *config;
-
-    config = enna_config_theme_get();
-    enna_config_config_get();
-
-    elm_theme_overlay_add(NULL, enna_config_theme_get());
-
-    return EINA_TRUE;
-}
-
-void
-enna_config_shutdown(void)
-{
-    const char *theme;
-    const char *config;
-
-    theme = enna_config_theme_get();
-    config = enna_config_config_get();
-
-    eina_stringshare_del(theme);
-    eina_stringshare_del(config);
-}
-
-
-const char *
-enna_config_config_get(void)
-{
-   static const char *config = NULL;
-   char tmp[PATH_MAX];
-   char cfg[PATH_MAX];
-
-   if (config)
-     return config;
-
-   snprintf(tmp, sizeof(tmp), "%s/.config/enna/", getenv("HOME"));
-   if (!ecore_file_is_dir(tmp))
-      ecore_file_mkpath(tmp);
-
-   snprintf(cfg, sizeof(cfg), "%s/%s", tmp, ENNA_CONFIG_FILE);
-   INF("Config : %s", cfg);
-   config = eina_stringshare_add(cfg);
-   return config;
-}
-
-const char *
-enna_config_theme_get(void)
-{
-   static const char *theme = NULL;
-   char tmp[PATH_MAX];
-
-   if (theme)
-     return theme;
-
-   snprintf(tmp, sizeof(tmp),
-            PACKAGE_DATA_DIR"/theme/default.edj");
-
-   INF("Theme : %s", tmp);
-
-   theme = eina_stringshare_add(tmp);
-   return theme;
-}
+#endif /* _ENNA_MAINMENU_H */

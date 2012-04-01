@@ -42,14 +42,19 @@ collections
             type: SWALLOW;
             clip_to: "mainmenu.clip";
             description {
-               color: 255 255 255 128;
+            }
+         }
+         part {
+            name: "activity.swallow";
+            type: SWALLOW;
+            description {
             }
          }
       }
       programs {
          program {
             name: "on_show";
-            in: 2.0 0.0;
+            in: 0.5 0.0;
             signal: "show";
             after: "mainmenu,show";
          }
@@ -80,6 +85,20 @@ collections
                rel1.offset: 0 80;
                rel2.relative: 0.3 1.0;
                rel2.offset: 0 -81;
+            }
+         }
+      }
+   }
+
+   group { name: "activity/layout/list";
+      parts {
+         part {
+            name: "list.swallow";
+            type: SWALLOW;
+            description {
+               align: 0 0.5;
+               rel1.relative: 0.02 0.036;
+               rel2.relative: 0.64 1-0.036;
             }
          }
       }

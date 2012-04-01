@@ -12,6 +12,8 @@ bin_PROGRAMS = enna
 
 enna_SOURCES = \
 main.c \
+enna_activity.c \
+enna_activity.h \
 enna_config.c \
 enna_config.h \
 enna_mainmenu.c \
