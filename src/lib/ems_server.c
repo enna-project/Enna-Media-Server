@@ -69,7 +69,10 @@ _ems_connected_cb(void *data __UNUSED__, int type __UNUSED__, Azy_Client *cli)
 
    INF("Info connected to %s:%d", azy_client_addr_get(cli), azy_client_port_get(cli));
 
-   server->is_connected = EINA_TRUE;
+   if (server->is_connected)
+       return EINA_TRUE;
+   else
+       server->is_connected = EINA_TRUE;
 
    EINA_LIST_FOREACH(_servers_cb, l_cb, cb)
      {
