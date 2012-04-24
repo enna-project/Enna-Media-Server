@@ -16,7 +16,8 @@ ems_rpc_Browser.azy_server.h \
 ems_rpc_Common_Azy.c \
 ems_rpc_Common_Azy.h \
 ems_rpc_Common.c \
-ems_rpc_Common.h
+ems_rpc_Common.h \
+ems_web.azy_server.c
 
 BUILT_SOURCES = $(SERVER_SOURCES)
 CLEANFILES = $(SERVER_SOURCES)
@@ -27,5 +28,6 @@ libems_server_la_SOURCES = $(SERVER_SOURCES)
 $(SERVER_SOURCES): services.azy
 	@echo  "  GEN    $@"
 	@azy_parser -H -p -o ./ services.azy
+	@azy_parser -H -p -o ./ services2.azy
 
-EXTRA_DIST = services.azy
+EXTRA_DIST = services.azy services2.azy

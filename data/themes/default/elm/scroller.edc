@@ -403,6 +403,7 @@ group {
       image: "scroll_bg_h.png" COMP;
       image: "scroll_v.png" COMP;
       image: "scroll_h.png" COMP;
+      image: "cover_shadow.png" COMP;
    }
    data {
       item: "focus_highlight" "on";
@@ -433,6 +434,19 @@ group {
       }
    }
    parts {
+      part {
+         name: "bg.shadow";
+         type: IMAGE;
+         description {
+            rel1.to: "bg";
+            rel1.offset: -50 -51;
+            rel2.to: "bg";
+            rel2.offset: 49 50;
+            color: 0 0 0 255;
+            image.normal: "cover_shadow.png";
+            image.border: 51 51 51 51;
+         }
+      }
       part { name: "bg";
          type: RECT;
          description { state: "default" 0.0;
@@ -454,7 +468,6 @@ group {
          description { state: "default" 0.0;
             rel1.to: "bg";
             rel2.to: "bg";
-            rel2.offset: -22 0;
          }
       }
 

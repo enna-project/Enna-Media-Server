@@ -201,7 +201,7 @@ group { name: "elm/genlist/item/media/default";
    alias: "elm/genlist/item_compress/media/default";
    data.item: "stacking" "above";
    data.item: "selectraise" "on";
-   data.item: "texts" "elm.text";
+   data.item: "texts" "name description";
    data.item: "contents" "elm.swallow.icon elm.swallow.end";
    data.item: "treesize" "16";
    //      data.item: "states" "";
@@ -210,7 +210,6 @@ group { name: "elm/genlist/item/media/default";
       image: "list_selected.png" COMP;
    }
    parts {
-
       part {
          name:           "event";
          type:           RECT;
@@ -230,12 +229,10 @@ group { name: "elm/genlist/item/media/default";
       }
 
       part { name: "selector";
-
          mouse_events: 0;
          description { state: "default" 0.0;
             visible: 0;
             color: 255 255 255 0;
-            rel2.offset: 1 1;
             image {
                normal: "list_selected.png";
                border: 4 4 4 4;
@@ -312,7 +309,43 @@ group { name: "elm/genlist/item/media/default";
             }
          }
       }
-      part { name: "elm.text";
+      part { name: "name";
+         type:           TEXT;
+         //effect:         SOFT_SHADOW;
+         mouse_events:   0;
+         scale: 1;
+         description {
+            state: "default" 0.0;
+            //               min: 16 16;
+            fixed: 0 1;
+            rel1 {
+               to_x:     "elm.swallow.icon";
+               relative: 1.0  0.0;
+               offset:   8 4;
+            }
+            rel2 {
+               to_x:     "elm.swallow.end";
+               relative: 0.0  0.5;
+               offset:   -1 -5;
+            }
+            //color: 172 179 191 255;
+            //color3: 0 0 0 30;
+            color: 200 200 200 255;
+            text {
+               font: "Roboto Th:style=Bold";
+               size: 30;
+               min: 0 1;
+               align: 0.0 0.5;
+            }
+         }
+         description { state: "selected" 0.0;
+            inherit: "default" 0.0;
+            color: 255 255 255 255;
+            color3: 0 0 0 30;
+         }
+      }
+
+      part { name: "description";
          type:           TEXT;
          //effect:         SOFT_SHADOW;
          mouse_events:   0;
@@ -323,7 +356,7 @@ group { name: "elm/genlist/item/media/default";
             fixed: 1 0;
             rel1 {
                to_x:     "elm.swallow.icon";
-               relative: 1.0  0.0;
+               relative: 1.0  0.5;
                offset:   8 4;
             }
             rel2 {
@@ -336,7 +369,7 @@ group { name: "elm/genlist/item/media/default";
             color: 200 200 200 255;
             text {
                font: "Roboto Th";
-               size: 54;
+               size: 20;
                min: 0 1;
                align: 0.0 0.5;
             }
@@ -347,6 +380,7 @@ group { name: "elm/genlist/item/media/default";
             color3: 0 0 0 30;
          }
       }
+
 
    }
    programs {
@@ -361,7 +395,8 @@ group { name: "elm/genlist/item/media/default";
          source:  "elm";
          action:  STATE_SET "selected" 0.0;
          target:  "selector";
-         target:  "elm.text";
+         target:  "name";
+         target:  "description";
       }
       program {
          name:    "go_passive";
@@ -369,7 +404,8 @@ group { name: "elm/genlist/item/media/default";
          source:  "elm";
          action:  STATE_SET "default" 0.0;
          target:  "selector";
-         target:  "elm.text";
+         target:  "name";
+         target:  "description";
          transition: LINEAR 0.1;
       }
    }
@@ -457,7 +493,7 @@ group { name: "elm/genlist/item/group_index/default";
       part { name: "elm.text";
          //         clip_to: "disclip";
          type: TEXT;
-         effect: SOFT_SHADOW;
+         effect: SHADOW;
          mouse_events: 0;
          scale: 1;
          description {
@@ -473,11 +509,11 @@ group { name: "elm/genlist/item/group_index/default";
                relative: 0.0  1.0;
                offset: -1 -5;
             }
-            color: 255 255 255 255;
-            color3: 0 0 0 0;
+            color: 200 200 200 255;
+            color3: 50 50 50 255;
             text {
-               font: "Roboto Th";
-               size: 54;
+               font: "Roboto Th:style=Bold";
+               size: 25;
                min: 1 1;
                     //                  min: 0 1;
                align: -1.0 0.5;

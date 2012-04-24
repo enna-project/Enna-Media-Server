@@ -1,7 +1,7 @@
 
 MAINTAINERCLEANFILES = Makefile.in
 
-SUBDIRS = themes
+SUBDIRS = themes images
 
 confdir = $(datadir)/enna-media-server
 conf_DATA = enna-media-server.conf
