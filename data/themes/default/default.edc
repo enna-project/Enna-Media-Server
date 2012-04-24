@@ -1,4 +1,5 @@
-
+#define REL_BORDER_X 0.02
+#define REL_BORDER_Y 0.036
 
 
 images{
@@ -108,8 +109,8 @@ collections
             type: SWALLOW;
             description {
                align: 0 0.5;
-               rel1.relative: 0.02 0.036;
-               rel2.relative: 0.64 1-0.036;
+               rel1.relative: REL_BORDER_X REL_BORDER_Y;
+               rel2.relative: 0.66-REL_BORDER_X 1-REL_BORDER_Y;
             }
          }
          part {
@@ -125,6 +126,25 @@ collections
                image.border: 51 51 51 51;
             }
          }
+
+         part {
+            name: "play.swallow";
+            type: SWALLOW;
+            description {
+               rel1.relative: 0.66+REL_BORDER_X (1-0.153)+REL_BORDER_Y;
+               rel2.relative: 0.66+0.15 1-REL_BORDER_Y;
+            }
+         }
+
+         part {
+            name: "trailer.swallow";
+            type: SWALLOW;
+            description {
+               rel1.relative: 0.66+0.15+2*REL_BORDER_X (1-0.153)+REL_BORDER_Y;
+               rel2.relative: 1-REL_BORDER_X 1-REL_BORDER_Y;
+            }
+         }
+
          part {
             name: "cover.border";
             type: RECT;
@@ -141,8 +161,8 @@ collections
             type: SWALLOW;
             description {
                align: 0.5 0.5;
-               rel1.relative: 0.68 0.036;
-               rel2.relative: 1-0.036 1-0.153;
+               rel1.relative: 0.66+REL_BORDER_X REL_BORDER_Y;
+               rel2.relative: 1-REL_BORDER_X 1-0.153;
                aspect: 0.5 1;
             }
          }

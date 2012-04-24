@@ -447,6 +447,25 @@ group {
             image.border: 51 51 51 51;
          }
       }
+      part { name: "button_image_focused";
+         mouse_events: 0;
+         description { state: "default" 0.0;
+            image.normal: "btn_focused.png";
+            image.border: 46 46 46 46;
+            rel1.offset: -31 -31;
+            rel1.to: "elm.swallow.content";
+            rel2.to: "elm.swallow.content";
+            rel2.offset: 30 29;
+            color: 0 0 0 0;
+            visible: 1;
+         }
+         description { state: "focused" 0.0;
+            inherit: "default" 0.0;
+            color: 255 255 255 255;
+            visible: 1;
+         }
+
+      }
       part { name: "bg";
          type: RECT;
          description { state: "default" 0.0;
@@ -795,6 +814,22 @@ group {
          source: "elm";
          action: STATE_SET "default" 0.0;
          target: "disabler";
+      }
+      program {
+         name:   "button_focus_anim";
+         signal: "elm,action,focus";
+         source: "elm";
+         action: STATE_SET "focused" 0.0;
+         transition: ACCELERATE 0.5;
+         target: "button_image_focused";
+      }
+      program {
+         name:   "button_unfocus_anim";
+         signal: "elm,action,unfocus";
+         source: "elm";
+         action: STATE_SET "default" 0.0;
+         transition: DECELERATE 0.5;
+         target: "button_image_focused";
       }
    }
 }

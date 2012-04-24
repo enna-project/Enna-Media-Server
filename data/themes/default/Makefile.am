@@ -30,6 +30,7 @@ elm/images/tree_arrow_down.png
 
 EDC = \
 default.edc \
+elm/button.edc \
 elm/elm.edc \
 elm/genlist.edc \
 elm/scroller.edc

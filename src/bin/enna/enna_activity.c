@@ -67,6 +67,8 @@ struct _Enna_Activity
    Eina_Hash *servers;
    Evas_Object *list;
    Evas_Object *ly;
+   Evas_Object *btn_trailer;
+   Evas_Object *btn_play;
    Ecore_Timer *show_timer;
 };
 
@@ -326,7 +328,6 @@ Evas_Object *enna_activity_add(Evas_Object *parent)
    elm_layout_file_set(ly, enna_config_theme_get(), "activity/layout/list");
    evas_object_data_set(ly, "activity", act);
 
-
    list = elm_genlist_add(ly);
    if (!list)
        goto err2;
@@ -335,7 +336,7 @@ Evas_Object *enna_activity_add(Evas_Object *parent)
    elm_genlist_bounce_set(list, EINA_FALSE, EINA_TRUE);
    elm_object_style_set(list, "media");
 
-   itc_group.item_style       = "group_index";
+   itc_group.item_style       = "group_index_media";
    itc_group.func.text_get    = _genlist_text_get;
    itc_group.func.content_get = NULL;
    itc_group.func.state_get   = NULL;
@@ -372,7 +373,22 @@ Evas_Object *enna_activity_add(Evas_Object *parent)
         }
    }
 
-  evas_object_smart_callback_add(act->list, "selected", _list_item_selected_cb, act);
+   elm_object_focus_set(list, EINA_TRUE);
+
+   /* Create Trailer and Play buttons */
+   act->btn_play = elm_button_add(ly);
+   elm_object_text_set(act->btn_play, "Play");
+   evas_object_show(act->btn_play);
+   elm_object_part_content_set(ly, "play.swallow", act->btn_play);
+   elm_object_style_set(act->btn_play, "enna");
+
+   act->btn_trailer = elm_button_add(ly);
+   elm_object_text_set(act->btn_trailer, "Trailer");
+   evas_object_show(act->btn_trailer);
+   elm_object_part_content_set(ly, "trailer.swallow", act->btn_trailer);
+   elm_object_style_set(act->btn_trailer, "enna");
+
+   evas_object_smart_callback_add(act->list, "selected", _list_item_selected_cb, act);
 
    return ly;
 

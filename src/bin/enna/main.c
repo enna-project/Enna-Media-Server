@@ -89,6 +89,52 @@ _mainmenu_item_selected_cb(void *data, Evas_Object *obj __UNUSED__, void *event_
 }
 
 static Eina_Bool
+_elm_win_event_cb(Evas_Object *obj, Evas_Object *src __UNUSED__, Evas_Callback_Type type, void *event_info)
+{
+   if (type == EVAS_CALLBACK_KEY_DOWN)
+     {
+        Evas_Event_Key_Down *ev = event_info;
+
+        printf("keyname : %s\n", ev->keyname);
+
+         if (!strcmp(ev->keyname, "Tab"))
+          {
+              printf("TADADADADA\n");
+          }
+         else if ((!strcmp(ev->keyname, "Left")) ||
+                 (!strcmp(ev->keyname, "KP_Left")))
+          {
+              printf("left\n");
+              elm_widget_focus_cycle(obj, ELM_FOCUS_PREVIOUS);
+          }
+         else if ((!strcmp(ev->keyname, "Right")) ||
+                 (!strcmp(ev->keyname, "KP_Right")))
+          {
+              printf("right\n");
+              elm_widget_focus_cycle(obj, ELM_FOCUS_NEXT);
+          }
+     }
+   return EINA_FALSE;
+}
+
+static void
+_key_down(void *data __UNUSED__, Evas *e __UNUSED__, Evas_Object *obj, void *event_info)
+{
+   Evas_Event_Key_Down *ev = event_info;
+
+   if ((!strcmp(ev->keyname, "Left")) ||
+            (!strcmp(ev->keyname, "KP_Left")))
+   {
+       elm_widget_focus_cycle(obj, ELM_FOCUS_PREVIOUS);
+   }
+   else if ((!strcmp(ev->keyname, "Right")) ||
+            (!strcmp(ev->keyname, "KP_Right")))
+   {
+       elm_widget_focus_cycle(obj, ELM_FOCUS_NEXT);
+   }
+}
+
+static Eina_Bool
 enna_window_init(void)
 {
 
@@ -97,6 +143,9 @@ enna_window_init(void)
    evas_object_smart_callback_add(win, "delete,request", enna_win_del, NULL);
 
    ly = elm_layout_add(win);
+   evas_object_event_callback_add(ly, EVAS_CALLBACK_KEY_DOWN,
+                                  _key_down, win);
+
    elm_layout_file_set(ly, enna_config_theme_get(), "main/layout");
    evas_object_size_hint_weight_set(ly, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    elm_win_resize_object_add(win, ly);
@@ -109,7 +158,6 @@ enna_window_init(void)
    evas_object_smart_callback_add(mainmenu, "selected", _mainmenu_item_selected_cb, NULL);
 
    elm_object_focus_set(mainmenu, EINA_TRUE);
-
 
    evas_object_resize(win, 1280, 720);
    evas_object_show(win);

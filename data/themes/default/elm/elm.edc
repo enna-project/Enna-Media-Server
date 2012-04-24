@@ -1,7 +1,7 @@
 //#include "bg.edc"
 #include "scroller.edc"
 //#include "label.edc"
-//#include "button.edc"
+#include "button.edc"
 //#include "toggle.edc"
 //#include "clock.edc"
 //#include "menu.edc"
