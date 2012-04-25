@@ -65,6 +65,7 @@ enna_mainmenu_add(Evas_Object *parent)
 
 
     list = elm_list_add(ly);
+    elm_object_style_set(list, "enna");
     it = elm_list_item_append(list, "Videos", NULL, NULL, NULL, NULL);
     elm_list_item_selected_set(it, EINA_TRUE);
     elm_list_item_append(list, "TV Shows", NULL, NULL, NULL, NULL);
