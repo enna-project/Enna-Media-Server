@@ -60,7 +60,7 @@ struct _Ems_Downloader_Req
    Ecore_Con_Url *ec_url;
    long size;
    int fd;
-   void (*end_cb)(void *data, const char *filename);
+   void (*end_cb)(void *data, const char *url, const char *filename);
    void *data;
 };
 
@@ -88,6 +88,9 @@ _url_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info)
 
    if (!req)
      return EINA_TRUE;
+
+   if (req->end_cb)
+     req->end_cb(req->data, req->url, req->filename);
 
    eina_hash_del(_downloader->hash_req, req->ec_url, req);
    ecore_con_url_free(req->ec_url);

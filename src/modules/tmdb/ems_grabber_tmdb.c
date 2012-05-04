@@ -125,6 +125,14 @@ _search_data_cb(void *data __UNUSED__, int type __UNUSED__, Ecore_Con_Event_Url_
      }                                                                  \
   } while(0);                                                           \
 
+static Eina_Bool
+_poster_download_end_cb(void *data, const char *url,
+                        const char *filename)
+{
+   ems_database_meta_insert(ems_config->db, data, "poster",  eina_stringshare_add(filename));
+   eina_stringshare_del(data);
+}
+
 
 static Eina_Bool
 _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info)
@@ -221,8 +229,7 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
                                   it = cJSON_GetObjectItem(it_image, "url");
                                   if (it)
                                     {
-                                       ems_database_meta_insert(ems_config->db, req->filename, "poster_url",  eina_stringshare_add(it->valuestring));
-                                       ems_downloader_url_download(it->valuestring, req->filename, NULL, NULL);
+                                       ems_downloader_url_download(it->valuestring, req->filename, _poster_download_end_cb, eina_stringshare_add(req->filename));
                                        break;
 
                                     }
