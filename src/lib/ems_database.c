@@ -68,6 +68,15 @@
     }                                                           \
   while (0)
 
+#define EMS_DB_BIND_DOUBLE_OR_GOTO(stmt, col, value, label)      \
+  do                                                            \
+    {                                                           \
+       res = sqlite3_bind_double(stmt, col, value);             \
+       if (res != SQLITE_OK)                                    \
+         goto label;                                            \
+    }                                                           \
+  while (0)
+
 struct _Ems_Database
 {
    sqlite3 *db;
@@ -75,6 +84,8 @@ struct _Ems_Database
    sqlite3_stmt *file_stmt;
    sqlite3_stmt *file_update_stmt;
    sqlite3_stmt *file_get_stmt;
+   sqlite3_stmt *meta_get_stmt;
+   sqlite3_stmt *data_get_stmt;
    sqlite3_stmt *fileid_get_stmt;
    sqlite3_stmt *file_delete_stmt;
    sqlite3_stmt *filemtime_stmt;
@@ -87,60 +98,146 @@ struct _Ems_Database
    sqlite3_stmt *end_stmt;
 };
 
-static int64_t
-_step_rowid (Ems_Database *db,
-             sqlite3_stmt *stmt, int *res)
+static int
+_table_get_id(Ems_Database *db,
+              sqlite3_stmt *stmt, const char *name)
 {
+   int res, err = -1;
    int64_t val = 0;
 
-   val = sqlite3_last_insert_rowid(db->db);
-   *res = sqlite3_step (stmt);
+   if (!name)
+     return 0;
+
+   EMS_DB_BIND_TEXT_OR_GOTO(stmt, 1, name, out);
+
+   res = sqlite3_step(stmt);
+   if (res == SQLITE_ROW)
+     val = sqlite3_column_int64(stmt, 0);
+
+   sqlite3_reset(stmt);
+   sqlite3_clear_bindings(stmt);
+   err = 0;
+ out:
+   if (err < 0)
+     ERR("%s", sqlite3_errmsg (db->db));
    return val;
 }
 
+
 static int64_t
-_data_insert(Ems_Database *db, Eina_Value *value, int64_t lang_id)
+_step_rowid (Ems_Database *db,
+             sqlite3_stmt *stmt, int *res, int *err)
+{
+  int64_t val = 0, val_tmp;
+
+  val_tmp = sqlite3_last_insert_rowid(db->db);
+  *res = sqlite3_step(stmt);
+  if (*res == SQLITE_DONE)
+  {
+    *err = 0;
+    val = sqlite3_last_insert_rowid(db->db);
+
+    if (val == val_tmp)
+ return 0;
+  }
+
+  return val;
+}
+
+static int64_t
+_data_insert(Ems_Database *db, const char *value, int64_t lang_id)
 {
    int res;
    int64_t val = 0;
-   char *str;
+   /* char *str; */
+   int err = -1;
+   /* Eina_Value_Type *type; */
 
-   str = eina_value_to_string(value);
-   if (!str)
-     return 0;
+   /* str = eina_value_to_string(value); */
+   /* if (!str) */
+   /*   return 0; */
 
-   EMS_DB_BIND_TEXT_OR_GOTO(db->data_stmt, 1, str, out);
+   /* type = eina_value_type_get(value); */
+
+   /* if (type == EINA_VALUE_TYPE_STRINGSHARE || */
+   /*     type == EINA_VALUE_TYPE_STRING) */
+   /*   { */
+   /*      const char *s; */
+   /*      eina_value_get(value, &s); */
+   ERR("Insert %s", value);
+   EMS_DB_BIND_TEXT_OR_GOTO(db->data_stmt, 1, value, out);
+   /*   } */
+   /* else if (type == EINA_VALUE_TYPE_INT64) */
+   /*   { */
+   /*      int v; */
+   /*      eina_value_get(value, &v); */
+   /*      EMS_DB_BIND_INT_OR_GOTO(db->data_stmt, 1, v, out); */
+   /*   } */
+   /* else if (type == EINA_VALUE_TYPE_LONG || */
+   /*          type == EINA_VALUE_TYPE_INT || */
+   /*          type == EINA_VALUE_TYPE_SHORT) */
+   /*   { */
+   /*      int64_t v; */
+   /*      eina_value_get(value, &v); */
+   /*      EMS_DB_BIND_INT64_OR_GOTO(db->data_stmt, 1, v, out); */
+   /*   } */
+   /* else if (type == EINA_VALUE_TYPE_DOUBLE || */
+   /*          type == EINA_VALUE_TYPE_FLOAT) */
+   /*   { */
+   /*      double v; */
+   /*      eina_value_get(value, &v); */
+   /*      EMS_DB_BIND_DOUBLE_OR_GOTO(db->data_stmt, 1, v, out); */
+   /*   } */
+   /* else */
+   /*   { */
+   /*      ERR("unknown value type"); */
+   /*      goto out; */
+   /*   } */
+
    EMS_DB_BIND_INT64_OR_GOTO(db->data_stmt, 2, lang_id, out_clear);
 
-   val = _step_rowid(db, db->data_stmt, &res);
+   val = _step_rowid(db, db->data_stmt, &res, &err);
    sqlite3_reset(db->data_stmt);
  out_clear:
    sqlite3_clear_bindings(db->data_stmt);
  out:
-   if (res != SQLITE_CONSTRAINT && res != SQLITE_DONE) /* ignore constraint violation */
+   if (err < 0 && res != SQLITE_CONSTRAINT) /* ignore constraint violation */
      ERR("%s", sqlite3_errmsg(db->db));
-   free(str);
+
+   if (!val)
+     {
+        val = _table_get_id(db, db->data_get_stmt, value);
+     }
+
    return val;
 }
+
+
 
 static int64_t
 _meta_insert(Ems_Database *db, const char *meta)
 {
    int res;
    int64_t val = 0;
+   int err = -1;
 
    if (!db || !db->db || !meta)
      return 0;
 
    EMS_DB_BIND_TEXT_OR_GOTO(db->meta_stmt, 1, meta, out);
 
-   val = _step_rowid(db, db->meta_stmt, &res);
+   val = _step_rowid(db, db->meta_stmt, &res, &err);
    sqlite3_reset(db->meta_stmt);
    sqlite3_clear_bindings(db->meta_stmt);
 
  out:
-   if (res != SQLITE_CONSTRAINT && res != SQLITE_DONE) /* ignore constraint violation */
+   if (err < 0 && res != SQLITE_CONSTRAINT) /* ignore constraint violation */
      ERR("%s", sqlite3_errmsg (db->db));
+
+   if (!val)
+     {
+        val = _table_get_id(db, db->meta_get_stmt, meta);
+     }
 
    return val;
 }
@@ -385,6 +482,18 @@ ems_database_prepare(Ems_Database *db)
         ERR("%s", sqlite3_errmsg (db->db));
         return;
      }
+   res = sqlite3_prepare_v2(db->db, SELECT_META_ID, -1, &db->meta_get_stmt, NULL);
+   if (res != SQLITE_OK)
+     {
+        ERR("%s", sqlite3_errmsg (db->db));
+        return;
+     }
+   res = sqlite3_prepare_v2(db->db, SELECT_DATA_ID, -1, &db->data_get_stmt, NULL);
+   if (res != SQLITE_OK)
+     {
+        ERR("%s", sqlite3_errmsg (db->db));
+        return;
+     }
    res = sqlite3_prepare_v2(db->db, DELETE_FILE, -1, &db->file_delete_stmt, NULL);
    if (res != SQLITE_OK)
      {
@@ -456,6 +565,8 @@ ems_database_release(Ems_Database *db)
    sqlite3_finalize(db->file_stmt);
    sqlite3_finalize(db->file_update_stmt);
    sqlite3_finalize(db->file_get_stmt);
+   sqlite3_finalize(db->meta_get_stmt);
+   sqlite3_finalize(db->data_get_stmt);
    sqlite3_finalize(db->file_delete_stmt);
    sqlite3_finalize(db->data_stmt);
    sqlite3_finalize(db->meta_stmt);
@@ -517,7 +628,7 @@ ems_database_file_update(Ems_Database *db, const char *filename, int64_t mtime, 
 }
 
 void
-ems_database_meta_insert(Ems_Database *db, const char *filename, const char *meta, Eina_Value *value)
+ems_database_meta_insert(Ems_Database *db, const char *filename, const char *meta, const char *value)
 {
    int res = -1, err = -1;
    int64_t meta_id = 0;
@@ -532,7 +643,7 @@ ems_database_meta_insert(Ems_Database *db, const char *filename, const char *met
    meta_id = _meta_insert(db, meta);
    data_id = _data_insert(db, value, 0); /* TODO : handle lang correctly */
 
-
+   ERR("Insert meta %lld %lld %lld\n", file_id, meta_id, data_id);
 
    EMS_DB_BIND_INT64_OR_GOTO(db->assoc_file_meta_stmt, 1, file_id, out);
    EMS_DB_BIND_INT64_OR_GOTO(db->assoc_file_meta_stmt, 2, meta_id, out_clear);
@@ -541,6 +652,7 @@ ems_database_meta_insert(Ems_Database *db, const char *filename, const char *met
    res = sqlite3_step(db->assoc_file_meta_stmt);
    if (res == SQLITE_DONE)
      err = 0;
+
    sqlite3_reset(db->assoc_file_meta_stmt);
  out_clear:
    sqlite3_clear_bindings (db->assoc_file_meta_stmt);
@@ -580,7 +692,7 @@ ems_database_files_get(Ems_Database *db)
    if (!db || !db->db)
      return NULL;
 
-   res = sqlite3_prepare_v2 (db->db, "SELECT file_path,file_mtime FROM file;", -1, &stmt, NULL);
+   res = sqlite3_prepare_v2 (db->db, "SELECT file_path FROM file;", -1, &stmt, NULL);
    if (res != SQLITE_OK)
      goto out;
 
@@ -592,7 +704,7 @@ ems_database_files_get(Ems_Database *db)
           {
              const char * text;
 
-             text  = (const char*)sqlite3_column_text (stmt, 1);
+             text  = (const char*)sqlite3_column_text(stmt, 0);
              files = eina_list_append(files, eina_stringshare_add(text));
           }
         else if (res == SQLITE_DONE)
@@ -792,4 +904,111 @@ ems_database_uuid_get(Ems_Database *db)
    uuid = (const char*)_table_info_get(db, "uuid");
 
    return uuid;
+}
+
+Eina_List *
+ems_database_collection_get(Ems_Database *db, Ems_Collection *collection)
+{
+   Eina_List *files = NULL;
+   sqlite3_stmt *stmt = NULL;
+   int res;
+
+   if (!db || !db->db)
+     return NULL;
+
+   res = sqlite3_prepare_v2 (db->db, "SELECT file_hash FROM file;", -1, &stmt, NULL);
+   if (res != SQLITE_OK)
+     goto out;
+
+   while (1)
+     {
+
+        res = sqlite3_step (stmt);
+        if (res == SQLITE_ROW)
+          {
+             const char * text;
+             const char *file;
+             text  = (const char*)sqlite3_column_text(stmt, 0);
+             file = eina_stringshare_printf("%s-%s",
+                                            ems_database_uuid_get(db),
+                                            text);
+             files = eina_list_append(files, file);
+          }
+        else if (res == SQLITE_DONE)
+          {
+             DBG("Request End");
+             break;
+          }
+        else
+          {
+             ERR("Request failed");
+          }
+     }
+
+   return files;
+
+ out:
+   return NULL;
+}
+
+const char *
+ems_database_info_get(Ems_Database *db, const char *uuid, const char *metadata)
+{
+   int res, err = -1;
+   const char *val = NULL;
+   int64_t file_id = 0;
+   sqlite3_stmt *stmt = NULL;
+
+   if (!metadata || !db || !db->db)
+     return NULL;
+
+   DBG("");
+
+   res = sqlite3_prepare_v2(db->db, SELECT_FILE_HASH_ID, -1, &stmt, NULL);
+   if (res != SQLITE_OK)
+     {
+        printf("Error ?\n");
+        goto out;
+     }
+
+   EMS_DB_BIND_TEXT_OR_GOTO(stmt, 1, uuid, out);
+   res = sqlite3_step(stmt);
+   if (res == SQLITE_ROW)
+     {
+        file_id = sqlite3_column_int64(stmt, 0);
+     }
+
+   DBG("file_id : %d", file_id);
+
+   sqlite3_reset(stmt);
+   sqlite3_clear_bindings(stmt);
+   err = -1;
+
+   res = sqlite3_prepare_v2(db->db, SELECT_METADATA, -1, &stmt, NULL);
+   if (res != SQLITE_OK)
+     {
+        goto out;
+     }
+
+   DBG("uuid %s metadata : %s", uuid, metadata);
+
+   EMS_DB_BIND_INT64_OR_GOTO(stmt, 1, file_id, out);
+   EMS_DB_BIND_TEXT_OR_GOTO(stmt, 2, metadata, out);
+
+   res = sqlite3_step(stmt);
+   printf("RES : %d\n", res);
+   if (res == SQLITE_ROW)
+     {
+        val = eina_stringshare_add((const char*)sqlite3_column_text(stmt, 0));
+        DBG("val : %s", val);
+     }
+
+
+   sqlite3_reset(stmt);
+   sqlite3_clear_bindings(stmt);
+   err = 0;
+ out:
+   if (err < 0)
+     ERR("%s", sqlite3_errmsg(db->db));
+   return val;
 }

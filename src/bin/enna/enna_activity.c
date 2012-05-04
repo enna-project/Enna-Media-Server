@@ -88,9 +88,9 @@ static char *_media_text_get(void *data, Evas_Object *obj __UNUSED__, const char
    Enna_Activity_Item *it = data;
 
    if (!strcmp(part, "name"))
-        return strdup(it->name);
+     return it->name ? strdup(it->name) : NULL;
    else if (!strcmp(part, "description"))
-     return strdup(it->description);
+     return it->description ? strdup(it->description) : NULL;
    else
      return NULL;
 }
@@ -140,20 +140,44 @@ _server_update_cb(void *data, Ems_Server *server)
    DBG("Server %s updated", ems_server_name_get(server));
 }
 
-#define ADD_ITEM(n, d, c, f)                                            \
-  it = calloc(1, sizeof (Enna_Activity_Item));                          \
-  it->server = server;                                                  \
-  it->act = act;                                                        \
-  it->name = eina_stringshare_add(n);                                   \
-  it->description = eina_stringshare_add(d);                            \
-  it->cover = eina_stringshare_printf(c);                               \
-  it->fanart = eina_stringshare_printf(f);                              \
-  it->it = elm_genlist_item_append(act->list, &itc_item,                \
-                                   it,                                  \
-                                   gr->it/* parent */,                  \
-                                   ELM_GENLIST_ITEM_NONE,               \
-                                   NULL,                                \
-                                   NULL)
+
+static void
+_add_item_name_cb(void *data, Ems_Server *server, const char *value)
+{
+   Enna_Activity_Item *it = data;
+
+   if (value)
+     {
+        it->name = eina_stringshare_add(value);
+        elm_genlist_item_fields_update(it->it, "name",
+                                       ELM_GENLIST_ITEM_FIELD_TEXT);
+     }
+}
+
+static void
+_add_item_cb(void *data, Ems_Server *server, const char *media)
+{
+   Enna_Activity *act = data;
+   Enna_Activity_Item *it;
+   Enna_Activity_Group *gr;
+
+   gr = eina_hash_find(act->servers, server);
+
+   it = calloc(1, sizeof (Enna_Activity_Item));
+   it->server = server;
+   it->act = act;
+
+   it->it = elm_genlist_item_append(act->list, &itc_item,
+                                    it,
+                                    gr->it/* parent */,
+                                    ELM_GENLIST_ITEM_NONE,
+                                    NULL,
+                                    NULL);
+
+
+   ems_server_media_info_get(server, media, "name", _add_item_name_cb,
+                             NULL, NULL, it);
+}
 
 static void
 _server_connected_cb(void *data, Ems_Server *server)
@@ -162,6 +186,7 @@ _server_connected_cb(void *data, Ems_Server *server)
    Enna_Activity_Group *gr;
    Enna_Activity_Item *it;
    Enna_Activity *act = data;
+   Ems_Collection *collection;
 
    DBG("Server %s connected", ems_server_name_get(server));
 
@@ -174,81 +199,8 @@ _server_connected_cb(void *data, Ems_Server *server)
                                     NULL);
    elm_genlist_item_select_mode_set(gr->it, ELM_OBJECT_SELECT_MODE_DISPLAY_ONLY);
 
-   ADD_ITEM("Crazy stupid love",
-            "by Glenn Ficarra, John Requa",
-            PACKAGE_DATA_DIR"/images/cover1.jpg",
-            PACKAGE_DATA_DIR"/images/fanart1.jpg");
-
-   ADD_ITEM("Iron Man",
-            "by John Favreau",
-            PACKAGE_DATA_DIR"/images/cover2.jpg",
-            PACKAGE_DATA_DIR"/images/fanart2.jpg");
-
-   ADD_ITEM("Star Wars Episode 1",
-            "by George Lucas",
-            PACKAGE_DATA_DIR"/images/cover3.jpg",
-            PACKAGE_DATA_DIR"/images/fanart3.jpg");
-
-   ADD_ITEM("Crazy stupid love",
-            "by Glenn Ficarra, John Requa",
-            PACKAGE_DATA_DIR"/images/cover1.jpg",
-            PACKAGE_DATA_DIR"/images/fanart1.jpg");
-
-   ADD_ITEM("Iron Man",
-            "by John Favreau",
-            PACKAGE_DATA_DIR"/images/cover2.jpg",
-            PACKAGE_DATA_DIR"/images/fanart2.jpg");
-
-   ADD_ITEM("Star Wars Episode 1",
-            "by George Lucas",
-            PACKAGE_DATA_DIR"/images/cover3.jpg",
-            PACKAGE_DATA_DIR"/images/fanart3.jpg");
-
-   ADD_ITEM("Crazy stupid love",
-            "by Glenn Ficarra, John Requa",
-            PACKAGE_DATA_DIR"/images/cover1.jpg",
-            PACKAGE_DATA_DIR"/images/fanart1.jpg");
-
-   ADD_ITEM("Iron Man",
-            "by John Favreau",
-            PACKAGE_DATA_DIR"/images/cover2.jpg",
-            PACKAGE_DATA_DIR"/images/fanart2.jpg");
-
-   ADD_ITEM("Star Wars Episode 1",
-            "by George Lucas",
-            PACKAGE_DATA_DIR"/images/cover3.jpg",
-            PACKAGE_DATA_DIR"/images/fanart3.jpg");
-
-   ADD_ITEM("Crazy stupid love",
-            "by Glenn Ficarra, John Requa",
-            PACKAGE_DATA_DIR"/images/cover1.jpg",
-            PACKAGE_DATA_DIR"/images/fanart1.jpg");
-
-   ADD_ITEM("Iron Man",
-            "by John Favreau",
-            PACKAGE_DATA_DIR"/images/cover2.jpg",
-            PACKAGE_DATA_DIR"/images/fanart2.jpg");
-
-   ADD_ITEM("Star Wars Episode 1",
-            "by George Lucas",
-            PACKAGE_DATA_DIR"/images/cover3.jpg",
-            PACKAGE_DATA_DIR"/images/fanart3.jpg");
-
-   ADD_ITEM("Crazy stupid love",
-            "by Glenn Ficarra, John Requa",
-            PACKAGE_DATA_DIR"/images/cover1.jpg",
-            PACKAGE_DATA_DIR"/images/fanart1.jpg");
-
-   ADD_ITEM("Iron Man",
-            "by John Favreau",
-            PACKAGE_DATA_DIR"/images/cover2.jpg",
-            PACKAGE_DATA_DIR"/images/fanart2.jpg");
-
-   ADD_ITEM("Star Wars Episode 1",
-            "by George Lucas",
-            PACKAGE_DATA_DIR"/images/cover3.jpg",
-            PACKAGE_DATA_DIR"/images/fanart3.jpg");
-
+   collection = ems_collection_new(EMS_MEDIA_TYPE_VIDEO, "films", "*", NULL);
+   ems_server_media_get(server, collection, _add_item_cb, act);
 }
 
 static void

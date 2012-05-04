@@ -120,6 +120,16 @@
     "FROM file "                                \
     "WHERE file_path = ?;"
 
+#define SELECT_META_ID                          \
+    "SELECT meta_id "                           \
+    "FROM meta "                                \
+    "WHERE meta_name = ?;"
+
+#define SELECT_DATA_ID                          \
+  "SELECT data_id "                             \
+  "FROM data "                                  \
+  "WHERE data_value = ?;"
+
 #define SELECT_FILE_FROM_ID                     \
     "SELECT file_path "                         \
     "FROM file "                                \
@@ -135,6 +145,11 @@
     "FROM file "                                \
     "WHERE file_path = ?;"
 
+#define SELECT_FILE_HASH_ID                     \
+  "SELECT file_id "                             \
+  "FROM file "                                  \
+  "WHERE file_hash = ?;"
+
 #define SELECT_FILE_SCAN_MAGIC                  \
     "SELECT file_path,file_id "                 \
     "FROM file "                                \
@@ -145,14 +160,25 @@
     "FROM info "                                \
     "WHERE info_name = ?;"
 
-#define SELECT_FILE_METADATA                    \
-    "SELECT meta_name, data_value "             \
-    "FROM FILE, FILE AS F, META AS M, DATA AS D, "      \
-    "ASSOC_FILE_METADATA AS AFM "               \
-    "WHERE M.meta_id = AFM.meta_id "            \
-    "AND D.data_id = AFM.data_id "              \
-    "AND F.file_id = AFM.file_id "              \
-    "AND F.file_id = ?;"
+#define SELECT_METADATA                                 \
+  "SELECT data_value "                                  \
+  "FROM FILE, FILE AS F, META AS M, DATA AS D, "        \
+  "ASSOC_FILE_METADATA AS AFM "                         \
+  "WHERE M.meta_id = AFM.meta_id "                      \
+  "AND D.data_id = AFM.data_id "                        \
+  "AND F.file_id = AFM.file_id "                        \
+  "AND F.file_id = ? "                                  \
+  "AND M.meta_name = ?;"
+
+/* #define SELECT_METADATA                                 \ */
+/*   "SELECT DISTINC data.data_value "                     \ */
+/*   "FROM file,data,meta,assoc_file_metadata "            \ */
+/*   "WHERE file.file_id = assoc_file_metadata.file_id "   \ */
+/*   "AND data.data_id = assoc_file_metadata.data_id "     \ */
+/*   "AND meta.meta_id = assoc_file_metadata.meta_id "     \ */
+/*   "AND file.file_id = ? "                               \ */
+/*   "AND meta.meta_name = ?;" */
+
 
 /******************************************************************************/
 /*                                                                            */

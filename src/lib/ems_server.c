@@ -37,14 +37,42 @@
 
 #include "ems_rpc_Config.azy_server.h"
 #include "ems_rpc_Browser.azy_server.h"
+#include "ems_rpc_Medias.azy_server.h"
 #include "ems_rpc_Browser.azy_client.h"
+#include "ems_rpc_Medias.azy_client.h"
 
+#define CALL_CHECK(X) \
+   do \
+     { \
+        if (!azy_client_call_checker(server->cli, err, ret, X, __PRETTY_FUNCTION__)) \
+          { \
+             WRN("%s", azy_content_error_message_get(err)); \
+             exit(1); \
+          } \
+     } while (0)
 
 /*============================================================================*
  *                                  Local                                     *
  *============================================================================*/
-
+typedef struct _Ems_Server_Media_Get_Req Ems_Server_Media_Get_Req;
+typedef struct _Ems_Server_Media_Info_Get_Req Ems_Server_Media_Info_Get_Req;
 typedef struct _Ems_Server_Cb Ems_Server_Cb;
+
+struct _Ems_Server_Media_Get_Req
+{
+   Ems_Server *server;
+   Ems_Collection *collection;
+   void (*add_cb)(void *data, Ems_Server *server, const char *media);
+   void *data_cb;
+};
+
+struct _Ems_Server_Media_Info_Get_Req
+{
+   Ems_Server *server;
+   const char *info;
+   void (*add_cb)(void *data, Ems_Server *server, const char *media);
+   void *data_cb;
+};
 
 struct _Ems_Server_Cb
 {
@@ -74,6 +102,8 @@ _ems_connected_cb(void *data __UNUSED__, int type __UNUSED__, Azy_Client *cli)
    else
        server->is_connected = EINA_TRUE;
 
+   server->cli = cli;
+
    EINA_LIST_FOREACH(_servers_cb, l_cb, cb)
      {
         if (cb->add_cb)
@@ -92,6 +122,7 @@ _ems_disconnected_cb(void *data __UNUSED__, int type __UNUSED__, Azy_Client *cli
    INF("Info disconnected from %s:%d", azy_client_addr_get(cli), azy_client_port_get(cli));
 
    server->is_connected = EINA_FALSE;
+   server->cli = NULL;
 
    EINA_LIST_FOREACH(_servers_cb, l_cb, cb)
      {
@@ -142,6 +173,7 @@ Eina_Bool ems_server_init(void)
    Azy_Server_Module_Def *modules[] = {
      ems_rpc_Config_module_def(),
      ems_rpc_Browser_module_def(),
+     ems_rpc_Medias_module_def(),
      NULL
    };
    Azy_Server_Module_Def **mods;
@@ -364,4 +396,116 @@ ems_server_dir_get(Ems_Server *server,
 
    return NULL;
 
+}
+
+static Eina_Error
+_ems_server_media_get_ret(Azy_Client *client, Azy_Content *content, void *response)
+{
+   Eina_List *files = response;
+   Eina_List *l;
+   const char *f;
+   Ems_Server_Media_Get_Req *media_req;
+
+   if (azy_content_error_is_set(content))
+     {
+        DBG("Error encountered: %s", azy_content_error_message_get(content));
+        return azy_content_error_code_get(content);
+     }
+
+   media_req = azy_content_data_get(content);
+
+   EINA_LIST_FREE(files, f)
+     {
+        if (media_req->add_cb)
+          media_req->add_cb(media_req->data_cb, media_req->server, f);
+        DBG("%s", f);
+     }
+   free(media_req);
+   //response is automaticaly free
+   return AZY_ERROR_NONE;
+}
+
+
+Ems_Observer *
+ems_server_media_get(Ems_Server *server,
+                     Ems_Collection *collection,
+                     Ems_Media_Add_Cb media_add,
+                     void *data)
+{
+   Azy_Content *err;
+   unsigned int ret;
+   Ems_Server_Media_Get_Req *media_req;
+
+    if (!server || !server->cli || !collection)
+     return NULL;
+
+    if (!server->is_connected)
+      _ems_server_connect(server);
+
+   err = azy_content_new(NULL);
+   media_req = calloc(1, sizeof(Ems_Server_Media_Get_Req));
+   media_req->server = server;
+   media_req->collection = collection;
+   media_req->add_cb = media_add;
+   media_req->data_cb = data;
+
+
+   ret = ems_rpc_Medias_GetMedias(server->cli, collection->type, collection->filters, err, media_req);
+   CALL_CHECK(_ems_server_media_get_ret);
+   return NULL;
+}
+
+static Eina_Error
+_ems_server_media_info_get_ret(Azy_Client *client, Azy_Content *content, void *response)
+{
+   const char *info = response;
+   Ems_Server_Media_Info_Get_Req *media_req;
+
+   if (azy_content_error_is_set(content))
+     {
+        DBG("Error encountered: %s", azy_content_error_message_get(content));
+        return azy_content_error_code_get(content);
+     }
+
+   media_req = azy_content_data_get(content);
+
+   if (media_req->add_cb)
+     media_req->add_cb(media_req->data_cb, media_req->server, info);
+
+   eina_stringshare_del(media_req->info);
+   free(media_req);
+
+   //response is automaticaly free
+   return AZY_ERROR_NONE;
+}
+
+Ems_Observer *
+ems_server_media_info_get(Ems_Server *server,
+                          const char *uuid,
+                          const char *info,
+                          Ems_Media_Info_Add_Cb info_add,
+                          Ems_Media_Info_Add_Cb info_del,
+                          Ems_Media_Info_Update_Cb info_update,
+                          void *data)
+{
+   Azy_Content *err;
+   unsigned int ret;
+   Ems_Server_Media_Info_Get_Req *media_req;
+
+    if (!server || !server->cli || !info)
+     return NULL;
+
+    if (!server->is_connected)
+      _ems_server_connect(server);
+
+   err = azy_content_new(NULL);
+   media_req = calloc(1, sizeof(Ems_Server_Media_Info_Get_Req));
+   media_req->server = server;
+   media_req->info = eina_stringshare_add(info);
+   media_req->add_cb = info_add;
+   media_req->data_cb = data;
+
+   ret = ems_rpc_Medias_GetMediaInfo(server->cli, uuid+37, info, err, media_req);
+   CALL_CHECK(_ems_server_media_info_get_ret);
+   return NULL;
 }

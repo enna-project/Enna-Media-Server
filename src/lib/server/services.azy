@@ -21,18 +21,31 @@ struct Config
    array<Directory> video_directories;
 };
 
+struct Filter
+{
+   string metadata;
+   string value;
+};
+
 //Our module, a module contains a list of methods
 Azy_Module Config
 {
    <%
-   #include <config.h>
-   #include "ems_private.h"
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
+#include <Eina.h>
+
+#include "Ems.h"
+#include "ems_private.h"
+#include "ems_server.h"
    %>
    __version__(1.0);
 
    Config GetAll()
-   <%
-   (void)module;
+     <%
+     (void)module;
 
    retval = ems_rpc_Config_new();
    retval->version = eina_stringshare_add(PACKAGE_VERSION);
@@ -43,15 +56,15 @@ Azy_Module Config
    return retval;
    %>
 
-   Config SetAll(Config cfg)
-   <%
-   (void) module;
+     Config SetAll(Config cfg)
+       <%
+       (void) module;
    
-   INF("Receive : %s", cfg->name);
-   INF("Receive: %d", cfg->port);
-   %>
+     INF("Receive : %s", cfg->name);
+     INF("Receive: %d", cfg->port);
+     %>
 
-}
+       }
 
 
 struct File
@@ -61,56 +74,87 @@ struct File
    int type;
 };
 
+Azy_Module Medias
+{
+   <%
+#include <config.h>
+#include <Ecore_File.h>
+#include "ems_private.h"
+   %>
+   __version__(1.0);
 
+   array<string> GetMedias(int type, array<Filter> filters)
+   <%
+     Eina_List *l;
+     Ems_Collection_Filter *filter;
+
+     (void)module;
+     (void)type;
+     DBG("Get Medias");
+     EINA_LIST_FOREACH(l, filters, filter)
+       {
+          DBG("%s %s", filter->metadata, filter->value);
+       }
+     return ems_database_collection_get(ems_config->db, NULL);
+   %>
+
+       string GetMediaInfo(string uuid, string metadata)
+   <%
+     (void)module;
+     DBG("Get Media Name : %s\n", uuid);
+     return ems_database_info_get(ems_config->db, uuid, metadata);
+   %>
+
+}
 
 Azy_Module Browser
 {
    <%
-   #include <config.h>
-   #include <Ecore_File.h>
-   #include "ems_private.h"
+#include <config.h>
+#include <Ecore_File.h>
+#include "ems_private.h"
    %>
 
    __version__(1.0);
 
    array<File> GetSources()
    <%
-   Eina_List *l;
-   Ems_Directory *dir;
-   ems_rpc_File *f;
-   (void) module;
+     Eina_List *l;
+     Ems_Directory *dir;
+     ems_rpc_File *f;
+     (void) module;
 
-   EINA_LIST_FOREACH(ems_config->video_directories, l, dir)
-   {
-     f = ems_rpc_File_new();
-     f->path = eina_stringshare_add(dir->path);
-     retval = eina_list_append(retval, f);
-   }
-   return retval;
+     EINA_LIST_FOREACH(ems_config->video_directories, l, dir)
+       {
+          f = ems_rpc_File_new();
+          f->path = eina_stringshare_add(dir->path);
+          retval = eina_list_append(retval, f);
+       }
+     return retval;
    %>
 
    array<File> GetDirectory(string path)
    <%
-      Eina_List *files;
-      ems_rpc_File *f;
-      char *s;
-      char filename[PATH_MAX + 1];
+     Eina_List *files;
+     ems_rpc_File *f;
+     char *s;
+     char filename[PATH_MAX + 1];
 
-      (void) module;
+     (void) module;
 
-      INF("Browse %s", path);
-      files = ecore_file_ls(path);
-      EINA_LIST_FREE(files, s)
-        {
-           f = ems_rpc_File_new();
-           f->friendly_name = eina_stringshare_add(s);
-           snprintf(filename, PATH_MAX, "%s/%s", path, s);
-           f->path = eina_stringshare_add(filename);
-           if (!ecore_file_is_dir(filename))
-              f->type = 1;
-           retval = eina_list_append(retval, f);
-           free(s);
-        }
+     INF("Browse %s", path);
+     files = ecore_file_ls(path);
+     EINA_LIST_FREE(files, s)
+       {
+          f = ems_rpc_File_new();
+          f->friendly_name = eina_stringshare_add(s);
+          snprintf(filename, PATH_MAX, "%s/%s", path, s);
+          f->path = eina_stringshare_add(filename);
+          if (!ecore_file_is_dir(filename))
+            f->type = 1;
+          retval = eina_list_append(retval, f);
+          free(s);
+       }
 
-   %>
+     %>
 }

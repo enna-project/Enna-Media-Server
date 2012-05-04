@@ -108,8 +108,10 @@ _search_data_cb(void *data __UNUSED__, int type __UNUSED__, Ecore_Con_Event_Url_
      it = cJSON_GetObjectItem(m, #val);                                 \
      eina_value_setup(&v, eina_type);                                   \
      if (it) {                                                          \
-         eina_value_set(&v, it->type);                                  \
-         ems_database_meta_insert(ems_config->db, req->filename, #val, &v); \
+        const char *str;                                                \
+        eina_value_set(&v, it->type);                                   \
+        str = eina_stringshare_add(eina_value_to_string(&v));           \
+        ems_database_meta_insert(ems_config->db, req->filename, #val, str); \
      }                                                                  \
      eina_value_flush(&v);                                              \
   } while(0);                                                           \
@@ -117,14 +119,10 @@ _search_data_cb(void *data __UNUSED__, int type __UNUSED__, Ecore_Con_Event_Url_
 #define GETVALSTR(val, type, eina_type)                                 \
   do {                                                                  \
      cJSON *it;                                                         \
-     Eina_Value v;                                                      \
      it = cJSON_GetObjectItem(m, #val);                                 \
-     eina_value_setup(&v, eina_type);                                   \
      if (it) {                                                          \
-         eina_value_set(&v, eina_stringshare_add(it->type));            \
-         ems_database_meta_insert(ems_config->db, req->filename, #val, &v); \
+        ems_database_meta_insert(ems_config->db, req->filename, #val, eina_stringshare_add(it->type)); \
      }                                                                  \
-     eina_value_flush(&v);                                              \
   } while(0);                                                           \
 
 
@@ -223,12 +221,8 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
                                   it = cJSON_GetObjectItem(it_image, "url");
                                   if (it)
                                     {
-                                       Eina_Value v;
-                                       eina_value_setup(&v, EINA_VALUE_TYPE_STRINGSHARE);
-                                       eina_value_set(&v, eina_stringshare_add(it->valuestring));
-                                       ems_database_meta_insert(ems_config->db, req->filename, "poster_url", &v);
+                                       ems_database_meta_insert(ems_config->db, req->filename, "poster_url",  eina_stringshare_add(it->valuestring));
                                        ems_downloader_url_download(it->valuestring, req->filename, NULL, NULL);
-                                       DBG("%s", it->valuestring);
                                        break;
 
                                     }

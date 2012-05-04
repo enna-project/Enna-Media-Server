@@ -26,10 +26,10 @@ typedef void (*Ems_Server_Disconnected_Cb)(void *data, Ems_Server *server);
 
 typedef void (*Ems_Player_Add_Cb)(void *data, Ems_Player *player);
 typedef void (*Ems_Player_Del_Cb)(void *data, Ems_Player *player);
-typedef void (*Ems_Player_Update_Cb)(void *data, Ems_Player *player);
+typedef void (*Ems_Player_emUpdate_Cb)(void *data, Ems_Player *playeemr);
 
 typedef void (*Ems_Media_Add_Cb)(void *data, Ems_Server *server,
-                                 Eina_Iterator *it);
+                                 const char *media);
 typedef void (*Ems_Media_Del_Cb)(void *data, Ems_Server *server,
                                  Eina_Iterator *it);
 typedef void (*Ems_Media_Done_Cb)(void *data, Ems_Server *server);
@@ -80,14 +80,14 @@ void ems_server_cb_del(Ems_Server_Add_Cb server_add_cb,
                        Ems_Server_Update_Cb server_uddate_cb);
 
 /* Set callbacks to be informed when a player is added/deleted/update */
-void ems_player_cb_set(Ems_Player_Add_Cb player_add_cb,
-                       Ems_Player_Del_Cb player_del_cb,
-                       Ems_Player_Update_Cb player_update_cb,
-                       void *data);
-/* Unset callbacks */
-void ems_player_cb_del(Ems_Player_Add_Cb player_add_cb,
-                       Ems_Player_Del_Cb player_del_cb,
-                       Ems_Player_Update_Cb player_update_cb);
+/* void ems_player_cb_set(Ems_Player_Add_Cb player_add_cb, */
+/*                        Ems_Player_Del_Cb player_del_cb, */
+/*                        Ems_Player_Update_Cb player_update_cb, */
+/*                        void *data); */
+/* /\* Unset callbacks *\/ */
+/* void ems_player_cb_del(Ems_Player_Add_Cb player_add_cb, */
+/*                        Ems_Player_Del_Cb player_del_cb, */
+/*                        Ems_Player_Update_Cb player_update_cb); */
 
 /* No need to be asyncrhonous here as name, icons, local and type are already set */
 
@@ -142,30 +142,27 @@ Ems_Observer *ems_server_dir_get(Ems_Server *server,
  * get all seasons of Dexter :
  * collection = ems_collection_new(EMS_MEDIA_TYPE_TVSHOW, "tvshow", "Dexter", NULL);
  */
-Ems_Collection *ems_collection_new(Ems_Media_Type type, ...);
+Ems_Collection *ems_collection_new(Ems_Media_Type type, const char *arg, ...);
 void ems_collection_free(Ems_Collection *collection);
 
 
 /* Get The list of movies on the specified server */
 Ems_Observer *ems_server_media_get(Ems_Server *server,
-                                   Ems_Media_Type type,
                                    Ems_Collection *collection,
                                    Ems_Media_Add_Cb media_add,
-                                   Ems_Media_Del_Cb media_del,
-                                   Ems_Media_Done_Cb media_done,
-                                   Ems_Media_Error_Cb media_error,
                                    void *data);
 
 
 
 /* Get the info propertiy of a media on the specified server */
 Ems_Observer *ems_server_media_info_get(Ems_Server *server,
-                                        Ems_Media *media,
+                                        const char *uuid,
                                         const char *info,
                                         Ems_Media_Info_Add_Cb info_add,
                                         Ems_Media_Info_Add_Cb info_del,
                                         Ems_Media_Info_Update_Cb info_update,
                                         void *data);
+
 void ems_media_info_observer_del(Ems_Observer *obs);
 
 /* Set the info of a media on the specified server */

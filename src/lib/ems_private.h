@@ -27,6 +27,8 @@
 #define _EMS_PRIVATE_H
 
 #include <Eina.h>
+#include <Azy.h>
+
 #include "ems_database.h"
 /*
  * variable and macros used for the eina_log module
@@ -84,15 +86,23 @@ extern int _ems_log_dom_global;
 
 typedef struct _Ems_Config Ems_Config;
 typedef struct _Ems_Directory Ems_Directory;
+typedef struct _Ems_Collection_Filter Ems_Collection_Filter;
 
 struct _Ems_Observer
 {
    int dummy;
 };
 
+struct _Ems_Collection_Filter
+{
+   const char *metadata;
+   const char *value;
+};
+
 struct _Ems_Collection
 {
-   int dummy;
+   Ems_Media_Type type;
+   Eina_List *filters;
 };
 
 struct _Ems_Media
@@ -110,6 +120,7 @@ struct _Ems_Server
    const char *name;
    const char *ip;
    unsigned int port;
+   Azy_Client *cli;
    Eina_Bool is_ipv6;
    Eina_Bool is_local;
    Eina_Bool is_connected;
