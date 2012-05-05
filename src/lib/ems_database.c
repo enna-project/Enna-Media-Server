@@ -164,7 +164,6 @@ _data_insert(Ems_Database *db, const char *value, int64_t lang_id)
    /*   { */
    /*      const char *s; */
    /*      eina_value_get(value, &s); */
-   ERR("Insert %s", value);
    EMS_DB_BIND_TEXT_OR_GOTO(db->data_stmt, 1, value, out);
    /*   } */
    /* else if (type == EINA_VALUE_TYPE_INT64) */
@@ -643,8 +642,6 @@ ems_database_meta_insert(Ems_Database *db, const char *filename, const char *met
    meta_id = _meta_insert(db, meta);
    data_id = _data_insert(db, value, 0); /* TODO : handle lang correctly */
 
-   ERR("Insert meta %lld %lld %lld\n", file_id, meta_id, data_id);
-
    EMS_DB_BIND_INT64_OR_GOTO(db->assoc_file_meta_stmt, 1, file_id, out);
    EMS_DB_BIND_INT64_OR_GOTO(db->assoc_file_meta_stmt, 2, meta_id, out_clear);
    EMS_DB_BIND_INT64_OR_GOTO(db->assoc_file_meta_stmt, 3, data_id, out_clear);
@@ -962,14 +959,9 @@ ems_database_info_get(Ems_Database *db, const char *uuid, const char *metadata)
    if (!metadata || !db || !db->db)
      return NULL;
 
-   DBG("");
-
    res = sqlite3_prepare_v2(db->db, SELECT_FILE_HASH_ID, -1, &stmt, NULL);
    if (res != SQLITE_OK)
-     {
-        printf("Error ?\n");
         goto out;
-     }
 
    EMS_DB_BIND_TEXT_OR_GOTO(stmt, 1, uuid, out);
    res = sqlite3_step(stmt);
@@ -977,8 +969,6 @@ ems_database_info_get(Ems_Database *db, const char *uuid, const char *metadata)
      {
         file_id = sqlite3_column_int64(stmt, 0);
      }
-
-   DBG("file_id : %d", file_id);
 
    sqlite3_reset(stmt);
    sqlite3_clear_bindings(stmt);
@@ -990,17 +980,13 @@ ems_database_info_get(Ems_Database *db, const char *uuid, const char *metadata)
         goto out;
      }
 
-   DBG("uuid %s metadata : %s", uuid, metadata);
-
    EMS_DB_BIND_INT64_OR_GOTO(stmt, 1, file_id, out);
    EMS_DB_BIND_TEXT_OR_GOTO(stmt, 2, metadata, out);
 
    res = sqlite3_step(stmt);
-   printf("RES : %d\n", res);
    if (res == SQLITE_ROW)
      {
         val = eina_stringshare_add((const char*)sqlite3_column_text(stmt, 0));
-        DBG("val : %s", val);
      }
 
 
