@@ -90,18 +90,12 @@ Azy_Module Medias
 
      (void)module;
      (void)type;
-     DBG("Get Medias");
-     EINA_LIST_FOREACH(l, filters, filter)
-       {
-          DBG("%s %s", filter->metadata, filter->value);
-       }
      return ems_database_collection_get(ems_config->db, NULL);
    %>
 
        string GetMediaInfo(string uuid, string metadata)
    <%
      (void)module;
-     DBG("Get Media Name : %s\n", uuid);
      return ems_database_info_get(ems_config->db, uuid, metadata);
    %>
 
