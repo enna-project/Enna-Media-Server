@@ -246,10 +246,8 @@ _timer_cb(void *data)
    Evas_Object *cover;
    Evas_Object *fanart;
 
-   if (item->o_cover)
-     evas_object_del(item->o_cover);
-   if (item->o_fanart)
-     evas_object_del(item->o_fanart);
+   if (!item)
+     return EINA_FALSE;
 
    item->o_cover = evas_object_image_filled_add(evas_object_evas_get(item->act->ly));
    evas_object_image_file_set(item->o_cover, item->cover, NULL);
