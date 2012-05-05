@@ -93,12 +93,12 @@ _search_data_cb(void *data __UNUSED__, int type __UNUSED__, Ecore_Con_Event_Url_
    Ems_Tmdb_Req *req = eina_hash_find(_hash_req, ev->url_con);
 
    if (!req)
-     return EINA_TRUE;
+     return  ECORE_CALLBACK_PASS_ON;
 
    if (req->buf)
      eina_strbuf_append_length(req->buf, (char*)&ev->data[0], ev->size);
 
-   return EINA_FALSE;
+   return ECORE_CALLBACK_DONE;
 }
 
 #define GETVAL(val, type, eina_type)                                    \
@@ -129,6 +129,8 @@ static Eina_Bool
 _poster_download_end_cb(void *data, const char *url,
                         const char *filename)
 {
+
+   ERR("insert poster for %s", data);
    ems_database_meta_insert(ems_config->db, data, "poster",  eina_stringshare_add(filename));
    eina_stringshare_del(data);
 }
@@ -142,16 +144,16 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
    Ems_Tmdb_Req *req = eina_hash_find(_hash_req, url_complete->url_con);
 
    if (!req)
-     return EINA_TRUE;
+     return ECORE_CALLBACK_PASS_ON;
 
    DBG("download completed for %s with status code: %d", req->filename, url_complete->status);
    if (url_complete->status != 200)
      {
         if (req->end_cb)
           req->end_cb(req->data, req->filename);
+        //ecore_con_url_free(req->ec_url);
         eina_hash_del(_hash_req, req->ec_url, req);
-        ecore_con_url_free(req->ec_url);
-        return EINA_FALSE;
+        return ECORE_CALLBACK_DONE;
      }
 
 
@@ -165,9 +167,20 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
               cJSON *posters;
               int size = 0;
               int i;
+              const char *buf = eina_strbuf_string_get(req->buf);
+
+              if (!buf)
+                {
+                   if (req->end_cb)
+                     req->end_cb(req->data, req->filename);
+                   //ecore_con_url_free(req->ec_url);
+                   eina_hash_del(_hash_req, req->ec_url, req);
+      
+                   return ECORE_CALLBACK_DONE;
+                }
 
               //DBG("Search request data : %s", eina_strbuf_string_get(req->buf));
-              root = cJSON_Parse(eina_strbuf_string_get(req->buf));
+              root = cJSON_Parse(buf);
               if (root)
                 size = cJSON_GetArraySize(root);
               //DBG("%s", cJSON_Print(root));
@@ -177,7 +190,7 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
                 {
                    DBG("No result found");
                    goto end_req;
-                   return EINA_FALSE;
+                   return ECORE_CALLBACK_DONE;
                 }
               else if (size > 1)
                 {
@@ -190,7 +203,7 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
                    ERR("Unable to get movie info");
                    goto end_req;
                 }
-
+              DBG("find info for %s", req->filename);
               ems_database_transaction_begin(ems_config->db);
               GETVAL(score, valuedouble, EINA_VALUE_TYPE_DOUBLE);
               GETVAL(popularity, valueint, EINA_VALUE_TYPE_INT);
@@ -211,41 +224,51 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
               GETVALSTR(released, valuestring, EINA_VALUE_TYPE_STRINGSHARE);
               GETVAL(version, valueint, EINA_VALUE_TYPE_INT);
               GETVALSTR(last_modified_at, valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+              ems_database_transaction_end(ems_config->db);
 
               posters = cJSON_GetObjectItem(m, "posters");
               if (posters)
                 {
+                   const char *poster = NULL;
+                   const char *size = NULL;
                    size = cJSON_GetArraySize(posters);
                    for (i = 0; i < size; i++)
                      {
                         cJSON *it_image, *it;
                         m = cJSON_GetArrayItem(posters, i);
+                        if (!m)
+                          break;
                         it_image =  cJSON_GetObjectItem(m, "image");
                         if (it_image)
                           {
                              it = cJSON_GetObjectItem(it_image, "size");
+                             size = it->valuestring;
                              if (it && !strcmp(it->valuestring, "original"))
                                {
                                   it = cJSON_GetObjectItem(it_image, "url");
-                                  if (it)
+                                  if (it && it->valuestring)
                                     {
-                                       ems_downloader_url_download(it->valuestring, req->filename, _poster_download_end_cb, eina_stringshare_add(req->filename));
+                                       poster = eina_stringshare_add(it->valuestring);
+                                       ERR("start poster download for %s", req->filename);
+                                       ems_downloader_url_download(poster, req->filename,
+                                                                   _poster_download_end_cb,
+                                                                   eina_stringshare_add(req->filename));
+                                       eina_stringshare_del(poster);
                                        break;
-
                                     }
                                }
                           }
                      }
                 }
-              ems_database_transaction_end(ems_config->db);
+
 
               cJSON_Delete(root);
            end_req:
               if (req->end_cb)
                   req->end_cb(req->data, req->filename);
+              //ecore_con_url_free(req->ec_url);
               eina_hash_del(_hash_req, req->ec_url, req);
-              ecore_con_url_free(req->ec_url);
-              return EINA_FALSE;
+              return ECORE_CALLBACK_DONE;
            }
          else
            {
@@ -260,10 +283,10 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
 
    if (req->end_cb)
      req->end_cb(req->data, req->filename);
-   ecore_con_url_free(req->ec_url);
+   //ecore_con_url_free(req->ec_url);
    eina_hash_del(_hash_req, req->ec_url, req);
 
-   return EINA_FALSE;
+   return ECORE_CALLBACK_DONE;
 }
 
 static void
