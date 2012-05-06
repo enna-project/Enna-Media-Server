@@ -60,6 +60,7 @@ struct _Enna_Activity_Item
    const char *description;
    const char *cover;
    const char *fanart;
+   const char *media;
    Evas_Object *o_cover;
    Evas_Object *o_fanart;
 };
@@ -142,17 +143,42 @@ _server_update_cb(void *data, Ems_Server *server)
    DBG("Server %s updated", ems_server_name_get(server));
 }
 
+static void
+_add_item_file_name_cb(void *data, Ems_Server *server, const char *value)
+{
+   Enna_Activity_Item *it = data;
+
+   if (value && value[0])
+     {
+        it->name = eina_stringshare_add(value);
+        elm_genlist_item_fields_update(it->it, "name",
+                                       ELM_GENLIST_ITEM_FIELD_TEXT);
+     }
+   else
+     {
+        it->name = eina_stringshare_add("Unknown");
+        elm_genlist_item_fields_update(it->it, "name",
+                                       ELM_GENLIST_ITEM_FIELD_TEXT);
+        ERR("Cannot find a title for this file: :'(");
+     }
+}
+
 
 static void
 _add_item_name_cb(void *data, Ems_Server *server, const char *value)
 {
    Enna_Activity_Item *it = data;
 
-   if (value)
+   if (value && value[0])
      {
         it->name = eina_stringshare_add(value);
         elm_genlist_item_fields_update(it->it, "name",
                                        ELM_GENLIST_ITEM_FIELD_TEXT);
+     }
+   else
+     {
+         ems_server_media_info_get(server, it->media, "original_name", _add_item_file_name_cb,
+                             NULL, NULL, it);
      }
 }
 
@@ -180,7 +206,7 @@ _add_item_cb(void *data, Ems_Server *server, const char *media)
    it = calloc(1, sizeof (Enna_Activity_Item));
    it->server = server;
    it->act = act;
-
+   it->media = eina_stringshare_add(media);
    it->it = elm_genlist_item_append(act->list, &itc_item,
                                     it,
                                     gr->it/* parent */,
