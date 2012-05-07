@@ -155,8 +155,12 @@ _decrapify_blacklist (char **list, char *str)
 
         size = strlen (*l);
         if (!EMS_ISGRAPH (*(p + size)) && (p == str || !EMS_ISGRAPH (*(p - 1))))
-          memset (p, ' ', size);
+          {
+             *p = '\0';
+          }
+        //memset (p, ' ', size);
      }
+   ERR("str : \"%s\"", str);
 }
 
 static void
