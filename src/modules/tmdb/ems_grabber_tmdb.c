@@ -130,9 +130,10 @@ _poster_download_end_cb(void *data, const char *url,
                         const char *filename)
 {
 
-   ERR("insert poster for %s", data);
+   ERR("insert poster for %s", (const char*)data);
    ems_database_meta_insert(ems_config->db, data, "poster",  eina_stringshare_add(filename));
    eina_stringshare_del(data);
+   return EINA_TRUE;
 }
 
 
@@ -230,7 +231,6 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
               if (posters)
                 {
                    const char *poster = NULL;
-                   const char *size = NULL;
                    size = cJSON_GetArraySize(posters);
                    for (i = 0; i < size; i++)
                      {
@@ -242,7 +242,6 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
                         if (it_image)
                           {
                              it = cJSON_GetObjectItem(it_image, "size");
-                             size = it->valuestring;
                              if (it && !strcmp(it->valuestring, "original"))
                                {
                                   it = cJSON_GetObjectItem(it_image, "url");
@@ -338,6 +337,12 @@ ems_grabber_grab(const char *filename, Ems_Media_Type type, Ems_Grabber_End_Cb e
    tmp = ems_utils_decrapify(filename);
    if (tmp)
      {
+        /* Insert metadata name in database based on searched string
+         * If tmdb give a result this name will be changed by the tmdb value
+         */
+        ems_database_meta_insert(ems_config->db, filename, "name", tmp);
+
+        /* Escape string for search with tmdb */
         search = ems_utils_escape_string(tmp);
         free(tmp);
         if (!search)
