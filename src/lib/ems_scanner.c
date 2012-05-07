@@ -181,13 +181,13 @@ _file_main_cb(void *data, Eio_File *handler __UNUSED__, const Eina_File_Direct_I
         if (mtime < 0)
           {
              uint64_t hash, size;
-             /* File doesn't exists in the db, insert a new one, start time is here a markup, once the scan is finished we do a request on on this value to see which files changed, these files can be then removed from the db, as they are removed on the filesystem*/
+             /* File doesn't exists in the db, insert a new one, start time is here a markup, once the scan is finished we do a request on this value to see which files changed, these files can be then removed from the db, as they are removed on the filesystem*/
              if (ems_utils_hash_compute(info->path, &hash, &size))
                {
                   if (size || hash)
                     {
                        char uuid[50];
-
+                       char ssize[17];
                        snprintf(uuid, sizeof(uuid), "%032"PRIx64"-%016"PRIx32,
                                 hash,
                                 (uint32_t)size);
@@ -195,6 +195,11 @@ _file_main_cb(void *data, Eio_File *handler __UNUSED__, const Eina_File_Direct_I
                        DBG("Insert %s with uuid : %s", info->path, uuid);
 
                        ems_database_file_insert(ems_config->db, info->path, uuid, (int64_t)st.st_mtime, dir->type, _scanner->start_time);
+                       snprintf(ssize, sizeof(ssize), "%"PRIx64, (uint32_t)size);
+                       /* Insert metadata name, filesize and filename in database */
+                       ems_database_meta_insert(ems_config->db, info->path, "filesize", ssize);
+                       ems_database_meta_insert(ems_config->db, info->path, "filename", info->path);
+
                        ems_parser_grab(info->path);
                     }
                   else
