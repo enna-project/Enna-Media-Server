@@ -177,7 +177,7 @@ _add_item_name_cb(void *data, Ems_Server *server, const char *value)
      }
    else
      {
-         ems_server_media_info_get(server, it->media, "original_name", _add_item_file_name_cb,
+         ems_server_media_info_get(server, it->media, "filename", _add_item_file_name_cb,
                              NULL, NULL, it);
      }
 }
@@ -272,7 +272,7 @@ _timer_cb(void *data)
    Evas_Object *cover;
    Evas_Object *fanart;
 
-   if (!item)
+   if (!item || !item->act)
      return EINA_FALSE;
 
    item->o_cover = evas_object_image_filled_add(evas_object_evas_get(item->act->ly));
