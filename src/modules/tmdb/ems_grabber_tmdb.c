@@ -87,7 +87,7 @@ _grabber_tmdb_shutdown(void)
 }
 
 
-Eina_Bool
+static Eina_Bool
 _search_data_cb(void *data __UNUSED__, int type __UNUSED__, Ecore_Con_Event_Url_Data *ev)
 {
    Ems_Tmdb_Req *req = eina_hash_find(_hash_req, ev->url_con);
