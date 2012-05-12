@@ -136,6 +136,62 @@ _poster_download_end_cb(void *data, const char *url,
    return EINA_TRUE;
 }
 
+static Eina_Bool
+_backdrop_download_end_cb(void *data, const char *url,
+                          const char *filename)
+{
+
+   ERR("insert backdrop for %s", (const char*)data);
+   ems_database_meta_insert(ems_config->db, data, "backdrop",  eina_stringshare_add(filename));
+   eina_stringshare_del(data);
+   return EINA_TRUE;
+}
+
+
+
+static void
+_tmdb_images_get(Ems_Tmdb_Req *req, cJSON *parent, const char *name, Ems_Downloader_End_Cb end_cb)
+{
+   int size = 0;
+   int i;
+   cJSON *images, *m;
+   const char *search;
+
+   images = cJSON_GetObjectItem(parent, name);
+   if (images)
+     {
+        const char *poster = NULL;
+        size = cJSON_GetArraySize(images);
+        for (i = 0; i < size; i++)
+          {
+             cJSON *it_image, *it;
+             m = cJSON_GetArrayItem(images, i);
+             if (!m)
+               break;
+             it_image =  cJSON_GetObjectItem(m, "image");
+             if (it_image)
+               {
+                  it = cJSON_GetObjectItem(it_image, "size");
+                  if (it && !strcmp(it->valuestring, "original"))
+                    {
+                       it = cJSON_GetObjectItem(it_image, "url");
+                       if (it && it->valuestring)
+                         {
+                            poster = eina_stringshare_add(it->valuestring);
+                            ERR("start %s download for %s", name, req->filename);
+                            ems_downloader_url_download(poster, req->filename,
+                                                        end_cb,
+                                                        eina_stringshare_add(req->filename));
+                            eina_stringshare_del(poster);
+                            break;
+                         }
+                    }
+               }
+          }
+     }
+
+
+}
 
 static Eina_Bool
 _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info)
@@ -165,9 +221,7 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
            {
               cJSON *root;
               cJSON *m;
-              cJSON *posters;
               int size = 0;
-              int i;
               const char *buf = eina_strbuf_string_get(req->buf);
 
               if (!buf)
@@ -226,41 +280,9 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
               GETVAL(version, valueint, EINA_VALUE_TYPE_INT);
               GETVALSTR(last_modified_at, valuestring, EINA_VALUE_TYPE_STRINGSHARE);
               ems_database_transaction_end(ems_config->db);
-
-              posters = cJSON_GetObjectItem(m, "posters");
-              if (posters)
-                {
-                   const char *poster = NULL;
-                   size = cJSON_GetArraySize(posters);
-                   for (i = 0; i < size; i++)
-                     {
-                        cJSON *it_image, *it;
-                        m = cJSON_GetArrayItem(posters, i);
-                        if (!m)
-                          break;
-                        it_image =  cJSON_GetObjectItem(m, "image");
-                        if (it_image)
-                          {
-                             it = cJSON_GetObjectItem(it_image, "size");
-                             if (it && !strcmp(it->valuestring, "original"))
-                               {
-                                  it = cJSON_GetObjectItem(it_image, "url");
-                                  if (it && it->valuestring)
-                                    {
-                                       poster = eina_stringshare_add(it->valuestring);
-                                       ERR("start poster download for %s", req->filename);
-                                       ems_downloader_url_download(poster, req->filename,
-                                                                   _poster_download_end_cb,
-                                                                   eina_stringshare_add(req->filename));
-                                       eina_stringshare_del(poster);
-                                       break;
-                                    }
-                               }
-                          }
-                     }
-                }
-
-
+              _tmdb_images_get(req, m, "posters", _poster_download_end_cb);
+              _tmdb_images_get(req, m, "backdrops", _backdrop_download_end_cb);
+ 
               cJSON_Delete(root);
            end_req:
               if (req->end_cb)
