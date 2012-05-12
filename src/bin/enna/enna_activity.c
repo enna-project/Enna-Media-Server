@@ -61,10 +61,10 @@ struct _Enna_Activity_Item
    const char *name;
    const char *description;
    const char *cover;
-   const char *fanart;
+   const char *backdrop;
    const char *media;
    Evas_Object *o_cover;
-   Evas_Object *o_fanart;
+   Evas_Object *o_backdrop;
 };
 
 struct _Enna_Activity
@@ -198,6 +198,19 @@ _add_item_poster_cb(void *data, Ems_Server *server, const char *value)
 }
 
 static void
+_add_item_backdrop_cb(void *data, Ems_Server *server, const char *value)
+{
+   Enna_Activity_Item *it = data;
+
+   if (value)
+     {
+        it->backdrop = eina_stringshare_add(value);
+        if(elm_genlist_item_selected_get(it->it))
+          _timer_cb(it);
+     }
+}
+
+static void
 _add_item_cb(void *data, Ems_Server *server, const char *media)
 {
    Enna_Activity *act = data;
@@ -220,6 +233,8 @@ _add_item_cb(void *data, Ems_Server *server, const char *media)
    ems_server_media_info_get(server, media, "name", _add_item_name_cb,
                              NULL, NULL, it);
    ems_server_media_info_get(server, media, "poster", _add_item_poster_cb,
+                             NULL, NULL, it);
+   ems_server_media_info_get(server, media, "backdrop", _add_item_backdrop_cb,
                              NULL, NULL, it);
 
 
@@ -272,15 +287,15 @@ _timer_cb(void *data)
 {
    Enna_Activity_Item *item = data;
    Evas_Object *cover;
-   Evas_Object *fanart;
+   Evas_Object *backdrop;
 
    if (!item || !item->act)
      return EINA_FALSE;
 
    if (item->o_cover)
      evas_object_del(item->o_cover);
-   if (item->o_fanart)
-     evas_object_del(item->o_fanart);
+   if (item->o_backdrop)
+     evas_object_del(item->o_backdrop);
 
    if (item->cover)
      {
@@ -289,13 +304,14 @@ _timer_cb(void *data)
         evas_object_show(item->o_cover);
         elm_object_part_content_set(item->act->ly, "cover.swallow", item->o_cover);
      }
-   if (item->o_fanart)
-     {
-        item->o_fanart = evas_object_image_filled_add(evas_object_evas_get(item->act->ly));
-        evas_object_image_file_set(item->o_fanart, item->fanart, NULL);
-        evas_object_show(item->o_fanart);
 
-        elm_object_part_content_set(item->act->ly, "fanart.swallow", item->o_fanart);
+   if (item->backdrop)
+     {
+        item->o_backdrop = evas_object_image_filled_add(evas_object_evas_get(item->act->ly));
+        evas_object_image_file_set(item->o_backdrop, item->backdrop, NULL);
+        evas_object_show(item->o_backdrop);
+
+        elm_object_part_content_set(item->act->ly, "backdrop.swallow", item->o_backdrop);
      }
 
    if (item->act->show_timer)
