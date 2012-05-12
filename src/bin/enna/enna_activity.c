@@ -40,6 +40,8 @@
 /*============================================================================*
  *                                  Local                                     *
  *============================================================================*/
+#define TIMER_VALUE 0.1
+
 typedef struct _Enna_Activity_Group Enna_Activity_Group;
 typedef struct _Enna_Activity_Item Enna_Activity_Item;
 typedef struct _Enna_Activity Enna_Activity;
@@ -177,7 +179,7 @@ _add_item_name_cb(void *data, Ems_Server *server, const char *value)
      }
    else
      {
-         ems_server_media_info_get(server, it->media, "filename", _add_item_file_name_cb,
+         ems_server_media_info_get(server, it->media, "clean_name", _add_item_file_name_cb,
                              NULL, NULL, it);
      }
 }
@@ -190,7 +192,8 @@ _add_item_poster_cb(void *data, Ems_Server *server, const char *value)
    if (value)
      {
         it->cover = eina_stringshare_add(value);
-        _timer_cb(it);
+        if(elm_genlist_item_selected_get(it->it))
+             _timer_cb(it);
      }
 }
 
@@ -213,7 +216,6 @@ _add_item_cb(void *data, Ems_Server *server, const char *media)
                                     ELM_GENLIST_ITEM_NONE,
                                     NULL,
                                     NULL);
-
 
    ems_server_media_info_get(server, media, "name", _add_item_name_cb,
                              NULL, NULL, it);
@@ -275,33 +277,51 @@ _timer_cb(void *data)
    if (!item || !item->act)
      return EINA_FALSE;
 
-   item->o_cover = evas_object_image_filled_add(evas_object_evas_get(item->act->ly));
-   evas_object_image_file_set(item->o_cover, item->cover, NULL);
-   evas_object_show(item->o_cover);
+   if (item->o_cover)
+     evas_object_del(item->o_cover);
+   if (item->o_fanart)
+     evas_object_del(item->o_fanart);
 
-   elm_object_part_content_set(item->act->ly, "cover.swallow", item->o_cover);
+   if (item->cover)
+     {
+        item->o_cover = evas_object_image_filled_add(evas_object_evas_get(item->act->ly));
+        evas_object_image_file_set(item->o_cover, item->cover, NULL);
+        evas_object_show(item->o_cover);
+        elm_object_part_content_set(item->act->ly, "cover.swallow", item->o_cover);
+     }
+   if (item->o_fanart)
+     {
+        item->o_fanart = evas_object_image_filled_add(evas_object_evas_get(item->act->ly));
+        evas_object_image_file_set(item->o_fanart, item->fanart, NULL);
+        evas_object_show(item->o_fanart);
 
-   item->o_fanart = evas_object_image_filled_add(evas_object_evas_get(item->act->ly));
-   evas_object_image_file_set(item->o_fanart, item->fanart, NULL);
-   evas_object_show(item->o_fanart);
+        elm_object_part_content_set(item->act->ly, "fanart.swallow", item->o_fanart);
+     }
 
-   elm_object_part_content_set(item->act->ly, "fanart.swallow", item->o_fanart);
-   item->act->show_timer = NULL;
+   if (item->act->show_timer)
+     item->act->show_timer = NULL;
    return EINA_FALSE;
 }
 
 static void
-_list_item_selected_cb(void *data, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
+_list_item_selected_cb(void *data, Evas_Object *obj __UNUSED__, void *event_info)
 {
    Elm_Object_Item *it = event_info;
    Enna_Activity_Item *item;
 
+   if (elm_genlist_item_type_get(it) != ELM_GENLIST_ITEM_NONE)
+        return;
+
    item = elm_object_item_data_get(it);
+   if (!item || !item->act)
+     return;
+
    if (item->act->show_timer)
      {
         ecore_timer_del(item->act->show_timer);
      }
-   item->act->show_timer = ecore_timer_add(0.3, _timer_cb, item);
+   item->act->show_timer = ecore_timer_add(TIMER_VALUE, _timer_cb, item);
+
 }
 
 /*============================================================================*
