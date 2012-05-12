@@ -188,6 +188,8 @@ _file_main_cb(void *data, Eio_File *handler __UNUSED__, const Eina_File_Direct_I
                     {
                        char uuid[50];
                        char ssize[17];
+                       char *tmp;
+
                        snprintf(uuid, sizeof(uuid), "%032"PRIx64"-%016"PRIx32,
                                 hash,
                                 (uint32_t)size);
@@ -199,7 +201,10 @@ _file_main_cb(void *data, Eio_File *handler __UNUSED__, const Eina_File_Direct_I
                        /* Insert metadata name, filesize and filename in database */
                        ems_database_meta_insert(ems_config->db, info->path, "filesize", ssize);
                        ems_database_meta_insert(ems_config->db, info->path, "filename", info->path);
-
+                       /* Insert metadata clean_name in database based on searched string */
+                       tmp = ems_utils_decrapify(info->path);
+                       ems_database_meta_insert(ems_config->db, info->path, "clean_name", tmp);
+                       /* Queue file in grabber list */
                        ems_parser_grab(info->path);
                     }
                   else
