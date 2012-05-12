@@ -913,7 +913,7 @@ ems_database_collection_get(Ems_Database *db, Ems_Collection *collection)
    if (!db || !db->db)
      return NULL;
 
-   res = sqlite3_prepare_v2 (db->db, "SELECT file_hash FROM file;", -1, &stmt, NULL);
+   res = sqlite3_prepare_v2 (db->db, "SELECT file_hash FROM file ORDER BY file_path;", -1, &stmt, NULL);
    if (res != SQLITE_OK)
      goto out;
 
