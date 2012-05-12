@@ -98,7 +98,7 @@ collections
       }
       parts {
          part {
-            name: "fanart.swallow";
+            name: "backdrop.swallow";
             type: SWALLOW;
             description {
                align: 0.5 0.5;
