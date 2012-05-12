@@ -414,7 +414,7 @@ _ems_server_media_get_ret(Azy_Client *client, Azy_Content *content, void *respon
 
    media_req = azy_content_data_get(content);
 
-   EINA_LIST_FREE(files, f)
+   EINA_LIST_FOREACH(files, l, f)
      {
         if (media_req->add_cb)
           media_req->add_cb(media_req->data_cb, media_req->server, f);
