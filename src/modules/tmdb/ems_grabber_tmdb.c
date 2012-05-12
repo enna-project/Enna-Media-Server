@@ -176,7 +176,7 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
                      req->end_cb(req->data, req->filename);
                    //ecore_con_url_free(req->ec_url);
                    eina_hash_del(_hash_req, req->ec_url, req);
-      
+
                    return ECORE_CALLBACK_DONE;
                 }
 
@@ -184,7 +184,7 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
               root = cJSON_Parse(buf);
               if (root)
                 size = cJSON_GetArraySize(root);
-              //DBG("%s", cJSON_Print(root));
+              DBG("%s", cJSON_Print(root));
               //DBG("Size %d", size);
 
               if (!size)
@@ -334,14 +334,10 @@ ems_grabber_grab(const char *filename, Ems_Media_Type type, Ems_Grabber_End_Cb e
 
    DBG("Grab %s of type %d", filename, type);
 
+   /* Should be get back from database as this info (clean_name) is inserted in scanner*/
    tmp = ems_utils_decrapify(filename);
    if (tmp)
      {
-        /* Insert metadata name in database based on searched string
-         * If tmdb give a result this name will be changed by the tmdb value
-         */
-        ems_database_meta_insert(ems_config->db, filename, "name", tmp);
-
         /* Escape string for search with tmdb */
         search = ems_utils_escape_string(tmp);
         free(tmp);
