@@ -53,8 +53,10 @@ struct _Ems_Downloader
    Eina_Hash *hash_req;
 };
 
+#define EMS_DOWNLOADER_REQ_MAGIC 0x133742
 struct _Ems_Downloader_Req
 {
+   EINA_MAGIC;
    const char *url;
    const char *filename;
    Ecore_Con_Url *ec_url;
@@ -85,14 +87,19 @@ _request_free_cb(Ems_Downloader_Req *req)
 /*    Ecore_Con_Event_Url_Progress *url_progress = event_info; */
 /*    float percent; */
 
+/*    Ems_Downloader_Req *req = ecore_con_url_data_get(url_progress->url_con); */
+/*    //   Ems_Downloader_Req *req = eina_hash_find(_downloader->hash_req, url_complete->url_con); */
+/*    if (!EINA_MAGIC_CHECK(req, EMS_DOWNLOADER_REQ_MAGIC)) */
+/*       return ECORE_CALLBACK_PASS_ON; */
+
 /*    if (url_progress->down.total > 0) */
 /*      { */
-  
 /*         percent = (url_progress->down.now / url_progress->down.total) * 100; */
-/*         printf("Total of download complete of %s: %0.1f (%0.0f)%%\n", ecore_con_url_url_get(url_progress->url_con), percent, url_progress->down.now); */
+/*         if (percent == 100.0) */
+/*           printf("Total of download complete of %s: %0.1f%%\n", ecore_con_url_url_get(url_progress->url_con), percent); */
 /*      } */
 
-/*    return EINA_TRUE; */
+/*    return ECORE_CALLBACK_DONE; */
 /* } */
 
 
@@ -100,11 +107,11 @@ static Eina_Bool
 _url_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info)
 {
    Ecore_Con_Event_Url_Complete *url_complete = event_info;
+   Ems_Downloader_Req *req = ecore_con_url_data_get(url_complete->url_con);
+   //   Ems_Downloader_Req *req = eina_hash_find(_downloader->hash_req, url_complete->url_con);
+   if (!EINA_MAGIC_CHECK(req, EMS_DOWNLOADER_REQ_MAGIC))
+      return ECORE_CALLBACK_PASS_ON;
 
-   Ems_Downloader_Req *req = eina_hash_find(_downloader->hash_req, url_complete->url_con);
-
-   if (!req)
-     return ECORE_CALLBACK_PASS_ON;
 
    if (req->end_cb)
      req->end_cb(req->data, req->url, req->filename);
@@ -150,6 +157,7 @@ ems_downloader_url_download(const char *url, const char *file,
    if (!req)
      return EINA_FALSE;
 
+   EINA_MAGIC_SET(req, EMS_DOWNLOADER_REQ_MAGIC);
    req->ec_url = ecore_con_url_new(url);
    req->end_cb = end_cb;
    req->data = data;
@@ -193,6 +201,7 @@ ems_downloader_url_download(const char *url, const char *file,
 
    eina_hash_add(_downloader->hash_req, req->ec_url, req);
    ecore_con_url_fd_set(req->ec_url, req->fd);
+   ecore_con_url_data_set(req->ec_url, req);
 
   if (!ecore_con_url_get(req->ec_url))
      {
