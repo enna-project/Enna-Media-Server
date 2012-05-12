@@ -160,7 +160,7 @@ _decrapify_blacklist (char **list, char *str)
           }
         //memset (p, ' ', size);
      }
-   ERR("str : \"%s\"", str);
+   DBG("str : \"%s\"", str);
 }
 
 static void
