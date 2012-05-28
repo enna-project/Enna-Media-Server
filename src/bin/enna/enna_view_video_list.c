@@ -33,7 +33,7 @@
 #include <Ems.h>
 
 #include "enna_private.h"
-#include "enna_activity.h"
+#include "enna_view_video_list.h"
 #include "enna_config.h"
 
 
@@ -42,22 +42,22 @@
  *============================================================================*/
 #define TIMER_VALUE 0.1
 
-typedef struct _Enna_Activity_Group Enna_Activity_Group;
-typedef struct _Enna_Activity_Item Enna_Activity_Item;
-typedef struct _Enna_Activity Enna_Activity;
+typedef struct _Enna_View_Video_List_Group Enna_View_Video_List_Group;
+typedef struct _Enna_View_Video_List_Item Enna_View_Video_List_Item;
+typedef struct _Enna_View_Video_List Enna_View_Video_List;
 
-struct _Enna_Activity_Group
+struct _Enna_View_Video_List_Group
 {
     Elm_Object_Item *it;
     Ems_Server *server;
-    Enna_Activity *act;
+    Enna_View_Video_List *act;
 };
 
-struct _Enna_Activity_Item
+struct _Enna_View_Video_List_Item
 {
    Elm_Object_Item *it;
    Ems_Server *server;
-   Enna_Activity *act;
+   Enna_View_Video_List *act;
    const char *name;
    const char *description;
    const char *cover;
@@ -67,7 +67,7 @@ struct _Enna_Activity_Item
    Evas_Object *o_backdrop;
 };
 
-struct _Enna_Activity
+struct _Enna_View_Video_List
 {
    Eina_Hash *servers;
    Evas_Object *list;
@@ -83,14 +83,14 @@ static Elm_Genlist_Item_Class itc_item;
 
 static char *_genlist_text_get(void *data, Evas_Object *obj __UNUSED__, const char *part __UNUSED__)
 {
-   Enna_Activity_Group *gr = data;
+   Enna_View_Video_List_Group *gr = data;
 
    return strdup(ems_server_name_get(gr->server));
 }
 
 static char *_media_text_get(void *data, Evas_Object *obj __UNUSED__, const char *part)
 {
-   Enna_Activity_Item *it = data;
+   Enna_View_Video_List_Item *it = data;
 
    if (!strcmp(part, "name"))
      return it->name ? strdup(it->name) : NULL;
@@ -100,7 +100,7 @@ static char *_media_text_get(void *data, Evas_Object *obj __UNUSED__, const char
      return NULL;
 }
 
-static void _group_del(Enna_Activity_Group *gr)
+static void _group_del(Enna_View_Video_List_Group *gr)
 {
    if (!gr)
      return;
@@ -113,7 +113,7 @@ static void _group_del(Enna_Activity_Group *gr)
 static void
 _server_add_cb(void *data, Ems_Server *server)
 {
-   Enna_Activity *act = data;
+   Enna_View_Video_List *act = data;
 
    DBG("Server %s added", ems_server_name_get(server));
 
@@ -122,9 +122,9 @@ _server_add_cb(void *data, Ems_Server *server)
          ems_server_name_get(server));
    else
      {
-        Enna_Activity_Group *gr;
+        Enna_View_Video_List_Group *gr;
 
-        gr = calloc(1, sizeof(Enna_Activity_Group));
+        gr = calloc(1, sizeof(Enna_View_Video_List_Group));
         gr->server = server;
         gr->act = act;
         eina_hash_add(act->servers, server, gr);
@@ -148,7 +148,7 @@ _server_update_cb(void *data, Ems_Server *server)
 static void
 _add_item_file_name_cb(void *data, Ems_Server *server, const char *value)
 {
-   Enna_Activity_Item *it = data;
+   Enna_View_Video_List_Item *it = data;
 
    if (value && value[0])
      {
@@ -169,7 +169,7 @@ _add_item_file_name_cb(void *data, Ems_Server *server, const char *value)
 static void
 _add_item_name_cb(void *data, Ems_Server *server, const char *value)
 {
-   Enna_Activity_Item *it = data;
+   Enna_View_Video_List_Item *it = data;
 
    if (value && value[0])
      {
@@ -187,7 +187,7 @@ _add_item_name_cb(void *data, Ems_Server *server, const char *value)
 static void
 _add_item_poster_cb(void *data, Ems_Server *server, const char *value)
 {
-   Enna_Activity_Item *it = data;
+   Enna_View_Video_List_Item *it = data;
 
    if (value)
      {
@@ -200,7 +200,7 @@ _add_item_poster_cb(void *data, Ems_Server *server, const char *value)
 static void
 _add_item_backdrop_cb(void *data, Ems_Server *server, const char *value)
 {
-   Enna_Activity_Item *it = data;
+   Enna_View_Video_List_Item *it = data;
 
    if (value)
      {
@@ -213,13 +213,13 @@ _add_item_backdrop_cb(void *data, Ems_Server *server, const char *value)
 static void
 _add_item_cb(void *data, Ems_Server *server, const char *media)
 {
-   Enna_Activity *act = data;
-   Enna_Activity_Item *it;
-   Enna_Activity_Group *gr;
+   Enna_View_Video_List *act = data;
+   Enna_View_Video_List_Item *it;
+   Enna_View_Video_List_Group *gr;
 
    gr = eina_hash_find(act->servers, server);
 
-   it = calloc(1, sizeof (Enna_Activity_Item));
+   it = calloc(1, sizeof (Enna_View_Video_List_Item));
    it->server = server;
    it->act = act;
    it->media = eina_stringshare_add(media);
@@ -244,9 +244,9 @@ static void
 _server_connected_cb(void *data, Ems_Server *server)
 {
    int i;
-   Enna_Activity_Group *gr;
-   Enna_Activity_Item *it;
-   Enna_Activity *act = data;
+   Enna_View_Video_List_Group *gr;
+   Enna_View_Video_List_Item *it;
+   Enna_View_Video_List *act = data;
    Ems_Collection *collection;
 
    DBG("Server %s connected", ems_server_name_get(server));
@@ -267,8 +267,8 @@ _server_connected_cb(void *data, Ems_Server *server)
 static void
 _server_disconnected_cb(void *data, Ems_Server *server)
 {
-   Enna_Activity_Group *gr;
-   Enna_Activity *act = data;
+   Enna_View_Video_List_Group *gr;
+   Enna_View_Video_List *act = data;
 
    DBG("Server %s disconnected", ems_server_name_get(server));
 
@@ -285,7 +285,7 @@ _server_disconnected_cb(void *data, Ems_Server *server)
 static Eina_Bool
 _timer_cb(void *data)
 {
-   Enna_Activity_Item *item = data;
+   Enna_View_Video_List_Item *item = data;
    Evas_Object *cover;
    Evas_Object *backdrop;
 
@@ -323,7 +323,7 @@ static void
 _list_item_selected_cb(void *data, Evas_Object *obj __UNUSED__, void *event_info)
 {
    Elm_Object_Item *it = event_info;
-   Enna_Activity_Item *item;
+   Enna_View_Video_List_Item *item;
 
    if (elm_genlist_item_type_get(it) != ELM_GENLIST_ITEM_NONE)
         return;
@@ -344,15 +344,15 @@ _list_item_selected_cb(void *data, Evas_Object *obj __UNUSED__, void *event_info
  *                                 Global                                     *
  *============================================================================*/
 
-Evas_Object *enna_activity_add(Evas_Object *parent)
+Evas_Object *enna_view_video_list_add(Evas_Object *parent)
 {
    Evas_Object *ly;
    Evas_Object *list;
    Ems_Server *server;
    Eina_List *l;
-   Enna_Activity *act;
+   Enna_View_Video_List *act;
 
-   act = calloc(1, sizeof(Enna_Activity));
+   act = calloc(1, sizeof(Enna_View_Video_List));
    if (!act)
        return NULL;
 
@@ -361,7 +361,7 @@ Evas_Object *enna_activity_add(Evas_Object *parent)
        goto err1;
 
    elm_layout_file_set(ly, enna_config_theme_get(), "activity/layout/list");
-   evas_object_data_set(ly, "activity", act);
+   evas_object_data_set(ly, "view_video_list", act);
 
    list = elm_genlist_add(ly);
    if (!list)
@@ -399,9 +399,9 @@ Evas_Object *enna_activity_add(Evas_Object *parent)
             ems_server_name_get(server));
       else
         {
-           Enna_Activity_Group *gr;
+           Enna_View_Video_List_Group *gr;
 
-           gr = calloc(1, sizeof(Enna_Activity_Group));
+           gr = calloc(1, sizeof(Enna_View_Video_List_Group));
            gr->server = server;
            gr->act = act;
            eina_hash_add(act->servers, server, gr);

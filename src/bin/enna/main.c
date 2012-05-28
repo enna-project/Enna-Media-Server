@@ -38,7 +38,7 @@
 #include "enna_private.h"
 #include "enna_config.h"
 #include "enna_mainmenu.h"
-#include "enna_activity.h"
+#include "enna_view_video_list.h"
 
 #ifndef ELM_LIB_QUICKLAUNCH
 
@@ -81,7 +81,7 @@ _mainmenu_item_selected_cb(void *data, Evas_Object *obj __UNUSED__, void *event_
      {
         Evas_Object *act;
         edje_object_signal_emit(elm_layout_edje_get(ly), "mainmenu,hide", "enna");
-        act = enna_activity_add(ly);
+        act = enna_view_video_list_add(ly);
         elm_object_part_content_set(ly, "activity.swallow", act);
         evas_object_show(act);
      }

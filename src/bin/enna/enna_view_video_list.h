@@ -23,9 +23,9 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _ENNA_ACTIVITY_H
-#define _ENNA_ACTIVITY_H
+#ifndef _ENNA_VIEW_VIDEO_LIST_H
+#define _ENNA_VIEW_VIDEO_LIST_H
 
-Evas_Object *enna_activity_add(Evas_Object *parent);
+Evas_Object *enna_view_video_list_add(Evas_Object *parent);
 
-#endif /* _ENNA_ACTIVITY_H */
+#endif /* _ENNA_VIEW_VIDEO_LIST_H */
