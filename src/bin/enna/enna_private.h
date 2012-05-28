@@ -26,6 +26,8 @@
 #ifndef _ENNA_PRIVATE_H
 #define _ENNA_PRIVATE_H
 
+#include <Evas.h>
+
 /* variable and macros used for the eina_log module */
 extern int _enna_log_dom_global;
 /*
@@ -59,7 +61,19 @@ extern int _enna_log_dom_global;
 #endif /* ifdef CRIT */
 #define CRIT(...) EINA_LOG_DOM_CRIT(_enna_log_dom_global, __VA_ARGS__)
 
-
 #define ENNA_CONFIG_FILE "enna.conf"
+
+typedef struct _Enna Enna;
+
+struct _Enna
+{
+   Evas_Coord app_x_off, app_y_off, app_w, app_h;
+   const char *theme_file;
+   const char *config_file;
+   Eina_Bool run_fullscreen;
+   Evas_Object *win, *ly, *mainmenu;
+};
+
+extern Enna *enna;
 
 #endif /* _ENNA_PRIVATE_H_ */
