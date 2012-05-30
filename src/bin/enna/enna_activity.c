@@ -83,7 +83,7 @@ enna_activity_shutdown(void)
    eina_hash_free(_activities);
 }
 
-void
+Eina_Bool
 enna_activity_select(const char *activity)
 {
    Enna_Activity *act;
@@ -97,9 +97,13 @@ enna_activity_select(const char *activity)
         obj = elm_object_part_content_unset(enna->ly, "activity.swallow");
         evas_object_hide(obj);
         elm_object_part_content_set(enna->ly, "activity.swallow", act->obj);
+        return EINA_TRUE;
      }
    else
-     ERR("Unable to select activity : %s", activity);
+     {
+        ERR("Unable to select activity : %s", activity);
+        return EINA_FALSE;
+     }
 }
 
 void

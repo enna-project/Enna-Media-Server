@@ -30,7 +30,7 @@ typedef struct _Enna_Activity Enna_Activity;
 
 int enna_activity_init(void);
 void  enna_activity_shutdown(void);
-void enna_activity_select(const char *activity);
+Eina_Bool enna_activity_select(const char *activity);
 void enna_activity_add(const char *activity, Evas_Object *obj);
 
 #endif /* _ENNA_ACTIVITY_H */

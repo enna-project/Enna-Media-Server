@@ -94,10 +94,10 @@ _mainmenu_item_selected_cb(void *data, Evas_Object *obj __UNUSED__, void *event_
 
    if (!strcmp(activity, "Exit"))
      elm_exit();
-   else if (!strcmp(activity, "Videos"))
+   else
      {
-         edje_object_signal_emit(elm_layout_edje_get(enna->ly), "mainmenu,hide", "enna");
-         enna_activity_select(activity);
+        if (enna_activity_select(activity))
+          edje_object_signal_emit(elm_layout_edje_get(enna->ly), "mainmenu,hide", "enna");
      }
 
 }
