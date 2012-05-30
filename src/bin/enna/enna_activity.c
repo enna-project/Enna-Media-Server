@@ -40,6 +40,7 @@
 /*============================================================================*
  *                                  Local                                     *
  *============================================================================*/
+static int _activity_init_count = 0;
 
 struct _Enna_Activity
 {
@@ -64,11 +65,15 @@ _activity_free_cb(Enna_Activity *act)
  *                                   API                                      *
  *============================================================================*/
 
-Eina_Bool
+int
 enna_activity_init(void)
 {
+   if (++_activity_init_count != 1)
+     return _activity_init_count;
+
    _activities = eina_hash_string_superfast_new((Eina_Free_Cb)_activity_free_cb);
-   return EINA_TRUE;
+
+   return _activity_init_count;
 
 }
 
