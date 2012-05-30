@@ -97,6 +97,7 @@ enna_activity_select(const char *activity)
         obj = elm_object_part_content_unset(enna->ly, "activity.swallow");
         evas_object_hide(obj);
         elm_object_part_content_set(enna->ly, "activity.swallow", act->obj);
+        elm_object_focus_set(act->obj, EINA_TRUE);
         return EINA_TRUE;
      }
    else

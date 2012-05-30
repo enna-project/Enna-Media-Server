@@ -36,6 +36,15 @@
 /*============================================================================*
  *                                  Local                                     *
  *============================================================================*/
+
+typedef struct _Enna_Mainmenu Enna_Mainmenu;
+
+struct _Enna_Mainmenu
+{
+   Evas_Object *ly;
+   Evas_Object *list;
+};
+
 static void
 _list_item_activated_cb(void *data, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
 {
@@ -47,6 +56,32 @@ _list_item_activated_cb(void *data, Evas_Object *obj __UNUSED__, void *event_inf
 
     evas_object_smart_callback_call(data, "selected", label);
 
+    if (!strcmp(label, "Exit"))
+      elm_exit();
+    else
+      {
+         if (enna_activity_select(label))
+           {
+              edje_object_signal_emit(elm_layout_edje_get(enna->ly), "mainmenu,hide", "enna");
+           }
+      }
+}
+
+static void
+_edje_signal_cb(void        *data,
+                Evas_Object *obj,
+                const char  *emission,
+                const char  *source)
+{
+   Enna_Mainmenu *mm = data;
+
+   DBG("Edje Object %p receive %s %s", obj, emission, source);
+   if (!strcmp(emission, "mainmenu,hide,end"))
+     {
+        DBG("Mainmenu hide transition end");
+        evas_object_del(mm->list);
+        mm->list = NULL;
+     }
 }
 
 /*============================================================================*
@@ -56,32 +91,37 @@ _list_item_activated_cb(void *data, Evas_Object *obj __UNUSED__, void *event_inf
 Evas_Object *
 enna_mainmenu_add(Evas_Object *parent)
 {
-    Evas_Object *ly;
-    Evas_Object *list;
     Elm_Object_Item *it;
+    Enna_Mainmenu *mm;
 
-    ly = elm_layout_add(parent);
-    elm_layout_file_set(ly, enna_config_theme_get(), "mainmenu/layout");
+    mm = calloc(1, sizeof(Enna_Mainmenu));
+    if (!mm)
+      return NULL;
+
+    mm->ly = elm_layout_add(parent);
+    elm_layout_file_set(mm->ly, enna_config_theme_get(), "mainmenu/layout");
 
 
-    list = elm_list_add(ly);
-    elm_object_style_set(list, "enna");
-    it = elm_list_item_append(list, "Videos", NULL, NULL, NULL, NULL);
+    mm->list = elm_list_add(mm->ly);
+    elm_object_style_set(mm->list, "enna");
+    it = elm_list_item_append(mm->list, "Videos", NULL, NULL, NULL, NULL);
     elm_list_item_selected_set(it, EINA_TRUE);
-    elm_list_item_append(list, "TV Shows", NULL, NULL, NULL, NULL);
-    elm_list_item_append(list, "Music", NULL, NULL, NULL, NULL);
-    elm_list_item_append(list, "Photos", NULL, NULL, NULL, NULL);
-    elm_list_item_append(list, "Settings", NULL, NULL, NULL, NULL);
-    elm_list_item_append(list, "Exit", NULL, NULL, NULL, NULL);
-    elm_object_part_content_set(ly, "list.swallow", list);
-    evas_object_size_hint_align_set(list, -1, 0.5);
-    elm_list_bounce_set(list, EINA_FALSE, EINA_FALSE);
+    elm_list_item_append(mm->list, "TV Shows", NULL, NULL, NULL, NULL);
+    elm_list_item_append(mm->list, "Music", NULL, NULL, NULL, NULL);
+    elm_list_item_append(mm->list, "Photos", NULL, NULL, NULL, NULL);
+    elm_list_item_append(mm->list, "Settings", NULL, NULL, NULL, NULL);
+    elm_list_item_append(mm->list, "Exit", NULL, NULL, NULL, NULL);
+    elm_object_part_content_set(mm->ly, "list.swallow", mm->list);
+    evas_object_size_hint_align_set(mm->list, -1, 0.5);
+    elm_list_bounce_set(mm->list, EINA_FALSE, EINA_FALSE);
 
-    evas_object_smart_callback_add(list, "activated", _list_item_activated_cb, ly);
+    evas_object_smart_callback_add(mm->list, "activated", _list_item_activated_cb, mm->ly);
+    edje_object_signal_callback_add(elm_layout_edje_get(enna->ly), "*", "*",
+                                    _edje_signal_cb, mm);
 
-    evas_object_show(list);
+    evas_object_show(mm->list);
 
-    return ly;
+    return mm->ly;
 }
 
 /*============================================================================*

@@ -75,6 +75,7 @@ struct _Enna_View_Video_List
    Evas_Object *btn_trailer;
    Evas_Object *btn_play;
    Ecore_Timer *show_timer;
+   int nb_items;
 };
 static Eina_Bool _timer_cb(void *data);
 
@@ -229,6 +230,10 @@ _add_item_cb(void *data, Ems_Server *server, const char *media)
                                     ELM_GENLIST_ITEM_NONE,
                                     NULL,
                                     NULL);
+   if (!act->nb_items)
+     elm_genlist_item_selected_set(it->it, EINA_TRUE);
+
+   act->nb_items++;
 
    ems_server_media_info_get(server, media, "name", _add_item_name_cb,
                              NULL, NULL, it);

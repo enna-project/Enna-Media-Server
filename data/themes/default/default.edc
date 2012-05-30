@@ -65,6 +65,7 @@ collections
             action: STATE_SET "visible" 0.0;
             transition: ACCELERATE 1.0;
             target: "mainmenu.clip";
+            after: "mainmenu,show,end";
          }
          program { name: "mainmenu,hide";
             signal: "mainmenu,hide";
@@ -72,6 +73,13 @@ collections
             action: STATE_SET "default" 0.0;
             transition: DECELERATE 1.0;
             target: "mainmenu.clip";
+            after: "mainmenu,hide,end";
+         }
+         program { name: "mainmenu,show,end";
+            action: SIGNAL_EMIT "mainmenu,show,end" "";
+         }
+         program { name: "mainmenu,hide,end";
+            action: SIGNAL_EMIT "mainmenu,hide,end" "";
          }
       }
    }

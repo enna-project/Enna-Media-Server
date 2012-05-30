@@ -85,23 +85,6 @@ enna_init(void)
    return EINA_TRUE;
 }
 
-static void
-_mainmenu_item_selected_cb(void *data, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
-{
-   const char *activity = event_info;
-
-   DBG("Selected Activity : %s", activity);
-
-   if (!strcmp(activity, "Exit"))
-     elm_exit();
-   else
-     {
-        if (enna_activity_select(activity))
-          edje_object_signal_emit(elm_layout_edje_get(enna->ly), "mainmenu,hide", "enna");
-     }
-
-}
-
 static Eina_Bool
 _elm_win_event_cb(Evas_Object *obj, Evas_Object *src __UNUSED__, Evas_Callback_Type type, void *event_info)
 {
@@ -169,7 +152,6 @@ enna_window_init(void)
    enna->mainmenu = enna_mainmenu_add(enna->ly);
    elm_object_part_content_set(enna->ly, "mainmenu.swallow", enna->mainmenu);
    evas_object_show(enna->mainmenu);
-   evas_object_smart_callback_add(enna->mainmenu, "selected", _mainmenu_item_selected_cb, NULL);
 
    elm_object_focus_set(enna->mainmenu, EINA_TRUE);
 
