@@ -160,10 +160,14 @@ _key_down(void *data __UNUSED__, Evas *e __UNUSED__, Evas_Object *obj, void *eve
      {
         if (enna->state != ENNA_STATE_MAINMENU)
           {
+             Eina_List *focus_chain = NULL;
              /* Back to the mainmenu */
              edje_object_signal_emit(elm_layout_edje_get(enna->ly), "mainmenu,show", "enna");
              edje_object_signal_emit(elm_layout_edje_get(enna->ly), "activity,hide", "enna");
              enna->state = ENNA_STATE_MAINMENU;
+             focus_chain = eina_list_append(focus_chain, enna->mainmenu);
+             elm_object_focus_custom_chain_set(enna->ly, focus_chain);
+             elm_object_focus_set(enna->mainmenu, EINA_TRUE);
           }
         else
           {
