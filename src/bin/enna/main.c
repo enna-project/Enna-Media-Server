@@ -97,7 +97,11 @@ _mainmenu_item_selected_cb(void *data, Evas_Object *obj __UNUSED__, void *event_
    else
      {
         if (enna_activity_select(activity))
-          edje_object_signal_emit(elm_layout_edje_get(enna->ly), "mainmenu,hide", "enna");
+          {
+             edje_object_signal_emit(elm_layout_edje_get(enna->ly), "mainmenu,hide", "enna");
+             edje_object_signal_emit(elm_layout_edje_get(enna->ly), "activity,show", "enna");
+             enna->state = ENNA_STATE_ACTIVITY;
+          }
      }
 
 }
@@ -154,12 +158,16 @@ _key_down(void *data __UNUSED__, Evas *e __UNUSED__, Evas_Object *obj, void *eve
      }
    else if (!strcmp(ev->keyname, "BackSpace"))
      {
-        if (!enna->mainmenu)
+        if (enna->state != ENNA_STATE_MAINMENU)
           {
              /* Back to the mainmenu */
+             edje_object_signal_emit(elm_layout_edje_get(enna->ly), "mainmenu,show", "enna");
+             edje_object_signal_emit(elm_layout_edje_get(enna->ly), "activity,hide", "enna");
+             enna->state = ENNA_STATE_MAINMENU;
           }
         else
           {
+             elm_exit();
              /* Show Exit Confirmation Menu */
           }
      }
@@ -205,6 +213,7 @@ enna_window_init(void)
    evas_object_smart_callback_add(enna->mainmenu, "selected", _mainmenu_item_selected_cb, NULL);
 
    elm_object_focus_set(enna->mainmenu, EINA_TRUE);
+   enna->state = ENNA_STATE_MAINMENU;
 
    if (!enna->app_w || !enna->app_h)
      {

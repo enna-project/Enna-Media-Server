@@ -64,6 +64,13 @@ extern int _enna_log_dom_global;
 #define ENNA_CONFIG_FILE "enna.conf"
 
 typedef struct _Enna Enna;
+typedef enum _Enna_State Enna_State;
+
+enum _Enna_State{
+  ENNA_STATE_MAINMENU,
+  ENNA_STATE_ACTIVITY,
+  ENNA_STATE_SENTINEL,
+};
 
 struct _Enna
 {
@@ -72,6 +79,7 @@ struct _Enna
    const char *config_file;
    Eina_Bool run_fullscreen;
    Evas_Object *win, *ly, *mainmenu;
+   Enna_State state;
 };
 
 extern Enna *enna;
