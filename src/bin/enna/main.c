@@ -39,7 +39,7 @@
 #include "enna_private.h"
 #include "enna_config.h"
 #include "enna_mainmenu.h"
-#include "enna_view_video_list.h"
+#include "enna_video.h"
 
 #ifndef ELM_LIB_QUICKLAUNCH
 
@@ -96,12 +96,8 @@ _mainmenu_item_selected_cb(void *data, Evas_Object *obj __UNUSED__, void *event_
      elm_exit();
    else if (!strcmp(activity, "Videos"))
      {
-        /* Evas_Object *act; */
-        /* edje_object_signal_emit(elm_layout_edje_get(enna->ly), "mainmenu,hide", "enna"); */
-        /* act = enna_activity_get(activity); */
-        /* elm_object_part_content_set(enna->ly, "activity.swallow", act); */
-        /* evas_object_show(act); */
-        enna_activity_select(activity);
+         edje_object_signal_emit(elm_layout_edje_get(enna->ly), "mainmenu,hide", "enna");
+         enna_activity_select(activity);
      }
 
 }
@@ -188,6 +184,8 @@ enna_window_init(void)
    evas_object_move(enna->ly, enna->app_x_off, enna->app_y_off);
 
    evas_object_show(enna->win);
+
+   enna_video_init();
 
    return EINA_TRUE;
 }

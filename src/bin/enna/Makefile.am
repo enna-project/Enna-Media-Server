@@ -19,6 +19,8 @@ enna_config.h \
 enna_mainmenu.c \
 enna_mainmenu.h \
 enna_private.h \
+enna_video.c \
+enna_video.h \
 enna_view_video_list.c \
 enna_view_video_list.h
 
