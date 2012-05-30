@@ -96,11 +96,12 @@ _mainmenu_item_selected_cb(void *data, Evas_Object *obj __UNUSED__, void *event_
      elm_exit();
    else if (!strcmp(activity, "Videos"))
      {
-        Evas_Object *act;
-        edje_object_signal_emit(elm_layout_edje_get(enna->ly), "mainmenu,hide", "enna");
-        act = enna_view_video_list_add(enna->ly);
-        elm_object_part_content_set(enna->ly, "activity.swallow", act);
-        evas_object_show(act);
+        /* Evas_Object *act; */
+        /* edje_object_signal_emit(elm_layout_edje_get(enna->ly), "mainmenu,hide", "enna"); */
+        /* act = enna_activity_get(activity); */
+        /* elm_object_part_content_set(enna->ly, "activity.swallow", act); */
+        /* evas_object_show(act); */
+        enna_activity_select(activity);
      }
 
 }
