@@ -85,6 +85,23 @@ enna_init(void)
    return EINA_TRUE;
 }
 
+static void
+_mainmenu_item_selected_cb(void *data, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
+{
+   const char *activity = event_info;
+
+   DBG("Selected Activity : %s", activity);
+
+   if (!strcmp(activity, "Exit"))
+     elm_exit();
+   else
+     {
+        if (enna_activity_select(activity))
+          edje_object_signal_emit(elm_layout_edje_get(enna->ly), "mainmenu,hide", "enna");
+     }
+
+}
+
 static Eina_Bool
 _elm_win_event_cb(Evas_Object *obj, Evas_Object *src __UNUSED__, Evas_Callback_Type type, void *event_info)
 {
@@ -119,6 +136,8 @@ _key_down(void *data __UNUSED__, Evas *e __UNUSED__, Evas_Object *obj, void *eve
 {
    Evas_Event_Key_Down *ev = event_info;
 
+   DBG("Key ev : %s", ev->keyname);
+
    if ((!strcmp(ev->keyname, "Left")) ||
        (!strcmp(ev->keyname, "KP_Left")))
      {
@@ -128,6 +147,35 @@ _key_down(void *data __UNUSED__, Evas *e __UNUSED__, Evas_Object *obj, void *eve
             (!strcmp(ev->keyname, "KP_Right")))
      {
         elm_widget_focus_cycle(obj, ELM_FOCUS_NEXT);
+     }
+   else if (!strcmp(ev->keyname, "Escape"))
+     {
+        /* Show Exit Confirmation Menu */
+     }
+   else if (!strcmp(ev->keyname, "BackSpace"))
+     {
+        if (!enna->mainmenu)
+          {
+             /* Back to the mainmenu */
+          }
+        else
+          {
+             /* Show Exit Confirmation Menu */
+          }
+     }
+}
+
+static void
+_edje_signal_cb(void        *data,
+                Evas_Object *obj,
+                const char  *emission,
+                const char  *source)
+{
+
+   //DBG("Edje Object %p receive %s %s", obj, emission, source);
+   if (!strcmp(emission, "mainmenu,hide,end"))
+     {
+        DBG("Mainmenu hide transition end");
      }
 }
 
@@ -142,6 +190,8 @@ enna_window_init(void)
    enna->ly = elm_layout_add(enna->win);
    evas_object_event_callback_add(enna->ly, EVAS_CALLBACK_KEY_DOWN,
                                   _key_down, enna->win);
+   edje_object_signal_callback_add(elm_layout_edje_get(enna->ly), "*", "*",
+                                    _edje_signal_cb, NULL);
 
    elm_layout_file_set(enna->ly, enna_config_theme_get(), "main/layout");
    evas_object_size_hint_weight_set(enna->ly, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
@@ -152,6 +202,7 @@ enna_window_init(void)
    enna->mainmenu = enna_mainmenu_add(enna->ly);
    elm_object_part_content_set(enna->ly, "mainmenu.swallow", enna->mainmenu);
    evas_object_show(enna->mainmenu);
+   evas_object_smart_callback_add(enna->mainmenu, "selected", _mainmenu_item_selected_cb, NULL);
 
    elm_object_focus_set(enna->mainmenu, EINA_TRUE);
 

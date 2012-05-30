@@ -55,33 +55,6 @@ _list_item_activated_cb(void *data, Evas_Object *obj __UNUSED__, void *event_inf
     DBG("Item activated : %s", label);
 
     evas_object_smart_callback_call(data, "selected", label);
-
-    if (!strcmp(label, "Exit"))
-      elm_exit();
-    else
-      {
-         if (enna_activity_select(label))
-           {
-              edje_object_signal_emit(elm_layout_edje_get(enna->ly), "mainmenu,hide", "enna");
-           }
-      }
-}
-
-static void
-_edje_signal_cb(void        *data,
-                Evas_Object *obj,
-                const char  *emission,
-                const char  *source)
-{
-   Enna_Mainmenu *mm = data;
-
-   DBG("Edje Object %p receive %s %s", obj, emission, source);
-   if (!strcmp(emission, "mainmenu,hide,end"))
-     {
-        DBG("Mainmenu hide transition end");
-        evas_object_del(mm->list);
-        mm->list = NULL;
-     }
 }
 
 /*============================================================================*
@@ -116,8 +89,6 @@ enna_mainmenu_add(Evas_Object *parent)
     elm_list_bounce_set(mm->list, EINA_FALSE, EINA_FALSE);
 
     evas_object_smart_callback_add(mm->list, "activated", _list_item_activated_cb, mm->ly);
-    edje_object_signal_callback_add(elm_layout_edje_get(enna->ly), "*", "*",
-                                    _edje_signal_cb, mm);
 
     evas_object_show(mm->list);
 

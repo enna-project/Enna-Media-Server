@@ -89,14 +89,15 @@ enna_activity_select(const char *activity)
    Enna_Activity *act;
    Evas_Object *obj;
 
-
-
    act = eina_hash_find(_activities, activity);
    if (act)
      {
+        Eina_List *focus_chain = NULL;
         obj = elm_object_part_content_unset(enna->ly, "activity.swallow");
         evas_object_hide(obj);
         elm_object_part_content_set(enna->ly, "activity.swallow", act->obj);
+        focus_chain = eina_list_append(focus_chain, act->obj);
+        elm_object_focus_custom_chain_set(enna->ly, focus_chain);
         elm_object_focus_set(act->obj, EINA_TRUE);
         return EINA_TRUE;
      }
