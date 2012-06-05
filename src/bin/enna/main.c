@@ -155,6 +155,7 @@ _key_down(void *data __UNUSED__, Evas *e __UNUSED__, Evas_Object *obj, void *eve
    else if (!strcmp(ev->keyname, "Escape"))
      {
         /* Show Exit Confirmation Menu */
+        enna_exit_popup_show(enna->win);
      }
    else if (!strcmp(ev->keyname, "BackSpace"))
      {
@@ -171,8 +172,8 @@ _key_down(void *data __UNUSED__, Evas *e __UNUSED__, Evas_Object *obj, void *eve
           }
         else
           {
-             elm_exit();
              /* Show Exit Confirmation Menu */
+             enna_exit_popup_show(enna->win);
           }
      }
 }
