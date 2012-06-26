@@ -90,7 +90,7 @@ enna_config_theme_get(void)
      return theme;
 
    snprintf(tmp, sizeof(tmp),
-            PACKAGE_DATA_DIR"/theme/default.edj");
+            PACKAGE_DATA_DIR"/theme/desktop.edj");
 
    INF("Theme : %s", tmp);
 
