@@ -124,34 +124,9 @@ _file_filter_cb(void *data, Eio_File *handler __UNUSED__, Eina_File_Direct_Info 
          return EINA_FALSE;
      }
 
-   /* if ( info->type == EINA_FILE_DIR ) */
-   /*     return EINA_TRUE; */
-
-   /* if (!strcmp("Sintel.2010.2K.SURROUND.x264-VODO.mp4", info->path + info->name_start)) */
-   /*     return EINA_TRUE; */
-   /* else */
-   /*     return EINA_FALSE; */
-
-   if ( info->type == EINA_FILE_DIR ||
-        _ems_util_has_suffix(info->path + info->name_start, ext))
+   if ( info->type == EINA_FILE_DIR )
      return EINA_TRUE;
-   else
-     return EINA_FALSE;
-}
-
-static void
-_file_main_cb(void *data, Eio_File *handler __UNUSED__, const Eina_File_Direct_Info *info)
-{
-   Ems_Directory *dir = data;
-
-   if (*(info->path + info->name_start) == '.' )
-     return;
-
-   if (info->type == EINA_FILE_DIR)
-     {
-        //DBG("[DIR] %s", info->path);
-     }
-   else
+   else if (_ems_util_has_suffix(info->path + info->name_start, ext))
      {
         const char *type;
         struct stat st;
@@ -237,6 +212,16 @@ _file_main_cb(void *data, Eio_File *handler __UNUSED__, const Eina_File_Direct_I
              ems_database_transaction_begin(ems_config->db);
           }
      }
+   else
+     return EINA_FALSE;
+
+
+
+}
+
+static void
+_file_main_cb(void *data, Eio_File *handler __UNUSED__, const Eina_File_Direct_Info *info)
+{
 }
 
 static void
