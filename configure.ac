@@ -159,6 +159,7 @@ src/tests/Makefile
 data/Makefile
 data/themes/Makefile
 data/themes/default/Makefile
+data/themes/desktop/Makefile
 data/images/Makefile
 ])
 
