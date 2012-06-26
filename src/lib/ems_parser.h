@@ -28,6 +28,6 @@
 
 Eina_Bool ems_parser_init(void);
 void ems_parser_shutdown(void);
-void ems_parser_grab(const char *filename);
+void ems_parser_grab(const char *filename, Ems_Media_Type type);
 
 #endif /* _EMS_PARSER_H_ */

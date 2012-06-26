@@ -36,6 +36,14 @@
 /*============================================================================*
  *                                  Local                                     *
  *============================================================================*/
+typedef struct _Ems_Parser_File Ems_Parser_File;
+
+struct _Ems_Parser_File
+{
+   const char *filename;
+   Ems_Media_Type type;
+};
+
 static Eina_Array *_modules = NULL;
 static Eina_List *_files = NULL;
 static Ecore_Idler *_queue_idler = NULL;
@@ -49,7 +57,7 @@ _idler_cb(void *data)
    Eina_Module *m;
    unsigned int i;
    Eina_List *l;
-   const char *file;
+   Ems_Parser_File *file;
    const char *filename = data;
    void (*grab)(const char *filename, Ems_Media_Type type,
                 void (*Ems_Grabber_End_Cb)(void *data, const char *filename),
@@ -60,10 +68,11 @@ _idler_cb(void *data)
      {
         EINA_LIST_FOREACH(_files, l, file)
           {
-             if (!strcmp(file, filename))
+             if (!strcmp(file->filename, filename))
                {
                   _files = eina_list_remove(_files, file);
-                  eina_stringshare_del(file);
+                  eina_stringshare_del(file->filename);
+                  free(file);
                   break;
                }
           }
@@ -77,9 +86,9 @@ _idler_cb(void *data)
              grab = eina_module_symbol_get(m, "ems_grabber_grab");
              if (grab)
                {
-                  const char *f = eina_list_nth(_files, 0);
-                  grab(f,
-                       EMS_MEDIA_TYPE_VIDEO,
+                  Ems_Parser_File *f = eina_list_nth(_files, 0);
+                  grab(f->filename,
+                       f->type,
                        _end_grab_cb, NULL);
                }
              break;
@@ -119,10 +128,13 @@ ems_parser_init(void)
 void
 ems_parser_shutdown(void)
 {
-   const char *filename;
+   Ems_Parser_File *file;
 
-   EINA_LIST_FREE(_files, filename)
-     eina_stringshare_del(filename);
+   EINA_LIST_FREE(_files, file)
+     {
+        eina_stringshare_del(file->filename);
+        free(file);
+     }
 
    if (_queue_idler)
      ecore_idler_del(_queue_idler);
@@ -137,10 +149,19 @@ ems_parser_shutdown(void)
  *============================================================================*/
 
 void
-ems_parser_grab(const char *filename)
+ems_parser_grab(const char *filename, Ems_Media_Type type)
 {
-    _files = eina_list_append(_files, eina_stringshare_add(filename));
-    if (!_queue_idler)
-        _queue_idler = ecore_idler_add(_idler_cb, NULL);
+   Ems_Parser_File *file;
+
+   if (!filename)
+     return;
+
+   file = calloc(1, sizeof(Ems_Parser_File));
+   file->filename = eina_stringshare_add(filename);
+   file->type = type;
+
+   _files = eina_list_append(_files, file);
+   if (!_queue_idler)
+     _queue_idler = ecore_idler_add(_idler_cb, NULL);
 
 }
