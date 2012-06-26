@@ -108,6 +108,9 @@ _file_filter_cb(void *data, Eio_File *handler __UNUSED__, Eina_File_Direct_Info 
    if (*(info->path + info->name_start) == '.' )
      return EINA_FALSE;
 
+   if ( info->type == EINA_FILE_DIR )
+     return EINA_TRUE;
+
    switch (dir->type)
      {
       case EMS_MEDIA_TYPE_VIDEO:
@@ -124,9 +127,7 @@ _file_filter_cb(void *data, Eio_File *handler __UNUSED__, Eina_File_Direct_Info 
          return EINA_FALSE;
      }
 
-   if ( info->type == EINA_FILE_DIR )
-     return EINA_TRUE;
-   else if (_ems_util_has_suffix(info->path + info->name_start, ext))
+   if (_ems_util_has_suffix(info->path + info->name_start, ext))
      {
         const char *type;
         struct stat st;
@@ -180,7 +181,7 @@ _file_filter_cb(void *data, Eio_File *handler __UNUSED__, Eina_File_Direct_Info 
                        tmp = ems_utils_decrapify(info->path);
                        ems_database_meta_insert(ems_config->db, info->path, "clean_name", tmp);
                        /* Queue file in grabber list */
-                       ems_parser_grab(info->path);
+                       ems_parser_grab(info->path, dir->type);
                     }
                   else
                     ERR("%s is corrupted ?", info->path);
@@ -197,7 +198,7 @@ _file_filter_cb(void *data, Eio_File *handler __UNUSED__, Eina_File_Direct_Info 
              if (mtime != (int64_t)st.st_mtime)
                {
                   INF("File changed on disk %s", info->path);
-                  ems_parser_grab(info->path);
+                  ems_parser_grab(info->path, dir->type);
                }
 
           }
@@ -211,17 +212,18 @@ _file_filter_cb(void *data, Eio_File *handler __UNUSED__, Eina_File_Direct_Info 
              ems_database_transaction_end(ems_config->db);
              ems_database_transaction_begin(ems_config->db);
           }
+ 
+        return EINA_TRUE;
      }
    else
      return EINA_FALSE;
-
-
 
 }
 
 static void
 _file_main_cb(void *data, Eio_File *handler __UNUSED__, const Eina_File_Direct_Info *info)
 {
+
 }
 
 static void
