@@ -1,0 +1,184 @@
+#define REL_BORDER_X 0.02
+#define REL_BORDER_Y 0.036
+
+
+images{
+   image: "background.png" COMP;
+
+}
+
+fonts{
+
+}
+
+collections
+{
+
+#include "elm/elm.edc"
+
+   group { name: "main/layout";
+      parts {
+         part {
+            name: "background";
+            description {
+               image.normal: "background.png";
+            }
+         }
+         part {
+            name: "mainmenu.clip";
+            type: RECT;
+            description {
+               state: "default" 0.0;
+               color: 0 0 0 0;
+               visible: 0;
+            }
+            description {
+               state: "visible" 0.0;
+               color: 255 255 255 255;
+               visible: 1;
+            }
+         }
+         part {
+            name: "mainmenu.swallow";
+            type: SWALLOW;
+            clip_to: "mainmenu.clip";
+            description {
+            }
+         }
+         part {
+            name: "activity.swallow";
+            type: SWALLOW;
+            description {
+            }
+         }
+      }
+      programs {
+         program {
+            name: "on_show";
+            in: 0.5 0.0;
+            signal: "show";
+            after: "mainmenu,show";
+         }
+         program { name: "mainmenu,show";
+            signal: "mainmenu,show";
+            source: "enna";
+            action: STATE_SET "visible" 0.0;
+            transition: ACCELERATE 1.0;
+            target: "mainmenu.clip";
+         }
+         program { name: "mainmenu,hide";
+            signal: "mainmenu,hide";
+            source: "enna";
+            action: STATE_SET "default" 0.0;
+            transition: DECELERATE 1.0;
+            target: "mainmenu.clip";
+         }
+      }
+   }
+
+   group { name: "mainmenu/layout";
+      parts {
+         part {
+            name: "list.swallow";
+            type: SWALLOW;
+            description {
+               align: 0 0.5;
+               rel1.offset: 0 80;
+               rel2.relative: 0.3 1.0;
+               rel2.offset: 0 -81;
+            }
+         }
+      }
+   }
+
+   group { name: "activity/layout/list";
+      images {
+         image: "cover_reflect.png" COMP;
+         image: "cover_shadow.png" COMP;
+      }
+      parts {
+         part {
+            name: "backdrop.swallow";
+            type: SWALLOW;
+            description {
+               align: 0.5 0.5;
+            }
+         }
+         part {
+            name: "list.swallow";
+            type: SWALLOW;
+            description {
+               align: 0 0.5;
+               rel1.relative: REL_BORDER_X REL_BORDER_Y;
+               rel2.relative: 0.66-REL_BORDER_X 1-REL_BORDER_Y;
+            }
+         }
+         part {
+            name: "cover.shadow";
+            type: IMAGE;
+            description {
+               rel1.to: "cover.swallow";
+               rel1.offset: -51 -51;
+               rel2.to: "cover.swallow";
+               rel2.offset: 50 50;
+               color: 0 0 0 255;
+               image.normal: "cover_shadow.png";
+               image.border: 51 51 51 51;
+            }
+         }
+
+         part {
+            name: "play.swallow";
+            type: SWALLOW;
+            description {
+               rel1.relative: 0.66+REL_BORDER_X (1-0.153)+REL_BORDER_Y;
+               rel2.relative: 0.66+0.15 1-REL_BORDER_Y;
+            }
+         }
+
+         part {
+            name: "trailer.swallow";
+            type: SWALLOW;
+            description {
+               rel1.relative: 0.66+0.15+2*REL_BORDER_X (1-0.153)+REL_BORDER_Y;
+               rel2.relative: 1-REL_BORDER_X 1-REL_BORDER_Y;
+            }
+         }
+
+         part {
+            name: "cover.border";
+            type: RECT;
+            description {
+               rel1.to: "cover.swallow";
+               rel1.offset: -1 -1;
+               rel2.to: "cover.swallow";
+               rel2.offset: 0 0;
+               color: 0 0 0 255;
+            }
+         }
+         part {
+            name: "cover.swallow";
+            type: SWALLOW;
+            description {
+               align: 0.5 0.5;
+               rel1.relative: 0.66+REL_BORDER_X REL_BORDER_Y;
+               rel2.relative: 1-REL_BORDER_X 1-0.153;
+               aspect: 0.5 1;
+            }
+         }
+         part {
+            name: "cover.reflect";
+            type: IMAGE;
+            description {
+               rel1.to: "cover.swallow";
+               rel2.to: "cover.swallow";
+               rel2.relative: 1.0 0.5;
+               image.normal: "cover_reflect.png";
+            }
+         }
+      }
+   }
+
+
+
+}
