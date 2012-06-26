@@ -195,6 +195,9 @@ _edje_signal_cb(void        *data,
 static Eina_Bool
 enna_window_init(void)
 {
+   Eina_Bool shaped = EINA_FALSE;
+   const char *sshaped = NULL;
+   Evas_Coord minw, minh;
 
    enna->win = elm_win_add(NULL, "enna", ELM_WIN_BASIC);
    elm_win_title_set(enna->win, "Enna Media Center");
@@ -220,10 +223,28 @@ enna_window_init(void)
    elm_object_focus_set(enna->mainmenu, EINA_TRUE);
    enna->state = ENNA_STATE_MAINMENU;
 
+   sshaped = elm_layout_data_get(enna->ly, "shaped");
+
+   if (sshaped)
+     shaped = !strcmp(sshaped, "1");
+
+   elm_win_shaped_set(enna->win, shaped);
+   elm_win_borderless_set(enna->win, shaped);
+   elm_win_alpha_set(enna->win, shaped);
+
    if (!enna->app_w || !enna->app_h)
      {
-        enna->app_w = 1280;
-        enna->app_h = 720;
+        edje_object_size_min_get(elm_layout_edje_get(enna->ly), &minw, &minh);
+        if (!minw || !minh)
+          {
+             enna->app_w = 1280;
+             enna->app_h = 720;
+          }
+        else
+          {
+             enna->app_w = minw;
+             enna->app_h = minh;
+          }
      }
    evas_object_resize(enna->win, enna->app_w, enna->app_h);
 
@@ -233,6 +254,7 @@ enna_window_init(void)
    evas_object_show(enna->win);
 
    enna_video_init();
+   enna_music_init();
 
    return EINA_TRUE;
 }
