@@ -590,8 +590,9 @@ ems_database_file_insert(Ems_Database *db, const char *filename,
 
    EMS_DB_BIND_TEXT_OR_GOTO(stmt, 1, filename,  out);
    EMS_DB_BIND_TEXT_OR_GOTO(stmt, 2, uuid,  out_clear);
-   EMS_DB_BIND_INT64_OR_GOTO(stmt, 3, mtime, out_clear);
-   EMS_DB_BIND_INT64_OR_GOTO(stmt, 4, magic, out_clear);
+   EMS_DB_BIND_INT64_OR_GOTO(stmt, 3, type, out_clear);
+   EMS_DB_BIND_INT64_OR_GOTO(stmt, 4, mtime, out_clear);
+   EMS_DB_BIND_INT64_OR_GOTO(stmt, 5, magic, out_clear);
 
    res = sqlite3_step (stmt);
    if (res == SQLITE_DONE)
@@ -909,9 +910,12 @@ ems_database_collection_get(Ems_Database *db, Ems_Collection *collection)
    Eina_List *files = NULL;
    sqlite3_stmt *stmt = NULL;
    int res;
+   double t0;
 
    if (!db || !db->db)
      return NULL;
+
+   t0 = ecore_time_get();
 
    res = sqlite3_prepare_v2 (db->db, "SELECT file_hash FROM file ORDER BY file_path;", -1, &stmt, NULL);
    if (res != SQLITE_OK)
@@ -942,6 +946,7 @@ ems_database_collection_get(Ems_Database *db, Ems_Collection *collection)
           }
      }
 
+   DBG("Request time : %3.3f", ecore_time_get() - t0);
    return files;
 
  out:

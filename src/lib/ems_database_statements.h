@@ -72,6 +72,7 @@
     "file_id          INTEGER PRIMARY KEY AUTOINCREMENT, "      \
     "file_path        TEXT    NOT NULL UNIQUE, "                \
     "file_hash        TEXT    NOT NULL, "                       \
+    "file_type        INTEGER, "                                \
     "file_mtime       INTEGER NOT NULL,"                        \
     "scan_magic       INTEGER NOT NULL"                         \
     ");"
@@ -195,9 +196,10 @@
     "INSERT "                                   \
     "INTO file (file_path, "                    \
     "           file_hash,"                     \
+    "           file_type,"                     \
     "           file_mtime,"                    \
     "           scan_magic) "                   \
-    "VALUES (?, ?, ?, ?);"
+    "VALUES (?, ?, ?, ?, ?);"
 
 #define INSERT_META                             \
     "INSERT "                                   \
