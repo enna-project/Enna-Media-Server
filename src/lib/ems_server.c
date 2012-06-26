@@ -419,7 +419,7 @@ _ems_server_media_get_ret(Azy_Client *client, Azy_Content *content, void *respon
         if (media_req->add_cb)
           media_req->add_cb(media_req->data_cb, media_req->server, f);
      }
-   free(media_req);
+   //free(media_req);
    //response is automaticaly free
    return AZY_ERROR_NONE;
 }
@@ -471,8 +471,8 @@ _ems_server_media_info_get_ret(Azy_Client *client, Azy_Content *content, void *r
    if (media_req->add_cb)
      media_req->add_cb(media_req->data_cb, media_req->server, info);
 
-   eina_stringshare_del(media_req->info);
-   free(media_req);
+   //eina_stringshare_del(media_req->info);
+   //free(media_req);
 
    //response is automaticaly free
    return AZY_ERROR_NONE;
