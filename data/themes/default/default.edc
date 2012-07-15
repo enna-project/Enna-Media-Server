@@ -16,6 +16,8 @@ collections
 
 #include "elm/elm.edc"
 
+#include "player.edc"
+
    group { name: "main/layout";
       parts {
          part {

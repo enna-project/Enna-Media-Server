@@ -25,15 +25,25 @@ elm/images/scroll_h.png \
 elm/images/scroll_v.png \
 elm/images/tree_arrow_left.png \
 elm/images/tree_arrow_right.png \
-elm/images/tree_arrow_down.png
+elm/images/tree_arrow_down.png \
+images/player_osd.png \
+images/player_play.png \
+images/player_pause.png \
+images/player_slider_bg.png \
+images/player_slider_inside.png \
+images/player_slider_knob.png \
+images/player_slider_out.png \
+images/player_slider_time.png
 
 
 EDC = \
 default.edc \
+player.edc \
 elm/button.edc \
 elm/elm.edc \
 elm/genlist.edc \
-elm/scroller.edc
+elm/scroller.edc \
+elm/video.edc
 
 EXTRA_DIST = \
   $(IMG) \
