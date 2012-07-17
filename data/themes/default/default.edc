@@ -127,7 +127,30 @@ collections
    }
 
    group { name: "mainmenu/layout";
+      images {
+         image: "mainmenu_shelf_reflect.png" COMP;
+      }
       parts {
+         part {
+            name: "shelf_background";
+            type: RECT;
+            description {
+               rel1.relative: 0 0.75;
+               rel2.relative: 1 1;
+               color: 12 12 12 255;
+            }
+         }
+         part {
+            name: "shelf_overlay";
+            type: IMAGE;
+            description  {
+               image.normal: "mainmenu_shelf_reflect.png";
+               color: 255 255 255 255;
+               rel1.offset: -1 -1;
+               rel1.to: "shelf_background";
+               rel2.to: "shelf_background";
+            }
+         }
          part {
             name: "list.swallow";
             type: SWALLOW;
