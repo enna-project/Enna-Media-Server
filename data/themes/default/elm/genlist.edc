@@ -930,7 +930,8 @@ group { name: "elm/list/item/mainmenu";
          description { state: "default" 0.0;
          visible: 0;
          color: 255 255 255 0;
-         rel2.offset: 1 1;
+         rel1.offset: 0 -8;
+         rel2.offset: 0 25;
             image {
             normal: "list_mainmenu_selected.png";
             border: 0 25 8 25;
@@ -954,10 +955,6 @@ group { name: "elm/list/item/mainmenu";
             rel1 {
                relative: 0.0  0.0;
                offset:   8 0;
-            }
-            rel2 {
-               relative: 1.0  1.0;
-               offset:   -20 -20;
             }
             color: 255 255 255 255;
             color3: 0 0 0 30;
