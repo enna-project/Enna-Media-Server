@@ -22,6 +22,7 @@
 //#include "slider.edc"
 //#include "actionslider.edc"
 #include "genlist.edc"
+#include "popup.edc"
 //#include "check.edc"
 //#include "radio.edc"
 //#include "pager.edc"
