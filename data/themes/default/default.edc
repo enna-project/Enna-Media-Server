@@ -129,6 +129,9 @@ collections
    group { name: "mainmenu/layout";
       images {
          image: "mainmenu_shelf_reflect.png" COMP;
+         image: "background_light.png" COMP;
+         image: "mainmenu_list_bg.png" COMP;
+         image: "mainmenu_shelf_reflection_mask.png" COMP;
       }
       parts {
          part {
@@ -138,12 +141,58 @@ collections
             }
          }
          part {
+            name: "list.bg";
+            description {
+               image.normal: "mainmenu_list_bg.png";
+               color: 0 0 0 100;
+               rel2.to: "list.swallow";
+            }
+         }
+         part {
+            name: "fanart_light";
+            type: IMAGE;
+            description  {
+               image.normal: "background_light.png";
+            }
+         }
+         part {
             name: "shelf_background";
             type: RECT;
             description {
                rel1.relative: 0 0.75;
                rel2.relative: 1 1;
                color: 12 12 12 255;
+            }
+         }
+         part {
+            name: "shelf.reflexion";
+            type: PROXY;
+            mouse_events: 0;
+            description {
+               state: "default" 0.0;
+               source: "shelf.swallow";
+               rel1.relative: 0 1;
+               rel1.offset: 0 -100;
+               rel1.to: "shelf.swallow";
+               rel2.relative: 1 2;
+               rel1.to: "shelf.swallow";
+               color: 255 255 255 100;
+               map {
+                  on: 1;
+                  rotation {
+                     z: 180.0;
+                     y: 180.0;
+                  }
+               }
+            }
+         }
+         part {
+            name: "shelf_reflection_mask";
+            type: IMAGE;
+            description  {
+               image.normal: "mainmenu_shelf_reflection_mask.png";
+               rel1.to: "shelf_background";
+               rel2.to: "shelf_background";
             }
          }
          part {
@@ -162,7 +211,7 @@ collections
             type: SWALLOW;
             description {
                rel1.relative: 0.3 0.2;
-               rel2.relative: 1.0 0.95;
+               rel2.relative: 1.0 0.90;
             }
          }
          part {
