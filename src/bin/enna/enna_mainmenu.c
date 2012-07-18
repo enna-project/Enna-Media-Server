@@ -67,6 +67,7 @@ enna_mainmenu_add(Evas_Object *parent)
 {
     Elm_Object_Item *it;
     Enna_Mainmenu *mm;
+    Evas_Object *ic;
 
     mm = calloc(1, sizeof(Enna_Mainmenu));
     if (!mm)
@@ -93,12 +94,30 @@ enna_mainmenu_add(Evas_Object *parent)
 
     evas_object_show(mm->list);
 
+
+
     mm->shelf = elm_list_add(mm->ly);
+
+    ic = evas_object_image_filled_add(evas_object_evas_get(mm->shelf));
+    evas_object_image_file_set(ic, PACKAGE_DATA_DIR"/images/cover1.jpg", NULL);
+    evas_object_show(ic);
+
     elm_object_style_set(mm->shelf, "shelf");
-    it = elm_list_item_append(mm->shelf, "Test", NULL, NULL, NULL, NULL);
+    it = elm_list_item_append(mm->shelf, "Test", ic, NULL, NULL, NULL);
     elm_list_item_selected_set(it, EINA_TRUE);
-    elm_list_item_append(mm->shelf, "Test2", NULL, NULL, NULL, NULL);
-    elm_list_item_append(mm->shelf, "Test3", NULL, NULL, NULL, NULL);
+
+    ic = evas_object_image_filled_add(evas_object_evas_get(mm->shelf));
+    evas_object_image_file_set(ic, PACKAGE_DATA_DIR"/images/cover2.jpg", NULL);
+    evas_object_show(ic);
+
+
+    elm_list_item_append(mm->shelf, "Test2", ic, NULL, NULL, NULL);
+
+    ic = evas_object_image_filled_add(evas_object_evas_get(mm->shelf));
+    evas_object_image_file_set(ic, PACKAGE_DATA_DIR"/images/cover3.jpg", NULL);
+    evas_object_show(ic);
+
+    elm_list_item_append(mm->shelf, "Test3", ic, NULL, NULL, NULL);
     elm_object_part_content_set(mm->ly, "shelf.swallow", mm->shelf);
     evas_object_size_hint_align_set(mm->shelf, -1, 0.5);
     elm_list_horizontal_set(mm->shelf, EINA_TRUE);
