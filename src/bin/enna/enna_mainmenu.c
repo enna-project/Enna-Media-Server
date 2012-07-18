@@ -43,6 +43,7 @@ struct _Enna_Mainmenu
 {
    Evas_Object *ly;
    Evas_Object *list;
+   Evas_Object *shelf;
 };
 
 static void
@@ -92,6 +93,15 @@ enna_mainmenu_add(Evas_Object *parent)
 
     evas_object_show(mm->list);
 
+    mm->shelf = elm_list_add(mm->ly);
+    elm_object_style_set(mm->shelf, "shelf");
+    it = elm_list_item_append(mm->shelf, "Test", NULL, NULL, NULL, NULL);
+    elm_list_item_selected_set(it, EINA_TRUE);
+    elm_list_item_append(mm->shelf, "Test2", NULL, NULL, NULL, NULL);
+    elm_list_item_append(mm->shelf, "Test3", NULL, NULL, NULL, NULL);
+    elm_object_part_content_set(mm->ly, "shelf.swallow", mm->shelf);
+    evas_object_size_hint_align_set(mm->shelf, -1, 0.5);
+    elm_list_horizontal_set(mm->shelf, EINA_TRUE);
     return mm->ly;
 }
 
