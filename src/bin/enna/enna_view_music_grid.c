@@ -292,7 +292,7 @@ _grid_item_selected_cb(void *data, Evas_Object *obj __UNUSED__, void *event_info
  *                                 Global                                     *
  *============================================================================*/
 
-Evas_Object *enna_view_music_grid_add(Evas_Object *parent)
+Evas_Object *enna_view_music_grid_add(Enna *enna __UNUSED__, Evas_Object *parent)
 {
    Evas_Object *ly;
    Evas_Object *grid;

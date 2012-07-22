@@ -30,16 +30,14 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <getopt.h>
 
-#include <Evas.h>
+#include <Ecore_Getopt.h>
 #include <Elementary.h>
 #include <Ems.h>
 
 #include "enna_private.h"
 #include "enna_config.h"
-#include "enna_mainmenu.h"
-#include "enna_video.h"
+#include "enna_main.h"
 
 #ifndef ELM_LIB_QUICKLAUNCH
 
@@ -47,353 +45,92 @@
  *                                  Local                                     *
  *============================================================================*/
 
-static void
-_win_del(void *data __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
+static const Ecore_Getopt _options =
 {
-   elm_exit();
-}
-
-static void
-_win_resize(void *data __UNUSED__, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
-{
-    Evas_Coord w, h;
-
-    evas_object_geometry_get(enna->win, NULL, NULL, &w, &h);
-    evas_object_resize(enna->ly, w - 2 * enna->app_x_off, h - 2 * enna->app_y_off);
-    evas_object_move(enna->ly, enna->app_x_off, enna->app_y_off);
-}
-
-static Eina_Bool
-enna_init(void)
-{
-   _enna_log_dom_global = eina_log_domain_register("enna", ENNA_DEFAULT_LOG_COLOR);
-   if (_enna_log_dom_global < 0)
-     {
-        EINA_LOG_ERR("Enna Can not create a general log domain.");
-        return EINA_FALSE;
-     }
-
-   enna = calloc(1, sizeof(Enna));
-   if (!enna)
-     {
-        EINA_LOG_ERR("Not enough ram ?");
-        return EINA_FALSE;
-     }
-
-   INF("Enna init done");
-
-   return EINA_TRUE;
-}
-
-static void
-_mainmenu_item_selected_cb(void *data, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
-{
-   const char *activity = event_info;
-
-   DBG("Selected Activity : %s", activity);
-
-   if (!strcmp(activity, "Exit"))
-     elm_exit();
-   else
-     {
-        if (enna_activity_select(activity))
-          {
-             edje_object_signal_emit(elm_layout_edje_get(enna->ly), "mainmenu,hide", "enna");
-             edje_object_signal_emit(elm_layout_edje_get(enna->ly), "activity,show", "enna");
-             enna->state = ENNA_STATE_ACTIVITY;
-          }
-     }
-
-}
-
-static Eina_Bool
-_elm_win_event_cb(Evas_Object *obj, Evas_Object *src __UNUSED__, Evas_Callback_Type type, void *event_info)
-{
-   if (type == EVAS_CALLBACK_KEY_DOWN)
-     {
-        Evas_Event_Key_Down *ev = event_info;
-
-        printf("keyname : %s\n", ev->keyname);
-
-        if (!strcmp(ev->keyname, "Tab"))
-          {
-             printf("TADADADADA\n");
-          }
-        else if ((!strcmp(ev->keyname, "Left")) ||
-                 (!strcmp(ev->keyname, "KP_Left")))
-          {
-             printf("left\n");
-             elm_widget_focus_cycle(obj, ELM_FOCUS_PREVIOUS);
-          }
-        else if ((!strcmp(ev->keyname, "Right")) ||
-                 (!strcmp(ev->keyname, "KP_Right")))
-          {
-             printf("right\n");
-             elm_widget_focus_cycle(obj, ELM_FOCUS_NEXT);
-          }
-     }
-   return EINA_FALSE;
-}
-
-static void
-_key_down(void *data __UNUSED__, Evas *e __UNUSED__, Evas_Object *obj, void *event_info)
-{
-   Evas_Event_Key_Down *ev = event_info;
-
-   DBG("Key ev : %s", ev->keyname);
-
-   if ((!strcmp(ev->keyname, "Left")) ||
-       (!strcmp(ev->keyname, "KP_Left")))
-     {
-        elm_widget_focus_cycle(obj, ELM_FOCUS_PREVIOUS);
-     }
-   else if ((!strcmp(ev->keyname, "Right")) ||
-            (!strcmp(ev->keyname, "KP_Right")))
-     {
-        elm_widget_focus_cycle(obj, ELM_FOCUS_NEXT);
-     }
-   else if (!strcmp(ev->keyname, "Escape"))
-     {
-        /* Show Exit Confirmation Menu */
-        enna_exit_popup_show(enna->win);
-     }
-   else if (!strcmp(ev->keyname, "BackSpace"))
-     {
-        if (enna->state != ENNA_STATE_MAINMENU)
-          {
-             Eina_List *focus_chain = NULL;
-             /* Back to the mainmenu */
-             edje_object_signal_emit(elm_layout_edje_get(enna->ly), "mainmenu,show", "enna");
-             edje_object_signal_emit(elm_layout_edje_get(enna->ly), "activity,hide", "enna");
-             enna->state = ENNA_STATE_MAINMENU;
-             focus_chain = eina_list_append(focus_chain, enna->mainmenu);
-             elm_object_focus_custom_chain_set(enna->ly, focus_chain);
-             elm_object_focus_set(enna->mainmenu, EINA_TRUE);
-          }
-        else
-          {
-             /* Show Exit Confirmation Menu */
-             enna_exit_popup_show(enna->win);
-          }
-     }
-}
-
-static void
-_edje_signal_cb(void        *data,
-                Evas_Object *obj,
-                const char  *emission,
-                const char  *source)
-{
-
-   //DBG("Edje Object %p receive %s %s", obj, emission, source);
-   if (!strcmp(emission, "mainmenu,hide,end"))
-     {
-        DBG("Mainmenu hide transition end");
-     }
-}
-
-static Eina_Bool
-enna_window_init(void)
-{
-   Eina_Bool shaped = EINA_FALSE;
-   const char *sshaped = NULL;
-   Evas_Coord minw, minh;
-
-   enna->win = elm_win_add(NULL, "enna", ELM_WIN_BASIC);
-   elm_win_title_set(enna->win, "Enna Media Center");
-   evas_object_smart_callback_add(enna->win, "delete,request", _win_del, NULL);
-   evas_object_event_callback_add(enna->win, EVAS_CALLBACK_RESIZE, _win_resize, NULL);
-   enna->ly = elm_layout_add(enna->win);
-   evas_object_event_callback_add(enna->ly, EVAS_CALLBACK_KEY_DOWN,
-                                  _key_down, enna->win);
-   edje_object_signal_callback_add(elm_layout_edje_get(enna->ly), "*", "*",
-                                    _edje_signal_cb, NULL);
-
-   elm_layout_file_set(enna->ly, enna_config_theme_get(), "main/layout");
-   evas_object_size_hint_weight_set(enna->ly, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   //elm_win_resize_object_add(win, enna->ly);
-
-   evas_object_show(enna->ly);
-
-   enna->mainmenu = enna_mainmenu_add(enna->ly);
-   elm_object_part_content_set(enna->ly, "mainmenu.swallow", enna->mainmenu);
-   evas_object_show(enna->mainmenu);
-   evas_object_smart_callback_add(enna->mainmenu, "selected", _mainmenu_item_selected_cb, NULL);
-
-   elm_object_focus_set(enna->mainmenu, EINA_TRUE);
-   enna->state = ENNA_STATE_MAINMENU;
-
-   sshaped = elm_layout_data_get(enna->ly, "shaped");
-
-   if (sshaped)
-     shaped = !strcmp(sshaped, "1");
-
-   elm_win_shaped_set(enna->win, shaped);
-   elm_win_borderless_set(enna->win, shaped);
-   elm_win_alpha_set(enna->win, shaped);
-
-   if (!enna->app_w || !enna->app_h)
-     {
-        edje_object_size_min_get(elm_layout_edje_get(enna->ly), &minw, &minh);
-        if (!minw || !minh)
-          {
-             enna->app_w = 1280;
-             enna->app_h = 720;
-          }
-        else
-          {
-             enna->app_w = minw;
-             enna->app_h = minh;
-          }
-     }
-   evas_object_resize(enna->win, enna->app_w, enna->app_h);
-
-   evas_object_resize(enna->ly, enna->app_w - 2 * enna->app_x_off, enna->app_h - 2 * enna->app_y_off);
-   evas_object_move(enna->ly, enna->app_x_off, enna->app_y_off);
-
-   evas_object_show(enna->win);
-
-   enna_video_init();
-   enna_music_init();
-
-   return EINA_TRUE;
-}
-
-static void
-_opt_geometry_parse(const char *opt,
-                    Evas_Coord *pw, Evas_Coord *ph,
-                    Evas_Coord *px, Evas_Coord *py)
-{
-   int w = 0, h = 0;
-   int x = 0, y = 0;
-   int ret;
-
-   ret = sscanf(opt, "%dx%d:%d:%d", &w, &h, &x, &y);
-
-   if ( ret != 2 && ret != 4 )
-     return;
-
-   if (pw) *pw = w;
-   if (ph) *ph = h;
-   if (px) *px = x;
-   if (py) *py = y;
-}
-
-static void _usage_print(char *binname)
-{
-   printf("Enna Media Center\n");
-   printf(" Usage: %s [options ...]\n", binname);
-   printf(" Available options:\n");
-   printf("  -c, (--config):  Specify configuration file to be used.\n");
-   printf("  -f, (--fs):      Force fullscreen mode.\n");
-   printf("  -h, (--help):    Display this help.\n");
-   printf("  -t, (--theme):   Specify theme name to be used.\n");
-   printf("  -g, (--geometry):Specify window geometry. (geometry=1280x720)\n");
-   printf("  -g, (--geometry):Specify window geometry and offset. (geometry=1280x720:10:20)\n");
-   printf("\n");
-   printf("  -V, (--version): Display Enna version number.\n");
-   exit(EXIT_SUCCESS);
-}
-
-static void _version_print(void)
-{
-   printf(PACKAGE_STRING"\n");
-   exit(EXIT_SUCCESS);
-}
-
-static int _parse_command_line(int argc, char **argv)
-{
-   int c, id;
-   char short_options[] = "Vhfc:t:b:g:p:";
-   struct option long_options [] =
-     {
-       { "help",          no_argument,       0, 'h' },
-       { "version",       no_argument,       0, 'V' },
-       { "fs",            no_argument,       0, 'f' },
-       { "config",        required_argument, 0, 'c' },
-       { "theme",         required_argument, 0, 't' },
-       { "geometry",      required_argument, 0, 'g' },
-       { 0,               0,                 0,  0  }
-     };
-
-   /* command line argument processing */
-   while (1)
-     {
-        c = getopt_long(argc, argv, short_options, long_options, &id);
-
-        if (c == EOF)
-          break;
-
-        switch (c)
-          {
-           case 0:
-              /* opt = long_options[index].name; */
-              break;
-
-           case '?':
-           case 'h':
-              _usage_print(argv[0]);
-              return -1;
-
-           case 'V':
-              _version_print();
-              break;
-
-           case 'f':
-              enna->run_fullscreen = 1;
-              break;
-
-           case 'c':
-              enna->config_file = eina_stringshare_add(optarg);
-              break;
-
-           case 't':
-              enna->theme_file = eina_stringshare_add(optarg);
-              break;
-
-           case 'g':
-              _opt_geometry_parse(optarg, &enna->app_w, &enna->app_h, &enna->app_x_off, &enna->app_y_off);
-              break;
-           default:
-              _usage_print(argv[0]);
-              return -1;
-          }
-     }
-
-   return 0;
-}
+   "enna",
+   "%prog [options]",
+   VERSION,
+   "(C) 2012 Enna Team",
+   "BSD",
+   "Enna - a powerfull mediacenter based on EFL and Enna Media Server",
+   EINA_TRUE,
+   {
+      ECORE_GETOPT_STORE_DEF_BOOL
+      ('f', "fullscreen", "Force fullscreen mode.", EINA_FALSE),
+      ECORE_GETOPT_CALLBACK_ARGS
+      ('g', "geometry", "geometry to use in x:y:w:h form.", "X:Y:W:H", ecore_getopt_callback_geometry_parse, NULL),
+      ECORE_GETOPT_VERSION
+      ('V', "version"),
+      ECORE_GETOPT_COPYRIGHT
+      ('R', "copyright"),
+      ECORE_GETOPT_LICENSE
+      ('L', "license"),
+      ECORE_GETOPT_HELP
+      ('h', "help"),
+      ECORE_GETOPT_STORE_STR
+      ('t', "theme", "Specify theme file to be used."),
+      ECORE_GETOPT_SENTINEL
+   }
+};
 
 /*============================================================================*
  *                                 Global                                     *
  *============================================================================*/
 
-int _enna_log_dom_global = -1;
-
-Enna *enna = NULL;
-
 /*============================================================================*
  *                                   API                                      *
  *============================================================================*/
 
-
-
 EAPI_MAIN int
 elm_main(int argc, char **argv)
 {
+   char *theme = NULL;
+   int args;
+   unsigned char quit_option = 0;
+   Eina_Rectangle geometry = {0, 0, 0, 0};
+   Eina_Bool is_fullscreen = 0;
+   Enna *enna;
+
+   Ecore_Getopt_Value values[] =
+   {
+      ECORE_GETOPT_VALUE_BOOL(is_fullscreen),
+      ECORE_GETOPT_VALUE_PTR_CAST(geometry),
+      ECORE_GETOPT_VALUE_BOOL(quit_option),
+      ECORE_GETOPT_VALUE_BOOL(quit_option),
+      ECORE_GETOPT_VALUE_BOOL(quit_option),
+      ECORE_GETOPT_VALUE_BOOL(quit_option),
+      ECORE_GETOPT_VALUE_STR(theme),
+      ECORE_GETOPT_VALUE_NONE
+   };
+
+   eina_init();
+
+   ecore_app_args_set(argc, (const char **) argv);
+   args = ecore_getopt_parse(&_options, values, argc, argv);
+
+   if (args < 0)
+     {
+        ERR("Could not parse options !");
+        return EXIT_FAILURE;
+     }
+
+   if (quit_option)
+     return EXIT_SUCCESS;
 
    if (!enna_init())
      goto shutdown;
 
-   if (_parse_command_line(argc, argv) < 0)
-     goto shutdown;
-
    if (!enna_config_init())
-     goto shutdown;
+     goto shutdown_enna;
+
+   if (theme)
+     enna_config_theme_set(theme);
 
    if (!ems_init(enna_config_config_get()))
-     return EXIT_FAILURE;
+     goto shutdown_config;
 
-   if (!enna_window_init())
+   enna = enna_add(is_fullscreen, geometry);
+   if (!enna)
      goto shutdown_config;
 
    INF("Start scanner");
@@ -404,13 +141,18 @@ elm_main(int argc, char **argv)
    ems_run();
 
    ems_shutdown();
+   enna_config_shutdown();
+   enna_shutdown();
    elm_shutdown();
 
    return EXIT_SUCCESS;
 
  shutdown_config:
    enna_config_shutdown();
+ shutdown_enna:
+   enna_shutdown();
  shutdown:
+   enna_shutdown();
    return -1;
 }
 #endif

@@ -29,9 +29,12 @@
 
 #include <Eina.h>
 #include <Ecore_File.h>
+#include <Elementary.h>
 
 #include "enna_private.h"
 #include "enna_config.h"
+
+static const char *_theme = NULL;
 
 Eina_Bool
 enna_config_init(void)
@@ -80,20 +83,30 @@ enna_config_config_get(void)
    return config;
 }
 
+void
+enna_config_theme_set(char *theme)
+{
+   if (_theme)
+     eina_stringshare_del(_theme);
+
+   _theme = eina_stringshare_add(theme);
+
+   INF("Theme : %s", _theme);
+}
+
 const char *
 enna_config_theme_get(void)
 {
-   static const char *theme = NULL;
    char tmp[PATH_MAX];
 
-   if (theme)
-     return theme;
+   if (_theme)
+     return _theme;
 
    snprintf(tmp, sizeof(tmp),
             PACKAGE_DATA_DIR"/theme/default.edj");
 
    INF("Theme : %s", tmp);
 
-   theme = eina_stringshare_add(tmp);
-   return theme;
+   _theme = eina_stringshare_add(tmp);
+   return _theme;
 }

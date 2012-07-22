@@ -26,6 +26,6 @@
 #ifndef _ENNA_VIEW_MUSIC_GRID_H
 #define _ENNA_VIEW_MUSIC_GRID_H
 
-Evas_Object *enna_view_music_grid_add(Evas_Object *parent);
+Evas_Object *enna_view_music_grid_add(Enna *enna, Evas_Object *parent);
 
 #endif /* _ENNA_VIEW_MUSIC_GRID_H */

@@ -22,52 +22,13 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#ifndef _ENNA_MAIN_H
+#define _ENNA_MAIN_H
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+int enna_init(void);
+void enna_shutdown(void);
 
-#include <Eina.h>
-#include <Evas.h>
-#include <Elementary.h>
-#include <Ems.h>
+Enna *enna_add(Eina_Bool is_fullscreen, Eina_Rectangle geometry);
+void enna_del(Enna *enna);
 
-#include "enna_private.h"
-#include "enna_activity.h"
-#include "enna_config.h"
-#include "enna_view_video_list.h"
-
-/*============================================================================*
- *                                  Local                                     *
- *============================================================================*/
-static int _video_init_count = 0;
-
-/*============================================================================*
- *                                 Global                                     *
- *============================================================================*/
-
-/*============================================================================*
- *                                   API                                      *
- *============================================================================*/
-
-int
-enna_video_init(void)
-{
-   Evas_Object *obj;
-
-   if (++_video_init_count != 1)
-     return _video_init_count;
-
-   enna_activity_init();
-
-   obj = enna_view_video_list_add(enna->ly);
-
-   enna_activity_add("Videos", obj);
-
-   return _video_init_count;
-}
-
-void
-enna_video_shutdown(void)
-{
-}
+#endif /* _ENNA_MAIN_H */

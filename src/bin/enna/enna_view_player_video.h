@@ -22,11 +22,14 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef _ENNA_MUSIC_H
-#define _ENNA_MUSIC_H
 
+#ifndef _ENNA_VIEW_PLAYER_VIDEO_H
+#define _ENNA_VIEW_PLAYER_VIDEO_H
 
-int enna_music_init(void);
-void enna_music_shutdown(void);
+Evas_Object *enna_view_player_video_add(Enna *enna, Evas_Object *parent);
+void enna_view_player_video_uri_set(Evas_Object *o, const char *uri);
+void enna_view_player_video_play(Evas_Object *o);
+void enna_view_player_video_pause(Evas_Object *o);
+void enna_view_player_video_stop(Evas_Object *o);
 
-#endif /* _ENNA_MUSIC_H */
+#endif /* _ENNA_VIEW_PLAYER_VIDEO_H */

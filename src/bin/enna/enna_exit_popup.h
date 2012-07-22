@@ -26,7 +26,7 @@
 #define _ENNA_EXIT_POPUP_H
 
 
-void enna_exit_popup_show(Evas_Object *parent);
+void enna_exit_popup_show(Enna *enna, Evas_Object *parent);
 void enna_exit_popup_hide(void);
 
 #endif /* _ENNA_EXIT_POPUP_H */

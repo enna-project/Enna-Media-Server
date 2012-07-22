@@ -1,6 +1,6 @@
 
 group {
-   name: "enna/player/video";
+   name: "activity/layout/player/video";
 
    parts {
       part {

@@ -27,20 +27,24 @@
 # include <config.h>
 #endif
 
-#include <Eina.h>
 #include <Evas.h>
 #include <Elementary.h>
 #include <Ems.h>
 
 #include "enna_private.h"
-#include "enna_activity.h"
+#include "enna_view_player_video.h"
 #include "enna_config.h"
-#include "enna_view_music_grid.h"
 
 /*============================================================================*
  *                                  Local                                     *
  *============================================================================*/
-static int _music_init_count = 0;
+
+typedef struct _Enna_View_Player_Video_Data Enna_View_Player_Video_Data;
+
+struct _Enna_View_Player_Video_Data
+{
+    Evas_Object *video;
+};
 
 /*============================================================================*
  *                                 Global                                     *
@@ -50,24 +54,52 @@ static int _music_init_count = 0;
  *                                   API                                      *
  *============================================================================*/
 
-int
-enna_music_init(void)
+Evas_Object *
+enna_view_player_video_add(Enna *enna __UNUSED__, Evas_Object *parent)
 {
-   Evas_Object *obj;
+   Evas_Object *layout;
+   Enna_View_Player_Video_Data *priv;
 
-   if (++_music_init_count != 1)
-     return _music_init_count;
+   priv = calloc(1, sizeof(Enna_View_Player_Video_Data));
+   if (!priv)
+       return NULL;
 
-   enna_activity_init();
+   layout = elm_layout_add(parent);
+   elm_layout_file_set(layout, enna_config_theme_get(), "activity/layout/player/video");
 
-   obj = enna_view_music_grid_add(enna->ly);
+   priv->video = elm_video_add(parent);
+   elm_object_part_content_set(layout, "video.swallow", priv->video);
+   elm_object_style_set(priv->video, "enna");
 
-   enna_activity_add("Music", obj);
+   evas_object_data_set(layout, "Enna_View_Player_Video_Data", priv);
 
-   return _music_init_count;
+   return layout;
 }
 
-void
-enna_music_shutdown(void)
+void enna_view_player_video_uri_set(Evas_Object *o, const char *uri)
 {
+   PRIV_GET_OR_RETURN(o, Enna_View_Player_Video_Data, priv);
+
+   elm_video_file_set(priv->video, uri);
+}
+
+void enna_view_player_video_play(Evas_Object *o)
+{
+   PRIV_GET_OR_RETURN(o, Enna_View_Player_Video_Data, priv);
+
+   elm_video_play(priv->video);
+}
+
+void enna_view_player_video_pause(Evas_Object *o)
+{
+   PRIV_GET_OR_RETURN(o, Enna_View_Player_Video_Data, priv);
+
+   elm_video_pause(priv->video);
+}
+
+void enna_view_player_video_stop(Evas_Object *o)
+{
+   PRIV_GET_OR_RETURN(o, Enna_View_Player_Video_Data, priv);
+
+   elm_video_stop(priv->video);
 }

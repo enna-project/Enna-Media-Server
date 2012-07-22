@@ -80,7 +80,7 @@ _shelf_item_activated_cb(void *data, Evas_Object *obj, void *event_info __UNUSED
  *============================================================================*/
 
 Evas_Object *
-enna_mainmenu_add(Evas_Object *parent)
+enna_mainmenu_add(Enna *enna __UNUSED__, Evas_Object *parent)
 {
     Elm_Object_Item *it;
     Enna_Mainmenu *mm;

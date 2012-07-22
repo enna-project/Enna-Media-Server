@@ -42,13 +42,17 @@
  *============================================================================*/
 static int _activity_init_count = 0;
 
+static Eina_Hash *_activities = NULL;
+
+typedef struct _Enna_Activity Enna_Activity;
+
 struct _Enna_Activity
 {
    const char *name;
    Evas_Object *obj;
-};
 
-static Eina_Hash *_activities = NULL;
+   Enna_Activity_Add_Func activity_add;
+};
 
 static void
 _activity_free_cb(Enna_Activity *act)
@@ -74,7 +78,6 @@ enna_activity_init(void)
    _activities = eina_hash_string_superfast_new((Eina_Free_Cb)_activity_free_cb);
 
    return _activity_init_count;
-
 }
 
 void
@@ -83,43 +86,49 @@ enna_activity_shutdown(void)
    eina_hash_free(_activities);
 }
 
-Eina_Bool
-enna_activity_select(const char *activity)
+void
+enna_activity_register(const char *activity_name, Enna_Activity_Add_Func activity_add)
 {
    Enna_Activity *act;
-   Evas_Object *obj;
 
-   act = eina_hash_find(_activities, activity);
+   if (!activity_name && !activity_add)
+     {
+        ERR("Can't register activity !");
+        return;
+     }
+
+   act = calloc(1, sizeof(Enna_Activity));
+   act->name = eina_stringshare_add(activity_name);
+   act->activity_add = activity_add;
+
+   eina_hash_add(_activities, act->name, act);
+
+   DBG("New activity registred: %s", act->name);
+}
+
+Evas_Object *
+enna_activity_select(Enna *enna, const char *activity_name)
+{
+   Enna_Activity *act;
+
+   act = eina_hash_find(_activities, activity_name);
    if (act)
      {
         Eina_List *focus_chain = NULL;
-        obj = elm_object_part_content_unset(enna->ly, "activity.swallow");
-        evas_object_hide(obj);
-        elm_object_part_content_set(enna->ly, "activity.swallow", act->obj);
+
+        //Let's create our new activity
+        act->obj = act->activity_add(enna, enna->naviframe);
+        elm_naviframe_item_push(enna->naviframe, NULL, NULL, NULL, act->obj, "enna");
+
         focus_chain = eina_list_append(focus_chain, act->obj);
-        elm_object_focus_custom_chain_set(enna->ly, focus_chain);
+        elm_object_focus_custom_chain_set(enna->layout, focus_chain);
         elm_object_focus_set(act->obj, EINA_TRUE);
-        return EINA_TRUE;
+
+        return act->obj;
      }
    else
      {
-        ERR("Unable to select activity : %s", activity);
-        return EINA_FALSE;
+        ERR("Unable to select activity : %s", activity_name);
+        return NULL;
      }
-}
-
-void
-enna_activity_add(const char *activity, Evas_Object *obj)
-{
-   Enna_Activity *act;
-
-
-   if (!activity || !obj)
-     return;
-
-   act = calloc(1, sizeof(Enna_Activity));
-   act->name = eina_stringshare_add(activity);
-   act->obj = obj;
-
-   eina_hash_add(_activities, activity, act);
 }

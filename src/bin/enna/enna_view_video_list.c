@@ -35,7 +35,7 @@
 #include "enna_private.h"
 #include "enna_view_video_list.h"
 #include "enna_config.h"
-
+#include "enna_activity.h"
 
 /*============================================================================*
  *                                  Local                                     *
@@ -76,6 +76,7 @@ struct _Enna_View_Video_List
    Evas_Object *btn_play;
    Ecore_Timer *show_timer;
    int nb_items;
+   Enna *enna;
 };
 static Eina_Bool _timer_cb(void *data);
 
@@ -331,7 +332,7 @@ _list_item_selected_cb(void *data, Evas_Object *obj __UNUSED__, void *event_info
    Enna_View_Video_List_Item *item;
 
    if (elm_genlist_item_type_get(it) != ELM_GENLIST_ITEM_NONE)
-        return;
+     return;
 
    item = elm_object_item_data_get(it);
    if (!item || !item->act)
@@ -345,11 +346,48 @@ _list_item_selected_cb(void *data, Evas_Object *obj __UNUSED__, void *event_info
 
 }
 
+static void
+_play_pressed_cb(void *data, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
+{
+   Enna_View_Video_List *act = data;
+   Elm_Object_Item *it;
+   Enna_View_Video_List_Item *item;
+   Evas_Object *player;
+
+   it = elm_genlist_selected_item_get(act->list);
+   if (elm_genlist_item_type_get(it) != ELM_GENLIST_ITEM_NONE)
+     return;
+
+   item = elm_object_item_data_get(it);
+   if (!item || !item->act)
+     return;
+
+   DBG("Start video player with item: %s", item->media);
+
+   player = enna_activity_select(act->enna, "VideoPlayer");
+   enna_view_player_video_uri_set(player, item->media);
+   enna_view_player_video_play(player);
+}
+
+static void
+_layout_object_del(void *data, Evas *e , Evas_Object *obj, void *event_info)
+{
+   Enna_View_Video_List *act = data;
+
+   DBG("delete Enna_View_Video_List object (%p)", obj);
+
+   FREE_NULL_FUNC(evas_object_del, act->list);
+   FREE_NULL_FUNC(evas_object_del, act->btn_trailer);
+   FREE_NULL_FUNC(evas_object_del, act->btn_play);
+   FREE_NULL_FUNC(ecore_timer_del, act->show_timer);
+   FREE_NULL_FUNC(eina_hash_free, act->servers);
+}
+
 /*============================================================================*
  *                                 Global                                     *
  *============================================================================*/
 
-Evas_Object *enna_view_video_list_add(Evas_Object *parent)
+Evas_Object *enna_view_video_list_add(Enna *enna, Evas_Object *parent)
 {
    Evas_Object *ly;
    Evas_Object *list;
@@ -367,6 +405,7 @@ Evas_Object *enna_view_video_list_add(Evas_Object *parent)
 
    elm_layout_file_set(ly, enna_config_theme_get(), "activity/layout/list");
    evas_object_data_set(ly, "view_video_list", act);
+   act->enna = enna;
 
    list = elm_genlist_add(ly);
    if (!list)
@@ -410,6 +449,8 @@ Evas_Object *enna_view_video_list_add(Evas_Object *parent)
            gr->server = server;
            gr->act = act;
            eina_hash_add(act->servers, server, gr);
+
+           DBG("Found new server: %s", ems_server_name_get(server));
         }
    }
 
@@ -421,6 +462,7 @@ Evas_Object *enna_view_video_list_add(Evas_Object *parent)
    evas_object_show(act->btn_play);
    elm_object_part_content_set(ly, "play.swallow", act->btn_play);
    elm_object_style_set(act->btn_play, "enna");
+   evas_object_smart_callback_add(act->btn_play, "pressed", _play_pressed_cb, act);
 
    act->btn_trailer = elm_button_add(ly);
    elm_object_text_set(act->btn_trailer, "Trailer");
@@ -429,6 +471,8 @@ Evas_Object *enna_view_video_list_add(Evas_Object *parent)
    elm_object_style_set(act->btn_trailer, "enna");
 
    evas_object_smart_callback_add(act->list, "selected", _list_item_selected_cb, act);
+
+   evas_object_event_callback_add(ly, EVAS_CALLBACK_DEL, _layout_object_del, act);
 
    return ly;
 

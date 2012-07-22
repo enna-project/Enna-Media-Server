@@ -26,6 +26,6 @@
 #ifndef _ENNA_MAINMENU_H
 #define _ENNA_MAINMENU_H
 
-Evas_Object *enna_mainmenu_add(Evas_Object *parent);
+Evas_Object *enna_mainmenu_add(Enna *enna, Evas_Object *parent);
 
 #endif /* _ENNA_MAINMENU_H */

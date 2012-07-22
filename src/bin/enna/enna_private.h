@@ -61,27 +61,46 @@ extern int _enna_log_dom_global;
 #endif /* ifdef CRIT */
 #define CRIT(...) EINA_LOG_DOM_CRIT(_enna_log_dom_global, __VA_ARGS__)
 
+
+#define PRIV_DATA_GET(o, type, ptr) \
+  type * ptr = evas_object_data_get(o, #type)
+
+#define PRIV_GET_OR_RETURN(o, type, ptr)           \
+  PRIV_DATA_GET(o, type, ptr);                     \
+  if (!ptr)                                        \
+    {                                              \
+       CRIT("No private data for object %p (%s)!", \
+               o, #type);                          \
+       abort();                                    \
+       return;                                     \
+    }
+
+#define PRIV_GET_OR_RETURN_VAL(o, type, ptr)       \
+  DATA_GET(o, type, ptr);                          \
+  if (!ptr)                                        \
+    {                                              \
+       CRIT("No private data for object %p (%s)!", \
+               o, #type);                          \
+       abort();                                    \
+       return val;                                 \
+    }
+
+#define FREE_NULL(p) \
+        if (p) { free(p); p = NULL; }
+
+#define FREE_NULL_FUNC(fn, p) \
+        if (p) { fn(p); p = NULL; }
+
 #define ENNA_CONFIG_FILE "enna.conf"
 
 typedef struct _Enna Enna;
-typedef enum _Enna_State Enna_State;
-
-enum _Enna_State{
-  ENNA_STATE_MAINMENU,
-  ENNA_STATE_ACTIVITY,
-  ENNA_STATE_SENTINEL,
-};
-
 struct _Enna
 {
    Evas_Coord app_x_off, app_y_off, app_w, app_h;
    const char *theme_file;
    const char *config_file;
    Eina_Bool run_fullscreen;
-   Evas_Object *win, *ly, *mainmenu;
-   Enna_State state;
+   Evas_Object *win, *naviframe, *mainmenu, *layout;
 };
-
-extern Enna *enna;
 
 #endif /* _ENNA_PRIVATE_H_ */

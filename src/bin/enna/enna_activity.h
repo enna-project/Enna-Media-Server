@@ -26,11 +26,12 @@
 #ifndef _ENNA_ACTIVITY_H
 #define _ENNA_ACTIVITY_H
 
-typedef struct _Enna_Activity Enna_Activity;
+typedef Evas_Object *(*Enna_Activity_Add_Func)(Enna *enna, Evas_Object *parent);
 
 int enna_activity_init(void);
 void  enna_activity_shutdown(void);
-Eina_Bool enna_activity_select(const char *activity);
-void enna_activity_add(const char *activity, Evas_Object *obj);
+
+void enna_activity_register(const char *activity_name, Enna_Activity_Add_Func activity_add);
+Evas_Object *enna_activity_select(Enna *enna, const char *activity_name);
 
 #endif /* _ENNA_ACTIVITY_H */

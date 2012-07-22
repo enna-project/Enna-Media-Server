@@ -64,7 +64,7 @@ group { name: "elm/button/base/enna";
             color: 10 10 10 50;
          }
       }
-     
+
 
       part { name: "elm.swallow.content";
          type: SWALLOW;

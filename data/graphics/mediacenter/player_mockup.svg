@@ -5373,16 +5373,6 @@
     <linearGradient
        inkscape:collect="always"
        xlink:href="#linearGradient4262"
-       id="linearGradient4272"
-       gradientUnits="userSpaceOnUse"
-       x1="711.11847"
-       y1="990.47369"
-       x2="711.11847"
-       y2="1045.4779"
-       gradientTransform="translate(774.19558,228.88982)" />
-    <linearGradient
-       inkscape:collect="always"
-       xlink:href="#linearGradient4262"
        id="linearGradient4287"
        gradientUnits="userSpaceOnUse"
        x1="711.11847"
@@ -5415,15 +5405,6 @@
        y1="920.50507"
        x2="2420.2422"
        y2="920.50507" />
-    <linearGradient
-       inkscape:collect="always"
-       xlink:href="#linearGradient7779"
-       id="linearGradient7875"
-       gradientUnits="userSpaceOnUse"
-       x1="42.517929"
-       y1="871.42859"
-       x2="42.517929"
-       y2="985.00946" />
     <linearGradient
        inkscape:collect="always"
        xlink:href="#linearGradient7779"
@@ -5511,7 +5492,7 @@
      inkscape:pageshadow="2"
      inkscape:zoom="0.6098796"
      inkscape:cx="838.94177"
-     inkscape:cy="1207.3063"
+     inkscape:cy="420.26576"
      inkscape:document-units="px"
      inkscape:current-layer="layer3"
      showgrid="false"
@@ -5521,7 +5502,7 @@
      inkscape:window-height="1015"
      inkscape:window-x="0"
      inkscape:window-y="0"
-     inkscape:window-maximized="0" />
+     inkscape:window-maximized="1" />
   <metadata
      id="metadata7">
     <rdf:RDF>
@@ -13207,7 +13188,8 @@ RigHFBpKYH//2Q==
          x="1666.0167"
          id="tspan4218"
          sodipodi:role="line"
-         style="font-size:31.47553253px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;font-family:Sans;-inkscape-font-specification:Sans">End at: 21:23</tspan></text>
+         style="font-size:31.47553253px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;font-family:Sans;-inkscape-font-specification:Sans"
+         dy="0 0 0 0 0 0 0 3.2793357">End at: 21:23</tspan></text>
     <text
        sodipodi:linespacing="125%"
        id="text4220"
@@ -13355,7 +13337,7 @@ RigHFBpKYH//2Q==
          id="text4244"
          y="1028.0983"
          x="645.08899"
-         style="font-size:27.81364059px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#333333;fill-opacity:1;stroke:none;font-family:Sans;-inkscape-font-specification:Sans Bold"
+         style="font-size:27.81364058999999855px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#333333;fill-opacity:1;stroke:none;font-family:Sans;-inkscape-font-specification:Sans Bold"
          xml:space="preserve"><tspan
            y="1028.0983"
            x="645.08899"

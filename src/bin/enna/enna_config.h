@@ -29,6 +29,7 @@
 Eina_Bool enna_config_init(void);
 void enna_config_shutdown(void);
 
+void enna_config_theme_set(char *theme);
 const char *enna_config_theme_get(void);
 const char *enna_config_config_get(void);
 
