@@ -374,11 +374,12 @@ _stream_server_request_process(Ems_Stream_Client *client)
    Eina_List *l;
    const char *path, *file_path = NULL;
    int cpt = 0, ret;
-   long file_id = -1;
    Eina_Bool err = EINA_FALSE;
    Eina_Strbuf *headers;
    long int range_start = 0, range_end = 0;
    const char *range;
+   char **arr;
+   unsigned int nbtoken;
 
    if (!client)
      return;
@@ -396,8 +397,19 @@ _stream_server_request_process(Ems_Stream_Client *client)
           }
         else if (cpt == 1)
           {
-             file_id = atol(path);
-             file_path = ems_database_file_get(ems_config->db, file_id);
+             //Parse media UUID
+             arr = eina_str_split_full(path, "-", 6, &nbtoken);
+
+             DBG("parsing UUID: %s", path);
+             DBG("got %d tokens", nbtoken);
+
+             if (nbtoken == 6)
+               {
+                   file_path = ems_database_file_uuid_get(ems_config->db, arr[5]);
+               }
+
+             free(arr[0]);
+             free(arr);
           }
         else
         {
@@ -522,7 +534,7 @@ _stream_request_data_send(Ems_Stream_Client *client)
         if (client->file_map_start < 0) client->file_map_start = 0;
         if (client->file_map_start >= client->file_size - 1) client->file_map_start = client->file_size - 2;
         if (client->file_map_end >= client->file_size) client->file_map_end = client->file_size - 1;
-        
+
         DBG("Try to map file at offset: %d, map window [%ld (%ld)] (map_offset: %ld) (filesize: %ld)",
                  client->data_offset,
                  client->file_map_start,

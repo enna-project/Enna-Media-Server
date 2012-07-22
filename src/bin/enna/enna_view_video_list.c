@@ -353,6 +353,7 @@ _play_pressed_cb(void *data, Evas_Object *obj __UNUSED__, void *event_info __UNU
    Elm_Object_Item *it;
    Enna_View_Video_List_Item *item;
    Evas_Object *player;
+   char *uri;
 
    it = elm_genlist_selected_item_get(act->list);
    if (elm_genlist_item_type_get(it) != ELM_GENLIST_ITEM_NONE)
@@ -362,11 +363,14 @@ _play_pressed_cb(void *data, Evas_Object *obj __UNUSED__, void *event_info __UNU
    if (!item || !item->act)
      return;
 
-   DBG("Start video player with item: %s", item->media);
+   uri = ems_server_media_stream_url_get(item->server, item->media);
+   DBG("Start video player with item: %s", uri);
 
    player = enna_activity_select(act->enna, "VideoPlayer");
-   enna_view_player_video_uri_set(player, item->media);
+   enna_view_player_video_uri_set(player, uri);
    enna_view_player_video_play(player);
+
+   free(uri);
 }
 
 static void

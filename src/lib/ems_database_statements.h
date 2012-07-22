@@ -136,6 +136,11 @@
     "FROM file "                                \
     "WHERE file_id = ?;"
 
+#define SELECT_FILE_FROM_UUID                   \
+    "SELECT file_path "                         \
+    "FROM file "                                \
+    "WHERE file_hash = ?;"
+
 #define SELECT_FILE_MTIME                       \
     "SELECT file_mtime "                        \
     "FROM file "                                \

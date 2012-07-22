@@ -378,6 +378,24 @@ ems_server_connect(Ems_Server *server)
     return _ems_server_connect(server);
 }
 
+char *
+ems_server_media_stream_url_get(Ems_Server *server, const char *media_uuid)
+{
+   Eina_Strbuf *uri;
+   char *str;
+
+   if (!server || !media_uuid)
+     return NULL;
+
+   uri = eina_strbuf_new();
+   eina_strbuf_append_printf(uri, "http://%s:%d/item/%s", server->ip, ems_config->port_stream, media_uuid);
+   DBG("url get: %s", eina_strbuf_string_get(uri));
+   str = strdup(eina_strbuf_string_get(uri));
+   eina_strbuf_free(uri);
+
+   return str;
+}
+
 Ems_Observer *
 ems_server_dir_get(Ems_Server *server,
                    const char *path,

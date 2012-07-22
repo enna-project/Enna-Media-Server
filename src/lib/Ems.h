@@ -119,10 +119,10 @@ Eina_Bool ems_server_connect(Ems_Server *server);
 Ems_Media_Type ems_player_type_get(Ems_Player *player);
 
 /*
- * Get the list of files and directories contains in path on the specified server 
+ * Get the list of files and directories contains in path on the specified server
  * If path is NULL returns the root directories
  * Filter file by type
- * Return an error if browse is not allowed. 
+ * Return an error if browse is not allowed.
  */
 void ems_media_observer_del(Ems_Observer *obs);
 
@@ -164,6 +164,9 @@ Ems_Observer *ems_server_media_info_get(Ems_Server *server,
                                         void *data);
 
 void ems_media_info_observer_del(Ems_Observer *obs);
+
+//Helper function to get a valid url from an Ems_Server and a media UUID
+char *ems_server_media_stream_url_get(Ems_Server *server, const char *media_uuid);
 
 /* Set the info of a media on the specified server */
 void ems_server_media_info_set(Ems_Server *server, Ems_Media *media, Ems_Media_Info *info, const char *value);

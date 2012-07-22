@@ -47,6 +47,7 @@ void ems_database_transaction_begin(Ems_Database *db);
 void ems_database_transaction_end(Ems_Database *db);
 Eina_List *ems_database_files_get(Ems_Database *db);
 const char *ems_database_file_get(Ems_Database *db, int item_id);
+const char *ems_database_file_uuid_get(Ems_Database *db, char *media_uuid);
 int64_t ems_database_file_mtime_get(Ems_Database *db, const char *filename);
 void ems_database_deleted_files_remove(Ems_Database *db, int64_t magic);
 Eina_List * ems_database_collection_get(Ems_Database *db, Ems_Collection *collection);
