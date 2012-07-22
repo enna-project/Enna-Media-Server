@@ -29,7 +29,7 @@ group { name: "elm/naviframe/item/enna/default";
       }
    }
    programs {
-      program { name: "content_new_pusehd";
+      program { name: "content_new_pushed";
          signal: "elm,state,new,pushed,internal";
          source: "";
          action: STATE_SET "default" 0.0;
@@ -37,7 +37,7 @@ group { name: "elm/naviframe/item/enna/default";
          target: "elm.swallow.content";
          after: "show_finished";
       }
-      program { name: "content_cur_pusehd";
+      program { name: "content_cur_pushed";
          signal: "elm,state,cur,pushed,internal";
          source: "";
          action: STATE_SET "left" 0.0;
