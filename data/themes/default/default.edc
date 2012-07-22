@@ -86,7 +86,7 @@ collections
    group { name: "mainmenu/layout";
       images {
          image: "mainmenu_shelf_reflect.png" COMP;
-//         image: "background_light.png" COMP;
+         image: "background_light.png" COMP;
          image: "mainmenu_list_bg.png" COMP;
          image: "mainmenu_shelf_reflection_mask.png" COMP;
       }
@@ -104,14 +104,14 @@ collections
                color: 0 0 0 100;
                rel2.to: "list.swallow";
             }
-         } /*
+         }
          part {
             name: "fanart_light";
             type: IMAGE;
             description  {
                image.normal: "background_light.png";
             }
-         } */
+         }
          part {
             name: "shelf_background";
             type: RECT;
