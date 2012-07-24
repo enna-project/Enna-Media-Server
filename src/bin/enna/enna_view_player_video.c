@@ -51,6 +51,10 @@ struct _Enna_View_Player_Video_Data
     Evas_Object *video;
     Evas_Object *layout;
     Ecore_Timer *osd_timer;
+    Evas_Object *cover;
+
+    char *media;
+    Ems_Server *server;
 };
 
 static Eina_Bool
@@ -126,6 +130,58 @@ _emotion_position_update_cb(void *data, Evas_Object *obj, void *event_info)
 }
 
 static void
+_item_file_name_get_cb(void *data, Ems_Server *server, const char *value)
+{
+   Enna_View_Player_Video_Data *priv = data;
+
+   if (value && value[0])
+     {
+        elm_object_part_text_set(priv->layout, "title.text", value);
+     }
+   else
+     {
+        elm_object_part_text_set(priv->layout, "title.text", "Unknown");
+        ERR("Cannot find a title for this file: :'(");
+     }
+}
+
+static void
+_item_name_get_cb(void *data, Ems_Server *server, const char *value)
+{
+   Enna_View_Player_Video_Data *priv = data;
+
+   if (value && value[0])
+     {
+        elm_object_part_text_set(priv->layout, "title.text", value);
+     }
+   else
+     {
+        ems_server_media_info_get(server, priv->media, "clean_name", _item_file_name_get_cb,
+                             NULL, NULL, priv);
+     }
+}
+
+static void
+_item_poster_get_cb(void *data, Ems_Server *server, const char *value)
+{
+   Enna_View_Player_Video_Data *priv = data;
+
+   if (value)
+     {
+        priv->cover = elm_icon_add(priv->layout);
+        elm_image_file_set(priv->cover, value, NULL);
+        elm_image_preload_disabled_set(priv->cover, EINA_FALSE);
+
+        elm_object_part_content_set(priv->layout, "cover.swallow", priv->cover);
+        elm_object_signal_emit(priv->layout, "show,cover", "enna"); 
+     }
+   else
+     {
+        elm_object_signal_emit(priv->layout, "hide,cover", "enna"); 
+     }
+}
+
+static void
 _emotion_open_done_cb(void *data, Evas_Object *obj, void *event_info)
 {
    Enna_View_Player_Video_Data *priv = data;
@@ -150,7 +206,9 @@ _enna_view_del(void *data, Evas *e , Evas_Object *obj, void *event_info)
    DBG("delete Enna_View_Player_Video_Data object (%p)", obj);
 
    FREE_NULL_FUNC(evas_object_del, priv->video);
+   FREE_NULL_FUNC(evas_object_del, priv->cover);
    FREE_NULL_FUNC(ecore_timer_del, priv->osd_timer);
+   FREE_NULL(priv->media);
 }
 
 /*============================================================================*
@@ -192,13 +250,24 @@ enna_view_player_video_add(Enna *enna __UNUSED__, Evas_Object *parent)
    return layout;
 }
 
-void enna_view_player_video_uri_set(Evas_Object *o, const char *uri, const char *title)
+void enna_view_player_video_uri_set(Evas_Object *o, Ems_Server *server, const char *media_uuid)
 {
+   char *uri;
    PRIV_GET_OR_RETURN(o, Enna_View_Player_Video_Data, priv);
 
-   elm_video_file_set(priv->video, uri);
+   priv->server = server;
+   priv->media = strdup(media_uuid);
 
-   elm_object_part_text_set(priv->layout, "title.text", title);
+   uri = ems_server_media_stream_url_get(server, media_uuid);
+   DBG("Start video player with item: %s", uri);
+
+   elm_video_file_set(priv->video, uri);
+   free(uri);
+
+   ems_server_media_info_get(server, media_uuid, "name", _item_name_get_cb,
+                             NULL, NULL, priv);
+   ems_server_media_info_get(server, media_uuid, "poster", _item_poster_get_cb,
+                             NULL, NULL, priv);
 }
 
 void enna_view_player_video_play(Evas_Object *o)

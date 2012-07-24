@@ -27,7 +27,7 @@
 #define _ENNA_VIEW_PLAYER_VIDEO_H
 
 Evas_Object *enna_view_player_video_add(Enna *enna, Evas_Object *parent);
-void enna_view_player_video_uri_set(Evas_Object *o, const char *uri, const char *title);
+void enna_view_player_video_uri_set(Evas_Object *o, Ems_Server *server, const char *media_uuid);
 void enna_view_player_video_play(Evas_Object *o);
 void enna_view_player_video_pause(Evas_Object *o);
 void enna_view_player_video_stop(Evas_Object *o);
