@@ -154,7 +154,6 @@ src/bin/Makefile
 src/bin/ems/Makefile
 src/bin/enna/Makefile
 src/modules/Makefile
-src/modules/lastfm/Makefile
 src/modules/tmdb/Makefile
 src/tests/Makefile
 data/Makefile

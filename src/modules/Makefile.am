@@ -1,3 +1,3 @@
 MAINTAINERCLEANFILES = Makefile.in
 
-SUBDIRS = lastfm tmdb
+SUBDIRS = tmdb
