@@ -142,6 +142,17 @@ _emotion_playback_started_cb(void *data, Evas_Object *obj, void *event_info)
    _set_osd_timer(priv, OSD_TIMER);
 }
 
+static void
+_enna_view_del(void *data, Evas *e , Evas_Object *obj, void *event_info)
+{
+   Enna_View_Player_Video_Data *priv = data;
+
+   DBG("delete Enna_View_Player_Video_Data object (%p)", obj);
+
+   FREE_NULL_FUNC(evas_object_del, priv->video);
+   FREE_NULL_FUNC(ecore_timer_del, priv->osd_timer);
+}
+
 /*============================================================================*
  *                                 Global                                     *
  *============================================================================*/
@@ -175,6 +186,8 @@ enna_view_player_video_add(Enna *enna __UNUSED__, Evas_Object *parent)
    evas_object_smart_callback_add(emotion, "position_update", _emotion_position_update_cb, priv);
    evas_object_smart_callback_add(emotion, "open_done", _emotion_open_done_cb, priv);
    evas_object_smart_callback_add(emotion, "playback_started", _emotion_playback_started_cb, priv);
+
+   evas_object_event_callback_add(layout, EVAS_CALLBACK_DEL, _enna_view_del, priv);
 
    return layout;
 }
