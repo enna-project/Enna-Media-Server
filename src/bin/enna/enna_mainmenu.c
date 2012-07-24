@@ -92,7 +92,11 @@ _layout_object_del(void *data, Evas *e __UNUSED__, Evas_Object *obj, void *event
 static Eina_Bool
 _input_event(void *data, Enna_Input event)
 {
-   INF("Mainmenu input event %d", event);
+   const char *tmp;
+
+   tmp = enna_keyboard_input_name_get(event);
+   INF("Mainmenu input event %s", tmp);
+
 }
 
 /*============================================================================*
