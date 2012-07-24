@@ -305,17 +305,17 @@ _timer_cb(void *data)
 
    if (item->cover)
      {
-        item->o_cover = evas_object_image_filled_add(evas_object_evas_get(item->act->ly));
-        evas_object_image_file_set(item->o_cover, item->cover, NULL);
-        evas_object_show(item->o_cover);
+        item->o_cover = elm_icon_add(item->act->ly);
+        elm_image_file_set(item->o_cover, item->cover, NULL);
+        elm_image_preload_disabled_set(item->o_cover, EINA_FALSE);
         elm_object_part_content_set(item->act->ly, "cover.swallow", item->o_cover);
      }
 
    if (item->backdrop)
      {
-        item->o_backdrop = evas_object_image_filled_add(evas_object_evas_get(item->act->ly));
-        evas_object_image_file_set(item->o_backdrop, item->backdrop, NULL);
-        evas_object_show(item->o_backdrop);
+        item->o_backdrop = elm_icon_add(item->act->ly);
+        elm_image_file_set(item->o_backdrop, item->backdrop, NULL);
+        elm_image_preload_disabled_set(item->o_backdrop, EINA_FALSE);
 
         elm_object_part_content_set(item->act->ly, "backdrop.swallow", item->o_backdrop);
      }
