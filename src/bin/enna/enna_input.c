@@ -43,7 +43,7 @@ static Eina_List *_listeners = NULL;
 
 /* Public Functions */
 Eina_Bool
-Enna_Input_event_emit(Enna_Input in)
+enna_input_event_emit(Enna_Input in)
 {
    Enna_Input_Listener *il;
    Eina_List *l;
