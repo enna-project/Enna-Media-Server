@@ -49,17 +49,17 @@ enna_input_event_emit(Enna_Input in)
    Eina_List *l;
    Eina_Bool ret;
 
-   INF("Input emit: %d (listeners: %d)", in, eina_list_count(_listeners));
+   DBG("Input emit: %d (listeners: %d)", in, eina_list_count(_listeners));
 
    EINA_LIST_FOREACH(_listeners, l, il)
      {
-        INF("  emit to: %s", il->name);
+        DBG("  emit to: %s", il->name);
         if (!il->func) continue;
 
         ret = il->func(il->data, in);
         if (ret == ENNA_EVENT_BLOCK)
           {
-             INF("  emission stopped by: %s", il->name);
+             DBG("  emission stopped by: %s", il->name);
              return EINA_TRUE;
           }
      }
@@ -74,7 +74,7 @@ enna_input_listener_add(const char *name,
 {
    Enna_Input_Listener *il;
 
-   INF("listener add: %s", name);
+   DBG("listener add: %s", name);
    il = calloc(1, sizeof(Enna_Input_Listener));
    if (!il) return NULL;
    il->name = eina_stringshare_add(name);
@@ -111,7 +111,7 @@ void
 enna_input_listener_del(Enna_Input_Listener *il)
 {
    if (!il) return;
-   INF("listener del: %s", il->name);
+   DBG("listener del: %s", il->name);
    _listeners = eina_list_remove(_listeners, il);
    eina_stringshare_del(il->name);
    if (il) free(il);
