@@ -32,7 +32,7 @@
 #include "enna_private.h"
 #include "enna_input.h"
 
-struct _Input_Listener {
+struct _Enna_Input_Listener {
    const char *name;
    Eina_Bool (*func)(void *data, Enna_Input event);
    void *data;
@@ -45,7 +45,7 @@ static Eina_List *_listeners = NULL;
 Eina_Bool
 Enna_Input_event_emit(Enna_Input in)
 {
-   Input_Listener *il;
+   Enna_Input_Listener *il;
    Eina_List *l;
    Eina_Bool ret;
 
@@ -67,15 +67,15 @@ Enna_Input_event_emit(Enna_Input in)
    return EINA_TRUE;
 }
 
-Input_Listener *
+Enna_Input_Listener *
 enna_input_listener_add(const char *name,
                         Eina_Bool(*func)(void *data, Enna_Input event),
                         void *data)
 {
-   Input_Listener *il;
+   Enna_Input_Listener *il;
 
    INF("listener add: %s", name);
-   il = calloc(1, sizeof(Input_Listener));
+   il = calloc(1, sizeof(Enna_Input_Listener));
    if (!il) return NULL;
    il->name = eina_stringshare_add(name);
    il->func = func;
@@ -86,7 +86,7 @@ enna_input_listener_add(const char *name,
 }
 
 void
-enna_input_listener_promote(Input_Listener *il)
+enna_input_listener_promote(Enna_Input_Listener *il)
 {
    Eina_List *l;
 
@@ -97,7 +97,7 @@ enna_input_listener_promote(Input_Listener *il)
 }
 
 void
-enna_input_listener_demote(Input_Listener *il)
+enna_input_listener_demote(Enna_Input_Listener *il)
 {
    Eina_List *l;
 
@@ -108,7 +108,7 @@ enna_input_listener_demote(Input_Listener *il)
 }
 
 void
-enna_input_listener_del(Input_Listener *il)
+enna_input_listener_del(Enna_Input_Listener *il)
 {
    if (!il) return;
    INF("listener del: %s", il->name);

@@ -28,7 +28,7 @@
 #define ENNA_EVENT_BLOCK ECORE_CALLBACK_CANCEL
 #define ENNA_EVENT_CONTINUE ECORE_CALLBACK_RENEW
 
-typedef struct _Input_Listener Input_Listener;
+typedef struct _Enna_Input_Listener Enna_Input_Listener;
 typedef enum _Enna_Input Enna_Input;
 
 enum _Enna_Input
@@ -145,9 +145,9 @@ enum _Enna_Input
 
 
 Eina_Bool enna_input_event_emit(Enna_Input in);
-Input_Listener *enna_input_listener_add(const char *name, Eina_Bool (*func)(void *data, Enna_Input event), void *data);
-void enna_input_listener_promote(Input_Listener *il);
-void enna_input_listener_demote(Input_Listener *il);
-void enna_input_listener_del(Input_Listener *il);
+Enna_Input_Listener *enna_input_listener_add(const char *name, Eina_Bool (*func)(void *data, Enna_Input event), void *data);
+void enna_input_listener_promote(Enna_Input_Listener *il);
+void enna_input_listener_demote(Enna_Input_Listener *il);
+void enna_input_listener_del(Enna_Input_Listener *il);
 
 #endif /* _ENNA_INPUT_H */
