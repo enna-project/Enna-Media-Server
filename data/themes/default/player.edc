@@ -92,6 +92,11 @@ group {
          }
       }
 
+      alias: "time_duration.text" "controls:duration.text";
+      alias: "time_current.text" "controls:time.text";
+      alias: "time_end_at.text" "controls:ending.text";
+      alias: "title.text" "controls:title.text";
+      alias: "time.slider" "controls:slider_drag";
       part {
          name: "controls";
          type: GROUP;
