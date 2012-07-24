@@ -112,10 +112,16 @@ _input_event(void *data, Enna_Input event)
                 {
                    it = elm_list_first_item_get(mm->list);
                      if (it)
-                       elm_list_item_selected_set(it, EINA_TRUE);
+                       {
+                          elm_list_item_selected_set(it, EINA_TRUE);
+                          elm_list_item_bring_in(it);
+                       }
                 }
               else
-                elm_list_item_selected_set(it, EINA_TRUE);
+                {
+                   elm_list_item_selected_set(it, EINA_TRUE);
+                   elm_list_item_bring_in(it);
+                }
            }
          break;
       case ENNA_INPUT_UP:
@@ -127,11 +133,60 @@ _input_event(void *data, Enna_Input event)
                 {
                    it = elm_list_last_item_get(mm->list);
                    if (it)
-                     elm_list_item_selected_set(it, EINA_TRUE);
+                     {
+                        elm_list_item_selected_set(it, EINA_TRUE);
+                        elm_list_item_bring_in(it);
+                     }
                 }
               else
-                elm_list_item_selected_set(it, EINA_TRUE);
+                {
+                   elm_list_item_selected_set(it, EINA_TRUE);
+                   elm_list_item_bring_in(it);
+                }
            }
+         break;
+      case ENNA_INPUT_LEFT:
+         it = elm_list_selected_item_get(mm->shelf);
+         if (it)
+           {
+              it = elm_list_item_prev(it);
+              if (!it)
+                {
+                   it = elm_list_last_item_get(mm->shelf);
+                   if (it)
+                     {
+                        elm_list_item_selected_set(it, EINA_TRUE);
+                        elm_list_item_bring_in(it);
+                     }
+                }
+              else
+                {
+                   elm_list_item_selected_set(it, EINA_TRUE);
+                   elm_list_item_bring_in(it);
+                }
+           }
+         break;
+      case ENNA_INPUT_RIGHT:
+         it = elm_list_selected_item_get(mm->shelf);
+         if (it)
+           {
+              it = elm_list_item_next(it);
+              if (!it)
+                {
+                   it = elm_list_first_item_get(mm->shelf);
+                   if (it)
+                     {
+                        elm_list_item_selected_set(it, EINA_TRUE);
+                        elm_list_item_bring_in(it);
+                     }
+                }
+              else
+                {
+                   elm_list_item_selected_set(it, EINA_TRUE);
+                   elm_list_item_bring_in(it);
+                }
+           }
+         break;
        default:
          break;
      }
