@@ -89,13 +89,52 @@ _layout_object_del(void *data, Evas *e __UNUSED__, Evas_Object *obj, void *event
 
    free(mm);
 }
+
+
 static Eina_Bool
 _input_event(void *data, Enna_Input event)
 {
    const char *tmp;
+   Elm_Object_Item *it;
+   Enna_Mainmenu *mm = data;
 
    tmp = enna_keyboard_input_name_get(event);
    INF("Mainmenu input event %s", tmp);
+
+   switch(event)
+     {
+      case ENNA_INPUT_DOWN:
+         it = elm_list_selected_item_get(mm->list);
+         if (it)
+           {
+              it = elm_list_item_next(it);
+              if (!it)
+                {
+                   it = elm_list_first_item_get(mm->list);
+                     if (it)
+                       elm_list_item_selected_set(it, EINA_TRUE);
+                }
+              else
+                elm_list_item_selected_set(it, EINA_TRUE);
+           }
+         break;
+      case ENNA_INPUT_UP:
+         it = elm_list_selected_item_get(mm->list);
+         if (it)
+           {
+              it = elm_list_item_prev(it);
+              if (!it)
+                {
+                   it = elm_list_last_item_get(mm->list);
+                   if (it)
+                     elm_list_item_selected_set(it, EINA_TRUE);
+                }
+              else
+                elm_list_item_selected_set(it, EINA_TRUE);
+           }
+       default:
+         break;
+     }
 
 }
 
