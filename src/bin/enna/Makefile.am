@@ -20,6 +20,8 @@ enna_config.c \
 enna_config.h \
 enna_exit_popup.c \
 enna_exit_popup.h \
+enna_input.c \
+enna_input.h \
 enna_mainmenu.c \
 enna_mainmenu.h \
 enna_private.h \
