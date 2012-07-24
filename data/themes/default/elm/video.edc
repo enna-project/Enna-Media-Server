@@ -7,7 +7,14 @@ group {
          type: RECT;
 
          description {
+            state: "default" 0.0;
+            color: 255 255 255 0;
+            visible: 0;
+         }
+         description {
+            state: "visible" 0.0;
             color: 255 255 255 255;
+            visible: 1;
          }
       }
       part {
@@ -25,16 +32,17 @@ group {
       }
    }
 
-//    programs {
-//       program {
-//          signal: "elm,video,load";
-//          source: "elm";
-//
-//          action: STATE_SET "darker" 0.0;
-//          target: "clipper";
-//       }
-//       program {
-//          signal: "elm,video,play";
+   programs {
+      program {
+         signal: "elm,video,load";
+         source: "elm";
+
+         action: STATE_SET "visible" 0.0;
+         target: "clipper";
+      }
+
+//      program {
+//         signal: "elm,video,play";
 //          source: "elm";
 //
 //          action: STATE_SET "default" 0.0;
@@ -55,5 +63,5 @@ group {
 //          action: STATE_SET "darker" 0.0;
 //          target: "clipper";
 //       }
-//    }
+    }
 }
