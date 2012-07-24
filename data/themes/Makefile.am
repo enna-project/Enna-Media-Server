@@ -1,1 +1,1 @@
-SUBDIRS = default desktop
+SUBDIRS = default
