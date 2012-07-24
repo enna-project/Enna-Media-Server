@@ -42,13 +42,33 @@
  *                                  Local                                     *
  *============================================================================*/
 
+#define OSD_TIMER    10.0
+
 typedef struct _Enna_View_Player_Video_Data Enna_View_Player_Video_Data;
 
 struct _Enna_View_Player_Video_Data
 {
     Evas_Object *video;
     Evas_Object *layout;
+    Ecore_Timer *osd_timer;
 };
+
+static Eina_Bool
+_osd_timer_cb(void *data)
+{
+   Enna_View_Player_Video_Data *priv = data;
+
+   elm_object_signal_emit(priv->layout, "hide,osd", "enna");
+}
+
+static void
+_set_osd_timer(Enna_View_Player_Video_Data *priv, double t)
+{
+   FREE_NULL_FUNC(ecore_timer_del, priv->osd_timer);
+
+   if (t > 0.0)
+     priv->osd_timer = ecore_timer_add(t, _osd_timer_cb, priv);
+}
 
 void
 _update_time_part(Evas_Object *obj, const char *part, double t)
@@ -105,6 +125,23 @@ _emotion_position_update_cb(void *data, Evas_Object *obj, void *event_info)
    edje_object_part_drag_value_set(edje, "time.slider", v, v);
 }
 
+static void
+_emotion_open_done_cb(void *data, Evas_Object *obj, void *event_info)
+{
+   Enna_View_Player_Video_Data *priv = data;
+
+   elm_object_signal_emit(priv->layout, "playing", "enna");
+}
+
+static void
+_emotion_playback_started_cb(void *data, Evas_Object *obj, void *event_info)
+{
+   Enna_View_Player_Video_Data *priv = data;
+
+   elm_object_signal_emit(priv->layout, "show,osd", "enna");
+   _set_osd_timer(priv, OSD_TIMER);
+}
+
 /*============================================================================*
  *                                 Global                                     *
  *============================================================================*/
@@ -136,6 +173,8 @@ enna_view_player_video_add(Enna *enna __UNUSED__, Evas_Object *parent)
 
    emotion = elm_video_emotion_get(priv->video);
    evas_object_smart_callback_add(emotion, "position_update", _emotion_position_update_cb, priv);
+   evas_object_smart_callback_add(emotion, "open_done", _emotion_open_done_cb, priv);
+   evas_object_smart_callback_add(emotion, "playback_started", _emotion_playback_started_cb, priv);
 
    return layout;
 }

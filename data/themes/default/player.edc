@@ -25,6 +25,16 @@ group {
       }
 
       part {
+         name: "video_black_bg";
+         type: RECT;
+         clip_to: "video_clip";
+         description {
+            state: "default" 0.0;
+            color: 0 0 0 255;
+         }
+      }
+
+      part {
          name: "video_clip";
          type: RECT;
          description {
@@ -35,7 +45,7 @@ group {
          description {
             state: "video-playing" 0.0;
             color: 255 255 255 255;
-            visible: 0;
+            visible: 1;
          }
       }
 
@@ -50,18 +60,9 @@ group {
       }
 
       part {
-         name: "video_black_bg";
-         type: RECT;
-         clip_to: "video_clip";
-         description {
-            state: "default" 0.0;
-         }
-      }
-
-      part {
          name: "video.swallow";
          type: SWALLOW;
-//         clip_to: "video_clip";
+         clip_to: "video_clip";
          description {
             state: "default" 0.0;
          }
@@ -169,13 +170,43 @@ group {
 
    programs {
       program {
-         in: 2.0 0.0;
-         name: "init";
-         signal: "show";
+         name: "show_osd";
+         signal: "show,osd";
+         source: "enna";
          action: STATE_SET "visible" 0.0;
-         transition: ACCELERATE 0.45;
+         transition: DECELERATE 1.0;
          target: "controls_clip";
          target: "main_clip";
+      }
+
+      program {
+         name: "hide_osd";
+         signal: "hide,osd";
+         source: "enna";
+         action: STATE_SET "default" 0.0;
+         transition: DECELERATE 1.0;
+         target: "controls_clip";
+         target: "main_clip";
+      }
+
+      program {
+         name: "loading";
+         signal: "loading";
+         source: "enna";
+         action: STATE_SET "default" 0.0;
+         transition: DECELERATE 1.0;
+         target: "video_clip";
+         target: "loading_clip";
+      }
+
+       program {
+         name: "playing";
+         signal: "playing";
+         source: "enna";
+         action: STATE_SET "video-playing" 0.0;
+         transition: DECELERATE 1.0;
+         target: "video_clip";
+         target: "loading_clip";
       }
 
    }

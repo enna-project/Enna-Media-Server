@@ -1,7 +1,7 @@
 group {
    name: "elm/video/base/enna";
 
-   parts {
+   parts {/*
       part {
          name: "clipper";
          type: RECT;
@@ -16,12 +16,12 @@ group {
             color: 255 255 255 255;
             visible: 1;
          }
-      }
+      }*/
       part {
          name: "elm.swallow.video";
          type: SWALLOW;
 
-         clip_to: "clipper";
+//         clip_to: "clipper";
          mouse_events: 1;
          repeat_events: 1;
 
@@ -33,13 +33,14 @@ group {
    }
 
    programs {
+        /*
       program {
          signal: "elm,video,load";
          source: "elm";
 
          action: STATE_SET "visible" 0.0;
          target: "clipper";
-      }
+      }*/
 
 //      program {
 //         signal: "elm,video,play";
