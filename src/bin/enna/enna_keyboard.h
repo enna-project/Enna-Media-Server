@@ -30,5 +30,6 @@
 #include "enna_input.h"
 
 void enna_keyboard_init(void);
+const char *enna_keyboard_input_name_get(Enna_Input *ei);
 
 #endif /* _ENNA_KEYBOARD_H */
