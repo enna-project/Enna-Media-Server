@@ -32,6 +32,7 @@
 #include "enna_private.h"
 #include "enna_config.h"
 #include "enna_mainmenu.h"
+#include "enna_input.h"
 
 /*============================================================================*
  *                                  Local                                     *
@@ -44,6 +45,7 @@ struct _Enna_Mainmenu
    Evas_Object *ly;
    Evas_Object *list;
    Evas_Object *shelf;
+   Enna_Input_Listener *il;
 };
 
 static void
@@ -74,6 +76,24 @@ _shelf_item_activated_cb(void *data, Evas_Object *obj, void *event_info __UNUSED
    elm_layout_content_set(ly, "fanart.swallow", ic);
 }
 
+static void
+_layout_object_del(void *data, Evas *e __UNUSED__, Evas_Object *obj, void *event_info __UNUSED__)
+{
+   Enna_Mainmenu *mm = data;
+
+   DBG("delete Enna_Mainmenu object (%p)", obj);
+
+   FREE_NULL_FUNC(evas_object_del, mm->list);
+   FREE_NULL_FUNC(evas_object_del, mm->shelf);
+   FREE_NULL_FUNC(enna_input_listener_del, mm->il);
+
+   free(mm);
+}
+static Eina_Bool
+_input_event(void *data, Enna_Input event)
+{
+   INF("Mainmenu input event %d", event);
+}
 
 /*============================================================================*
  *                                 Global                                     *
@@ -90,9 +110,11 @@ enna_mainmenu_add(Enna *enna __UNUSED__, Evas_Object *parent)
     if (!mm)
       return NULL;
 
+    mm->il = enna_input_listener_add("enna_mainmenu", _input_event, mm);
+
     mm->ly = elm_layout_add(parent);
     elm_layout_file_set(mm->ly, enna_config_theme_get(), "mainmenu/layout");
-
+    evas_object_event_callback_add(mm->ly, EVAS_CALLBACK_DEL, _layout_object_del, mm);
 
     mm->list = elm_list_add(mm->ly);
     elm_object_style_set(mm->list, "mainmenu");
@@ -108,6 +130,7 @@ enna_mainmenu_add(Enna *enna __UNUSED__, Evas_Object *parent)
     elm_list_bounce_set(mm->list, EINA_FALSE, EINA_FALSE);
     evas_object_smart_callback_add(mm->list, "activated", _list_item_activated_cb, mm->ly);
     evas_object_show(mm->list);
+
 
     mm->shelf = elm_list_add(mm->ly);
 
