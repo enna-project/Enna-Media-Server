@@ -172,6 +172,16 @@ _edje_signal_cb(void *data __UNUSED__, Evas_Object *obj __UNUSED__, const char *
 }
 
 static Eina_Bool
+_event_cb(void *data __UNUSED__, Evas_Object *obj __UNUSED__, Evas_Object *src __UNUSED__, Evas_Callback_Type type, void *event_info)
+{
+   Evas_Event_Key_Down *ev = event_info;
+
+   DBG("Event %s", ev->key);
+   ev->event_flags |= EVAS_EVENT_FLAG_ON_HOLD;
+   return EINA_TRUE;
+}
+
+static Eina_Bool
 _enna_window_init(Enna *enna)
 {
    Eina_Bool shaped = EINA_FALSE;
@@ -182,7 +192,7 @@ _enna_window_init(Enna *enna)
    elm_win_title_set(enna->win, "Enna Media Center");
    evas_object_smart_callback_add(enna->win, "delete,request", _win_del, enna);
    evas_object_event_callback_add(enna->win, EVAS_CALLBACK_RESIZE, _win_resize, enna);
-
+   elm_object_event_callback_add(enna->win, _event_cb, NULL);
    //create the naviframe, it's the main element that will handle all our subviews.
    //the first subview to be added is the mainmenu
    enna->naviframe = elm_naviframe_add(enna->win);
