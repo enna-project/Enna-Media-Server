@@ -100,6 +100,111 @@ _layout_object_del(void *data, Evas *e __UNUSED__, Evas_Object *obj, void *event
    free(mm);
 }
 
+static void
+_lists_select_do(Enna_Mainmenu *mm, Enna_Input ei)
+{
+   Elm_Object_Item *it;
+   Enna_Menu_Selected state;
+   Evas_Object *obj, *prev_obj;
+   unsigned char direction;
+
+   switch (ei)
+     {
+      case ENNA_INPUT_RIGHT:
+	 state = ENNA_MENU_SHELF;
+	 obj = mm->shelf;
+	 prev_obj = mm->list;
+	 direction = 1;
+	 break;
+      case ENNA_INPUT_LEFT:
+	 state = ENNA_MENU_SHELF;
+	 obj = mm->shelf;
+	 prev_obj = mm->list;
+	 direction = 0;
+	 break;
+      case ENNA_INPUT_UP:
+	 state = ENNA_MENU_LIST;
+	 obj = mm->list;
+	 prev_obj = mm->shelf;
+	 direction = 0;
+	 break;
+      case ENNA_INPUT_DOWN:
+	 state = ENNA_MENU_LIST;
+	 obj = mm->list;
+	 prev_obj = mm->shelf;
+	 direction = 1;
+	 break;
+      default:
+	 break;
+     }
+
+   /* Shelf is not selected right now */
+   if (mm->selected != state)
+     {
+	/* Unselect item in the list */
+	it = elm_list_selected_item_get(prev_obj);
+	if (it)
+	  elm_list_item_selected_set(it, EINA_FALSE);
+	mm->selected = state;
+     }
+
+
+   /* Get the current selected item */
+   it = elm_list_selected_item_get(obj);
+   if (it)
+     {
+	/* Get the previous or next item */
+	if (direction)
+	  it = elm_list_item_next(it);
+	else
+	  it = elm_list_item_prev(it);
+	/* Item is the first one or the last one in the list */
+	if (!it)
+	  {
+	     /* Try to select the last or the first element */
+	     if (direction)
+	       it = elm_list_first_item_get(obj);
+	     else
+	       it = elm_list_last_item_get(obj);
+	     if (it)
+	       {
+		  /* Select this item and show it */
+		  elm_list_item_selected_set(it, EINA_TRUE);
+		  elm_list_item_bring_in(it);
+	       }
+	     else
+	       {
+		  ERR("item can't be selected, the list is void ?");
+	       }
+	  }
+	/* Select previous or next item and show it */
+	else
+	  {
+	     elm_list_item_selected_set(it, EINA_TRUE);
+	     elm_list_item_bring_in(it);
+	  }
+     }
+   /* There is no selected item, select the fist one */
+   else
+     {
+	if (direction)
+	  it = elm_list_last_item_get(obj);
+	else
+	  it = elm_list_first_item_get(obj);
+	if (it)
+	  {
+	     /* Select this item and show it */
+	     elm_list_item_selected_set(it, EINA_TRUE);
+	     elm_list_item_bring_in(it);
+	  }
+	else
+	  {
+	     ERR("item can't be selected, the list is void ?");
+	  }
+     }
+
+}
+
 static Eina_Bool
 _input_event(void *data, Enna_Input event)
 {
@@ -113,170 +218,11 @@ _input_event(void *data, Enna_Input event)
    switch(event)
      {
       case ENNA_INPUT_DOWN:
-         if (mm->selected != ENNA_MENU_LIST)
-           {
-              it = elm_list_selected_item_get(mm->shelf);
-              if (it)
-                  elm_list_item_selected_set(it, EINA_FALSE);
-              mm->selected = ENNA_MENU_LIST;
-           }
-         it = elm_list_selected_item_get(mm->list);
-         if (it)
-           {
-              it = elm_list_item_next(it);
-              if (!it)
-                {
-                   it = elm_list_first_item_get(mm->list);
-                     if (it)
-                       {
-                          elm_list_item_selected_set(it, EINA_TRUE);
-                          elm_list_item_bring_in(it);
-                       }
-                }
-              else
-                {
-                   elm_list_item_selected_set(it, EINA_TRUE);
-                   elm_list_item_bring_in(it);
-                }
-           }
-         else
-           {
-              it = elm_list_first_item_get(mm->list);
-              if (it)
-                {
-                   elm_list_item_selected_set(it, EINA_TRUE);
-                   elm_list_item_bring_in(it);
-                }
-           }
-         break;
       case ENNA_INPUT_UP:
-         if (mm->selected != ENNA_MENU_LIST)
-           {
-              it = elm_list_selected_item_get(mm->shelf);
-              if (it)
-                elm_list_item_selected_set(it, EINA_FALSE);
-              mm->selected = ENNA_MENU_LIST;
-           }
-         it = elm_list_selected_item_get(mm->list);
-         if (it)
-           {
-              it = elm_list_item_prev(it);
-              if (!it)
-                {
-                   it = elm_list_last_item_get(mm->list);
-                   if (it)
-                     {
-                        elm_list_item_selected_set(it, EINA_TRUE);
-                        elm_list_item_bring_in(it);
-                     }
-                }
-              else
-                {
-                   elm_list_item_selected_set(it, EINA_TRUE);
-                   elm_list_item_bring_in(it);
-                }
-           }
-         else
-           {
-              it = elm_list_first_item_get(mm->list);
-              if (it)
-                {
-                   elm_list_item_selected_set(it, EINA_TRUE);
-                   elm_list_item_bring_in(it);
-                }
-           }
-         break;
-      case ENNA_INPUT_LEFT:
-         /* Shelf is not selected right now */
-         if (mm->selected != ENNA_MENU_SHELF)
-           {
-	      /* Unselect item in the list */
-              it = elm_list_selected_item_get(mm->list);
-              if (it)
-		elm_list_item_selected_set(it, EINA_FALSE);
-              mm->selected = ENNA_MENU_SHELF;
-           }
-         /* Get the current selected item */
-         it = elm_list_selected_item_get(mm->shelf);
-         if (it)
-           {
-              it = elm_list_item_prev(it);
-              /* Item is the first one in the list */
-              if (!it)
-                {
-		   /* Try to select the last element */
-                   it = elm_list_last_item_get(mm->shelf);
-                   if (it)
-                     {
-			/* Select this item and show it */
-                        elm_list_item_selected_set(it, EINA_TRUE);
-                        elm_list_item_bring_in(it);
-                     }
-                   else
-		     {
-			ERR("item can't be selected, the list is void ?");
-		     }
-                }
-              /* Select previous item and show it */
-              else
-                {
-                   elm_list_item_selected_set(it, EINA_TRUE);
-                   elm_list_item_bring_in(it);
-                }
-           }
-         /* There is no selected item, select the fist one */
-         else
-           {
-              it = elm_list_first_item_get(mm->shelf);
-              if (it)
-                {
-		   /* Select this item and show it */
-                   elm_list_item_selected_set(it, EINA_TRUE);
-                   elm_list_item_bring_in(it);
-                }
-              else
-		{
-		   ERR("item can't be selected, the list is void ?");
-		}
-           }
-         break;
       case ENNA_INPUT_RIGHT:
-         if (mm->selected != ENNA_MENU_SHELF)
-           {
-              it = elm_list_selected_item_get(mm->list);
-              if (it)
-                elm_list_item_selected_set(it, EINA_FALSE);
-              mm->selected = ENNA_MENU_SHELF;
-           }
-         it = elm_list_selected_item_get(mm->shelf);
-         if (it)
-           {
-              it = elm_list_item_next(it);
-              if (!it)
-                {
-                   it = elm_list_first_item_get(mm->shelf);
-                   if (it)
-                     {
-                        elm_list_item_selected_set(it, EINA_TRUE);
-                        elm_list_item_bring_in(it);
-                     }
-                }
-              else
-                {
-                   elm_list_item_selected_set(it, EINA_TRUE);
-                   elm_list_item_bring_in(it);
-                }
-           }
-         else
-           {
-              it = elm_list_first_item_get(mm->shelf);
-              if (it)
-                {
-                   elm_list_item_selected_set(it, EINA_TRUE);
-                   elm_list_item_bring_in(it);
-                }
-           }
-         break;
+      case ENNA_INPUT_LEFT:
+	 _lists_select_do(mm, event);
+	 break;
       case ENNA_INPUT_OK:
         {
            const char *label;
