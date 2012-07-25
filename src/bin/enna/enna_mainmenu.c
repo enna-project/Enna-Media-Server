@@ -188,9 +188,9 @@ _lists_select_do(Enna_Mainmenu *mm, Enna_Input ei)
    else
      {
 	if (direction)
-	  it = elm_list_last_item_get(obj);
-	else
 	  it = elm_list_first_item_get(obj);
+	else
+	  it = elm_list_last_item_get(obj);
 	if (it)
 	  {
 	     /* Select this item and show it */
