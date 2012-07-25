@@ -262,6 +262,23 @@ _input_event(void *data, Enna_Input event)
                 }
            }
          break;
+      case ENNA_INPUT_OK:
+        {
+           const char *label;
+           Elm_Object_Item *it;
+           if(mm->selected == ENNA_MENU_LIST)
+             it = elm_list_selected_item_get(mm->list);
+           else
+             it = elm_list_selected_item_get(mm->shelf);
+
+           if (it)
+             {
+                label = elm_object_item_text_get(it);
+                DBG("Item activated : %s", label);
+                evas_object_smart_callback_call(mm->ly, "selected", label);
+             }
+        }
+         break;
        default:
          break;
      }
@@ -303,6 +320,7 @@ enna_mainmenu_add(Enna *enna __UNUSED__, Evas_Object *parent)
     evas_object_size_hint_align_set(mm->list, -1, 0.5);
     elm_list_bounce_set(mm->list, EINA_FALSE, EINA_FALSE);
     evas_object_smart_callback_add(mm->list, "activated", _list_item_activated_cb, mm->ly);
+    elm_list_go(mm->list);
     evas_object_show(mm->list);
 
     /* Selected the first item of the list*/
@@ -330,6 +348,9 @@ enna_mainmenu_add(Enna *enna __UNUSED__, Evas_Object *parent)
     elm_object_part_content_set(mm->ly, "shelf.swallow", mm->shelf);
     evas_object_size_hint_align_set(mm->shelf, -1, 0.5);
     elm_list_horizontal_set(mm->shelf, EINA_TRUE);
+
+    elm_list_go(mm->shelf);
+    evas_object_show(mm->shelf);
 
     return mm->ly;
 }
