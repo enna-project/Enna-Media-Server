@@ -39,6 +39,14 @@
  *============================================================================*/
 
 typedef struct _Enna_Mainmenu Enna_Mainmenu;
+typedef enum _Enna_Menu_Selected Enna_Menu_Selected;
+
+enum _Enna_Menu_Selected
+{
+  ENNA_MENU_LIST,
+  ENNA_MENU_SHELF
+};
+
 
 struct _Enna_Mainmenu
 {
@@ -46,7 +54,9 @@ struct _Enna_Mainmenu
    Evas_Object *list;
    Evas_Object *shelf;
    Enna_Input_Listener *il;
+   Enna_Menu_Selected selected;
 };
+
 
 static void
 _list_item_activated_cb(void *data, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
@@ -104,6 +114,14 @@ _input_event(void *data, Enna_Input event)
    switch(event)
      {
       case ENNA_INPUT_DOWN:
+
+         if (mm->selected != ENNA_MENU_LIST)
+           {
+              it = elm_list_selected_item_get(mm->shelf);
+              if (it)
+                elm_list_item_selected_set(it, EINA_FALSE);
+              mm->selected = ENNA_MENU_LIST;
+           }
          it = elm_list_selected_item_get(mm->list);
          if (it)
            {
@@ -123,8 +141,24 @@ _input_event(void *data, Enna_Input event)
                    elm_list_item_bring_in(it);
                 }
            }
+         else
+           {
+              it = elm_list_first_item_get(mm->list);
+              if (it)
+                {
+                   elm_list_item_selected_set(it, EINA_TRUE);
+                   elm_list_item_bring_in(it);
+                }
+           }
          break;
       case ENNA_INPUT_UP:
+         if (mm->selected != ENNA_MENU_LIST)
+           {
+              it = elm_list_selected_item_get(mm->shelf);
+              if (it)
+                elm_list_item_selected_set(it, EINA_FALSE);
+              mm->selected = ENNA_MENU_LIST;
+           }
          it = elm_list_selected_item_get(mm->list);
          if (it)
            {
@@ -144,8 +178,24 @@ _input_event(void *data, Enna_Input event)
                    elm_list_item_bring_in(it);
                 }
            }
+         else
+           {
+              it = elm_list_first_item_get(mm->list);
+              if (it)
+                {
+                   elm_list_item_selected_set(it, EINA_TRUE);
+                   elm_list_item_bring_in(it);
+                }
+           }
          break;
       case ENNA_INPUT_LEFT:
+         if (mm->selected != ENNA_MENU_SHELF)
+           {
+              it = elm_list_selected_item_get(mm->list);
+              if (it)
+                elm_list_item_selected_set(it, EINA_FALSE);
+              mm->selected = ENNA_MENU_LIST;
+           }
          it = elm_list_selected_item_get(mm->shelf);
          if (it)
            {
@@ -165,8 +215,24 @@ _input_event(void *data, Enna_Input event)
                    elm_list_item_bring_in(it);
                 }
            }
+         else
+           {
+              it = elm_list_first_item_get(mm->shelf);
+              if (it)
+                {
+                   elm_list_item_selected_set(it, EINA_TRUE);
+                   elm_list_item_bring_in(it);
+                }
+           }
          break;
       case ENNA_INPUT_RIGHT:
+         if (mm->selected != ENNA_MENU_SHELF)
+           {
+              it = elm_list_selected_item_get(mm->list);
+              if (it)
+                elm_list_item_selected_set(it, EINA_FALSE);
+              mm->selected = ENNA_MENU_LIST;
+           }
          it = elm_list_selected_item_get(mm->shelf);
          if (it)
            {
@@ -181,6 +247,15 @@ _input_event(void *data, Enna_Input event)
                      }
                 }
               else
+                {
+                   elm_list_item_selected_set(it, EINA_TRUE);
+                   elm_list_item_bring_in(it);
+                }
+           }
+         else
+           {
+              it = elm_list_first_item_get(mm->shelf);
+              if (it)
                 {
                    elm_list_item_selected_set(it, EINA_TRUE);
                    elm_list_item_bring_in(it);
@@ -216,8 +291,9 @@ enna_mainmenu_add(Enna *enna __UNUSED__, Evas_Object *parent)
 
     mm->list = elm_list_add(mm->ly);
     elm_object_style_set(mm->list, "mainmenu");
+
     it = elm_list_item_append(mm->list, "Videos", NULL, NULL, NULL, NULL);
-    elm_list_item_selected_set(it, EINA_TRUE);
+
     elm_list_item_append(mm->list, "TV Shows", NULL, NULL, NULL, NULL);
     elm_list_item_append(mm->list, "Music", NULL, NULL, NULL, NULL);
     elm_list_item_append(mm->list, "Photos", NULL, NULL, NULL, NULL);
@@ -229,6 +305,9 @@ enna_mainmenu_add(Enna *enna __UNUSED__, Evas_Object *parent)
     evas_object_smart_callback_add(mm->list, "activated", _list_item_activated_cb, mm->ly);
     evas_object_show(mm->list);
 
+    /* Selected the first item of the list*/
+    elm_list_item_selected_set(it, EINA_TRUE);
+    mm->selected = ENNA_MENU_LIST;
 
     mm->shelf = elm_list_add(mm->ly);
 
@@ -236,19 +315,22 @@ enna_mainmenu_add(Enna *enna __UNUSED__, Evas_Object *parent)
     evas_object_image_file_set(ic, PACKAGE_DATA_DIR"/images/cover1.jpg", NULL);
     evas_object_show(ic);
     elm_object_style_set(mm->shelf, "shelf");
-    it = elm_list_item_append(mm->shelf, "Test", ic, NULL, _shelf_item_activated_cb, mm->ly);
-    elm_list_item_selected_set(it, EINA_TRUE);
+    elm_list_item_append(mm->shelf, "Test", ic, NULL, _shelf_item_activated_cb, mm->ly);
+
     ic = evas_object_image_filled_add(evas_object_evas_get(mm->shelf));
     evas_object_image_file_set(ic, PACKAGE_DATA_DIR"/images/cover2.jpg", NULL);
     evas_object_show(ic);
     elm_list_item_append(mm->shelf, "Test2", ic, NULL,_shelf_item_activated_cb, mm->ly);
+
     ic = evas_object_image_filled_add(evas_object_evas_get(mm->shelf));
     evas_object_image_file_set(ic, PACKAGE_DATA_DIR"/images/cover3.jpg", NULL);
     evas_object_show(ic);
     elm_list_item_append(mm->shelf, "Test3", ic, NULL, _shelf_item_activated_cb, mm->ly);
+
     elm_object_part_content_set(mm->ly, "shelf.swallow", mm->shelf);
     evas_object_size_hint_align_set(mm->shelf, -1, 0.5);
     elm_list_horizontal_set(mm->shelf, EINA_TRUE);
+
     return mm->ly;
 }
 
