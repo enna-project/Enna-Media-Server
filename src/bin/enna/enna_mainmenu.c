@@ -100,7 +100,6 @@ _layout_object_del(void *data, Evas *e __UNUSED__, Evas_Object *obj, void *event
    free(mm);
 }
 
-
 static Eina_Bool
 _input_event(void *data, Enna_Input event)
 {
@@ -188,40 +187,57 @@ _input_event(void *data, Enna_Input event)
            }
          break;
       case ENNA_INPUT_LEFT:
+         /* Shelf is not selected right now */
          if (mm->selected != ENNA_MENU_SHELF)
            {
+	      /* Unselect item in the list */
               it = elm_list_selected_item_get(mm->list);
               if (it)
-                  elm_list_item_selected_set(it, EINA_FALSE);
+		elm_list_item_selected_set(it, EINA_FALSE);
               mm->selected = ENNA_MENU_SHELF;
            }
+         /* Get the current selected item */
          it = elm_list_selected_item_get(mm->shelf);
          if (it)
            {
               it = elm_list_item_prev(it);
+              /* Item is the first one in the list */
               if (!it)
                 {
+		   /* Try to select the last element */
                    it = elm_list_last_item_get(mm->shelf);
                    if (it)
                      {
+			/* Select this item and show it */
                         elm_list_item_selected_set(it, EINA_TRUE);
                         elm_list_item_bring_in(it);
                      }
+                   else
+		     {
+			ERR("item can't be selected, the list is void ?");
+		     }
                 }
+              /* Select previous item and show it */
               else
                 {
                    elm_list_item_selected_set(it, EINA_TRUE);
                    elm_list_item_bring_in(it);
                 }
            }
+         /* There is no selected item, select the fist one */
          else
            {
               it = elm_list_first_item_get(mm->shelf);
               if (it)
                 {
+		   /* Select this item and show it */
                    elm_list_item_selected_set(it, EINA_TRUE);
                    elm_list_item_bring_in(it);
                 }
+              else
+		{
+		   ERR("item can't be selected, the list is void ?");
+		}
            }
          break;
       case ENNA_INPUT_RIGHT:
