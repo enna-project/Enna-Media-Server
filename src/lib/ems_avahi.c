@@ -86,18 +86,13 @@ static void entry_group_callback(AvahiEntryGroup *g, AvahiEntryGroupState state,
            n = avahi_alternative_service_name(server_name);
            avahi_free(server_name);
            server_name = n;
-
            WRN("Service name collision, renaming service to '%s'", server_name);
-
            /* And recreate the services */
            create_services(avahi_entry_group_get_client(g));
            break;
         }
-
       case AVAHI_ENTRY_GROUP_FAILURE :
-
          ERR("Entry group failure: %s", avahi_strerror(avahi_client_errno(avahi_entry_group_get_client(g))));
-
          /* Some kind of failure happened while we were registering our services */
          break;
 
@@ -120,8 +115,6 @@ static void create_services(AvahiClient *c __UNUSED__)
              return;
           }
      }
-
-
 }
 
 static void client_callback(AvahiClient *c, AvahiClientState state, AVAHI_GCC_UNUSED void * userdata)
