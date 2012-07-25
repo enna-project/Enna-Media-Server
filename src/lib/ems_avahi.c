@@ -157,8 +157,7 @@ static void client_callback(AvahiClient *c, AvahiClientState state, AVAHI_GCC_UN
      }
 }
 
-static void resolve_callback(
-                             AvahiServiceResolver *r,
+static void resolve_callback(AvahiServiceResolver *r,
                              AVAHI_GCC_UNUSED AvahiIfIndex interface,
                              AVAHI_GCC_UNUSED AvahiProtocol protocol,
                              AvahiResolverEvent event,
@@ -170,20 +169,15 @@ static void resolve_callback(
                              uint16_t port,
                              AvahiStringList *txt,
                              AvahiLookupResultFlags flags,
-                             AVAHI_GCC_UNUSED void* userdata
-                             )
+                             AVAHI_GCC_UNUSED void* userdata)
 {
-
    assert(r);
-
    /* Called whenever a service has been resolved successfully or timed out */
-
    switch (event)
      {
       case AVAHI_RESOLVER_FAILURE:
          ERR("(Resolver) Failed to resolve service '%s' of type '%s' in domain '%s': %s", name, type, domain, avahi_strerror(avahi_client_errno(avahi_service_resolver_get_client(r))));
          break;
-
       case AVAHI_RESOLVER_FOUND:
         {
            Ems_Server *server;
@@ -220,7 +214,6 @@ static void resolve_callback(
                 server->is_local = !!(flags & AVAHI_LOOKUP_RESULT_LOCAL);
                 ems_server_add(server);
              }
-
            avahi_free(t);
            break;
         }
@@ -228,13 +221,10 @@ static void resolve_callback(
          DBG("Unknown case");
          break;
      }
-
    avahi_service_resolver_free(r);
 }
 
-
-static void browse_callback(
-                            AvahiServiceBrowser *b,
+static void browse_callback(AvahiServiceBrowser *b,
                             AvahiIfIndex interface,
                             AvahiProtocol protocol,
                             AvahiBrowserEvent event,
@@ -244,37 +234,28 @@ static void browse_callback(
                             AVAHI_GCC_UNUSED AvahiLookupResultFlags flags,
                             void* userdata)
 {
-
    AvahiClient *c = userdata;;
 
    assert(b);
-
    /* Called whenever a new services becomes available on the LAN or is removed from the LAN */
-
    switch (event)
      {
       case AVAHI_BROWSER_FAILURE:
-
          ERR("(Browser) %s", avahi_strerror(avahi_client_errno(avahi_service_browser_get_client(b))));
          return;
-
       case AVAHI_BROWSER_NEW:
          DBG("(Browser) NEW: service '%s' of type '%s' in domain '%s'", name, type, domain);
          /* We ignore the returned resolver object. In the callback
             function we free it. If the server is terminated before
             the callback function is called the server will free
             the resolver for us. */
-
          if (!(avahi_service_resolver_new(c, interface, protocol, name, type, domain, AVAHI_PROTO_UNSPEC, 0, resolve_callback, NULL)))
            ERR("Failed to resolve service '%s': %s", name, avahi_strerror(avahi_client_errno(c)));
-
          break;
-
       case AVAHI_BROWSER_REMOVE:
          DBG("(Browser) REMOVE: service '%s' of type '%s' in domain '%s'", name, type, domain);
          ems_server_del(name);
          break;
-
       case AVAHI_BROWSER_ALL_FOR_NOW:
       case AVAHI_BROWSER_CACHE_EXHAUSTED:
          DBG("(Browser) %s", event == AVAHI_BROWSER_CACHE_EXHAUSTED ? "CACHE_EXHAUSTED" : "ALL_FOR_NOW");
@@ -293,10 +274,8 @@ Eina_Bool ems_avahi_init(void)
 
    /* We are using avahi_glib here so we need to integrate glib mainloop into ecore */
    ecore_main_loop_glib_integrate();
-
    glib_poll = avahi_glib_poll_new (NULL, G_PRIORITY_DEFAULT);
    poll_api = avahi_glib_poll_get (glib_poll);
-
 
    /* Allocate main loop object */
    if (!glib_poll)
@@ -306,46 +285,35 @@ Eina_Bool ems_avahi_init(void)
      }
 
    server_name = avahi_strdup(ems_config->name);
-
    /* Allocate a new client */
    client = avahi_client_new(poll_api, 0, client_callback, NULL, &error);
-
    /* Check wether creating the client object succeeded */
    if (!client)
      {
         ERR("Failed to create client: %s", avahi_strerror(error));
         goto fail;
      }
-
    /* Create the service browser */
-   if (
-       !(sb = avahi_service_browser_new(client,
+   if (!(sb = avahi_service_browser_new(client,
                                         AVAHI_IF_UNSPEC,
                                         AVAHI_PROTO_UNSPEC,
                                         EMS_SERVER_JSONRPC_API_NAME,
-                                        NULL, 0, browse_callback, client))
-       )
+                                        NULL, 0, browse_callback, client)))
      {
         ERR("Failed to create service browser: %s",
             avahi_strerror(avahi_client_errno(client)));
         goto fail;
      }
-
-
    return EINA_TRUE;
 
  fail:
-
    /* Cleanup things */
    if (sb)
      avahi_service_browser_free(sb);
-
    if (client)
      avahi_client_free(client);
-
    if (glib_poll)
      avahi_glib_poll_free(glib_poll);
-
    avahi_free(server_name);
 
    return EINA_FALSE;
@@ -353,20 +321,14 @@ Eina_Bool ems_avahi_init(void)
  
 void ems_avahi_shutdown(void)
 {
-
-
    if (sb)
      avahi_service_browser_free(sb);
-
    if (client)
      avahi_client_free(client);
-
    if (glib_poll)
      avahi_glib_poll_free(glib_poll);
-
    avahi_free(server_name);
 }
-
 
 /*============================================================================*
  *                                   API                                      *
@@ -399,9 +361,7 @@ ems_avahi_start(void)
         const char *name;
 
         DBG("Adding service '%s' on port %d", server_name, ems_config->port);
-
         name = eina_stringshare_printf("name=%s", ems_config->name);
-
         if ((ret = avahi_entry_group_add_service(group,
                                                  AVAHI_IF_UNSPEC,
                                                  AVAHI_PROTO_UNSPEC,
@@ -410,10 +370,8 @@ ems_avahi_start(void)
                                                  NULL, NULL,
                                                  ems_config->port, name, NULL)) < 0)
           {
-
              if (ret == AVAHI_ERR_COLLISION)
                goto collision;
-
              ERR("Failed to add _ipp._tcp service: %s", avahi_strerror(ret));
              goto fail;
           }
@@ -429,20 +387,15 @@ ems_avahi_start(void)
    return EINA_TRUE;
 
  collision:
-
    /* A service name collision with a local service happened. Let's
     * pick a new name */
    n = avahi_alternative_service_name(server_name);
    avahi_free(server_name);
    server_name = n;
-
    ERR("Service name collision, renaming service to '%s'", server_name);
-
    avahi_entry_group_reset(group);
-
    ems_avahi_start();
    return EINA_TRUE;
-
  fail:
    return EINA_FALSE;
 }
