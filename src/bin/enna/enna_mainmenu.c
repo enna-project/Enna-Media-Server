@@ -114,12 +114,11 @@ _input_event(void *data, Enna_Input event)
    switch(event)
      {
       case ENNA_INPUT_DOWN:
-
          if (mm->selected != ENNA_MENU_LIST)
            {
               it = elm_list_selected_item_get(mm->shelf);
               if (it)
-                elm_list_item_selected_set(it, EINA_FALSE);
+                  elm_list_item_selected_set(it, EINA_FALSE);
               mm->selected = ENNA_MENU_LIST;
            }
          it = elm_list_selected_item_get(mm->list);
@@ -193,8 +192,8 @@ _input_event(void *data, Enna_Input event)
            {
               it = elm_list_selected_item_get(mm->list);
               if (it)
-                elm_list_item_selected_set(it, EINA_FALSE);
-              mm->selected = ENNA_MENU_LIST;
+                  elm_list_item_selected_set(it, EINA_FALSE);
+              mm->selected = ENNA_MENU_SHELF;
            }
          it = elm_list_selected_item_get(mm->shelf);
          if (it)
@@ -231,7 +230,7 @@ _input_event(void *data, Enna_Input event)
               it = elm_list_selected_item_get(mm->list);
               if (it)
                 elm_list_item_selected_set(it, EINA_FALSE);
-              mm->selected = ENNA_MENU_LIST;
+              mm->selected = ENNA_MENU_SHELF;
            }
          it = elm_list_selected_item_get(mm->shelf);
          if (it)
