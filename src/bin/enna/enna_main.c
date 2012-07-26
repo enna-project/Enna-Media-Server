@@ -183,8 +183,10 @@ _enna_window_init(Enna *enna)
    elm_win_title_set(enna->win, "Enna Media Center");
    evas_object_smart_callback_add(enna->win, "delete,request", _win_del, enna);
    evas_object_event_callback_add(enna->win, EVAS_CALLBACK_RESIZE, _win_resize, enna);
-   //create the naviframe, it's the main element that will handle all our subviews.
-   //the first subview to be added is the mainmenu
+   /*
+    * create the naviframe, it's the main element that will handle all our subviews.
+    * the first subview to be added is the mainmenu
+    */
    enna->naviframe = elm_naviframe_add(enna->win);
 //   elm_object_style_set(enna->naviframe, "enna");
    evas_object_show(enna->naviframe);
