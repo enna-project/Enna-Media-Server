@@ -221,8 +221,10 @@ _input_event(void *data, Enna_Input event)
       case ENNA_INPUT_UP:
       case ENNA_INPUT_RIGHT:
       case ENNA_INPUT_LEFT:
-	 _lists_select_do(mm, event);
-	 break;
+        {
+           _lists_select_do(mm, event);
+           return ENNA_EVENT_BLOCK;
+        }
       case ENNA_INPUT_OK:
         {
            const char *label;
@@ -238,11 +240,14 @@ _input_event(void *data, Enna_Input event)
                 DBG("Item activated : %s", label);
                 evas_object_smart_callback_call(mm->ly, "selected", label);
              }
+           return ENNA_EVENT_BLOCK;
         }
          break;
        default:
          break;
      }
+
+   return ENNA_EVENT_CONTINUE;
 
 }
 
