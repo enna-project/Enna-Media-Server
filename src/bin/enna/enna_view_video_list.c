@@ -36,6 +36,7 @@
 #include "enna_view_video_list.h"
 #include "enna_config.h"
 #include "enna_activity.h"
+#include "enna_input.h"
 
 /*============================================================================*
  *                                  Local                                     *
@@ -77,6 +78,7 @@ struct _Enna_View_Video_List
    Ecore_Timer *show_timer;
    int nb_items;
    Enna *enna;
+   Enna_Input_Listener *il;
 };
 static Eina_Bool _timer_cb(void *data);
 
@@ -379,6 +381,94 @@ _layout_object_del(void *data, Evas *e , Evas_Object *obj, void *event_info)
    FREE_NULL_FUNC(evas_object_del, act->btn_play);
    FREE_NULL_FUNC(ecore_timer_del, act->show_timer);
    FREE_NULL_FUNC(eina_hash_free, act->servers);
+   FREE_NULL_FUNC(enna_input_listener_del, act->il);
+
+   free(act);
+}
+
+static void
+_list_select_do(Evas_Object *obj, const char direction)
+{
+   Elm_Object_Item *it;
+
+   /* Get the current selected item */
+   it = elm_genlist_selected_item_get(obj);
+   if (it)
+     {
+	/* Get the previous or next item */
+	if (direction)
+	  it = elm_genlist_item_next_get(it);
+	else
+	  it = elm_genlist_item_prev_get(it);
+	/* Item is the first one or the last one in the list */
+	if (!it)
+	  {
+	     /* Try to select the last or the first element */
+	     if (direction)
+	       it = elm_genlist_first_item_get(obj);
+	     else
+	       it = elm_genlist_last_item_get(obj);
+	     if (it)
+	       {
+		  /* Select this item and show it */
+		  elm_genlist_item_selected_set(it, EINA_TRUE);
+		  elm_genlist_item_bring_in(it, ELM_GENLIST_ITEM_SCROLLTO_MIDDLE);
+	       }
+	     else
+	       {
+		  ERR("item can't be selected, the list is void ?");
+	       }
+	  }
+	/* Select previous or next item and show it */
+	else
+	  {
+	     elm_genlist_item_selected_set(it, EINA_TRUE);
+	     elm_genlist_item_bring_in(it, ELM_GENLIST_ITEM_SCROLLTO_MIDDLE);
+	  }
+     }
+   /* There is no selected item, select the fist one */
+   else
+     {
+	if (direction)
+	  it = elm_genlist_first_item_get(obj);
+	else
+	  it = elm_genlist_last_item_get(obj);
+	if (it)
+	  {
+	     /* Select this item and show it */
+	     elm_genlist_item_selected_set(it, EINA_TRUE);
+	     elm_genlist_item_bring_in(it, ELM_GENLIST_ITEM_SCROLLTO_MIDDLE);
+	  }
+	else
+	  {
+	     ERR("item can't be selected, the list is void ?");
+	  }
+     }
+
+}
+
+static Eina_Bool
+_input_event(void *data, Enna_Input event)
+{
+   Enna_View_Video_List *act = data;
+   const char *tmp;
+
+   tmp = enna_keyboard_input_name_get(event);
+   INF("view video list input event %s", tmp);
+
+   switch(event)
+     {
+      case ENNA_INPUT_DOWN:
+         _list_select_do(act->list, 1);
+         return ENNA_EVENT_BLOCK;
+      case ENNA_INPUT_UP:
+         _list_select_do(act->list, 0);
+         return ENNA_EVENT_BLOCK;
+      default:
+         break;
+     }
+
+   return ENNA_EVENT_CONTINUE;
 }
 
 /*============================================================================*
@@ -396,6 +486,8 @@ Evas_Object *enna_view_video_list_add(Enna *enna, Evas_Object *parent)
    act = calloc(1, sizeof(Enna_View_Video_List));
    if (!act)
        return NULL;
+
+   act->il = enna_input_listener_add("enna_view_video_list", _input_event, act);
 
    ly = elm_layout_add(parent);
    if (!ly)
