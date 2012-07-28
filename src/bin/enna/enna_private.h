@@ -28,6 +28,8 @@
 
 #include <Evas.h>
 
+#include "enna_input.h"
+
 /* variable and macros used for the eina_log module */
 extern int _enna_log_dom_global;
 /*
@@ -101,6 +103,7 @@ struct _Enna
    const char *config_file;
    Eina_Bool run_fullscreen;
    Evas_Object *win, *naviframe, *mainmenu, *layout;
+   Enna_Input_Listener *il;
 };
 
 #endif /* _ENNA_PRIVATE_H_ */

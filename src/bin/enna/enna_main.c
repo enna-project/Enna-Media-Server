@@ -42,6 +42,7 @@
 #include "enna_view_player_video.h"
 #include "enna_view_music_grid.h"
 #include "enna_keyboard.h"
+#include "enna_input.h"
 
 /*============================================================================*
  *                                  Local                                     *
@@ -88,80 +89,6 @@ _mainmenu_item_selected_cb(void *data, Evas_Object *obj __UNUSED__, void *event_
 
 }
 
-static Eina_Bool
-_elm_win_event_cb(Evas_Object *obj, Evas_Object *src __UNUSED__, Evas_Callback_Type type, void *event_info)
-{
-   if (type == EVAS_CALLBACK_KEY_DOWN)
-     {
-        Evas_Event_Key_Down *ev = event_info;
-
-        printf("keyname : %s\n", ev->keyname);
-
-        if (!strcmp(ev->keyname, "Tab"))
-          {
-             printf("TADADADADA\n");
-          }
-        else if ((!strcmp(ev->keyname, "Left")) ||
-                 (!strcmp(ev->keyname, "KP_Left")))
-          {
-             printf("left\n");
-             elm_widget_focus_cycle(obj, ELM_FOCUS_PREVIOUS);
-          }
-        else if ((!strcmp(ev->keyname, "Right")) ||
-                 (!strcmp(ev->keyname, "KP_Right")))
-          {
-             printf("right\n");
-             elm_widget_focus_cycle(obj, ELM_FOCUS_NEXT);
-          }
-     }
-   return EINA_FALSE;
-}
-
-static void
-_key_down(void *data, Evas *e __UNUSED__, Evas_Object *obj, void *event_info)
-{
-   Evas_Event_Key_Down *ev = event_info;
-   Enna *enna;
-   enna = (Enna *)data;
-
-   DBG("Key ev : %s", ev->keyname);
-
-   if ((!strcmp(ev->keyname, "Left")) ||
-       (!strcmp(ev->keyname, "KP_Left")))
-     {
-        elm_widget_focus_cycle(obj, ELM_FOCUS_PREVIOUS);
-     }
-   else if ((!strcmp(ev->keyname, "Right")) ||
-            (!strcmp(ev->keyname, "KP_Right")))
-     {
-        elm_widget_focus_cycle(obj, ELM_FOCUS_NEXT);
-     }
-   else if (!strcmp(ev->keyname, "Escape"))
-     {
-        /* Show Exit Confirmation Menu */
-        enna_exit_popup_show(enna, enna->win);
-     }
-   else if (!strcmp(ev->keyname, "BackSpace"))
-     {
-        if (elm_object_item_widget_get(elm_naviframe_top_item_get(enna->naviframe)) != enna->mainmenu)
-          {
-             Eina_List *focus_chain = NULL;
-
-             /* Back to the mainmenu */
-             elm_naviframe_item_pop(enna->naviframe);
-
-             focus_chain = eina_list_append(focus_chain, enna->mainmenu);
-             //elm_object_focus_custom_chain_set(enna->ly, focus_chain);
-             elm_object_focus_set(enna->mainmenu, EINA_TRUE);
-          }
-        else
-          {
-             /* Show Exit Confirmation Menu */
-             enna_exit_popup_show(enna, enna->win);
-          }
-     }
-}
-
 static void
 _edje_signal_cb(void *data __UNUSED__, Evas_Object *obj __UNUSED__, const char *emission, const char *source __UNUSED__)
 {
@@ -170,6 +97,36 @@ _edje_signal_cb(void *data __UNUSED__, Evas_Object *obj __UNUSED__, const char *
      {
         DBG("Mainmenu hide transition end");
      }
+}
+
+static Eina_Bool
+_input_event(void *data, Enna_Input event)
+{
+   Enna *enna = data;
+   const char *tmp;
+
+   tmp = enna_keyboard_input_name_get(event);
+   INF("main input event %s", tmp);
+
+   switch (event)
+     {
+      case ENNA_INPUT_QUIT:
+         /* Show Exit Confirmation Menu */
+         enna_exit_popup_show(enna, enna->win);
+         break;
+      case ENNA_INPUT_BACK:
+         if (elm_object_item_widget_get(elm_naviframe_top_item_get(enna->naviframe)) != enna->mainmenu)
+           /* Back to the mainmenu */
+           elm_naviframe_item_pop(enna->naviframe);
+         else
+           /* Show Exit Confirmation Menu */
+           enna_exit_popup_show(enna, enna->win);
+         break;
+      default:
+         break;
+     }
+
+   return ENNA_EVENT_BLOCK;
 }
 
 static Eina_Bool
@@ -183,19 +140,22 @@ _enna_window_init(Enna *enna)
    elm_win_title_set(enna->win, "Enna Media Center");
    evas_object_smart_callback_add(enna->win, "delete,request", _win_del, enna);
    evas_object_event_callback_add(enna->win, EVAS_CALLBACK_RESIZE, _win_resize, enna);
-   //create the naviframe, it's the main element that will handle all our subviews.
-   //the first subview to be added is the mainmenu
+   /*
+    * create the naviframe, it's the main element that will handle all our subviews.
+    * the first subview to be added is the mainmenu
+    */
    enna->naviframe = elm_naviframe_add(enna->win);
 //   elm_object_style_set(enna->naviframe, "enna");
    evas_object_show(enna->naviframe);
+
+   /* Add Main input listener, it reacts to all keys wich are not handled by other view */
+   enna->il = enna_input_listener_add("enna_main", _input_event, enna);
 
    enna->mainmenu = enna_activity_select(enna, "MainMenu");
    evas_object_smart_callback_add(enna->mainmenu, "selected", _mainmenu_item_selected_cb, enna);
    elm_object_focus_set(enna->mainmenu, EINA_TRUE);
 
    enna->layout = elm_layout_add(enna->win);
-   evas_object_event_callback_add(enna->layout, EVAS_CALLBACK_KEY_DOWN,
-                                  _key_down, enna);
    edje_object_signal_callback_add(elm_layout_edje_get(enna->layout), "*", "*",
                                     _edje_signal_cb, enna);
 

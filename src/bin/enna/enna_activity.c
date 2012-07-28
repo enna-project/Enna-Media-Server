@@ -114,16 +114,9 @@ enna_activity_select(Enna *enna, const char *activity_name)
    act = eina_hash_find(_activities, activity_name);
    if (act)
      {
-        Eina_List *focus_chain = NULL;
-
-        //Let's create our new activity
+         //Let's create our new activity
         act->obj = act->activity_add(enna, enna->naviframe);
         elm_naviframe_item_push(enna->naviframe, NULL, NULL, NULL, act->obj, "enna");
-
-        focus_chain = eina_list_append(focus_chain, act->obj);
-        elm_object_focus_custom_chain_set(enna->layout, focus_chain);
-        elm_object_focus_set(act->obj, EINA_TRUE);
-
         return act->obj;
      }
    else

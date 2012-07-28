@@ -63,7 +63,6 @@ _no_clicked_cb(void *data __UNUSED__, Evas_Object *obj __UNUSED__, void *event_i
 void enna_exit_popup_show(Enna *enna, Evas_Object *parent)
 {
    Evas_Object *btn, *btn2;
-   Eina_List *focus_chain = NULL;
    Eina_List *l;
    Evas_Object *obj;
 
@@ -90,11 +89,6 @@ void enna_exit_popup_show(Enna *enna, Evas_Object *parent)
    evas_object_smart_callback_add(btn2, "clicked", _no_clicked_cb, popup);
 
    evas_object_show(popup);
-
-   focus_chain = eina_list_append(focus_chain, btn);
-   focus_chain = eina_list_append(focus_chain, btn2);
-   elm_object_focus_custom_chain_set(enna->layout, focus_chain);
-   elm_object_focus_set(btn2, EINA_TRUE);
 }
 
 void enna_exit_popup_hide(void)
