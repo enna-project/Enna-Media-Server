@@ -290,6 +290,22 @@ _server_disconnected_cb(void *data, Ems_Server *server)
      }
 }
 
+static void
+_cover_del(void *data, Evas *e , Evas_Object *obj, void *event_info)
+{
+   Enna_View_Video_List_Item *item = data;
+
+   item->o_cover = NULL;
+}
+
+static void
+_backdrop_del(void *data, Evas *e , Evas_Object *obj, void *event_info)
+{
+   Enna_View_Video_List_Item *item = data;
+
+   item->o_backdrop = NULL;
+}
+
 static Eina_Bool
 _timer_cb(void *data)
 {
@@ -311,6 +327,8 @@ _timer_cb(void *data)
         elm_image_file_set(item->o_cover, item->cover, NULL);
         elm_image_preload_disabled_set(item->o_cover, EINA_FALSE);
         elm_object_part_content_set(item->act->ly, "cover.swallow", item->o_cover);
+
+        evas_object_event_callback_add(item->o_cover, EVAS_CALLBACK_DEL, _cover_del, item);
      }
 
    if (item->backdrop)
@@ -318,8 +336,9 @@ _timer_cb(void *data)
         item->o_backdrop = elm_icon_add(item->act->ly);
         elm_image_file_set(item->o_backdrop, item->backdrop, NULL);
         elm_image_preload_disabled_set(item->o_backdrop, EINA_FALSE);
-
         elm_object_part_content_set(item->act->ly, "backdrop.swallow", item->o_backdrop);
+
+        evas_object_event_callback_add(item->o_backdrop, EVAS_CALLBACK_DEL, _backdrop_del, item);
      }
 
    if (item->act->show_timer)
