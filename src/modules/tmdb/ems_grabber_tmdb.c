@@ -40,6 +40,29 @@
 /*============================================================================*
  *                                  Local                                     *
  *============================================================================*/
+static int _dom;
+
+#define ENNA_DEFAULT_LOG_COLOR EINA_COLOR_LIGHTBLUE
+#ifdef ERR
+# undef ERR
+#endif /* ifdef ERR */
+#define ERR(...)  EINA_LOG_DOM_ERR(_dom, __VA_ARGS__)
+#ifdef DBG
+# undef DBG
+#endif /* ifdef DBG */
+#define DBG(...)  EINA_LOG_DOM_DBG(_dom, __VA_ARGS__)
+#ifdef INF
+# undef INF
+#endif /* ifdef INF */
+#define INF(...)  EINA_LOG_DOM_INFO(_dom, __VA_ARGS__)
+#ifdef WRN
+# undef WRN
+#endif /* ifdef WRN */
+#define WRN(...)  EINA_LOG_DOM_WARN(_dom, __VA_ARGS__)
+#ifdef CRIT
+# undef CRIT
+#endif /* ifdef CRIT */
+#define CRIT(...) EINA_LOG_DOM_CRIT(_enna_log_dom_global, __VA_ARGS__)
 
 #define EMS_TMDB_API_KEY "ba2eed549e5c84e712931fef2b69bfb1"
 #define EMS_TMDB_QUERY_SEARCH "http://api.themoviedb.org/2.1/Movie.search/en/json/%s/%s"
@@ -55,6 +78,7 @@
 
 typedef struct _Ems_Tmdb_Req Ems_Tmdb_Req;
 typedef enum _Ems_Request_State Ems_Request_State;
+typedef struct _Ems_Tmdb_Stats Ems_Tmdb_Stats;
 
 enum _Ems_Request_State
   {
@@ -73,9 +97,19 @@ struct _Ems_Tmdb_Req
    void *data;
 };
 
+struct _Ems_Tmdb_Stats
+{
+   int total;
+   int files_grabbed;
+   int covers_grabbed;
+   int backdrop_grabbed;
+   int multiple_results;
+};
+
 typedef void (*Ems_Grabber_End_Cb)(void *data, const char *filename);
 
 static Eina_Hash *_hash_req = NULL;
+static Ems_Tmdb_Stats *_stats = NULL;
 
 static void
 _grabber_tmdb_shutdown(void)
@@ -130,9 +164,10 @@ _poster_download_end_cb(void *data, const char *url,
                         const char *filename)
 {
 
-   ERR("insert poster for %s", (const char*)data);
+   DBG("insert poster for %s", (const char*)data);
    ems_database_meta_insert(ems_config->db, data, "poster",  eina_stringshare_add(filename));
    eina_stringshare_del(data);
+   _stats->covers_grabbed++;
    return EINA_TRUE;
 }
 
@@ -141,9 +176,10 @@ _backdrop_download_end_cb(void *data, const char *url,
                           const char *filename)
 {
 
-   ERR("insert backdrop for %s", (const char*)data);
+   DBG("insert backdrop for %s", (const char*)data);
    ems_database_meta_insert(ems_config->db, data, "backdrop",  eina_stringshare_add(filename));
    eina_stringshare_del(data);
+   _stats->backdrop_grabbed++;
    return EINA_TRUE;
 }
 
@@ -178,7 +214,7 @@ _tmdb_images_get(Ems_Tmdb_Req *req, cJSON *parent, const char *name, Ems_Downloa
                        if (it && it->valuestring)
                          {
                             poster = eina_stringshare_add(it->valuestring);
-                            ERR("start %s download for %s", name, req->filename);
+                            DBG("start %s download for %s", name, req->filename);
                             ems_downloader_url_download(poster, req->filename,
                                                         end_cb,
                                                         eina_stringshare_add(req->filename));
@@ -238,7 +274,7 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
               root = cJSON_Parse(buf);
               if (root)
                 size = cJSON_GetArraySize(root);
-              DBG("%s", cJSON_Print(root));
+              //DBG("%s", cJSON_Print(root));
               //DBG("Size %d", size);
 
               if (!size)
@@ -250,6 +286,7 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
               else if (size > 1)
                 {
                    DBG("More then one result, take the first");
+                   _stats->multiple_results++;
                 }
 
               m = cJSON_GetArrayItem(root, 0);
@@ -258,6 +295,7 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
                    ERR("Unable to get movie info");
                    goto end_req;
                 }
+              _stats->files_grabbed++;
               DBG("find info for %s", req->filename);
               ems_database_transaction_begin(ems_config->db);
               GETVAL(score, valuedouble, EINA_VALUE_TYPE_DOUBLE);
@@ -282,7 +320,6 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
               ems_database_transaction_end(ems_config->db);
               _tmdb_images_get(req, m, "posters", _poster_download_end_cb);
               _tmdb_images_get(req, m, "backdrops", _backdrop_download_end_cb);
- 
               cJSON_Delete(root);
            end_req:
               if (req->end_cb)
@@ -334,6 +371,10 @@ _grabber_tmdb_init(void)
    ecore_event_handler_add(ECORE_CON_EVENT_URL_COMPLETE, (Ecore_Event_Handler_Cb)_search_complete_cb, NULL);
    ecore_event_handler_add(ECORE_CON_EVENT_URL_DATA, (Ecore_Event_Handler_Cb)_search_data_cb, NULL);
 
+   _dom = eina_log_domain_register("ems_grabber_tmdb", ENNA_DEFAULT_LOG_COLOR);
+
+   _stats = calloc(1, sizeof(Ems_Tmdb_Stats));
+
    return EINA_TRUE;
 }
 
@@ -355,6 +396,7 @@ ems_grabber_grab(const char *filename, Ems_Media_Type type, Ems_Grabber_End_Cb e
      return;
 
    DBG("Grab %s of type %d", filename, type);
+   _stats->total++;
 
    /* Should be get back from database as this info (clean_name) is inserted in scanner*/
    tmp = ems_utils_decrapify(filename);
@@ -399,6 +441,18 @@ ems_grabber_grab(const char *filename, Ems_Media_Type type, Ems_Grabber_End_Cb e
         eina_hash_del(_hash_req, ec_url, req);
         ecore_con_url_free(ec_url);
      }
+}
+
+EAPI void
+ems_grabber_stats(void)
+{
+   INF("Stats for TMDB module");
+   INF("Total files grabbed : %d", _stats->total);
+   INF("Files grabbed : %d (%3.3f%%)", _stats->files_grabbed,  _stats->files_grabbed * 100.0 / _stats->total);
+   INF("Covers grabbed : %d (%3.3f%%)", _stats->covers_grabbed,  _stats->files_grabbed * 100.0 / _stats->total);
+   INF("Backdrop grabbed : %d (%3.3f%%)", _stats->backdrop_grabbed,  _stats->backdrop_grabbed * 100.0 / _stats->total);
+   INF("Multipled results : %d (%3.3f%%)", _stats->multiple_results,  _stats->multiple_results * 100.0 / _stats->total);
+   INF("End of stats");
 }
 
 EINA_MODULE_INIT(_grabber_tmdb_init);
