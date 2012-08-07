@@ -27,7 +27,6 @@
 #define _EMS_PRIVATE_H
 
 #include <Eina.h>
-#include <Azy.h>
 
 #include "ems_database.h"
 /*
@@ -120,7 +119,6 @@ struct _Ems_Server
    const char *name;
    const char *ip;
    unsigned int port;
-   Azy_Client *cli;
    Eina_Bool is_ipv6;
    Eina_Bool is_local;
    Eina_Bool is_connected;

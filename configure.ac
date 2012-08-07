@@ -102,7 +102,7 @@ AC_SUBST([pkgconfig_requires_private])
 
 ### Checks for libraries
 
-requirements_ems="eina >= 1.1.0 eet >= 1.4.0 ecore >= 1.0.0 ecore-file >= 1.0.0 eio >= 0.0.1 avahi-client >= 0.6.0 avahi-glib >= 0.6.0 azy sqlite3 uuid"
+requirements_ems="eina >= 1.1.0 eet >= 1.4.0 ecore >= 1.0.0 ecore-file >= 1.0.0 eio >= 0.0.1 avahi-client >= 0.6.0 avahi-glib >= 0.6.0 sqlite3 uuid"
 PKG_CHECK_MODULES([EMS], [${requirements_ems}])
 AC_SUBST([requirements_ems])
 

@@ -161,5 +161,5 @@ int ems_shutdown(void)
 
 void ems_run(void)
 {
-    ems_server_run();
+   ecore_main_loop_begin();
 }

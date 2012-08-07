@@ -30,7 +30,6 @@
 
 Eina_Bool ems_server_init(void);
 void ems_server_shutdown();
-void ems_server_run(void);
 
 void ems_server_add(Ems_Server *server);
 void ems_server_del(const char *name);

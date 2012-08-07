@@ -98,6 +98,14 @@ _idler_cb(void *data)
      {
         DBG("%s was the last file to parse", filename);
         _queue_idler = NULL;
+        void (*stats)(void);
+        EINA_ARRAY_ITER_NEXT(_modules, i, m, iterator)
+          {
+             stats = eina_module_symbol_get(m, "ems_grabber_stats");
+             if (stats)
+               stats();
+             break;
+          }
      }
 
    return EINA_FALSE;
@@ -165,3 +173,5 @@ ems_parser_grab(const char *filename, Ems_Media_Type type)
      _queue_idler = ecore_idler_add(_idler_cb, NULL);
 
 }
+
+
