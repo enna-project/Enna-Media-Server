@@ -40,6 +40,13 @@
  *                                  Local                                     *
  *============================================================================*/
 typedef struct _Ems_Server_Cb Ems_Server_Cb;
+typedef struct _Ems_Server_Media_Get_Cb Ems_Server_Media_Get_Cb;
+
+struct _Ems_Server_Media_Get_Cb
+{
+   void (*add_cb)(void *data, Ems_Server *server, const char *media);
+   void *data;
+};
 
 struct _Ems_Server_Cb
 {
@@ -51,14 +58,6 @@ struct _Ems_Server_Cb
    void *data;
 };
 
-typedef struct _Ems_Server_Data_Media_Get Ems_Server_Data_Media_Get;
-
-struct _Ems_Server_Data_Media_Get
-{
-   int one;
-   const char *str;
-};
-
 
 static Ecore_Con_Server *conn = NULL;
 static Eet_Connection *econn = NULL;
@@ -66,6 +65,7 @@ static Eet_Data_Descriptor *edd = NULL;
 
 static Eina_List *_servers = NULL;
 static Eina_List *_servers_cb = NULL;
+static Eina_List *_media_get_cb = NULL;
 
 static Eina_Bool
 _ems_client_connected(void *data, int type, Ecore_Con_Event_Server_Add *ev)
@@ -84,11 +84,9 @@ _ems_client_connected(void *data, int type, Ecore_Con_Event_Server_Add *ev)
 
    EINA_LIST_FOREACH(_servers_cb, l_cb, cb)
      {
-        if (cb->add_cb)
+        if (cb->connected_cb)
           cb->connected_cb(cb->data, server);
      }
-   return EINA_TRUE;
-
    return EINA_TRUE;
 }
 
@@ -106,7 +104,7 @@ _ems_client_disconnected(void *data, int type, Ecore_Con_Event_Server_Del *ev)
    server->is_connected = EINA_FALSE;
    EINA_LIST_FOREACH(_servers_cb, l_cb, cb)
      {
-        if (cb->add_cb)
+        if (cb->disconnected_cb)
           cb->disconnected_cb(cb->data, server);
      }
    return EINA_TRUE;
@@ -211,11 +209,22 @@ _ems_client_read_cb(const void *eet_data, size_t size, void *user_data)
              DBG("Received %s [%p]", match_type[i].name, &prot->type);
              if (prot->type == EMS_SERVER_PROTOCOL_TYPE_GET_MEDIAS)
                {
+                  Eina_List *l_cb;
+                  Ems_Server_Media_Get_Cb *cb;
                   Eina_List *files = prot->data.get_medias.files;
-                  Eina_List *l;
                   const char *f;
-                  EINA_LIST_FOREACH(files, l, f)
-                    DBG("%s",f);
+
+
+
+                  EINA_LIST_FOREACH(_media_get_cb, l_cb, cb)
+                    {
+                       EINA_LIST_FREE(files, f)
+                         {
+                            if (cb->add_cb)
+                              cb->add_cb(cb->data, user_data, f);
+                            eina_stringshare_del(f);
+                         }
+                    }
                }
              break;
           }
@@ -490,14 +499,23 @@ ems_server_media_get(Ems_Server *server,
                      void *data)
 {
    Ems_Server_Protocol *prot;
-
+   Ems_Server_Media_Get_Cb *cb;
    DBG("");
 
    prot = calloc(1, sizeof (Ems_Server_Protocol));
    prot->type = EMS_SERVER_PROTOCOL_TYPE_GET_MEDIAS_REQ;
    prot->data.get_medias_req.collection = collection;
 
+   cb = calloc(1, sizeof(Ems_Server_Media_Get_Cb));
+   if (!cb)
+     return;
+   cb->add_cb = media_add;
+   cb->data = data;
+
+   _media_get_cb = eina_list_append(_media_get_cb, cb);
+
    eet_connection_send(server->eet_conn, edd, prot, NULL);
+
    return NULL;
 }
 
