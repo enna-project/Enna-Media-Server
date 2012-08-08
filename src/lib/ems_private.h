@@ -27,6 +27,9 @@
 #define _EMS_PRIVATE_H
 
 #include <Eina.h>
+#include <Eet.h>
+#include <Ecore.h>
+#include <Ecore_Con.h>
 
 #include "ems_database.h"
 /*
@@ -118,6 +121,8 @@ struct _Ems_Server
 {
    const char *name;
    const char *ip;
+   Ecore_Con_Server *ecore_conn;
+   Eet_Connection *eet_conn;
    unsigned int port;
    Eina_Bool is_ipv6;
    Eina_Bool is_local;

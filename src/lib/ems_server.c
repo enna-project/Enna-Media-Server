@@ -28,34 +28,18 @@
 #endif
 
 #include <Eina.h>
+#include <Eet.h>
 #include <Ecore.h>
+#include <Ecore_Con.h>
 
 #include "Ems.h"
 #include "ems_private.h"
 #include "ems_server.h"
-
+#include "ems_server_protocol.h"
 /*============================================================================*
  *                                  Local                                     *
  *============================================================================*/
-typedef struct _Ems_Server_Media_Get_Req Ems_Server_Media_Get_Req;
-typedef struct _Ems_Server_Media_Info_Get_Req Ems_Server_Media_Info_Get_Req;
 typedef struct _Ems_Server_Cb Ems_Server_Cb;
-
-struct _Ems_Server_Media_Get_Req
-{
-   Ems_Server *server;
-   Ems_Collection *collection;
-   void (*add_cb)(void *data, Ems_Server *server, const char *media);
-   void *data_cb;
-};
-
-struct _Ems_Server_Media_Info_Get_Req
-{
-   Ems_Server *server;
-   const char *info;
-   void (*add_cb)(void *data, Ems_Server *server, const char *media);
-   void *data_cb;
-};
 
 struct _Ems_Server_Cb
 {
@@ -67,12 +51,207 @@ struct _Ems_Server_Cb
    void *data;
 };
 
+typedef struct _Ems_Server_Data_Media_Get Ems_Server_Data_Media_Get;
+
+struct _Ems_Server_Data_Media_Get
+{
+   int one;
+   const char *str;
+};
+
+
+static Ecore_Con_Server *conn = NULL;
+static Eet_Connection *econn = NULL;
+static Eet_Data_Descriptor *edd = NULL;
+
 static Eina_List *_servers = NULL;
 static Eina_List *_servers_cb = NULL;
 
 static Eina_Bool
+_ems_client_connected(void *data, int type, Ecore_Con_Event_Server_Add *ev)
+{
+   Ems_Server *server;
+   Eina_List *l_cb;
+   Ems_Server_Cb *cb;
+
+   server = ecore_con_server_data_get(ev->server);
+   DBG("Connected to %s:%d (%s)", server->ip, server->port, server->name);
+
+   if (server->is_connected)
+       return EINA_TRUE;
+   else
+       server->is_connected = EINA_TRUE;
+
+   EINA_LIST_FOREACH(_servers_cb, l_cb, cb)
+     {
+        if (cb->add_cb)
+          cb->connected_cb(cb->data, server);
+     }
+   return EINA_TRUE;
+
+   return EINA_TRUE;
+}
+
+static Eina_Bool
+_ems_client_disconnected(void *data, int type, Ecore_Con_Event_Server_Del *ev)
+{
+   Ems_Server *server;
+   Eina_List *l_cb;
+   Ems_Server_Cb *cb;
+
+   server = ecore_con_server_data_get(ev->server);
+
+   DBG("Disconnected from  %s:%d (%s)", server->ip, server->port, server->name);
+
+   server->is_connected = EINA_FALSE;
+   EINA_LIST_FOREACH(_servers_cb, l_cb, cb)
+     {
+        if (cb->add_cb)
+          cb->disconnected_cb(cb->data, server);
+     }
+   return EINA_TRUE;
+}
+
+static Eina_Bool
+_ems_client_data(void *data, int type, Ecore_Con_Event_Server_Data *ev)
+{
+   Ems_Server *server;
+
+   server = ecore_con_server_data_get(ev->server);
+   DBG("Received data from %s",server->ip );
+   eet_connection_received(server->eet_conn, ev->data, ev->size);
+
+   return EINA_TRUE;
+}
+
+
+static Eina_Bool
+_ems_server_disconnected(void *data, int type, Ecore_Con_Event_Client_Del *ev)
+{
+   DBG("Disconnected %s", ecore_con_client_ip_get(ev->client));
+
+   return EINA_TRUE;
+}
+
+static Eina_Bool
+_ems_server_data(void *data, int type, Ecore_Con_Event_Client_Data *ev)
+{
+   DBG("");
+
+   eet_connection_received(econn, ev->data, ev->size);
+
+   return EINA_TRUE;
+}
+
+static Eina_Bool
+_ems_server_read_cb(const void *eet_data, size_t size, void *user_data)
+{
+
+   int i;
+   Ems_Server_Protocol *prot = eet_data_descriptor_decode(edd, eet_data, size);
+
+   for (i = 0; match_type[i].name != NULL; i++)
+     {
+        if (match_type[i].type == prot->type)
+          {
+             DBG("Received %s [%p]", match_type[i].name, &prot->type);
+             if (prot->type == EMS_SERVER_PROTOCOL_TYPE_GET_MEDIAS_REQ)
+               {
+                  Eina_List *files = ems_database_collection_get(ems_config->db, NULL);
+                  Ems_Server_Protocol *prot;
+
+                  prot = calloc(1, sizeof (Ems_Server_Protocol));
+                  prot->type = EMS_SERVER_PROTOCOL_TYPE_GET_MEDIAS;
+                  prot->data.get_medias.files = files;
+
+                  eet_connection_send(econn, edd, prot, NULL);
+               }
+             break;
+          }
+     }
+   return EINA_TRUE;
+}
+
+static Eina_Bool
+_ems_server_write_cb(const void *data, size_t size, void *user_data)
+{
+   DBG("");
+
+   if (ecore_con_client_send(user_data, data, size) != (int) size)
+     {
+        ERR("Error sending data (%d)", size);
+        return EINA_FALSE;
+     }
+
+   DBG("Sent");
+   return EINA_TRUE;
+}
+
+static Eina_Bool
+_ems_server_connected(void *data, int type, Ecore_Con_Event_Client_Add *ev)
+{
+   DBG("New connection from %s", ecore_con_client_ip_get(ev->client));
+
+   econn = eet_connection_new(_ems_server_read_cb, _ems_server_write_cb, ev->client);
+
+   return EINA_TRUE;
+}
+
+static Eina_Bool
+_ems_client_read_cb(const void *eet_data, size_t size, void *user_data)
+{
+
+   int i;
+   Ems_Server_Protocol *prot = eet_data_descriptor_decode(edd, eet_data, size);
+   DBG("");
+   for (i = 0; match_type[i].name != NULL; i++)
+     {
+        if (match_type[i].type == prot->type)
+          {
+             DBG("Received %s [%p]", match_type[i].name, &prot->type);
+             if (prot->type == EMS_SERVER_PROTOCOL_TYPE_GET_MEDIAS)
+               {
+                  Eina_List *files = prot->data.get_medias.files;
+                  Eina_List *l;
+                  const char *f;
+                  EINA_LIST_FOREACH(files, l, f)
+                    DBG("%s",f);
+               }
+             break;
+          }
+     }
+   return EINA_TRUE;
+
+}
+
+static Eina_Bool
+_ems_client_write_cb(const void *data, size_t size, void *user_data)
+{
+   Ems_Server *server = user_data;
+
+   DBG("Data to send of size %d", size);
+
+   if (ecore_con_server_send(server->ecore_conn, data, size) != (int) size)
+     return EINA_FALSE;
+
+   return EINA_TRUE;
+}
+
+static Eina_Bool
 _ems_server_connect(Ems_Server *server)
 {
+   if (!server)
+     return EINA_FALSE;
+
+   INF("try to connect to %s:%d", server->name, server->port);
+
+   if (server->is_connected)
+     return EINA_TRUE;
+
+   server->ecore_conn = ecore_con_server_connect(ECORE_CON_REMOTE_TCP, server->ip, server->port, server);
+
+   server->eet_conn = eet_connection_new(_ems_client_read_cb, _ems_client_write_cb, server);
+
    return EINA_TRUE;
 }
 
@@ -82,6 +261,26 @@ _ems_server_connect(Ems_Server *server)
 
 Eina_Bool ems_server_init(void)
 {
+   eina_init();
+   eet_init();
+   ecore_init();
+   ecore_con_init();
+
+   ecore_event_handler_add(ECORE_CON_EVENT_CLIENT_ADD, (Ecore_Event_Handler_Cb)_ems_server_connected, NULL);
+   ecore_event_handler_add(ECORE_CON_EVENT_CLIENT_DEL, (Ecore_Event_Handler_Cb)_ems_server_disconnected, NULL);
+   ecore_event_handler_add(ECORE_CON_EVENT_CLIENT_DATA, (Ecore_Event_Handler_Cb)_ems_server_data, NULL);
+
+   ecore_event_handler_add(ECORE_CON_EVENT_SERVER_ADD, (Ecore_Event_Handler_Cb)_ems_client_connected, NULL);
+   ecore_event_handler_add(ECORE_CON_EVENT_SERVER_DEL, (Ecore_Event_Handler_Cb)_ems_client_disconnected, NULL);
+   ecore_event_handler_add(ECORE_CON_EVENT_SERVER_DATA, (Ecore_Event_Handler_Cb)_ems_client_data, NULL);
+
+   /* Add Ems instance server */
+   conn = ecore_con_server_add(ECORE_CON_REMOTE_TCP, "0.0.0.0", ems_config->port, NULL);
+   if (!conn)
+     return EINA_FALSE;
+
+   edd = ems_server_protocol_init();
+
    return EINA_TRUE;
 }
 
@@ -106,7 +305,6 @@ void ems_server_add(Ems_Server *server)
      }
 
    _servers = eina_list_append(_servers, server);
-
 }
 
 void ems_server_del(const char *name)
@@ -285,16 +483,21 @@ ems_server_dir_get(Ems_Server *server,
 
 }
 
-
-
-
 Ems_Observer *
 ems_server_media_get(Ems_Server *server,
                      Ems_Collection *collection,
                      Ems_Media_Add_Cb media_add,
                      void *data)
 {
+   Ems_Server_Protocol *prot;
 
+   DBG("");
+
+   prot = calloc(1, sizeof (Ems_Server_Protocol));
+   prot->type = EMS_SERVER_PROTOCOL_TYPE_GET_MEDIAS_REQ;
+   prot->data.get_medias_req.collection = collection;
+
+   eet_connection_send(server->eet_conn, edd, prot, NULL);
    return NULL;
 }
 
@@ -307,6 +510,7 @@ ems_server_media_info_get(Ems_Server *server,
                           Ems_Media_Info_Update_Cb info_update,
                           void *data)
 {
+   DBG("");
 
    return NULL;
 }

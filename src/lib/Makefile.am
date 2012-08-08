@@ -25,6 +25,8 @@ ems_config.h \
 ems_private.h \
 ems_scanner.h \
 ems_server.c \
+ems_server_protocol.c \
+ems_server_protocol.h \
 ems_collection.c \
 ems_collection.h \
 ems_database.c \
