@@ -581,12 +581,13 @@ ecore_con_eet_reply(Ecore_Con_Reply *reply)
 void
 ecore_con_eet_send(Ecore_Con_Reply *reply, const char *name, void *value)
 {
-   Ecore_Con_Eet_Protocol protocol;
+   Ecore_Con_Eet_Protocol *protocol;
 
-   if (!reply) return;
+   if (!reply) return ;
 
-   protocol.type = name;
-   protocol.data = value;
+   protocol = calloc(1, sizeof(Ecore_Con_Eet_Protocol));
+   protocol->type = name;
+   protocol->data = value;
 
-   eet_connection_send(reply->econn, reply->ece->edd, &protocol, NULL);
+   eet_connection_send(reply->econn, reply->ece->edd, protocol, NULL);
 }
