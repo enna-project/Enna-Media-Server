@@ -37,6 +37,7 @@ typedef struct _Ems_Server_Protocol Ems_Server_Protocol;
 
 struct _Match_Type {
    const char *name;
+   int type;
    Eet_Data_Descriptor *(*edd)(void);
 };
 
@@ -60,6 +61,26 @@ struct _Get_Medias_Infos
 };
 
 
+enum _Ems_Server_Protocol_Type
+{
+  EMS_SERVER_PROTOCOL_TYPE_GET_MEDIAS_REQ,
+  EMS_SERVER_PROTOCOL_TYPE_GET_MEDIAS,
+  EMS_SERVER_PROTOCOL_TYPE_UNKNOWN
+};
 
+union Specs
+{
+   Get_Medias get_medias;
+   Get_Medias_Req get_medias_req;
+   //   Get_Medias_Infos get_medias_infos;
+};
+
+struct _Ems_Server_Protocol
+{
+   Ems_Server_Protocol_Type type;
+   union Specs data;
+};
+
+Eina_Bool serialisation_init(void);
 
 #endif /* _EMS_SERVER_PROTOCOL_H_ */
