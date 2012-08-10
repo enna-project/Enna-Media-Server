@@ -41,12 +41,9 @@
  *                                  Local                                     *
  *============================================================================*/
 
-static Eina_Bool _serialisation_type_set(const char *type, void *data, Eina_Bool unknow);
-static const char *_serialisation_type_get(const void *data, Eina_Bool *unknow);
-
 
 static Eet_Data_Descriptor *
-_get_medias_req_edd()
+_get_medias_req_edd(void)
 {
    static Eet_Data_Descriptor *edd = NULL;
    Eet_Data_Descriptor *collection_edd = NULL;
@@ -74,13 +71,8 @@ _get_medias_req_edd()
    return edd;
 }
 
-typedef struct _Files
-{
-   const char *file;
-}Files;
-
 static Eet_Data_Descriptor *
-_get_medias_edd()
+_get_medias_edd(void)
 {
    static Eet_Data_Descriptor *edd = NULL;
    Eet_Data_Descriptor_Class eddc;
@@ -95,80 +87,27 @@ _get_medias_edd()
 }
 
 Match_Type match_type[] = {
-  { "get_medias_req", EMS_SERVER_PROTOCOL_TYPE_GET_MEDIAS_REQ, _get_medias_req_edd },
-  { "get_medias", EMS_SERVER_PROTOCOL_TYPE_GET_MEDIAS, _get_medias_edd },
+  { "get_medias_req", _get_medias_req_edd },
+  { "get_medias", _get_medias_edd },
   { NULL, 0, NULL }
 };
 
 
-static Eina_Bool _serialisation_type_set(const char *type, void *data, Eina_Bool unknow)
-{
-   Ems_Server_Protocol_Type *ev = data;
-   int i;
-
-   if (unknow) return EINA_FALSE;
-
-   for (i = 0; match_type[i].name != NULL; ++i)
-     if (!strcmp(type, match_type[i].name))
-       {
-          DBG("found '%s'", match_type[i].name);
-          *ev = match_type[i].type;
-          return EINA_TRUE;
-       }
-
-   DBG("not found !");
-   *ev = EMS_SERVER_PROTOCOL_TYPE_UNKNOWN;
-   return EINA_FALSE;
-}
-
-static const char *_serialisation_type_get(const void *data, Eina_Bool *unknow)
-{
-   const Ems_Server_Protocol_Type *ev = data;
-   int i;
-
-   for (i = 0; match_type[i].name != NULL; ++i)
-     if (*ev == match_type[i].type)
-       {
-          DBG("found '%s'", match_type[i].name);
-          return match_type[i].name;
-       }
-
-   if (unknow)
-     *unknow = EINA_TRUE;
-
-   DBG("unknow (%i)[%p] !", *ev, ev);
-   return NULL;
-}
 
 
 /*============================================================================*
  *                                 Global                                     *
  *============================================================================*/
-
 Eet_Data_Descriptor *
-ems_server_protocol_init(void)
+ems_server_protocol_edd_get(const char *type)
 {
-   Eet_Data_Descriptor_Class eddc;
-   Eet_Data_Descriptor *edd;
-   Eet_Data_Descriptor *un;
    int i;
-
-   edd = NULL;
-
-   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Server_Protocol);
-   edd = eet_data_descriptor_stream_new(&eddc);
-
-   eddc.version = EET_DATA_DESCRIPTOR_CLASS_VERSION;
-   eddc.func.type_get = _serialisation_type_get;
-   eddc.func.type_set = _serialisation_type_set;
-   un = eet_data_descriptor_stream_new(&eddc);
-
-   for (i = 0; match_type[i].name != NULL; i++)
-     EET_DATA_DESCRIPTOR_ADD_MAPPING(un, match_type[i].name, match_type[i].edd());
-
-   EET_DATA_DESCRIPTOR_ADD_UNION(edd, Ems_Server_Protocol, "Ems_Server_Protocol", data, type, un);
-
-   return edd;
+   for (i = 0; match_type[i].name; i++)
+     {
+        if (!strcmp(type, match_type[i].name))
+          return match_type[i].edd();
+     }
+   return NULL;
 }
 
 /*============================================================================*
