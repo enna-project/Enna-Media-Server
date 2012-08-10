@@ -59,7 +59,7 @@ struct _Get_Medias_Infos
    const char *str2;
 };
 
-Eet_Data_Descriptor * ems_server_protocol_edd_get(const char *type);
+
 
 
 #endif /* _EMS_SERVER_PROTOCOL_H_ */
