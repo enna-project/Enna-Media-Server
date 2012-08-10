@@ -77,7 +77,7 @@ _get_medias_req_cb(void *data, Ecore_Con_Reply *reply __UNUSED__, const char *na
 
    DBG("Get medias req cb %s", name);
 
-   ecore_con_eet_send(reply, "get_medias", files);
+   ecore_con_eet_send(server->reply, "get_medias", files);
 }
 
 static void
@@ -90,7 +90,6 @@ _get_medias_cb(void *data, Ecore_Con_Reply *reply, const char *name, void *value
    EINA_LIST_FOREACH(files, l, f)
      DBG("%s", f);
 
-   ecore_con_eet_send(reply, "get_medias", files);
 }
 
 static Eina_Bool
@@ -142,7 +141,7 @@ _ems_server_connect(Ems_Server *server)
 }
 
 static Eina_Bool
-_new_client_connected_cb(void *data, Ecore_Con_Reply *reply, Ecore_Con_Client *conn)
+_new_client_connected_cb(void *data, Ecore_Con_Reply *reply, Ecore_Con_Server *conn)
 {
    Ecore_Con_Eet *ece;
 
