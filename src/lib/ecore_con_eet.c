@@ -82,7 +82,8 @@ struct _Ecore_Con_Eet_Protocol {
 static const char *
 _ecore_con_eet_data_type_get(const void *data, Eina_Bool *unknow EINA_UNUSED)
 {
-   return data;
+   const char * const *type = data;
+   return type;
 }
 
 static Eina_Bool
