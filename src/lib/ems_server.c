@@ -67,50 +67,29 @@ static Eet_Data_Descriptor *edd = NULL;
 
 static Eina_List *_servers = NULL;
 static Eina_List *_servers_cb = NULL;
-static Eina_List *_media_get_cb = NULL;
-
-static Eina_Bool
-_ems_client_connected(void *data, int type, Ecore_Con_Event_Server_Add *ev)
-{
-   Ems_Server *server;
-   Eina_List *l_cb;
-   Ems_Server_Cb *cb;
-
-   server = ecore_con_server_data_get(ev->server);
-   DBG("Connected to %s:%d (%s)", server->ip, server->port, server->name);
-
-   if (server->is_connected)
-       return EINA_TRUE;
-   else
-       server->is_connected = EINA_TRUE;
-
-   EINA_LIST_FOREACH(_servers_cb, l_cb, cb)
-     {
-        if (cb->connected_cb)
-          cb->connected_cb(cb->data, server);
-     }
-   return EINA_TRUE;
-}
-
 
 static void
-_get_medias_req_cb(void *data, Ecore_Con_Reply *reply, const char *name, void *value)
+_get_medias_req_cb(void *data, Ecore_Con_Reply *reply __UNUSED__, const char *name __UNUSED__, void *value __UNUSED__)
 {
    Ems_Server *server = data;
 
    Eina_List *files = ems_database_collection_get(ems_config->db, NULL);
 
-   ecore_con_eet_send(reply, "get_medias", files);
+   DBG("Get medias req cb %s", name);
+
+   ecore_con_eet_send(server->reply, "get_medias", files);
 }
 
 static void
 _get_medias_cb(void *data, Ecore_Con_Reply *reply, const char *name, void *value)
 {
-   Ems_Server *server = data;
+   Eina_List *files = value;
+   const char *f;
+   Eina_List *l;
 
-   Eina_List *files = ems_database_collection_get(ems_config->db, NULL);
+   EINA_LIST_FOREACH(files, l, f)
+     DBG("%s", f);
 
-   ecore_con_eet_send(reply, "get_medias", files);
 }
 
 static Eina_Bool
@@ -162,11 +141,11 @@ _ems_server_connect(Ems_Server *server)
 }
 
 static Eina_Bool
-_new_client_connected_cb(void *data, Ecore_Con_Reply *reply, Ecore_Con_Client *conn)
+_new_client_connected_cb(void *data, Ecore_Con_Reply *reply, Ecore_Con_Server *conn)
 {
    Ecore_Con_Eet *ece;
 
-   DBG("New connection from %s", ecore_con_client_ip_get(conn));
+   DBG("New connection");
 }
 
 /*============================================================================*
@@ -195,7 +174,7 @@ Eina_Bool ems_server_init(void)
    ecore_con_eet_data_callback_add(ece, "get_medias", _get_medias_cb, NULL);
 
    /* Add a callback to be informed when a new client is connected to our server */
-   ecore_con_eet_server_connect_callback_add(ece, _new_client_connected_cb, NULL);
+   ecore_con_eet_server_connect_callback_add(ece, (Ecore_Con_Eet_Server_Cb)_new_client_connected_cb, NULL);
 
    return EINA_TRUE;
 }
