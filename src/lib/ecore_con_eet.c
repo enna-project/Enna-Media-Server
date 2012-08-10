@@ -82,7 +82,7 @@ struct _Ecore_Con_Eet_Protocol {
 static const char *
 _ecore_con_eet_data_type_get(const void *data, Eina_Bool *unknow EINA_UNUSED)
 {
-   const char * const *type = data;
+   const char *type = data;
    return type;
 }
 
@@ -118,6 +118,8 @@ _ecore_con_eet_read_cb(const void *eet_data, size_t size, void *user_data)
    Ecore_Con_Eet_Protocol *protocol;
    Ecore_Con_Eet_Data *cb;
 
+   printf("Server read cb\n");
+
    protocol = eet_data_descriptor_decode(n->ece->edd, eet_data, size);
    if (!protocol) return EINA_TRUE;
 
@@ -136,6 +138,8 @@ static Eina_Bool
 _ecore_con_eet_server_write_cb(const void *data, size_t size, void *user_data)
 {
    Ecore_Con_Reply *n = user_data;
+
+   printf("Server write cb\n");
 
    if (ecore_con_client_send(n->client, data, size) != (int) size)
      return EINA_FALSE;
@@ -169,6 +173,7 @@ _ecore_con_eet_server_connected(void *data, int type EINA_UNUSED, Ecore_Con_Even
    n->client = ev->client;
    n->ece = r;
    n->econn = eet_connection_new(_ecore_con_eet_read_cb, _ecore_con_eet_server_write_cb, n);
+   printf("set data : %p\n", n);
    ecore_con_client_data_set(n->client, n);
 
    EINA_LIST_FOREACH(r->u.server.client_connect_callbacks, ll, ecec)
@@ -218,11 +223,13 @@ _ecore_con_eet_server_data(void *data, int type EINA_UNUSED, Ecore_Con_Event_Cli
    Ecore_Con_Eet *r = data;
    Ecore_Con_Reply *n;
 
+   printf("eet server data\n");
+
    if (ecore_con_client_server_get(ev->client) != r->server)
-     return EINA_TRUE;
+        return EINA_TRUE;
 
    n = ecore_con_client_data_get(ev->client);
-
+   printf("data get : %p\n", n);
    eet_connection_received(n->econn, ev->data, ev->size);
 
    return EINA_TRUE;
