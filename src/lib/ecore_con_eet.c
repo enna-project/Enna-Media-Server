@@ -1,5 +1,15 @@
-#include <Eina.h>
 
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
+#include <Eina.h>
+#include <Eet.h>
+#include <Ecore.h>
+#include <Ecore_Con.h>
+
+#include "Ems.h"
+#include "ems_private.h"
 #include "Ecore_Con_Eet.h"
 
 typedef struct _Ecore_Con_Eet_Data Ecore_Con_Eet_Data;
@@ -69,6 +79,8 @@ _ecore_con_eet_data_free(void *data)
 {
    Ecore_Con_Eet_Data *eced = data;
 
+   DBG("");
+
    eina_stringshare_del(eced->name);
    free(eced);
 }
@@ -83,6 +95,9 @@ static const char *
 _ecore_con_eet_data_type_get(const void *data, Eina_Bool *unknow EINA_UNUSED)
 {
    const char *type = data;
+
+   DBG("");
+
    return type;
 }
 
@@ -90,6 +105,9 @@ static Eina_Bool
 _ecore_con_eet_data_type_set(const char *type, void *data, Eina_Bool unknow EINA_UNUSED)
 {
    const char **str = data;
+
+   DBG("");
+
    *str = type;
    return EINA_TRUE;
 }
@@ -98,6 +116,8 @@ static void
 _ecore_con_eet_data_descriptor_setup(Ecore_Con_Eet *ece)
 {
    Eet_Data_Descriptor_Class eddc;
+
+   DBG("");
 
    EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ecore_Con_Eet_Protocol);
    ece->edd = eet_data_descriptor_stream_new(&eddc);
@@ -118,7 +138,7 @@ _ecore_con_eet_read_cb(const void *eet_data, size_t size, void *user_data)
    Ecore_Con_Eet_Protocol *protocol;
    Ecore_Con_Eet_Data *cb;
 
-   printf("Server read cb\n");
+   DBG("");
 
    protocol = eet_data_descriptor_decode(n->ece->edd, eet_data, size);
    if (!protocol) return EINA_TRUE;
@@ -139,7 +159,7 @@ _ecore_con_eet_server_write_cb(const void *data, size_t size, void *user_data)
 {
    Ecore_Con_Reply *n = user_data;
 
-   printf("Server write cb\n");
+   DBG("");
 
    if (ecore_con_client_send(n->client, data, size) != (int) size)
      return EINA_FALSE;
@@ -151,8 +171,11 @@ _ecore_con_eet_client_write_cb(const void *data, size_t size, void *user_data)
 {
    Ecore_Con_Reply *n = user_data;
 
+   DBG("");
+
    if (ecore_con_server_send(n->ece->server, data, size) != (int) size)
      return EINA_FALSE;
+
    return EINA_TRUE;
 }
 
@@ -163,6 +186,8 @@ _ecore_con_eet_server_connected(void *data, int type EINA_UNUSED, Ecore_Con_Even
    Eina_List *ll;
    Ecore_Con_Eet *r = data;
    Ecore_Con_Reply *n;
+
+   DBG("");
 
    if (ecore_con_client_server_get(ev->client) != r->server)
      return EINA_TRUE;
@@ -196,6 +221,8 @@ _ecore_con_eet_server_disconnected(void *data, int type EINA_UNUSED, Ecore_Con_E
    Ecore_Con_Reply *n;
    Eina_List *l;
 
+   DBG("");
+
    if (ecore_con_client_server_get(ev->client) != r->server)
      return EINA_TRUE;
 
@@ -223,13 +250,15 @@ _ecore_con_eet_server_data(void *data, int type EINA_UNUSED, Ecore_Con_Event_Cli
    Ecore_Con_Eet *r = data;
    Ecore_Con_Reply *n;
 
-   printf("eet server data\n");
+   DBG("");
 
    if (ecore_con_client_server_get(ev->client) != r->server)
         return EINA_TRUE;
 
    n = ecore_con_client_data_get(ev->client);
-   printf("data get : %p\n", n);
+
+   DBG("%p %p %d\n", n->econn, ev->data, ev->size);
+
    eet_connection_received(n->econn, ev->data, ev->size);
 
    return EINA_TRUE;
@@ -244,6 +273,8 @@ _ecore_con_eet_client_connected(void *data, int type EINA_UNUSED, Ecore_Con_Even
    Ecore_Con_Eet *r = data;
    Ecore_Con_Reply *n;
    Eina_List *ll;
+
+   DBG("");
 
    /* Client did connect */
    if (r->server != ev->server) return EINA_TRUE;
@@ -276,6 +307,8 @@ _ecore_con_eet_client_disconnected(void *data, int type EINA_UNUSED, Ecore_Con_E
    Ecore_Con_Eet_Server *eces;
    Eina_List *ll;
 
+   DBG("");
+
    if (r->server != ev->server) return EINA_TRUE;
    if (!r->u.client.r) return EINA_TRUE;
 
@@ -295,6 +328,8 @@ _ecore_con_eet_client_data(void *data, int type EINA_UNUSED, Ecore_Con_Event_Ser
 {
    Ecore_Con_Eet *r = data;
 
+   DBG("");
+
    if (r->server != ev->server) return EINA_TRUE;
    if (!r->u.client.r) return EINA_TRUE;
 
@@ -308,6 +343,8 @@ Ecore_Con_Eet *
 ecore_con_eet_server_new(Ecore_Con_Server *server)
 {
    Ecore_Con_Eet *r;
+
+   DBG("");
 
    if (!server) return NULL;
 
@@ -333,6 +370,8 @@ ecore_con_eet_client_new(Ecore_Con_Server *server)
 {
    Ecore_Con_Eet *r;
 
+   DBG("");
+
    if (!server) return NULL;
 
    r = calloc(1, sizeof (Ecore_Con_Eet));
@@ -356,6 +395,8 @@ ecore_con_eet_client_new(Ecore_Con_Server *server)
 void
  ecore_con_eet_server_free(Ecore_Con_Eet *r)
 {
+   DBG("");
+
    if (!r) return ;
 
    eet_data_descriptor_free(r->edd);
@@ -403,6 +444,8 @@ ecore_con_eet_register(Ecore_Con_Eet *ece, const char *name, Eet_Data_Descriptor
 {
    if (!ece) return ;
 
+   DBG("Register '%s' with [%p]", name, edd);
+
    EET_DATA_DESCRIPTOR_ADD_MAPPING(ece->matching, name, edd);
 }
 
@@ -412,6 +455,8 @@ ecore_con_eet_data_callback_add(Ecore_Con_Eet *ece, const char *name, Ecore_Con_
    Ecore_Con_Eet_Data *eced;
 
    if (!ece) return ;
+
+   DBG("Register new callback [%p] for '%s'", func, name);
 
    eced = calloc(1, sizeof (Ecore_Con_Eet_Data));;
    if (!eced) return ;
@@ -435,6 +480,8 @@ ecore_con_eet_client_connect_callback_add(Ecore_Con_Eet *ece, Ecore_Con_Eet_Clie
 {
    Ecore_Con_Eet_Client *c;
 
+   DBG("");
+
    if (!ece || !func) return ;
 
    c = calloc(1, sizeof (Ecore_Con_Eet_Client));
@@ -452,6 +499,8 @@ ecore_con_eet_client_connect_callback_del(Ecore_Con_Eet *ece, Ecore_Con_Eet_Clie
    Ecore_Con_Eet_Client *c;
    Eina_List *l;
 
+   DBG("");
+
    if (!ece || !func) return ;
 
    EINA_LIST_FOREACH(ece->u.server.client_connect_callbacks, l, c)
@@ -467,6 +516,8 @@ void
 ecore_con_eet_client_disconnect_callback_add(Ecore_Con_Eet *ece, Ecore_Con_Eet_Client_Cb func, const void *data)
 {
    Ecore_Con_Eet_Client *c;
+
+   DBG("");
 
    if (!ece || !func) return ;
 
@@ -485,6 +536,8 @@ ecore_con_eet_client_disconnect_callback_del(Ecore_Con_Eet *ece, Ecore_Con_Eet_C
    Ecore_Con_Eet_Client *c;
    Eina_List *l;
 
+   DBG("");
+
    if (!ece || !func) return ;
 
    EINA_LIST_FOREACH(ece->u.server.client_disconnect_callbacks, l, c)
@@ -501,6 +554,8 @@ void
 ecore_con_eet_server_connect_callback_add(Ecore_Con_Eet *ece, Ecore_Con_Eet_Server_Cb func, const void *data)
 {
    Ecore_Con_Eet_Server *s;
+
+   DBG("");
 
    if (!ece || !func) return ;
 
@@ -519,6 +574,8 @@ ecore_con_eet_server_connect_callback_del(Ecore_Con_Eet *ece, Ecore_Con_Eet_Serv
    Ecore_Con_Eet_Server *s;
    Eina_List *l;
 
+   DBG("");
+
    if (!ece || !func) return ;
 
    EINA_LIST_FOREACH(ece->u.client.server_connect_callbacks, l, s)
@@ -534,6 +591,8 @@ void
 ecore_con_eet_server_disconnect_callback_add(Ecore_Con_Eet *ece, Ecore_Con_Eet_Server_Cb func, const void *data)
 {
    Ecore_Con_Eet_Server *s;
+
+   DBG("");
 
    if (!ece || !func) return ;
 
@@ -552,6 +611,8 @@ ecore_con_eet_server_disconnect_callback_del(Ecore_Con_Eet *ece, Ecore_Con_Eet_S
    Ecore_Con_Eet_Server *s;
    Eina_List *l;
 
+   DBG("");
+
    if (!ece || !func) return ;
 
    EINA_LIST_FOREACH(ece->u.client.server_disconnect_callbacks, l, s)
@@ -566,6 +627,8 @@ ecore_con_eet_server_disconnect_callback_del(Ecore_Con_Eet *ece, Ecore_Con_Eet_S
 void
 ecore_con_eet_data_set(Ecore_Con_Eet *ece, const void *data)
 {
+   DBG("");
+
    if (!ece) return;
 
    ece->data = data;
@@ -574,6 +637,8 @@ ecore_con_eet_data_set(Ecore_Con_Eet *ece, const void *data)
 void *
 ecore_con_eet_data_get(Ecore_Con_Eet *ece)
 {
+   DBG("");
+
    if (!ece) return NULL;
    return (void*) ece->data;
 }
@@ -581,6 +646,8 @@ ecore_con_eet_data_get(Ecore_Con_Eet *ece)
 Ecore_Con_Eet *
 ecore_con_eet_reply(Ecore_Con_Reply *reply)
 {
+   DBG("");
+
    if (!reply) return NULL;
    return reply->ece;
 }
@@ -589,6 +656,8 @@ void
 ecore_con_eet_send(Ecore_Con_Reply *reply, const char *name, void *value)
 {
    Ecore_Con_Eet_Protocol protocol;
+
+   DBG("");
 
    if (!reply) return;
 
