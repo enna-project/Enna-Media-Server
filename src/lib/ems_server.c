@@ -41,8 +41,15 @@
  *============================================================================*/
 typedef struct _Ems_Server_Cb Ems_Server_Cb;
 typedef struct _Ems_Server_Media_Get_Cb Ems_Server_Media_Get_Cb;
+typedef struct _Ems_Server_Media_Infos_Get_Cb Ems_Server_Media_Infos_Get_Cb;
 
 struct _Ems_Server_Media_Get_Cb
+{
+   void (*add_cb)(void *data, Ems_Server *server, const char *media);
+   void *data;
+};
+
+struct _Ems_Server_Media_Infos_Get_Cb
 {
    void (*add_cb)(void *data, Ems_Server *server, const char *media);
    void *data;
@@ -66,6 +73,7 @@ static Eet_Data_Descriptor *edd = NULL;
 static Eina_List *_servers = NULL;
 static Eina_List *_servers_cb = NULL;
 static Eina_List *_media_get_cb = NULL;
+static Eina_List *_media_infos_get_cb = NULL;
 
 static Eina_Bool
 _ems_client_connected(void *data, int type, Ecore_Con_Event_Server_Add *ev)
@@ -156,13 +164,26 @@ _ems_server_read_cb(const void *eet_data, size_t size, void *user_data)
              if (prot->type == EMS_SERVER_PROTOCOL_TYPE_GET_MEDIAS_REQ)
                {
                   Eina_List *files = ems_database_collection_get(ems_config->db, NULL);
-                  Ems_Server_Protocol *prot;
+                  Ems_Server_Protocol *send;
 
-                  prot = calloc(1, sizeof (Ems_Server_Protocol));
-                  prot->type = EMS_SERVER_PROTOCOL_TYPE_GET_MEDIAS;
-                  prot->data.get_medias.files = files;
+                  send = calloc(1, sizeof (Ems_Server_Protocol));
+                  send->type = EMS_SERVER_PROTOCOL_TYPE_GET_MEDIAS;
+                  send->data.get_medias.files = files;
 
-                  eet_connection_send(econn, edd, prot, NULL);
+                  eet_connection_send(econn, edd, send, NULL);
+               }
+             else if (prot->type == EMS_SERVER_PROTOCOL_TYPE_GET_MEDIA_INFOS_REQ)
+               {
+                  const char *value;
+                  Ems_Server_Protocol *send;
+                  DBG("Searching for '%s' '%s'", prot->data.get_media_infos_req.uuid, prot->data.get_media_infos_req.metadata);
+                  value = ems_database_info_get(ems_config->db, prot->data.get_media_infos_req.uuid, prot->data.get_media_infos_req.metadata);
+                  DBG("found '%s'", value);
+
+                  send = calloc(1, sizeof (Ems_Server_Protocol));
+                  send->type = EMS_SERVER_PROTOCOL_TYPE_GET_MEDIA_INFOS;
+                  send->data.get_media_infos.value = value;
+                  eet_connection_send(econn, edd, send, NULL);
                }
              break;
           }
@@ -181,7 +202,6 @@ _ems_server_write_cb(const void *data, size_t size, void *user_data)
         return EINA_FALSE;
      }
 
-   DBG("Sent");
    return EINA_TRUE;
 }
 
@@ -223,6 +243,22 @@ _ems_client_read_cb(const void *eet_data, size_t size, void *user_data)
                             if (cb->add_cb)
                               cb->add_cb(cb->data, user_data, f);
                             eina_stringshare_del(f);
+                         }
+                    }
+               }
+             else if (prot->type == EMS_SERVER_PROTOCOL_TYPE_GET_MEDIA_INFOS)
+               {
+                  Eina_List *l_cb;
+                  Ems_Server_Media_Get_Cb *cb;
+ 
+                  DBG("Send back info : '%s'",  prot->data.get_media_infos.value);
+
+                  EINA_LIST_FOREACH(_media_infos_get_cb, l_cb, cb)
+                    {
+                       if (cb->add_cb)
+                         {
+                            cb->add_cb(cb->data, user_data, prot->data.get_media_infos.value);
+                            DBG("show '%s'", prot->data.get_media_infos.value);
                          }
                     }
                }
@@ -528,7 +564,26 @@ ems_server_media_info_get(Ems_Server *server,
                           Ems_Media_Info_Update_Cb info_update,
                           void *data)
 {
+   Ems_Server_Protocol *prot;
+   Ems_Server_Media_Infos_Get_Cb *cb;
+
    DBG("");
+
+   prot = calloc(1, sizeof (Ems_Server_Protocol));
+   prot->type = EMS_SERVER_PROTOCOL_TYPE_GET_MEDIA_INFOS_REQ;
+   /* FIXME : +37 to skip the uuid of the database should be remove ?*/
+   prot->data.get_media_infos_req.uuid = uuid + 37;
+   prot->data.get_media_infos_req.metadata = info;
+
+   cb = calloc(1, sizeof(Ems_Server_Media_Infos_Get_Cb));
+   if (!cb)
+     return NULL;
+   cb->add_cb = info_add;
+   cb->data = data;
+
+   _media_infos_get_cb = eina_list_append(_media_infos_get_cb, cb);
+
+   eet_connection_send(server->eet_conn, edd, prot, NULL);
 
    return NULL;
 }

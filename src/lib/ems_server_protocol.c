@@ -46,7 +46,7 @@ static const char *_serialisation_type_get(const void *data, Eina_Bool *unknow);
 
 
 static Eet_Data_Descriptor *
-_get_medias_req_edd()
+_get_medias_req_edd(void)
 {
    static Eet_Data_Descriptor *edd = NULL;
    Eet_Data_Descriptor *collection_edd = NULL;
@@ -74,13 +74,8 @@ _get_medias_req_edd()
    return edd;
 }
 
-typedef struct _Files
-{
-   const char *file;
-}Files;
-
 static Eet_Data_Descriptor *
-_get_medias_edd()
+_get_medias_edd(void)
 {
    static Eet_Data_Descriptor *edd = NULL;
    Eet_Data_Descriptor_Class eddc;
@@ -94,9 +89,42 @@ _get_medias_edd()
    return edd;
 }
 
+static Eet_Data_Descriptor *
+_get_media_infos_req_edd(void)
+{
+   static Eet_Data_Descriptor *edd = NULL;
+   Eet_Data_Descriptor_Class eddc;
+
+   if (edd) return edd;
+
+   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Get_Media_Infos_Req);
+   edd =  eet_data_descriptor_stream_new(&eddc);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Get_Media_Infos_Req, "uuid", uuid, EET_T_STRING);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Get_Media_Infos_Req, "metadata", metadata, EET_T_STRING);
+
+   return edd;
+}
+
+static Eet_Data_Descriptor *
+_get_media_infos_edd(void)
+{
+   static Eet_Data_Descriptor *edd = NULL;
+   Eet_Data_Descriptor_Class eddc;
+
+   if (edd) return edd;
+
+   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Get_Media_Infos);
+   edd =  eet_data_descriptor_stream_new(&eddc);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Get_Media_Infos, "value", value, EET_T_STRING);
+
+   return edd;
+}
+
 Match_Type match_type[] = {
   { "get_medias_req", EMS_SERVER_PROTOCOL_TYPE_GET_MEDIAS_REQ, _get_medias_req_edd },
   { "get_medias", EMS_SERVER_PROTOCOL_TYPE_GET_MEDIAS, _get_medias_edd },
+  { "get_media_infos", EMS_SERVER_PROTOCOL_TYPE_GET_MEDIA_INFOS, _get_media_infos_edd },
+  { "get_media_infos_req", EMS_SERVER_PROTOCOL_TYPE_GET_MEDIA_INFOS_REQ, _get_media_infos_req_edd },
   { NULL, 0, NULL }
 };
 
