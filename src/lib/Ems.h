@@ -26,7 +26,7 @@ typedef void (*Ems_Server_Disconnected_Cb)(void *data, Ems_Server *server);
 
 typedef void (*Ems_Player_Add_Cb)(void *data, Ems_Player *player);
 typedef void (*Ems_Player_Del_Cb)(void *data, Ems_Player *player);
-typedef void (*Ems_Player_emUpdate_Cb)(void *data, Ems_Player *playeemr);
+typedef void (*Ems_Player_Update_Cb)(void *data, Ems_Player *player);
 
 typedef void (*Ems_Media_Add_Cb)(void *data, Ems_Server *server,
                                  const char *media);

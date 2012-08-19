@@ -32,11 +32,14 @@ typedef struct _Match_Type Match_Type;
 typedef struct _Get_Medias Get_Medias;
 typedef struct _Get_Medias_Req Get_Medias_Req;
 typedef struct _Get_Medias_Infos Get_Medias_Infos;
+typedef struct _Get_Media_Infos_Req Get_Media_Infos_Req;
+typedef struct _Get_Media_Infos Get_Media_Infos;
 typedef enum _Ems_Server_Protocol_Type Ems_Server_Protocol_Type;
 typedef struct _Ems_Server_Protocol Ems_Server_Protocol;
 
 struct _Match_Type {
    const char *name;
+   int type;
    Eet_Data_Descriptor *(*edd)(void);
 };
 
@@ -52,14 +55,42 @@ struct _Get_Medias
    Eina_List *files;
 };
 
-struct _Get_Medias_Infos
+struct _Get_Media_Infos_Req
 {
-   int test;
-   const char *str;
-   const char *str2;
+   const char *uuid;
+   const char *metadata;
 };
 
-Eet_Data_Descriptor * ems_server_protocol_edd_get(const char *type);
 
+struct _Get_Media_Infos
+{
+   const char *value;
+};
+
+
+enum _Ems_Server_Protocol_Type
+{
+  EMS_SERVER_PROTOCOL_TYPE_GET_MEDIAS_REQ,
+  EMS_SERVER_PROTOCOL_TYPE_GET_MEDIAS,
+  EMS_SERVER_PROTOCOL_TYPE_GET_MEDIA_INFOS_REQ,
+  EMS_SERVER_PROTOCOL_TYPE_GET_MEDIA_INFOS,
+  EMS_SERVER_PROTOCOL_TYPE_UNKNOWN
+};
+
+union Specs
+{
+   Get_Medias get_medias;
+   Get_Medias_Req get_medias_req;
+   Get_Media_Infos_Req get_media_infos_req;
+   Get_Media_Infos get_media_infos;
+};
+
+struct _Ems_Server_Protocol
+{
+   Ems_Server_Protocol_Type type;
+   union Specs data;
+};
+
+Eina_Bool serialisation_init(void);
 
 #endif /* _EMS_SERVER_PROTOCOL_H_ */
