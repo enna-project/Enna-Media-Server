@@ -276,8 +276,8 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
               if (root)
                 size = cJSON_GetArraySize(root);
               DBG("%s", cJSON_Print(root));
-               feed =  cJSON_GetObjectItem(root, "feed");
-               
+	      feed =  cJSON_GetObjectItem(root, "feed");
+
               //DBG("Size %d", size);
 
               if (!size)
@@ -299,11 +299,11 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
                    goto end_req;
                 }
               _stats->files_grabbed++;
-              
+
               cJSON_Delete(root);
            end_req:
               if (req->end_cb)
-                  req->end_cb(req->data, req->filename);
+		req->end_cb(req->data, req->filename);
               //ecore_con_url_free(req->ec_url);
               eina_hash_del(_hash_req, req->ec_url, req);
               return ECORE_CALLBACK_DONE;
@@ -316,7 +316,7 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
          break;
       case EMS_REQUEST_STATE_INFO:;
       default:
-         break;
+	break;
      }
 
    if (req->end_cb)
@@ -379,7 +379,7 @@ ems_grabber_grab(const char *filename, Ems_Media_Type type, Ems_Grabber_End_Cb e
    _stats->total++;
 
    /* Should be get back from database as this info (clean_name) is inserted in scanner*/
-    
+
    tmp = ems_utils_decrapify(filename);
    if (tmp)
      {
@@ -389,10 +389,10 @@ ems_grabber_grab(const char *filename, Ems_Media_Type type, Ems_Grabber_End_Cb e
         if (!search)
           return;
      }
-    else
-    {
+   else
+     {
         search = ems_utils_escape_string(filename);
-    }
+     }
 
    snprintf(url, sizeof (url), EMS_ALLOCINE_QUERY_SEARCH,
             EMS_ALLOCINE_API_KEY, search);
