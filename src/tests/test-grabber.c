@@ -41,15 +41,22 @@ _end_grab_cb(void *data __UNUSED__, const char *filename __UNUSED__)
  *                                 Global                                     *
  *============================================================================*/
 
-int main(int argc __UNUSED__, char **argv)
+int main(int argc, char **argv)
 {
    Eina_Module *m;
    char tmp[PATH_MAX];
-
    void (*grab)(const char *filename, Ems_Media_Type type,
 		void (*Ems_Grabber_End_Cb)(void *data, const char *filename),
 		void *data
 		);
+
+
+
+   if (argc != 3)
+     {
+	printf("USAGE : %s grabber_name filename\n", argv[0]);
+	exit(-1);
+     }
 
    ems_init(NULL);
    eina_init();
@@ -57,20 +64,10 @@ int main(int argc __UNUSED__, char **argv)
    ecore_con_init();
    ecore_con_url_init();
 
-   DBG("%s init", argv[0]);
-
-
-   if (!argv[1])
-     {
-        printf("USAGE : %s grabber_name", argv[0]);
-        exit(0);
-     }
-
    DBG("Try to load %s", argv[1]);
    DBG("Searh for modules in %s with arch %s", PACKAGE_LIB_DIR "/ems/grabbers", MODULE_ARCH);
 
    snprintf(tmp, sizeof(tmp), PACKAGE_LIB_DIR"/ems/grabbers/%s/%s/module.so", argv[1], MODULE_ARCH);
-   DBG("Complete path module %s", tmp);
    m = eina_module_new(tmp);
 
    eina_module_load(m);
@@ -78,7 +75,7 @@ int main(int argc __UNUSED__, char **argv)
    grab = eina_module_symbol_get(m, "ems_grabber_grab");
    if (grab)
      {
-        DBG("Grab file");
+        INF("Grab file %s", argv[2]);
         grab(argv[2],
              1,
              _end_grab_cb, NULL);
