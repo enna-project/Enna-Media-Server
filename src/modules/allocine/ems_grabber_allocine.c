@@ -66,7 +66,7 @@ static int _dom;
 
 #define EMS_ALLOCINE_API_KEY "YW5kcm9pZC12M3M"
 #define EMS_ALLOCINE_QUERY_SEARCH "http://api.allocine.fr/rest/v3/search?partner=%s&filter=movie&q=%s&format=json"
-#define EMS_ALLOCINE_QUERY_INFO   "http://api.allocine.fr/rest/v3/movie?partner=%s&code=%d&format=json&filter=movie"
+#define EMS_ALLOCINE_QUERY_INFO   "http://api.allocine.fr/rest/v3/movie?partner=%s&code=%d&mediafmt=mp4-lc&format=json&filter=movie"
 
 #define VH_ISALNUM(c) isalnum ((int) (unsigned char) (c))
 #define VH_ISGRAPH(c) isgraph ((int) (unsigned char) (c))
@@ -111,6 +111,33 @@ typedef void (*Ems_Grabber_End_Cb)(void *data, const char *filename);
 
 static Eina_Hash *_hash_req = NULL;
 static Ems_Allocine_Stats *_stats = NULL;
+
+
+
+#define GETVAL(val, type, eina_type)                                    \
+  do {                                                                  \
+     cJSON *it;                                                         \
+     Eina_Value v;                                                      \
+     it = cJSON_GetObjectItem(m, #val);                                 \
+     eina_value_setup(&v, eina_type);                                   \
+     if (it) {                                                          \
+        const char *str;                                                \
+        eina_value_set(&v, it->type);                                   \
+        str = eina_stringshare_add(eina_value_to_string(&v));           \
+        ems_database_meta_insert(ems_config->db, req->filename, #val, str); \
+     }                                                                  \
+     eina_value_flush(&v);                                              \
+  } while(0);                                                           \
+
+#define GETVALSTR(val, type, eina_type)                                 \
+  do {                                                                  \
+     cJSON *it;                                                         \
+     it = cJSON_GetObjectItem(m, #val);                                 \
+     if (it) {                                                          \
+        ems_database_meta_insert(ems_config->db, req->filename, #val, eina_stringshare_add(it->type)); \
+     }                                                                  \
+  } while(0);                                                           \
+
 
 static void
 _grabber_allocine_shutdown(void)
@@ -370,7 +397,7 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
 	 if (req->buf)
            {
 	      const char *buf = eina_strbuf_string_get(req->buf);
-	      cJSON *root;
+	      cJSON *root, *m;
 
               if (!buf)
                 {
@@ -383,6 +410,14 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
 
               root = cJSON_Parse(buf);
               DBG("%s", cJSON_Print(root));
+
+	      m = cJSON_GetObjectItem(root, "movie");
+
+	      ems_database_transaction_begin(ems_config->db);
+	      GETVALSTR(originalTitle, valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+              GETVALSTR(title, valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+
+	      ems_database_transaction_end(ems_config->db);
 	   }
 	 break;
       default:
