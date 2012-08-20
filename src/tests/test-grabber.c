@@ -29,10 +29,21 @@
 
 #include "ems_private.h"
 
-static void
-_end_grab_cb(void *data __UNUSED__, const char *filename __UNUSED__)
+static Eina_Bool _print_hash_cb(const Eina_Hash *hash, const void *key,
+                  void *data, void *fdata)
 {
-   DBG("End Grab");
+   INF("Func data: Hash entry: [%s] -> %s", key, data);
+   return 1;
+}
+
+static void
+_end_grab_cb(void *data __UNUSED__, const char *filename __UNUSED__, Ems_Grabber_Data *grabbed_data)
+{
+   DBG("End Grab %s", filename);
+   DBG("Grabbed data : %p", grabbed_data);
+   INF("Grabber language : %s", grabbed_data->lang);
+   INF("Grabber grabbed date : %lld", grabbed_data->date);
+   eina_hash_foreach(grabbed_data->data, _print_hash_cb, NULL);
    ecore_main_loop_quit();
 }
 
