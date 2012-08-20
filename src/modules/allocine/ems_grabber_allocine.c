@@ -65,8 +65,9 @@ static int _dom;
 #define CRIT(...) EINA_LOG_DOM_CRIT(_enna_log_dom_global, __VA_ARGS__)
 
 #define EMS_ALLOCINE_API_KEY "YW5kcm9pZC12M3M"
-#define EMS_ALLOCINE_QUERY_SEARCH "http://api.allocine.fr/rest/v3/search?partner=%s&filter=movie&q=%s&format=json"
-#define EMS_ALLOCINE_QUERY_INFO   "http://api.allocine.fr/rest/v3/movie?partner=%s&code=%d&mediafmt=mp4-lc&format=json&filter=movie"
+#define EMS_ALLOCINE_QUERY_SEARCH  "http://api.allocine.fr/rest/v3/search?partner=%s&filter=movie&q=%s&format=json"
+#define EMS_ALLOCINE_QUERY_INFO    "http://api.allocine.fr/rest/v3/movie?partner=%s&code=%d&mediafmt=mp4-lc&format=json&filter=movie"
+#define EMS_ALLOCINE_QUERY_TRAILER "http://api.allocine.fr/rest/v3/media?partner=%s&code=%d&mediafmt=mp4-hip&format=json&profile=large"
 
 #define VH_ISALNUM(c) isalnum ((int) (unsigned char) (c))
 #define VH_ISGRAPH(c) isgraph ((int) (unsigned char) (c))
@@ -84,7 +85,8 @@ typedef struct _Ems_Allocine_Stats Ems_Allocine_Stats;
 enum _Ems_Request_State
   {
     EMS_REQUEST_STATE_SEARCH,
-    EMS_REQUEST_STATE_INFO
+    EMS_REQUEST_STATE_INFO,
+    EMS_REQUEST_STATE_TRAILER
   };
 
 struct _Ems_Allocine_Req
@@ -261,8 +263,8 @@ static Eina_Bool
 _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info)
 {
    Ecore_Con_Event_Url_Complete *url_complete = event_info;
-
    Ems_Allocine_Req *req = eina_hash_find(_hash_req, url_complete->url_con);
+   cJSON *root;
 
    if (!req)
      return ECORE_CALLBACK_PASS_ON;
@@ -283,7 +285,6 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
       case EMS_REQUEST_STATE_SEARCH:
          if (req->buf)
            {
-              cJSON *root;
               cJSON *feed, *it, *movies;
               cJSON *m;
               int nb_results = 0;
@@ -312,7 +313,7 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
 		}
 	      else
 		{
-		   ERR("Cannot find totaResults tag !");
+		   ERR("Cannot find totalResults tag !");
                    goto end_req;
 		}
               if (!nb_results)
@@ -376,15 +377,6 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
 		}
 
 	      return ECORE_CALLBACK_DONE;
-
-           end_req:
-              if (root) cJSON_Delete(root);
-
-              if (req->end_cb)
-		req->end_cb(req->data, req->filename);
-              //ecore_con_url_free(req->ec_url);
-              eina_hash_del(_hash_req, req->ec_url, req);
-              return ECORE_CALLBACK_DONE;
            }
          else
            {
@@ -397,7 +389,9 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
 	 if (req->buf)
            {
 	      const char *buf = eina_strbuf_string_get(req->buf);
-	      cJSON *root, *m;
+	      cJSON *m, *trailer;
+              int code;
+              char url[PATH_MAX];
 
               if (!buf)
                 {
@@ -418,8 +412,100 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
               GETVALSTR(title, valuestring, EINA_VALUE_TYPE_STRINGSHARE);
 
 	      ems_database_transaction_end(ems_config->db);
+              trailer = cJSON_GetObjectItem(m, "trailer");
+              if (!trailer)
+                {
+                   ERR("Cannot find tag trailer");
+                   goto end_req;
+                }
+              m = cJSON_GetObjectItem(trailer, "code");
+              if (!m)
+                {
+                   INF("Cannot find trailer for this movie");
+                   goto end_req;
+                }
+
+              code = m->valueint;
+              snprintf(url, sizeof (url), EMS_ALLOCINE_QUERY_TRAILER,
+		       EMS_ALLOCINE_API_KEY, code);
+
+	      DBG("Search for %s", url);
+	      req->ec_url = ecore_con_url_new(url);
+	      if (!req->ec_url)
+		{
+		   ERR("error when creating ecore con url object.");
+		   goto end_req;
+		}
+	      eina_strbuf_free(req->buf);
+	      req->buf =  eina_strbuf_new();
+	      req->state = EMS_REQUEST_STATE_TRAILER;
+
+	      if (!ecore_con_url_get(req->ec_url))
+		{
+		   ERR("could not realize request.");
+		   eina_hash_del(_hash_req, req->ec_url, req);
+		   ecore_con_url_free(req->ec_url);
+		   goto end_req;
+		}
+
+	      return ECORE_CALLBACK_DONE;
 	   }
 	 break;
+      case EMS_REQUEST_STATE_TRAILER:
+	 DBG("Request trailer info");
+	 if (req->buf)
+           {
+	      const char *buf = eina_strbuf_string_get(req->buf);
+	      cJSON *media, *rendition, *width, *height, *it, *trailer;
+              int w = 0, h = 0;
+              int i;
+              int size = 0;
+
+              if (!buf)
+                {
+                   if (req->end_cb)
+                     req->end_cb(req->data, req->filename);
+                   eina_hash_del(_hash_req, req->ec_url, req);
+
+                   return ECORE_CALLBACK_DONE;
+                }
+
+              root = cJSON_Parse(buf);
+              DBG("%s", cJSON_Print(root));
+
+              media = cJSON_GetObjectItem(root, "media");
+              if (!media)
+                {
+                   ERR("Cannot find tag media");
+                   goto end_req;
+                }
+              rendition = cJSON_GetObjectItem(media, "rendition");
+              if (!rendition)
+                {
+                   ERR("Cannot find tag rendition");
+                   goto end_req;
+                }
+              size = cJSON_GetArraySize(rendition);
+              DBG("Find %d trailers", size);
+              /* parse all results and try to take the bigger resolution*/
+              for (i = 0; i < size; i++)
+                {
+                   it = cJSON_GetArrayItem(rendition, i);
+                   if (it)
+                     {
+                        width = cJSON_GetObjectItem(it, "width");
+                        height = cJSON_GetObjectItem(it, "height");
+                        if ((width->valueint > w) && (height->valueint > h))
+                          {
+                             trailer = it;
+                             w = width->valueint;
+                             h = height->valueint;
+                             DBG("trailer resolution %dx%d", width->valueint, height->valueint);
+                          }
+                     }
+                }
+           }
+         break;
       default:
 	break;
      }
@@ -429,6 +515,15 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
    //ecore_con_url_free(req->ec_url);
    eina_hash_del(_hash_req, req->ec_url, req);
 
+   return ECORE_CALLBACK_DONE;
+
+ end_req:
+   if (root) cJSON_Delete(root);
+
+   if (req->end_cb)
+     req->end_cb(req->data, req->filename);
+   //ecore_con_url_free(req->ec_url);
+   eina_hash_del(_hash_req, req->ec_url, req);
    return ECORE_CALLBACK_DONE;
 }
 
