@@ -32,8 +32,8 @@
 static void
 _end_grab_cb(void *data __UNUSED__, const char *filename __UNUSED__)
 {
-    DBG("End Grab");
-    ecore_main_loop_quit();
+   DBG("End Grab");
+   ecore_main_loop_quit();
 }
 
 
@@ -43,54 +43,54 @@ _end_grab_cb(void *data __UNUSED__, const char *filename __UNUSED__)
 
 int main(int argc __UNUSED__, char **argv)
 {
-    Eina_Module *m;
-    char tmp[PATH_MAX];
+   Eina_Module *m;
+   char tmp[PATH_MAX];
 
-    void (*grab)(const char *filename, Ems_Media_Type type,
-                 void (*Ems_Grabber_End_Cb)(void *data, const char *filename),
-                 void *data
-                 );
-    
-    ems_init(NULL);
-    eina_init();
-    ecore_init();
-    ecore_con_init();
-    ecore_con_url_init();
-    
-    DBG("%s init", argv[0]);
-    
-    
-    if (!argv[1])
-    {
+   void (*grab)(const char *filename, Ems_Media_Type type,
+		void (*Ems_Grabber_End_Cb)(void *data, const char *filename),
+		void *data
+		);
+
+   ems_init(NULL);
+   eina_init();
+   ecore_init();
+   ecore_con_init();
+   ecore_con_url_init();
+
+   DBG("%s init", argv[0]);
+
+
+   if (!argv[1])
+     {
         printf("USAGE : %s grabber_name", argv[0]);
         exit(0);
-    }
-    
-    DBG("Try to load %s", argv[1]);
-    DBG("Searh for modules in %s with arch %s", PACKAGE_LIB_DIR "/ems/grabbers", MODULE_ARCH);
+     }
 
-    snprintf(tmp, sizeof(tmp), PACKAGE_LIB_DIR"/ems/grabbers/%s/%s/module.so", argv[1], MODULE_ARCH);
-    DBG("Complete path module %s", tmp);
-    m = eina_module_new(tmp);
-    
-    eina_module_load(m);
+   DBG("Try to load %s", argv[1]);
+   DBG("Searh for modules in %s with arch %s", PACKAGE_LIB_DIR "/ems/grabbers", MODULE_ARCH);
 
-    grab = eina_module_symbol_get(m, "ems_grabber_grab");
-    if (grab)
-    {
+   snprintf(tmp, sizeof(tmp), PACKAGE_LIB_DIR"/ems/grabbers/%s/%s/module.so", argv[1], MODULE_ARCH);
+   DBG("Complete path module %s", tmp);
+   m = eina_module_new(tmp);
+
+   eina_module_load(m);
+
+   grab = eina_module_symbol_get(m, "ems_grabber_grab");
+   if (grab)
+     {
         DBG("Grab file");
         grab(argv[2],
              1,
              _end_grab_cb, NULL);
-    }
+     }
 
-    
-    
-    ecore_main_loop_begin();
-    
-    eina_module_free(m);
-    
-    ems_shutdown();
-    
-    return EXIT_SUCCESS;
+
+
+   ecore_main_loop_begin();
+
+   eina_module_free(m);
+
+   ems_shutdown();
+
+   return EXIT_SUCCESS;
 }
