@@ -85,10 +85,13 @@ extern int _ems_log_dom_global;
 #define ENNA_CONFIG_LIST(edd, type, member, eddtype) EET_DATA_DESCRIPTOR_ADD_LIST(edd, type, #member, member, eddtype)
 #define ENNA_CONFIG_HASH(edd, type, member, eddtype) EET_DATA_DESCRIPTOR_ADD_HASH(edd, type, #member, member, eddtype)
 
+/* Function typedef, called when grabber ends its work */
+typedef void (*Ems_Grabber_End_Cb)(void *data, const char *filename);
 
 typedef struct _Ems_Config Ems_Config;
 typedef struct _Ems_Directory Ems_Directory;
 typedef struct _Ems_Collection_Filter Ems_Collection_Filter;
+typedef struct _Ems_Grabber_Data Ems_Grabber_Data;
 
 struct _Ems_Observer
 {
@@ -156,5 +159,12 @@ struct _Ems_Config
 };
 
 extern Ems_Config *ems_config;
+
+struct _Ems_Grabber_Data
+{
+   Eina_Hash *data;
+   time_t date;
+   const char *lang;
+};
 
 #endif /* _EMS_PRIVATE_H_ */
