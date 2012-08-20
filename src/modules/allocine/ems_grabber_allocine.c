@@ -66,7 +66,7 @@ static int _dom;
 
 #define EMS_ALLOCINE_API_KEY "YW5kcm9pZC12M3M"
 #define EMS_ALLOCINE_QUERY_SEARCH "http://api.allocine.fr/rest/v3/search?partner=%s&filter=movie&q=%s&format=json"
-#define EMS_TMDB_QUERY_INFO   "http://api.allocine.fr/rest/v3/movie?partner=%s&code=%d&profile=large&mediafmt=mp4-lc&format=json&filter=movie&striptags=synopsis,synopsisshort"
+#define EMS_ALLOCINE_QUERY_INFO   "http://api.allocine.fr/rest/v3/movie?partner=%s&code=%d&format=json&filter=movie"
 
 #define VH_ISALNUM(c) isalnum ((int) (unsigned char) (c))
 #define VH_ISGRAPH(c) isgraph ((int) (unsigned char) (c))
@@ -257,9 +257,11 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
          if (req->buf)
            {
               cJSON *root;
-              cJSON *feed;
+              cJSON *feed, *it, *movies;
               cJSON *m;
-              int size = 0;
+              int nb_results = 0;
+	      int code;
+	      char url[PATH_MAX];
               const char *buf = eina_strbuf_string_get(req->buf);
 
               if (!buf)
@@ -273,35 +275,84 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
 
               //DBG("Search request data : %s", eina_strbuf_string_get(req->buf));
               root = cJSON_Parse(buf);
-              if (root)
-                size = cJSON_GetArraySize(root);
               DBG("%s", cJSON_Print(root));
 	      feed =  cJSON_GetObjectItem(root, "feed");
-
-              //DBG("Size %d", size);
-
-              if (!size)
-                {
-                   DBG("No result found");
+	      it = cJSON_GetObjectItem(feed, "totalResults");
+	      if (it)
+		{
+		   nb_results = it->valueint;
+		   DBG("NB results : %d", nb_results);
+		}
+	      else
+		{
+		   ERR("Cannot find totaResults tag !");
                    goto end_req;
-                   return ECORE_CALLBACK_DONE;
-                }
-              else if (size > 1)
+		}
+              if (!nb_results)
                 {
-                   DBG("More then one result, take the first");
+                   WRN("No result found");
+                   goto end_req;
+                }
+              else if (nb_results > 1)
+                {
+                   INF("More then one result, take the first");
                    _stats->multiple_results++;
                 }
-
-              m = cJSON_GetArrayItem(root, 0);
+	      movies = cJSON_GetObjectItem(feed, "movie");
+	      if (!movies)
+		{
+		   ERR("Error cannot found movie tag!");
+                   goto end_req;
+		}
+              m = cJSON_GetArrayItem(movies, 0);
               if (!m)
                 {
                    ERR("Unable to get movie info");
                    goto end_req;
                 }
+	      it = cJSON_GetObjectItem(m, "code");
+	      if (it)
+		{
+		   code = it->valueint;
+		   DBG("Movie code : %d", code);
+		}
+	      else
+		{
+		   ERR("Unable to get movie code");
+                   goto end_req;
+		}
+
               _stats->files_grabbed++;
 
-              cJSON_Delete(root);
+	      if (root) cJSON_Delete(root);
+
+	      snprintf(url, sizeof (url), EMS_ALLOCINE_QUERY_INFO,
+		       EMS_ALLOCINE_API_KEY, code);
+
+	      DBG("Search for %s", url);
+	      req->ec_url = ecore_con_url_new(url);
+	      if (!req->ec_url)
+		{
+		   ERR("error when creating ecore con url object.");
+		   goto end_req;
+		}
+	      eina_strbuf_free(req->buf);
+	      req->buf =  eina_strbuf_new();
+	      req->state = EMS_REQUEST_STATE_INFO;
+
+	      if (!ecore_con_url_get(req->ec_url))
+		{
+		   ERR("could not realize request.");
+		   eina_hash_del(_hash_req, req->ec_url, req);
+		   ecore_con_url_free(req->ec_url);
+		   goto end_req;
+		}
+
+	      return ECORE_CALLBACK_DONE;
+
            end_req:
+              if (root) cJSON_Delete(root);
+
               if (req->end_cb)
 		req->end_cb(req->data, req->filename);
               //ecore_con_url_free(req->ec_url);
@@ -314,7 +365,26 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
                 req->end_cb(req->data, req->filename);
            }
          break;
-      case EMS_REQUEST_STATE_INFO:;
+      case EMS_REQUEST_STATE_INFO:
+	 DBG("Request movie info");
+	 if (req->buf)
+           {
+	      const char *buf = eina_strbuf_string_get(req->buf);
+	      cJSON *root;
+
+              if (!buf)
+                {
+                   if (req->end_cb)
+                     req->end_cb(req->data, req->filename);
+                   eina_hash_del(_hash_req, req->ec_url, req);
+
+                   return ECORE_CALLBACK_DONE;
+                }
+
+              root = cJSON_Parse(buf);
+              DBG("%s", cJSON_Print(root));
+	   }
+	 break;
       default:
 	break;
      }
