@@ -115,20 +115,20 @@ static Ems_Allocine_Stats *_stats = NULL;
 
 
 
-#define PUTVAL(val, type, eina_type)                                    \
+#define PUTVAL(val, key, type, eina_type)                               \
   do {                                                                  \
      cJSON *it;                                                         \
-     Eina_Value v;                                                      \
-     it = cJSON_GetObjectItem(m, #val);                                 \
-     eina_value_setup(&v, eina_type);                                   \
+     Eina_Value *v;                                                     \
+     v = eina_value_new(eina_type);                                     \
+     it = cJSON_GetObjectItem(m, val);                                  \
      if (it) {                                                          \
         const char *str;                                                \
-        eina_value_set(&v, it->type);                                   \
-        str = eina_stringshare_add(eina_value_to_string(&v));           \
-        ems_database_meta_insert(ems_config->db, req->filename, #val, str); \
+        eina_value_set(v, it->type);                                    \
+        str = eina_stringshare_add(eina_value_to_string(v));            \
+        eina_hash_add(req->grabbed_data->data, key, v);                 \
      }                                                                  \
-     eina_value_flush(&v);                                              \
   } while(0);                                                           \
+
 
 #define PUTVALSTR(val, key)                                             \
   do {                                                                  \
@@ -382,8 +382,8 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
 
 	      m = cJSON_GetObjectItem(root, "movie");
 
-	      PUTVALSTR("originalTitle", "original_title");
-              PUTVALSTR("title", "title");
+	      PUTVAL("originalTitle", "original_title", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+              PUTVAL("title", "title", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
 
               trailer = cJSON_GetObjectItem(m, "trailer");
               if (!trailer)
@@ -479,7 +479,7 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
                      }
                 }
 
-              PUTVALSTR("href", "trailer");
+              PUTVAL("href", "trailer", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
            }
          break;
       default:
