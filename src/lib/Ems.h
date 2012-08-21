@@ -1,15 +1,24 @@
 #ifndef _EMS_H_
 #define _EMS_H_
 
-typedef enum _Ems_Error Ems_Error;
+#ifdef __cplusplus
+extern "C" {
+#endif /* ifdef __cplusplus */
 
-enum _Ems_Error
+typedef enum _Ems_Error
 {
-    EMS_OK = 0,
-    EMS_GENERIC_ERROR = 1,
-};
+   EMS_OK = 0,
+   EMS_GENERIC_ERROR = 1,
+} Ems_Error;
 
-typedef enum _Ems_Media_Type Ems_Media_Type;
+typedef enum _Ems_Media_Type
+{
+  EMS_MEDIA_TYPE_VIDEO = 1 << 0,
+  EMS_MEDIA_TYPE_MUSIC = 1 << 1,
+  EMS_MEDIA_TYPE_PHOTO = 1 << 2,
+} Ems_Media_Type;
+
+
 typedef struct _Ems_Server Ems_Server;
 typedef struct _Ems_Player Ems_Player;
 typedef struct _Ems_Observer Ems_Observer;
@@ -42,13 +51,6 @@ typedef void (*Ems_Media_Info_Del_Cb)(void *data, Ems_Server *server,
                                       Ems_Media *media);
 typedef void (*Ems_Media_Info_Update_Cb)(void *data, Ems_Server *server,
                                          Ems_Media *media);
-
-enum _Ems_Media_Type
-{
-  EMS_MEDIA_TYPE_VIDEO = 1 << 0,
-  EMS_MEDIA_TYPE_MUSIC = 1 << 1,
-  EMS_MEDIA_TYPE_PHOTO = 1 << 2,
-};
 
 int ems_init(const char *config_file);
 int ems_shutdown(void);
@@ -188,5 +190,9 @@ Eina_Bool ems_avahi_start(void);
 /* More ideas */
 void ems_player_synchronise(Ems_Player *master, Ems_Player *slave);
 void ems_player_desyncronise(Ems_Player *slave);
+
+#ifdef __cplusplus
+}
+#endif /* ifdef __cplusplus */
 
 #endif /* _EMS_H_ */
