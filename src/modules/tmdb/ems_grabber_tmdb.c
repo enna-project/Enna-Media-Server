@@ -93,7 +93,8 @@ struct _Ems_Tmdb_Req
    Eina_Strbuf *buf;
    Ecore_Con_Url *ec_url;
    Ems_Request_State state;
-   void (*end_cb)(void *data, const char *filename);
+   Ems_Grabber_Data *grabbed_data;
+   void (*end_cb)(void *data, const char *filename, Ems_Grabber_Data *grabbed_data);
    void *data;
 };
 
@@ -106,10 +107,22 @@ struct _Ems_Tmdb_Stats
    int multiple_results;
 };
 
-typedef void (*Ems_Grabber_End_Cb)(void *data, const char *filename);
-
 static Eina_Hash *_hash_req = NULL;
 static Ems_Tmdb_Stats *_stats = NULL;
+
+#define PUTVAL(val, key, type, eina_type)                               \
+  do {                                                                  \
+     cJSON *it;                                                         \
+     Eina_Value *v;                                                     \
+     v = eina_value_new(eina_type);                                     \
+     it = cJSON_GetObjectItem(m, val);                                  \
+     if (it) {                                                          \
+        const char *str;                                                \
+        eina_value_set(v, it->type);                                    \
+        str = eina_stringshare_add(eina_value_to_string(v));            \
+        eina_hash_add(req->grabbed_data->data, key, v);                 \
+     }                                                                  \
+  } while(0);                                                           \
 
 static void
 _grabber_tmdb_shutdown(void)
@@ -134,30 +147,6 @@ _search_data_cb(void *data __UNUSED__, int type __UNUSED__, Ecore_Con_Event_Url_
 
    return ECORE_CALLBACK_DONE;
 }
-
-#define GETVAL(val, type, eina_type)                                    \
-  do {                                                                  \
-     cJSON *it;                                                         \
-     Eina_Value v;                                                      \
-     it = cJSON_GetObjectItem(m, #val);                                 \
-     eina_value_setup(&v, eina_type);                                   \
-     if (it) {                                                          \
-        const char *str;                                                \
-        eina_value_set(&v, it->type);                                   \
-        str = eina_stringshare_add(eina_value_to_string(&v));           \
-        ems_database_meta_insert(ems_config->db, req->filename, #val, str); \
-     }                                                                  \
-     eina_value_flush(&v);                                              \
-  } while(0);                                                           \
-
-#define GETVALSTR(val, type, eina_type)                                 \
-  do {                                                                  \
-     cJSON *it;                                                         \
-     it = cJSON_GetObjectItem(m, #val);                                 \
-     if (it) {                                                          \
-        ems_database_meta_insert(ems_config->db, req->filename, #val, eina_stringshare_add(it->type)); \
-     }                                                                  \
-  } while(0);                                                           \
 
 static Eina_Bool
 _poster_download_end_cb(void *data, const char *url,
@@ -243,7 +232,7 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
    if (url_complete->status != 200)
      {
         if (req->end_cb)
-          req->end_cb(req->data, req->filename);
+          req->end_cb(req->data, req->filename, req->grabbed_data);
         //ecore_con_url_free(req->ec_url);
         eina_hash_del(_hash_req, req->ec_url, req);
         return ECORE_CALLBACK_DONE;
@@ -263,7 +252,7 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
               if (!buf)
                 {
                    if (req->end_cb)
-                     req->end_cb(req->data, req->filename);
+                     req->end_cb(req->data, req->filename, req->grabbed_data);
                    //ecore_con_url_free(req->ec_url);
                    eina_hash_del(_hash_req, req->ec_url, req);
 
@@ -297,33 +286,31 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
                 }
               _stats->files_grabbed++;
               DBG("find info for %s", req->filename);
-              ems_database_transaction_begin(ems_config->db);
-              GETVAL(score, valuedouble, EINA_VALUE_TYPE_DOUBLE);
-              GETVAL(popularity, valueint, EINA_VALUE_TYPE_INT);
-              GETVAL(translated, valueint, EINA_VALUE_TYPE_INT);
-              GETVAL(adult, valueint, EINA_VALUE_TYPE_INT);
-              GETVALSTR(language, valuestring, EINA_VALUE_TYPE_STRINGSHARE);
-              GETVALSTR(original_name, valuestring, EINA_VALUE_TYPE_STRINGSHARE);
-              GETVALSTR(name, valuestring, EINA_VALUE_TYPE_STRINGSHARE);
-              GETVALSTR(alternative_name, valuestring, EINA_VALUE_TYPE_STRINGSHARE);
-              GETVAL(id, valueint, EINA_VALUE_TYPE_INT);
-              GETVAL(imdb_id, valueint, EINA_VALUE_TYPE_INT);
-              GETVALSTR(type, valuestring, EINA_VALUE_TYPE_STRINGSHARE);
-              GETVALSTR(url, valuestring, EINA_VALUE_TYPE_STRINGSHARE);
-              GETVAL(votes, valueint, EINA_VALUE_TYPE_INT);
-              GETVAL(rating, valuedouble, EINA_VALUE_TYPE_DOUBLE);
-              GETVALSTR(certification, valuestring, EINA_VALUE_TYPE_STRINGSHARE);
-              GETVALSTR(overview, valuestring, EINA_VALUE_TYPE_STRINGSHARE);
-              GETVALSTR(released, valuestring, EINA_VALUE_TYPE_STRINGSHARE);
-              GETVAL(version, valueint, EINA_VALUE_TYPE_INT);
-              GETVALSTR(last_modified_at, valuestring, EINA_VALUE_TYPE_STRINGSHARE);
-              ems_database_transaction_end(ems_config->db);
+              PUTVAL("score", "score", valuedouble, EINA_VALUE_TYPE_DOUBLE);
+              PUTVAL("popularity", "popularity", valueint, EINA_VALUE_TYPE_INT);
+              PUTVAL("translated", "translated", valueint, EINA_VALUE_TYPE_INT);
+              PUTVAL("adult", "adult", valueint, EINA_VALUE_TYPE_INT);
+              PUTVAL("language", "language", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+              PUTVAL("original_name", "original_title", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+              PUTVAL("name", "title", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+              PUTVAL("alternative_name", "alternative_title", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+              PUTVAL("id", "tmdb_id", valueint, EINA_VALUE_TYPE_INT);
+              PUTVAL("imdb", "imdb_id", valueint, EINA_VALUE_TYPE_INT);
+              PUTVAL("type", "type", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+              PUTVAL("url", "url", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+              PUTVAL("votes", "votes", valueint, EINA_VALUE_TYPE_INT);
+              PUTVAL("rating", "rating", valuedouble, EINA_VALUE_TYPE_DOUBLE);
+              PUTVAL("certification", "certification", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+              PUTVAL("overview", "overciew", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+              PUTVAL("released", "released", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+              PUTVAL("version", "version", valueint, EINA_VALUE_TYPE_INT);
+              PUTVAL("last_modified_at", "last_modified_at", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
               _tmdb_images_get(req, m, "posters", _poster_download_end_cb);
               _tmdb_images_get(req, m, "backdrops", _backdrop_download_end_cb);
               cJSON_Delete(root);
            end_req:
               if (req->end_cb)
-                  req->end_cb(req->data, req->filename);
+                  req->end_cb(req->data, req->filename, req->grabbed_data);
               //ecore_con_url_free(req->ec_url);
               eina_hash_del(_hash_req, req->ec_url, req);
               return ECORE_CALLBACK_DONE;
@@ -331,7 +318,7 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
          else
            {
               if (req->end_cb)
-                req->end_cb(req->data, req->filename);
+                req->end_cb(req->data, req->filename, req->grabbed_data);
            }
          break;
       case EMS_REQUEST_STATE_INFO:;
@@ -340,7 +327,7 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
      }
 
    if (req->end_cb)
-     req->end_cb(req->data, req->filename);
+     req->end_cb(req->data, req->filename, req->grabbed_data);
    //ecore_con_url_free(req->ec_url);
    eina_hash_del(_hash_req, req->ec_url, req);
 
@@ -430,7 +417,8 @@ ems_grabber_grab(const char *filename, Ems_Media_Type type, Ems_Grabber_End_Cb e
    req->end_cb = end_cb;
    req->data = data;
    req->buf = eina_strbuf_new();
-
+   req->grabbed_data = calloc(1, sizeof(Ems_Grabber_Data));
+   req->grabbed_data->data = eina_hash_string_superfast_new(NULL);
    req->state = EMS_REQUEST_STATE_SEARCH;
 
    eina_hash_add(_hash_req, ec_url, req);
