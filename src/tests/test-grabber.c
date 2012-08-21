@@ -32,7 +32,9 @@
 static Eina_Bool _print_hash_cb(const Eina_Hash *hash, const void *key,
                   void *data, void *fdata)
 {
-   INF("Func data: Hash entry: [%s] -> %s", key, data);
+   Eina_Value *v = data;
+   INF("Func data: Hash entry: [%s] -> %s", key, eina_value_to_string(v));
+
    return 1;
 }
 
