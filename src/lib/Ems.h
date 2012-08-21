@@ -13,9 +13,10 @@ typedef enum _Ems_Error
 
 typedef enum _Ems_Media_Type
 {
-  EMS_MEDIA_TYPE_VIDEO = 1 << 0,
-  EMS_MEDIA_TYPE_MUSIC = 1 << 1,
-  EMS_MEDIA_TYPE_PHOTO = 1 << 2,
+  EMS_MEDIA_TYPE_VIDEO  = 1 << 0,
+  EMS_MEDIA_TYPE_MUSIC  = 1 << 1,
+  EMS_MEDIA_TYPE_PHOTO  = 1 << 2,
+  EMS_MEDIA_TYPE_TVSHOW = 1 << 3,
 } Ems_Media_Type;
 
 
