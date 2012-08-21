@@ -85,13 +85,23 @@ extern int _ems_log_dom_global;
 #define ENNA_CONFIG_LIST(edd, type, member, eddtype) EET_DATA_DESCRIPTOR_ADD_LIST(edd, type, #member, member, eddtype)
 #define ENNA_CONFIG_HASH(edd, type, member, eddtype) EET_DATA_DESCRIPTOR_ADD_HASH(edd, type, #member, member, eddtype)
 
-/* Function typedef, called when grabber ends its work */
-typedef void (*Ems_Grabber_End_Cb)(void *data, const char *filename);
-
 typedef struct _Ems_Config Ems_Config;
 typedef struct _Ems_Directory Ems_Directory;
 typedef struct _Ems_Collection_Filter Ems_Collection_Filter;
 typedef struct _Ems_Grabber_Data Ems_Grabber_Data;
+typedef struct _Ems_Grabber_Params Ems_Grabber_Params;
+
+/* Function typedef, called when grabber ends its work */
+typedef void (*Ems_Grabber_End_Cb)(void *data,
+                                   const char *filename,
+                                   Ems_Grabber_Data *grabbed_data);
+
+/* Function exported by grabber modules */
+typedef void (*Ems_Grabber_Grab)(const char *filename,
+                                 Ems_Media_Type type,
+                                 Ems_Grabber_Params params,
+	                         Ems_Grabber_End_Cb end_cb,
+	                         void *data);
 
 struct _Ems_Observer
 {
@@ -165,6 +175,13 @@ struct _Ems_Grabber_Data
    Eina_Hash *data;
    time_t date;
    const char *lang;
+};
+
+struct _Ems_Grabber_Params
+{
+   //for tvshow grabbers
+   unsigned int season;
+   unsigned int episode;
 };
 
 #endif /* _EMS_PRIVATE_H_ */

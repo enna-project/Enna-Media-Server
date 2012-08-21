@@ -93,7 +93,7 @@ struct _Ems_Tmdb_Req
    Eina_Strbuf *buf;
    Ecore_Con_Url *ec_url;
    Ems_Request_State state;
-   void (*end_cb)(void *data, const char *filename);
+   Ems_Grabber_End_Cb end_cb;
    void *data;
 };
 
@@ -105,8 +105,6 @@ struct _Ems_Tmdb_Stats
    int backdrop_grabbed;
    int multiple_results;
 };
-
-typedef void (*Ems_Grabber_End_Cb)(void *data, const char *filename);
 
 static Eina_Hash *_hash_req = NULL;
 static Ems_Tmdb_Stats *_stats = NULL;
@@ -242,8 +240,8 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
    DBG("download completed for %s with status code: %d", req->filename, url_complete->status);
    if (url_complete->status != 200)
      {
-        if (req->end_cb)
-          req->end_cb(req->data, req->filename);
+        if (req->end_cb) //FIXME: to fix
+          req->end_cb(req->data, req->filename, NULL);
         //ecore_con_url_free(req->ec_url);
         eina_hash_del(_hash_req, req->ec_url, req);
         return ECORE_CALLBACK_DONE;
@@ -262,8 +260,8 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
 
               if (!buf)
                 {
-                   if (req->end_cb)
-                     req->end_cb(req->data, req->filename);
+                   if (req->end_cb) //FIXME: to fix
+                     req->end_cb(req->data, req->filename, NULL);
                    //ecore_con_url_free(req->ec_url);
                    eina_hash_del(_hash_req, req->ec_url, req);
 
@@ -322,16 +320,16 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
               _tmdb_images_get(req, m, "backdrops", _backdrop_download_end_cb);
               cJSON_Delete(root);
            end_req:
-              if (req->end_cb)
-                  req->end_cb(req->data, req->filename);
+              if (req->end_cb) //FIXME: to fix
+                  req->end_cb(req->data, req->filename, NULL);
               //ecore_con_url_free(req->ec_url);
               eina_hash_del(_hash_req, req->ec_url, req);
               return ECORE_CALLBACK_DONE;
            }
          else
            {
-              if (req->end_cb)
-                req->end_cb(req->data, req->filename);
+              if (req->end_cb) //FIXME: to fix
+                req->end_cb(req->data, req->filename, NULL);
            }
          break;
       case EMS_REQUEST_STATE_INFO:;
@@ -339,8 +337,8 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
          break;
      }
 
-   if (req->end_cb)
-     req->end_cb(req->data, req->filename);
+   if (req->end_cb) //FIXME: to fix
+     req->end_cb(req->data, req->filename, NULL);
    //ecore_con_url_free(req->ec_url);
    eina_hash_del(_hash_req, req->ec_url, req);
 
@@ -384,7 +382,7 @@ _grabber_tmdb_init(void)
  *============================================================================*/
 
 EAPI void
-ems_grabber_grab(const char *filename, Ems_Media_Type type, Ems_Grabber_End_Cb end_cb, void *data)
+ems_grabber_grab(const char *filename, Ems_Media_Type type, Ems_Grabber_Params params, Ems_Grabber_End_Cb end_cb, void *data)
 {
    char url[PATH_MAX];
    Ecore_Con_Url *ec_url = NULL;
@@ -398,16 +396,7 @@ ems_grabber_grab(const char *filename, Ems_Media_Type type, Ems_Grabber_End_Cb e
    DBG("Grab %s of type %d", filename, type);
    _stats->total++;
 
-   /* Should be get back from database as this info (clean_name) is inserted in scanner*/
-   tmp = ems_utils_decrapify(filename);
-   if (tmp)
-     {
-        /* Escape string for search with tmdb */
-        search = ems_utils_escape_string(tmp);
-        free(tmp);
-        if (!search)
-          return;
-     }
+   search = ems_utils_escape_string(filename);
 
    snprintf(url, sizeof (url), EMS_TMDB_QUERY_SEARCH,
             EMS_TMDB_API_KEY, search);
