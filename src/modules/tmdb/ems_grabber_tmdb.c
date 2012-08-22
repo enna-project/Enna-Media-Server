@@ -301,7 +301,7 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
               PUTVAL("votes", "votes", valueint, EINA_VALUE_TYPE_INT);
               PUTVAL("rating", "rating", valuedouble, EINA_VALUE_TYPE_DOUBLE);
               PUTVAL("certification", "certification", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
-              PUTVAL("overview", "overciew", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+              PUTVAL("overview", "overview", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
               PUTVAL("released", "released", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
               PUTVAL("version", "version", valueint, EINA_VALUE_TYPE_INT);
               PUTVAL("last_modified_at", "last_modified_at", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
