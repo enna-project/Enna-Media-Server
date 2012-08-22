@@ -84,10 +84,10 @@ ems_server_eet_init(void)
 
    ems_server_protocol_init();
 
-   ecore_con_eet_register(ece, "medias_req", ems_server_protocol_edd_get(EMS_SERVER_PROTOCOL_TYPE_MEDIAS_REQ));
-   ecore_con_eet_register(ece, "medias", ems_server_protocol_edd_get(EMS_SERVER_PROTOCOL_TYPE_MEDIAS));
-   ecore_con_eet_register(ece, "media_info_req", ems_server_protocol_edd_get(EMS_SERVER_PROTOCOL_TYPE_MEDIA_INFOS_REQ));
-   ecore_con_eet_register(ece, "media_info", ems_server_protocol_edd_get(EMS_SERVER_PROTOCOL_TYPE_MEDIA_INFOS));
+   ecore_con_eet_register(ece, "medias_req", ems_medias_req_edd);
+   ecore_con_eet_register(ece, "medias", ems_medias_add_edd);
+   ecore_con_eet_register(ece, "media_info_req", ems_media_infos_req_edd);
+   ecore_con_eet_register(ece, "media_info", ems_media_infos_edd);
 
    return EINA_TRUE;
 }

@@ -28,7 +28,6 @@
 #include <Eina.h>
 #include <Eet.h>
 
-typedef struct _Match_Type Match_Type;
 typedef struct _Medias Medias;
 typedef struct _Medias_Req Medias_Req;
 typedef struct _Medias_Infos Medias_Infos;
@@ -36,12 +35,6 @@ typedef struct _Media_Infos_Req Media_Infos_Req;
 typedef struct _Media_Infos Media_Infos;
 typedef enum _Ems_Server_Protocol_Type Ems_Server_Protocol_Type;
 typedef struct _Ems_Server_Protocol Ems_Server_Protocol;
-
-struct _Match_Type {
-   const char *name;
-   int type;
-   Eet_Data_Descriptor *(*edd)(void);
-};
 
 struct _Medias_Req
 {
@@ -65,17 +58,11 @@ struct _Media_Infos
    const char *value;
 };
 
-
-enum _Ems_Server_Protocol_Type
-{
-  EMS_SERVER_PROTOCOL_TYPE_MEDIAS_REQ,
-  EMS_SERVER_PROTOCOL_TYPE_MEDIAS,
-  EMS_SERVER_PROTOCOL_TYPE_MEDIA_INFOS_REQ,
-  EMS_SERVER_PROTOCOL_TYPE_MEDIA_INFOS,
-  EMS_SERVER_PROTOCOL_TYPE_UNKNOWN
-};
-
 void ems_server_protocol_init(void);
-Eet_Data_Descriptor *ems_server_protocol_edd_get(Ems_Server_Protocol_Type type);
+
+extern Eet_Data_Descriptor *ems_medias_req_edd;
+extern Eet_Data_Descriptor *ems_medias_add_edd;
+extern Eet_Data_Descriptor *ems_media_infos_edd;
+extern Eet_Data_Descriptor *ems_media_infos_req_edd;
 
 #endif /* _EMS_SERVER_PROTOCOL_H_ */

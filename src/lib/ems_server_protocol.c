@@ -37,6 +37,11 @@
 #include "ems_server.h"
 #include "ems_server_protocol.h"
 
+Eet_Data_Descriptor *ems_medias_req_edd = NULL;
+Eet_Data_Descriptor *ems_medias_add_edd = NULL;
+Eet_Data_Descriptor *ems_media_infos_edd = NULL;
+Eet_Data_Descriptor *ems_media_infos_req_edd = NULL;
+
 /*============================================================================*
  *                                  Local                                     *
  *============================================================================*/
@@ -44,12 +49,10 @@
 static Eet_Data_Descriptor *
 _medias_req_edd(void)
 {
-   static Eet_Data_Descriptor *edd = NULL;
+   Eet_Data_Descriptor *edd = NULL;
    Eet_Data_Descriptor *collection_edd = NULL;
    Eet_Data_Descriptor *collection_filter_edd = NULL;
    Eet_Data_Descriptor_Class eddc;
-
-   if (edd) return edd;
 
    EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Collection_Filter);
    collection_filter_edd =  eet_data_descriptor_stream_new(&eddc);
@@ -73,10 +76,8 @@ _medias_req_edd(void)
 static Eet_Data_Descriptor *
 _medias_edd(void)
 {
-   static Eet_Data_Descriptor *edd = NULL;
+   Eet_Data_Descriptor *edd = NULL;
    Eet_Data_Descriptor_Class eddc;
-
-   if (edd) return edd;
 
    EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Medias);
    edd =  eet_data_descriptor_stream_new(&eddc);
@@ -88,10 +89,8 @@ _medias_edd(void)
 static Eet_Data_Descriptor *
 _media_infos_req_edd(void)
 {
-   static Eet_Data_Descriptor *edd = NULL;
+   Eet_Data_Descriptor *edd = NULL;
    Eet_Data_Descriptor_Class eddc;
-
-   if (edd) return edd;
 
    EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Media_Infos_Req);
    edd =  eet_data_descriptor_stream_new(&eddc);
@@ -104,10 +103,8 @@ _media_infos_req_edd(void)
 static Eet_Data_Descriptor *
 _media_infos_edd(void)
 {
-   static Eet_Data_Descriptor *edd = NULL;
+   Eet_Data_Descriptor *edd = NULL;
    Eet_Data_Descriptor_Class eddc;
-
-   if (edd) return edd;
 
    EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Media_Infos);
    edd =  eet_data_descriptor_stream_new(&eddc);
@@ -116,11 +113,15 @@ _media_infos_edd(void)
    return edd;
 }
 
-Match_Type match_type[] = {
-  { "medias_req", EMS_SERVER_PROTOCOL_TYPE_MEDIAS_REQ, _medias_req_edd },
-  { "medias", EMS_SERVER_PROTOCOL_TYPE_MEDIAS, _medias_edd },
-  { "media_infos", EMS_SERVER_PROTOCOL_TYPE_MEDIA_INFOS, _media_infos_edd },
-  { "media_infos_req", EMS_SERVER_PROTOCOL_TYPE_MEDIA_INFOS_REQ, _media_infos_req_edd },
+struct _Match_Type {
+   const char *name;
+   Eet_Data_Descriptor *(*func)(void);
+   Eet_Data_Descriptor **edd;
+} match_type[] = {
+  { "medias_req", _medias_req_edd, &ems_medias_req_edd },
+  { "medias", _medias_edd, &ems_medias_add_edd },
+  { "media_infos", _media_infos_edd, &ems_media_infos_edd },
+  { "media_infos_req", _media_infos_req_edd, &ems_media_infos_req_edd },
   { NULL, 0, NULL }
 };
 
@@ -134,13 +135,7 @@ ems_server_protocol_init(void)
    int i;
 
    for (i = 0; match_type[i].name != NULL; i++)
-     match_type[i].edd();
-}
-
-Eet_Data_Descriptor *
-ems_server_protocol_edd_get(Ems_Server_Protocol_Type type)
-{
-   return match_type[type].edd();
+     *match_type[i].edd = match_type[i].func();
 }
 
 /*============================================================================*
