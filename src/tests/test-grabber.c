@@ -28,6 +28,7 @@
 #endif
 
 #include "ems_private.h"
+#include "ems_utils.h"
 
 static Eina_Bool _print_hash_cb(const Eina_Hash *hash, const void *key,
                   void *data, void *fdata)
@@ -58,16 +59,14 @@ int main(int argc, char **argv)
 {
    Eina_Module *m;
    char tmp[PATH_MAX];
-   void (*grab)(const char *filename, Ems_Media_Type type,
-		void (*Ems_Grabber_End_Cb)(void *data, const char *filename),
-		void *data
-		);
+   Ems_Media_Type type = 1;
+   Ems_Grabber_Grab grab;
+   char *title;
+   Ems_Grabber_Params params;
 
-
-
-   if (argc != 3)
+   if (argc != 4)
      {
-	printf("USAGE : %s grabber_name filename\n", argv[0]);
+	printf("USAGE : %s grabber_name filename media_type\n", argv[0]);
 	exit(-1);
      }
 
@@ -83,17 +82,26 @@ int main(int argc, char **argv)
    snprintf(tmp, sizeof(tmp), PACKAGE_LIB_DIR"/ems/grabbers/%s/%s/module.so", argv[1], MODULE_ARCH);
    m = eina_module_new(tmp);
 
-   eina_module_load(m);
+   if (!eina_module_load(m))
+     {
+       ERR("unable to load module (%s): %s", tmp, eina_error_msg_get(eina_error_get()));
+     }
 
    grab = eina_module_symbol_get(m, "ems_grabber_grab");
    if (grab)
      {
-        INF("Grab file %s", argv[2]);
-        grab(argv[2],
-             1,
-             _end_grab_cb, NULL);
-     }
+        INF("Grab title %s", argv[2]);
+        type = atoi(argv[3]);
 
+        title = ems_utils_decrapify(argv[2], &params.season, &params.episode);
+
+        grab(title,
+             type,
+             params,
+             _end_grab_cb, NULL);
+
+        free(title);
+     }
 
 
    ecore_main_loop_begin();

@@ -94,7 +94,7 @@ struct _Ems_Tmdb_Req
    Ecore_Con_Url *ec_url;
    Ems_Request_State state;
    Ems_Grabber_Data *grabbed_data;
-   void (*end_cb)(void *data, const char *filename, Ems_Grabber_Data *grabbed_data);
+   Ems_Grabber_End_Cb end_cb;
    void *data;
 };
 
@@ -371,7 +371,7 @@ _grabber_tmdb_init(void)
  *============================================================================*/
 
 EAPI void
-ems_grabber_grab(const char *filename, Ems_Media_Type type, Ems_Grabber_End_Cb end_cb, void *data)
+ems_grabber_grab(const char *filename, Ems_Media_Type type, Ems_Grabber_Params params, Ems_Grabber_End_Cb end_cb, void *data)
 {
    char url[PATH_MAX];
    Ecore_Con_Url *ec_url = NULL;
@@ -385,16 +385,7 @@ ems_grabber_grab(const char *filename, Ems_Media_Type type, Ems_Grabber_End_Cb e
    DBG("Grab %s of type %d", filename, type);
    _stats->total++;
 
-   /* Should be get back from database as this info (clean_name) is inserted in scanner*/
-   tmp = ems_utils_decrapify(filename);
-   if (tmp)
-     {
-        /* Escape string for search with tmdb */
-        search = ems_utils_escape_string(tmp);
-        free(tmp);
-        if (!search)
-          return;
-     }
+   search = ems_utils_escape_string(filename);
 
    snprintf(url, sizeof (url), EMS_TMDB_QUERY_SEARCH,
             EMS_TMDB_API_KEY, search);

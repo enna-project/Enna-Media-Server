@@ -121,7 +121,7 @@ _decrapify_pattern (char *str, const char *bl,
 }
 
 static void
-_decrapify_blacklist (char **list, char *str)
+_decrapify_blacklist (char **list, char *str, unsigned int *se, unsigned int *ep)
 {
    char **l;
 
@@ -134,17 +134,29 @@ _decrapify_blacklist (char **list, char *str)
                || strstr (*l, PATTERN_SEASON)
                || strstr (*l, PATTERN_EPISODE))
           {
-             unsigned int i, se = 0, ep = 0;
+             unsigned int i, _se = 0, _ep = 0;
 
-             _decrapify_pattern (str, *l, &se, &ep);
+             _decrapify_pattern (str, *l, &_se, &_ep);
              for (i = 0; i < 2; i++)
                {
-                  unsigned int val = i ? ep : se;
+                  unsigned int val = i ? _ep : _se;
                   char v[32];
 
                   if (!val)
                     continue;
-                  DBG("Found %s", v);
+
+                  if (i)
+                    {
+                       if (ep)
+                         *ep = _ep;
+                       DBG("Found episode %d", _ep);
+                    }
+                  else
+                    {
+                       if (se)
+                         *se = _se;
+                       DBG("Found season %d", _se);
+                    }
                }
              continue;
           }
@@ -232,7 +244,7 @@ _isunreserved(unsigned char in)
 
 /* stolen from libvalhalla */
 char *
-ems_utils_decrapify(const char *file)
+ems_utils_decrapify(const char *file, unsigned int *season, unsigned int *episode)
 {
    char *it, *filename, *res;
    char *file_tmp = strdup (file);
@@ -249,8 +261,8 @@ ems_utils_decrapify(const char *file)
      it++;
    else
      {
-        free (file_tmp);
-        return NULL;
+        it = file_tmp;
+        DBG("decrapifier: not a path");
      }
 
    filename = it;
@@ -261,7 +273,7 @@ ems_utils_decrapify(const char *file)
        *it = ' ';
 
    items = eina_str_split(ems_config->blacklist, ",", 0);
-   _decrapify_blacklist(items, filename);
+   _decrapify_blacklist(items, filename, season, episode);
    free(*items);
    free(items);
    _decrapify_cleanup (filename);

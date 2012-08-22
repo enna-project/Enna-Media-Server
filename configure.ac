@@ -37,6 +37,7 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 AC_GNU_SOURCE
 AC_SYS_LARGEFILE
+AC_PROG_CXX
 
 LT_PREREQ([2.2])
 LT_INIT([win32-dll])
@@ -156,6 +157,7 @@ src/bin/enna/Makefile
 src/modules/Makefile
 src/modules/tmdb/Makefile
 src/modules/allocine/Makefile
+src/modules/thetvdb/Makefile
 src/tests/Makefile
 data/Makefile
 data/themes/Makefile

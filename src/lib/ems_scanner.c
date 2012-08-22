@@ -114,6 +114,7 @@ _file_filter_cb(void *data, Eio_File *handler __UNUSED__, Eina_File_Direct_Info 
    switch (dir->type)
      {
       case EMS_MEDIA_TYPE_VIDEO:
+      case EMS_MEDIA_TYPE_TVSHOW:
          ext = ems_config->video_extensions;
          break;
       case EMS_MEDIA_TYPE_MUSIC:
@@ -143,6 +144,8 @@ _file_filter_cb(void *data, Eio_File *handler __UNUSED__, Eina_File_Direct_Info 
            case EMS_MEDIA_TYPE_PHOTO:
               type = eina_stringshare_add("photo");
               break;
+           case EMS_MEDIA_TYPE_TVSHOW:
+              type = eina_stringshare_add("tvshow");
            default:
               ERR("Unknown type %d", dir->type);
               type = NULL;
@@ -178,7 +181,9 @@ _file_filter_cb(void *data, Eio_File *handler __UNUSED__, Eina_File_Direct_Info 
                        ems_database_meta_insert(ems_config->db, info->path, "filesize", ssize);
                        ems_database_meta_insert(ems_config->db, info->path, "filename", info->path);
                        /* Insert metadata clean_name in database based on searched string */
-                       tmp = ems_utils_decrapify(info->path);
+
+                       //FIXME: season, episode should be passed to the grabber
+                       tmp = ems_utils_decrapify(info->path, NULL, NULL);
                        ems_database_meta_insert(ems_config->db, info->path, "clean_name", tmp);
                        /* Queue file in grabber list */
                        ems_parser_grab(info->path, dir->type);
