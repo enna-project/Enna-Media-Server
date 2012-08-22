@@ -31,6 +31,7 @@
 #include <Ecore.h>
 #include <Ecore_Con.h>
 
+#include "Ecore_Con_Eet.h"
 #include "ems_database.h"
 /*
  * variable and macros used for the eina_log module
@@ -124,8 +125,7 @@ struct _Ems_Server
 {
    const char *name;
    const char *ip;
-   Ecore_Con_Server *ecore_conn;
-   Eet_Connection *eet_conn;
+   Ecore_Con_Eet *ece;
    unsigned int port;
    Eina_Bool is_ipv6;
    Eina_Bool is_local;
