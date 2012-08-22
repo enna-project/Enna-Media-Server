@@ -136,6 +136,7 @@ struct _Ems_Server
    const char *name;
    const char *ip;
    Ecore_Con_Eet *ece;
+   Ecore_Con_Reply *reply;
    unsigned int port;
    Eina_Bool is_ipv6;
    Eina_Bool is_local;

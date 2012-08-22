@@ -36,7 +36,7 @@
 #include "ems_private.h"
 #include "ems_server.h"
 #include "ems_server_eet.h"
-
+#include "ems_server_protocol.h"
 /*============================================================================*
  *                                  Local                                     *
  *============================================================================*/
@@ -69,18 +69,56 @@ struct _Ems_Server_Cb
 static Eina_List *_servers = NULL;
 static Eina_List *_servers_cb = NULL;
 
+
+
 static Eina_Bool
 _server_connected_cb(void *data, Ecore_Con_Reply *reply, Ecore_Con_Server *conn)
 {
-   DBG("connected to server");
+   Ems_Server *server = data;
+   Eina_List *l_cb;
+   Ems_Server_Cb *cb;
+   DBG("Connected to %s:%d (%s)", server->ip, server->port, server->name);
+
+   if (server->is_connected)
+     return EINA_TRUE;
+   else
+     server->is_connected = EINA_TRUE;
+
+   server->reply = reply;
+   EINA_LIST_FOREACH(_servers_cb, l_cb, cb)
+     {
+        if (cb->add_cb)
+          cb->connected_cb(cb->data, server);
+     }
    return EINA_TRUE;
+
+}
+
+static Eina_Bool
+_ems_client_disconnected(void *data, int type, Ecore_Con_Event_Server_Del *ev)
+{
 }
 
 static Eina_Bool
 _server_disconnected_cb(void *data, Ecore_Con_Reply *reply, Ecore_Con_Server *conn)
 {
-   DBG("disconnected to server");
+
+   Ems_Server *server = data;
+   Eina_List *l_cb;
+   Ems_Server_Cb *cb;
+
+   DBG("Disconnected from  %s:%d (%s)", server->ip, server->port, server->name);
+
+   server->reply = NULL;
+
+   server->is_connected = EINA_FALSE;
+   EINA_LIST_FOREACH(_servers_cb, l_cb, cb)
+     {
+        if (cb->disconnected_cb)
+          cb->disconnected_cb(cb->data, server);
+     }
    return EINA_TRUE;
+
 }
 
 static Eina_Bool
@@ -133,11 +171,12 @@ void ems_server_add(Ems_Server *server)
    INF("Adding %s to the list of detected server", server->name);
 
    EINA_LIST_FOREACH(_servers_cb, l_cb, cb)
-     {
-        if (cb->add_cb)
-          cb->add_cb(cb->data, server);
-     }
-
+       {
+	  if (cb->add_cb)
+	    {
+	       cb->add_cb(cb->data, server);
+	    }
+       }
    _servers = eina_list_append(_servers, server);
 }
 
@@ -191,6 +230,8 @@ ems_server_cb_set(Ems_Server_Add_Cb server_add_cb,
                   void *data)
 {
    Ems_Server_Cb *cb;
+
+   DBG("");
 
    cb = calloc(1, sizeof(Ems_Server_Cb));
    if (!cb)
@@ -317,10 +358,14 @@ ems_server_media_get(Ems_Server *server,
                      Ems_Media_Add_Cb media_add,
                      void *data)
 {
+   Medias_Req *req;
 
    DBG("");
 
-   return NULL;
+   req->collection = collection;
+
+   ecore_con_eet_send(server->reply, "media_req", req);
+
 }
 
 Ems_Observer *
@@ -332,8 +377,6 @@ ems_server_media_info_get(Ems_Server *server,
                           Ems_Media_Info_Update_Cb info_update,
                           void *data)
 {
-
-   DBG("");
 
    return NULL;
 }
