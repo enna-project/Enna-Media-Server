@@ -69,7 +69,17 @@ struct _Ems_Server_Cb
 static Eina_List *_servers = NULL;
 static Eina_List *_servers_cb = NULL;
 
+static void
+_medias_cb(void *data, Ecore_Con_Reply *reply, const char *name, void *value)
+{
+   DBG("");
+}
 
+static void
+_media_info_cb(void *data, Ecore_Con_Reply *reply, const char *name, void *value)
+{
+   DBG("");
+}
 
 static Eina_Bool
 _server_connected_cb(void *data, Ecore_Con_Reply *reply, Ecore_Con_Server *conn)
@@ -85,6 +95,8 @@ _server_connected_cb(void *data, Ecore_Con_Reply *reply, Ecore_Con_Server *conn)
      server->is_connected = EINA_TRUE;
 
    server->reply = reply;
+   DBG("Server reply : %p", server->reply);
+
    EINA_LIST_FOREACH(_servers_cb, l_cb, cb)
      {
         if (cb->add_cb)
@@ -92,11 +104,6 @@ _server_connected_cb(void *data, Ecore_Con_Reply *reply, Ecore_Con_Server *conn)
      }
    return EINA_TRUE;
 
-}
-
-static Eina_Bool
-_ems_client_disconnected(void *data, int type, Ecore_Con_Event_Server_Del *ev)
-{
 }
 
 static Eina_Bool
@@ -139,6 +146,14 @@ _ems_server_connect(Ems_Server *server)
    ecore_con_eet_data_set(server->ece, conn);
    ecore_con_eet_server_connect_callback_add(server->ece, _server_connected_cb, server);
    ecore_con_eet_server_disconnect_callback_add(server->ece, _server_disconnected_cb, server);
+
+   ecore_con_eet_register(server->ece, "medias_req", ems_medias_req_edd);
+   ecore_con_eet_register(server->ece, "medias", ems_medias_add_edd);
+   ecore_con_eet_register(server->ece, "media_info_req", ems_media_infos_req_edd);
+   ecore_con_eet_register(server->ece, "media_info", ems_media_infos_edd);
+
+   ecore_con_eet_data_callback_add(server->ece, "medias", _medias_cb, server);
+   ecore_con_eet_data_callback_add(server->ece, "media_info", _media_info_cb, server);
 
    return EINA_TRUE;
 }
@@ -360,11 +375,12 @@ ems_server_media_get(Ems_Server *server,
 {
    Medias_Req *req;
 
-   DBG("");
+   DBG("Server reply : %p", server->reply);
 
+   req = calloc(1, sizeof(Medias_Req));
    req->collection = collection;
 
-   ecore_con_eet_send(server->reply, "media_req", req);
+   ecore_con_eet_send(server->reply, "medias_req", req);
 
 }
 
