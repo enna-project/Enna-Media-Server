@@ -43,6 +43,18 @@
 
 static Ecore_Con_Eet *ece = NULL;
 
+static void
+_medias_req_cb(void *data, Ecore_Con_Reply *reply, const char *name, void *value)
+{
+   DBG("");
+}
+
+static void
+_media_info_req_cb(void *data, Ecore_Con_Reply *reply, const char *name, void *value)
+{
+   DBG("");
+}
+
 static Eina_Bool
 _client_connected_cb(void *data, Ecore_Con_Reply *reply, Ecore_Con_Client *conn)
 {
@@ -88,6 +100,9 @@ ems_server_eet_init(void)
    ecore_con_eet_register(ece, "medias", ems_medias_add_edd);
    ecore_con_eet_register(ece, "media_info_req", ems_media_infos_req_edd);
    ecore_con_eet_register(ece, "media_info", ems_media_infos_edd);
+
+   ecore_con_eet_data_callback_add(ece, "medias_req", _medias_req_cb, NULL);
+   ecore_con_eet_data_callback_add(ece, "media_info_req", _media_info_req_cb, NULL);
 
    return EINA_TRUE;
 }
