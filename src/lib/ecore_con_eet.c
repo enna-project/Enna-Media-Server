@@ -250,7 +250,7 @@ _ecore_con_eet_client_connected(void *data, int type EINA_UNUSED, Ecore_Con_Even
    n->client = NULL;
    n->ece = r;
    n->econn = eet_connection_new(_ecore_con_eet_read_cb, _ecore_con_eet_client_write_cb, n);
-     
+
    EINA_LIST_FOREACH(r->u.client.server_connect_callbacks, ll, eces)
      if (!eces->func((void*) eces->data, n, n->ece->server))
        {
@@ -349,7 +349,7 @@ ecore_con_eet_client_new(Ecore_Con_Server *server)
 }
 
 void
- ecore_con_eet_server_free(Ecore_Con_Eet *r)
+ecore_con_eet_server_free(Ecore_Con_Eet *r)
 {
    if (!r) return ;
 
