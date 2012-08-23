@@ -46,7 +46,13 @@ _end_grab_cb(void *data __UNUSED__, const char *filename __UNUSED__, Ems_Grabber
    DBG("Grabbed data : %p", grabbed_data);
    INF("Grabber language : %s", grabbed_data->lang);
    INF("Grabber grabbed date : %lld", grabbed_data->date);
+   INF("Data:");
    eina_hash_foreach(grabbed_data->data, _print_hash_cb, NULL);
+   if (grabbed_data->episode_data)
+     {
+        INF("Episode data:");
+        eina_hash_foreach(grabbed_data->episode_data, _print_hash_cb, NULL);
+     }
    ecore_main_loop_quit();
 }
 

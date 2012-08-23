@@ -174,6 +174,7 @@ extern Ems_Config *ems_config;
 struct _Ems_Grabber_Data
 {
    Eina_Hash *data;
+   Eina_Hash *episode_data; //episode specific data
    time_t date;
    const char *lang;
 };

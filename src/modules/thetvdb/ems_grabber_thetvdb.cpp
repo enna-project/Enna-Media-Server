@@ -77,7 +77,7 @@ static int _dom;
 #define EMS_THETVDB_QUERY_EPISODE_INFO  "http://thetvdb.com/api/%s/series/%s/default/%u/%u/%s.xml"
 #define EMS_THETVDB_COVER               "http://thetvdb.com/banners/%s"
 
-typedef struct _Ems_TheTVDB_Req Ems_TheTVDB_Req;
+using namespace tinyxml2;
 
 typedef enum _Ems_Request_State
 {
@@ -86,7 +86,7 @@ typedef enum _Ems_Request_State
    EMS_REQUEST_STATE_EPISODE_INFO,
 } Ems_Request_State;
 
-struct _Ems_TheTVDB_Req
+typedef struct _Ems_TheTVDB_Req
 {
    const char *filename;
    const char *search;
@@ -95,10 +95,30 @@ struct _Ems_TheTVDB_Req
    Ems_Request_State state;
    Ems_Grabber_Data *grabbed_data;
    Ems_Grabber_End_Cb end_cb;
+   Ems_Grabber_Params params;
    void *data;
-};
+} Ems_TheTVDB_Req;
+
+typedef struct _Ems_TheTVDB_Stats
+{
+   int total;
+   int files_grabbed;
+   int covers_grabbed;
+   int backdrop_grabbed;
+   int multiple_results;
+} Ems_TheTVDB_Stats;
 
 static Eina_Hash *_hash_req = NULL;
+static Ems_TheTVDB_Stats *_stats = NULL;
+
+#define STORE_METADATA(key, val, eina_type, where)                \
+   do {                                                           \
+        Eina_Value *v = eina_value_new(eina_type);                \
+        eina_value_set(v, val);                                   \
+        eina_hash_add(req->grabbed_data->where, key, v);          \
+        DBG("Store metadata \"%s\" --> \"%s\"", key,              \
+            eina_value_to_string(v));                             \
+   } while(0);                                                    \
 
 static void
 _grabber_thetvdb_shutdown(void)
@@ -123,10 +143,322 @@ _search_data_cb(void *data __UNUSED__, int type __UNUSED__, Ecore_Con_Event_Url_
    return ECORE_CALLBACK_DONE;
 }
 
+static void
+_call_end_cb(Ems_TheTVDB_Req *req, Eina_Bool del)
+{
+   if (req && req->end_cb)
+     {
+        req->end_cb(req->data, req->filename, req->grabbed_data);
+        if (del)
+          eina_hash_del(_hash_req, req->ec_url, req);
+     }
+}
+
 static Eina_Bool
 _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info)
 {
-   return ECORE_CALLBACK_PASS_ON;
+   Ecore_Con_Event_Url_Complete *url_complete = (Ecore_Con_Event_Url_Complete *)event_info;
+   Ems_TheTVDB_Req *req = (Ems_TheTVDB_Req *)eina_hash_find(_hash_req, url_complete->url_con);
+
+   if (!req)
+     return ECORE_CALLBACK_PASS_ON;
+
+   DBG("download completed for %s with status code: %d", req->filename, url_complete->status);
+
+   if (url_complete->status != 200)
+     {
+        _call_end_cb(req, EINA_TRUE);
+        return ECORE_CALLBACK_DONE;
+     }
+   
+   switch(req->state)
+     {
+      case EMS_REQUEST_STATE_SEARCH:
+         if (req->buf)
+           {
+              int nb_results = 0;
+              const char *buf = eina_strbuf_string_get(req->buf);
+              char *seriesid = NULL;
+              Eina_Strbuf *url;
+
+              if (!buf)
+                {
+                   DBG("No data");
+                   _call_end_cb(req, EINA_TRUE);
+
+                   return ECORE_CALLBACK_DONE;
+                }
+
+              //DBG("Search request data : %s", buf);
+
+              //Parse the returned xml, we are in C++ here, do it that way
+              XMLDocument doc;
+              if (doc.Parse(buf) != XML_NO_ERROR)
+                {
+                   DBG("Unable to parse, (%s) (%s)", doc.GetErrorStr1(), doc.GetErrorStr2());
+                   _call_end_cb(req, EINA_TRUE);
+
+                   return ECORE_CALLBACK_DONE;
+                }
+
+              XMLElement *node = doc.FirstChildElement("Data");
+              if (node)
+                node = node->FirstChildElement("Series");
+              for(;node;node = node->NextSiblingElement())
+                {
+                   nb_results++;
+                   if (node->FirstChildElement("seriesid") && !seriesid)
+                     {
+                        XMLText* textNode = node->FirstChildElement("seriesid")->FirstChild()->ToText();
+                        seriesid = strdup(textNode->Value());
+                        DBG("Found series id %s", seriesid);
+                     }
+                }
+
+              if (!seriesid)
+                {
+                   DBG("In %d results, can't find seriesid tag", nb_results);
+                   _call_end_cb(req, EINA_TRUE);
+
+                   return ECORE_CALLBACK_DONE;
+                }
+
+              url = eina_strbuf_new();
+              eina_strbuf_append_printf(url,
+                                        EMS_THETVDB_QUERY_INFO,
+                                        EMS_THETVDB_API_KEY,
+                                        seriesid,
+                                        EMX_THETVDB_DEFAULT_LANG); //TODO: get language from config
+
+              ecore_con_url_url_set(req->ec_url, eina_strbuf_string_get(url));
+              eina_strbuf_free(url);
+              free(seriesid);
+              eina_strbuf_reset(req->buf);
+
+              req->state = EMS_REQUEST_STATE_INFO;
+
+              if (!ecore_con_url_get(req->ec_url))
+                {
+                   ERR("could not realize request.");
+                   _call_end_cb(req, EINA_TRUE);
+                   ecore_con_url_free(req->ec_url);
+                }
+                                        
+           }
+         break;
+      case EMS_REQUEST_STATE_INFO:
+         if (req->buf)
+           {
+              const char *buf = eina_strbuf_string_get(req->buf);
+              Eina_Strbuf *url;
+              char *seriesid = NULL;
+
+              if (!buf)
+                {
+                   DBG("No data");
+                   _call_end_cb(req, EINA_TRUE);
+
+                   return ECORE_CALLBACK_DONE;
+                }
+
+              //DBG("Search request data : %s", buf);
+
+              XMLDocument doc;
+              if (doc.Parse(buf) != XML_NO_ERROR)
+                {
+                   DBG("Unable to parse, (%s) (%s)", doc.GetErrorStr1(), doc.GetErrorStr2());
+                   _call_end_cb(req, EINA_TRUE);
+
+                   return ECORE_CALLBACK_DONE;
+                }
+
+              XMLElement *node = doc.FirstChildElement("Data");
+              if (node)
+                node = node->FirstChildElement("Series");
+              if (node)
+                node = node->FirstChildElement();
+              for(;node;node = node->NextSiblingElement())
+                {
+                   if (!strcmp(node->Value(), "Language"))
+                     {
+                        XMLText* textNode = node->FirstChild()->ToText();
+                        STORE_METADATA("language", textNode->Value(), EINA_VALUE_TYPE_STRINGSHARE, data);
+                     }
+                   else if (!strcmp(node->Value(), "FirstAired"))
+                     {
+                        XMLText* textNode = node->FirstChild()->ToText();
+                        STORE_METADATA("first_aired", textNode->Value(), EINA_VALUE_TYPE_STRINGSHARE, data);
+                     }
+                   else if (!strcmp(node->Value(), "Network"))
+                     {
+                        XMLText* textNode = node->FirstChild()->ToText();
+                        STORE_METADATA("network", textNode->Value(), EINA_VALUE_TYPE_STRINGSHARE, data);
+                     }
+                   else if (!strcmp(node->Value(), "Overview"))
+                     {
+                        XMLText* textNode = node->FirstChild()->ToText();
+                        STORE_METADATA("overview", textNode->Value(), EINA_VALUE_TYPE_STRINGSHARE, data);
+                     }
+                   else if (!strcmp(node->Value(), "Rating"))
+                     {
+                        XMLText* textNode = node->FirstChild()->ToText();
+                        STORE_METADATA("rating", (double)atoi(textNode->Value()), EINA_VALUE_TYPE_DOUBLE, data);
+                     }
+                   else if (!strcmp(node->Value(), "RatingCount"))
+                     {
+                        XMLText* textNode = node->FirstChild()->ToText();
+                        STORE_METADATA("rating_count", (double)atoi(textNode->Value()), EINA_VALUE_TYPE_DOUBLE, data);
+                     }
+                   else if (!strcmp(node->Value(), "SeriesName"))
+                     {
+                        XMLText* textNode = node->FirstChild()->ToText();
+                        STORE_METADATA("title", textNode->Value(), EINA_VALUE_TYPE_STRINGSHARE, data);
+                     }
+                   else if (!strcmp(node->Value(), "Status"))
+                     {
+                        XMLText* textNode = node->FirstChild()->ToText();
+                        STORE_METADATA("status", textNode->Value(), EINA_VALUE_TYPE_STRINGSHARE, data);
+                     }
+                   else if (!strcmp(node->Value(), "Actors"))
+                     {
+                        XMLText* textNode = node->FirstChild()->ToText();
+                        STORE_METADATA("actors", textNode->Value(), EINA_VALUE_TYPE_STRINGSHARE, data);
+                     }
+                   else if (!strcmp(node->Value(), "Genre"))
+                     {
+                        XMLText* textNode = node->FirstChild()->ToText();
+                        STORE_METADATA("genre", textNode->Value(), EINA_VALUE_TYPE_STRINGSHARE, data);
+                     }
+                   else if (!strcmp(node->Value(), "id"))
+                     {
+                        XMLText* textNode = node->FirstChild()->ToText();
+                        STORE_METADATA("thetvdb_id", textNode->Value(), EINA_VALUE_TYPE_STRINGSHARE, data);
+                        seriesid = strdup(textNode->Value());
+                     }
+                   else if (!strcmp(node->Value(), "banner") ||
+                            !strcmp(node->Value(), "fanart") ||
+                            !strcmp(node->Value(), "poster"))
+                     {
+                        //TODO: download images
+                     }
+                }
+
+              if (!seriesid)
+                {
+                   _call_end_cb(req, EINA_TRUE);
+                   return ECORE_CALLBACK_DONE;
+                }
+
+              url = eina_strbuf_new();
+              eina_strbuf_append_printf(url,
+                                        EMS_THETVDB_QUERY_EPISODE_INFO,
+                                        EMS_THETVDB_API_KEY,
+                                        seriesid,
+                                        req->params.season,
+                                        req->params.episode,
+                                        EMX_THETVDB_DEFAULT_LANG); //TODO: get language from config
+
+              ecore_con_url_url_set(req->ec_url, eina_strbuf_string_get(url));
+              eina_strbuf_free(url);
+              free(seriesid);
+              eina_strbuf_reset(req->buf);
+
+              req->state = EMS_REQUEST_STATE_EPISODE_INFO;
+
+              if (!ecore_con_url_get(req->ec_url))
+                {
+                   ERR("could not realize request.");
+                   _call_end_cb(req, EINA_TRUE);
+                   ecore_con_url_free(req->ec_url);
+                }
+
+            }
+         break;
+      case EMS_REQUEST_STATE_EPISODE_INFO:
+         if (req->buf)
+           {
+              const char *buf = eina_strbuf_string_get(req->buf);
+
+              if (!buf)
+                {
+                   DBG("No data");
+                   _call_end_cb(req, EINA_TRUE);
+
+                   return ECORE_CALLBACK_DONE;
+                }
+
+              //DBG("Search request data : %s", buf);
+
+              XMLDocument doc;
+              if (doc.Parse(buf) != XML_NO_ERROR)
+                {
+                   DBG("Unable to parse, (%s) (%s)", doc.GetErrorStr1(), doc.GetErrorStr2());
+                   _call_end_cb(req, EINA_TRUE);
+
+                   return ECORE_CALLBACK_DONE;
+                }
+
+              XMLElement *node = doc.FirstChildElement("Data");
+              if (node)
+                node = node->FirstChildElement("Episode");
+              if (node)
+                node = node->FirstChildElement();
+              for(;node;node = node->NextSiblingElement())
+                {
+                   if (!strcmp(node->Value(), "EpisodeName"))
+                     {
+                        XMLText* textNode = node->FirstChild()->ToText();
+                        STORE_METADATA("title", textNode->Value(), EINA_VALUE_TYPE_STRINGSHARE, episode_data);
+                     }
+                   else if (!strcmp(node->Value(), "FirstAired"))
+                     {
+                        XMLText* textNode = node->FirstChild()->ToText();
+                        STORE_METADATA("first_aired", textNode->Value(), EINA_VALUE_TYPE_STRINGSHARE, episode_data);
+                     }
+                   else if (!strcmp(node->Value(), "Director"))
+                     {
+                        XMLText* textNode = node->FirstChild()->ToText();
+                        STORE_METADATA("director", textNode->Value(), EINA_VALUE_TYPE_STRINGSHARE, episode_data);
+                     }
+                   else if (!strcmp(node->Value(), "Overview"))
+                     {
+                        XMLText* textNode = node->FirstChild()->ToText();
+                        STORE_METADATA("overview", textNode->Value(), EINA_VALUE_TYPE_STRINGSHARE, episode_data);
+                     }
+                   else if (!strcmp(node->Value(), "Rating"))
+                     {
+                        XMLText* textNode = node->FirstChild()->ToText();
+                        STORE_METADATA("rating", (double)atoi(textNode->Value()), EINA_VALUE_TYPE_DOUBLE, episode_data);
+                     }
+                   else if (!strcmp(node->Value(), "Language"))
+                     {
+                        XMLText* textNode = node->FirstChild()->ToText();
+                        STORE_METADATA("language", textNode->Value(), EINA_VALUE_TYPE_STRINGSHARE, episode_data);
+                     }
+                   else if (!strcmp(node->Value(), "Writer"))
+                     {
+                        XMLText* textNode = node->FirstChild()->ToText();
+                        STORE_METADATA("writer", textNode->Value(), EINA_VALUE_TYPE_STRINGSHARE, episode_data);
+                     }
+                   else if (!strcmp(node->Value(), "GuestStars"))
+                     {
+                        XMLText* textNode = node->FirstChild()->ToText();
+                        STORE_METADATA("guest_stars", textNode->Value(), EINA_VALUE_TYPE_STRINGSHARE, episode_data);
+                     }
+                   else if (!strcmp(node->Value(), "filename"))
+                     {
+                        //TODO: download images
+                     }
+                }
+
+              _call_end_cb(req, EINA_TRUE);
+            }
+         break;
+      default:
+         break;
+     }
+
+   return ECORE_CALLBACK_DONE;
 }
 
 static void
@@ -155,6 +487,8 @@ _grabber_thetvdb_init(void)
 
    _dom = eina_log_domain_register("ems_grabber_thetvdb", ENNA_DEFAULT_LOG_COLOR);
 
+   _stats = (Ems_TheTVDB_Stats *)calloc(1, sizeof(Ems_TheTVDB_Stats));
+
    return EINA_TRUE;
 }
 
@@ -166,25 +500,29 @@ _grabber_thetvdb_init(void)
 EAPI void
 ems_grabber_grab(const char *filename, Ems_Media_Type type, Ems_Grabber_Params params, Ems_Grabber_End_Cb end_cb, void *data)
 {
-   char url[PATH_MAX];
+   Eina_Strbuf *url = NULL;
    Ecore_Con_Url *ec_url = NULL;
    char *tmp;
    char *search = NULL;
    Ems_TheTVDB_Req *req;
 
    if (type != EMS_MEDIA_TYPE_TVSHOW)
-     return;
+     {
+        DBG("Not for me: %d != %d", type, EMS_MEDIA_TYPE_TVSHOW);
+        return;
+     }
 
    DBG("Grab %s of type %d (episode:%d season:%d)", filename, type, params.episode, params.season);
 
    search = ems_utils_escape_string(filename);
 
-   snprintf(url, sizeof (url), EMS_THETVDB_QUERY_SEARCH,
-            EMS_THETVDB_API_KEY, search);
+   url = eina_strbuf_new();
+   eina_strbuf_append_printf(url, EMS_THETVDB_QUERY_SEARCH, search);
 
-   DBG("Search for %s", url);
+   DBG("Search for %s", eina_strbuf_string_get(url));
 
-   ec_url = ecore_con_url_new(url);
+   ec_url = ecore_con_url_new(eina_strbuf_string_get(url));
+   eina_strbuf_free(url);
    if (!ec_url)
      {
         ERR("error when creating ecore con url object.");
@@ -202,10 +540,14 @@ ems_grabber_grab(const char *filename, Ems_Media_Type type, Ems_Grabber_Params p
    req->buf = eina_strbuf_new();
    req->grabbed_data = (Ems_Grabber_Data *)calloc(1, sizeof (Ems_Grabber_Data));
    req->grabbed_data->data = eina_hash_string_superfast_new(NULL);
-   req->grabbed_data->lang = "fr";
+   req->grabbed_data->episode_data = eina_hash_string_superfast_new(NULL);
+   req->grabbed_data->lang = "fr"; //FIXME
+   req->params = params;
    req->state = EMS_REQUEST_STATE_SEARCH;
 
    eina_hash_add(_hash_req, ec_url, req);
+
+   _stats->total++;
 
    if (!ecore_con_url_get(ec_url))
      {
@@ -213,6 +555,18 @@ ems_grabber_grab(const char *filename, Ems_Media_Type type, Ems_Grabber_Params p
         eina_hash_del(_hash_req, ec_url, req);
         ecore_con_url_free(ec_url);
      }
+}
+
+EAPI void
+ems_grabber_stats(void)
+{
+   INF("Stats for TheTVDB module");
+   INF("Total files grabbed : %d", _stats->total);
+   INF("Files grabbed : %d (%3.3f%%)", _stats->files_grabbed,  _stats->files_grabbed * 100.0 / _stats->total);
+   INF("Covers grabbed : %d (%3.3f%%)", _stats->covers_grabbed,  _stats->files_grabbed * 100.0 / _stats->total);
+   INF("Backdrop grabbed : %d (%3.3f%%)", _stats->backdrop_grabbed,  _stats->backdrop_grabbed * 100.0 / _stats->total);
+   INF("Multipled results : %d (%3.3f%%)", _stats->multiple_results,  _stats->multiple_results * 100.0 / _stats->total);
+   INF("End of stats");
 }
 
 EINA_MODULE_INIT(_grabber_thetvdb_init);
