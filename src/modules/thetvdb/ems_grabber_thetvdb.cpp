@@ -111,14 +111,14 @@ typedef struct _Ems_TheTVDB_Stats
 static Eina_Hash *_hash_req = NULL;
 static Ems_TheTVDB_Stats *_stats = NULL;
 
-#define STORE_METADATA(key, val, eina_type, where)                \
-   do {                                                           \
-        Eina_Value *v = eina_value_new(eina_type);                \
-        eina_value_set(v, val);                                   \
-        eina_hash_add(req->grabbed_data->where, key, v);          \
-        DBG("Store metadata \"%s\" --> \"%s\"", key,              \
-            eina_value_to_string(v));                             \
-   } while(0);                                                    \
+#define STORE_METADATA(key, val, where)                               \
+   do {                                                               \
+        Eina_Value *v = eina_value_new(EINA_VALUE_TYPE_STRINGSHARE);  \
+        eina_value_set(v, val);                                       \
+        eina_hash_add(req->grabbed_data->where, key, v);              \
+        DBG("Store metadata \"%s\" --> \"%s\"", key,                  \
+            eina_value_to_string(v));                                 \
+   } while(0);                                                        \
 
 static void
 _grabber_thetvdb_shutdown(void)
@@ -282,57 +282,57 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
                    if (!strcmp(node->Value(), "Language"))
                      {
                         XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("language", textNode->Value(), EINA_VALUE_TYPE_STRINGSHARE, data);
+                        STORE_METADATA("language", textNode->Value(), data);
                      }
                    else if (!strcmp(node->Value(), "FirstAired"))
                      {
                         XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("first_aired", textNode->Value(), EINA_VALUE_TYPE_STRINGSHARE, data);
+                        STORE_METADATA("first_aired", textNode->Value(), data);
                      }
                    else if (!strcmp(node->Value(), "Network"))
                      {
                         XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("network", textNode->Value(), EINA_VALUE_TYPE_STRINGSHARE, data);
+                        STORE_METADATA("network", textNode->Value(), data);
                      }
                    else if (!strcmp(node->Value(), "Overview"))
                      {
                         XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("overview", textNode->Value(), EINA_VALUE_TYPE_STRINGSHARE, data);
+                        STORE_METADATA("overview", textNode->Value(), data);
                      }
                    else if (!strcmp(node->Value(), "Rating"))
                      {
                         XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("rating", (double)atoi(textNode->Value()), EINA_VALUE_TYPE_DOUBLE, data);
+                        STORE_METADATA("rating", (double)atoi(textNode->Value()), data);
                      }
                    else if (!strcmp(node->Value(), "RatingCount"))
                      {
                         XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("rating_count", (double)atoi(textNode->Value()), EINA_VALUE_TYPE_DOUBLE, data);
+                        STORE_METADATA("rating_count", (double)atoi(textNode->Value()), data);
                      }
                    else if (!strcmp(node->Value(), "SeriesName"))
                      {
                         XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("title", textNode->Value(), EINA_VALUE_TYPE_STRINGSHARE, data);
+                        STORE_METADATA("title", textNode->Value(), data);
                      }
                    else if (!strcmp(node->Value(), "Status"))
                      {
                         XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("status", textNode->Value(), EINA_VALUE_TYPE_STRINGSHARE, data);
+                        STORE_METADATA("status", textNode->Value(), data);
                      }
                    else if (!strcmp(node->Value(), "Actors"))
                      {
                         XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("actors", textNode->Value(), EINA_VALUE_TYPE_STRINGSHARE, data);
+                        STORE_METADATA("actors", textNode->Value(), data);
                      }
                    else if (!strcmp(node->Value(), "Genre"))
                      {
                         XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("genre", textNode->Value(), EINA_VALUE_TYPE_STRINGSHARE, data);
+                        STORE_METADATA("genre", textNode->Value(), data);
                      }
                    else if (!strcmp(node->Value(), "id"))
                      {
                         XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("thetvdb_id", textNode->Value(), EINA_VALUE_TYPE_STRINGSHARE, data);
+                        STORE_METADATA("thetvdb_id", textNode->Value(), data);
                         seriesid = strdup(textNode->Value());
                      }
                    else if (!strcmp(node->Value(), "banner") ||
@@ -408,42 +408,42 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
                    if (!strcmp(node->Value(), "EpisodeName"))
                      {
                         XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("title", textNode->Value(), EINA_VALUE_TYPE_STRINGSHARE, episode_data);
+                        STORE_METADATA("title", textNode->Value(), episode_data);
                      }
                    else if (!strcmp(node->Value(), "FirstAired"))
                      {
                         XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("first_aired", textNode->Value(), EINA_VALUE_TYPE_STRINGSHARE, episode_data);
+                        STORE_METADATA("first_aired", textNode->Value(), episode_data);
                      }
                    else if (!strcmp(node->Value(), "Director"))
                      {
                         XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("director", textNode->Value(), EINA_VALUE_TYPE_STRINGSHARE, episode_data);
+                        STORE_METADATA("director", textNode->Value(), episode_data);
                      }
                    else if (!strcmp(node->Value(), "Overview"))
                      {
                         XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("overview", textNode->Value(), EINA_VALUE_TYPE_STRINGSHARE, episode_data);
+                        STORE_METADATA("overview", textNode->Value(), episode_data);
                      }
                    else if (!strcmp(node->Value(), "Rating"))
                      {
                         XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("rating", (double)atoi(textNode->Value()), EINA_VALUE_TYPE_DOUBLE, episode_data);
+                        STORE_METADATA("rating", (double)atoi(textNode->Value()), episode_data);
                      }
                    else if (!strcmp(node->Value(), "Language"))
                      {
                         XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("language", textNode->Value(), EINA_VALUE_TYPE_STRINGSHARE, episode_data);
+                        STORE_METADATA("language", textNode->Value(), episode_data);
                      }
                    else if (!strcmp(node->Value(), "Writer"))
                      {
                         XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("writer", textNode->Value(), EINA_VALUE_TYPE_STRINGSHARE, episode_data);
+                        STORE_METADATA("writer", textNode->Value(), episode_data);
                      }
                    else if (!strcmp(node->Value(), "GuestStars"))
                      {
                         XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("guest_stars", textNode->Value(), EINA_VALUE_TYPE_STRINGSHARE, episode_data);
+                        STORE_METADATA("guest_stars", textNode->Value(), episode_data);
                      }
                    else if (!strcmp(node->Value(), "filename"))
                      {
