@@ -1,0 +1,140 @@
+Database saved in directory .config/enna/db/
+|----video_places_list.eet
+|----tvhsow_places_list.eet
+|----place1/
+|        |----videos/
+|        |      |----videos_list.eet
+|        |      |----video1/
+|        |      |      |----infos-video1.eet
+|        |      |      |----cover-video1.eet
+|        |      |      |----fanart-video1.eet
+.        .      .      .
+.        .      .      .
+.        .      .      .
+|        |      |----videoN/
+|        |      |      |----infos-videoN.eet
+|        |      |      |----cover.eet
+|        |      |      |----fanart.eet
+.
+.
+.
+|----place2/
+         |----tvshows/
+         |      |----tvshows_list.eet
+         |      |----serie1/
+         |      |      |----infos-serie1.eet
+         |      |      |----cover-seria1.eet
+         |      |      |----fanart-seria1.eet
+         |      |      |----saison1/
+         |      |      |      |----episodes-list.eet
+         |      |      |      |----episode1/
+         |      |      |      |      |----infos-episode1.eet
+         |      |      |      |      |----cover-episode1.eet
+         |      |      |      |      |----fanart-episode1.eet
+         .      .      .      .      .
+         .      .      .      .      .
+         |      |      |      |----episodeN/
+         |      |      |      |      |----infos-episodeN.eet
+         |      |      |      |      |----cover-episodeN.eet
+         |      |      |      |      |----fanart-episodeN.eet
+         .      .      .      .
+         .      .      .      .
+         |      |      |----saisonN/
+         |      |      |      |----episodes-list.eet
+         |      |      |      |----episode1/
+         |      |      |      |      |----infos-episode1.eet
+         |      |      |      |      |----cover-episode1.eet
+         |      |      |      |      |----fanart-episode1.eet
+         .      .      .      .      .
+         .      .      .      .      .
+         |      |      |      |----episodeN/
+         |      |      |      |      |----infos-episodeN.eet
+         |      |      |      |      |----cover-episodeN.eet
+         |      |      |      |      |----fanart-episodeN.eet
+         .      .
+         .      .
+         |      |----serieN/
+         |      |      |----infos-serieN.eet
+         |      |      |----cover-seriaN.eet
+         |      |      |----fanart-seriaN.eet
+         |      |      |----saison1/
+         |      |      |      |----episodes-list.eet
+         |      |      |      |----episode1/
+         |      |      |      |      |----infos-episode1.eet
+         |      |      |      |      |----cover-episode1.eet
+         |      |      |      |      |----fanart-episode1.eet
+         .      .      .      .      .
+         .      .      .      .      .
+         |      |      |      |----episodeN/
+         |      |      |      |      |----infos-episodeN.eet
+         |      |      |      |      |----cover-episodeN.eet
+         |      |      |      |      |----fanart-episodeN.eet
+         .      .      .      .
+         .      .      .      .
+         |      |      |----saisonN/
+         |      |      |      |----episodes-list.eet
+         |      |      |      |----episode1/
+         |      |      |      |      |----infos-episode1.eet
+         |      |      |      |      |----cover-episode1.eet
+         |      |      |      |      |----fanart-episode1.eet
+         .      .      .      .      .
+         .      .      .      .      .
+         |      |      |      |----episodeN/
+         |      |      |      |      |----infos-episodeN.eet
+         |      |      |      |      |----cover-episodeN.eet
+         |      |      |      |      |----fanart-episodeN.eet
+
+- *_places_list.eet :
+Contains an Eina_List of Place structure :
+ Place structure :
+     place name;
+     place icon;
+
+- video_list.eet :
+Contains Eina_List of char *. Char * represents the hash of the video file.
+
+- Video1 :
+Directory containing informations about a video. The name of the directory is the hash of the film.
+
+- infos-video1.eet :
+Contains information about the movie, this information are retrieved by grabbers.
+- title
+- original title
+- released date
+- synopsys
+- producer
+- director
+- actors
+- trailer url
+...
+
+- cover-video1.eet
+Contains the eet encapsulated image of the cover for this movie.
+
+- fanart-video1.eet
+Contains the eet encapsulated image of the fanart for this movie.
+
+This database is created by ems when it parses the directories of the config and all eet files are created during the scan period.
+
+When ems client ask for list of places it tries to load the local cached database. If nothing is found, it send a request to the server in order to retrieve the places list file, it saves the places_list.eet on the local cached database and send infos to the ui for display on screen.
+When ems server detects a new place, it send a request to the client, which contains informations about the new place.
+The client updates the file places_list.eet dynamically.
+if a file is found in the local cached database, the client load the revision of this list, and send a request to the server. The server compare the revision with his current file revision. If revisions are différent, the new videos_list.eet is sent to the client. If revisions are the same, server send ACK, and the client load data from the local cached database.
+
+We do the same thing with video_list.eet of a video place. The client try to read the file on the cached database. If not found it send a request to the server. Then each time the server detects a new file on his system, it send a request to the client, and the ems client updates the eet file dynamically.
+
+Video informations.
+
+When client ask for information about a movie, it first look at the local cached database to see if the eet file for this movie is present. In case a eet file is present, it loads eet information and get them back to the caller. These informations contains the revision value for all these informations. A request is send asynchronously to the server to compare the revision on the server and the local revision. if the version is different, for example if an update has been done, the new data are send back to the client otherwise nothing a ACK is returned to the client.
+This machanism has advantage to display as soon as possible the data for a movie, and update them asynchronously on demand.
+
+Special cases:
+- New movie added :
+In this case, the sever send a request to the client, with the hash of this new movie. The client update the videos_list and may update UI.
+- Movie removed :
+In case a movie is removed from the server database, a request containing the removed movie's hash is sent to the client, who updated the videos_list.
+
+
+
+
+
