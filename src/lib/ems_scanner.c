@@ -133,6 +133,12 @@ _file_filter_cb(void *data, Eio_File *handler __UNUSED__, Eina_File_Direct_Info 
         const char *type;
         struct stat st;
         int64_t mtime;
+        uint64_t hash, size;
+        char uuid[50];
+        char ssize[17];
+        char *tmp;
+
+
         switch (dir->type)
           {
            case EMS_MEDIA_TYPE_VIDEO:
@@ -155,50 +161,40 @@ _file_filter_cb(void *data, Eio_File *handler __UNUSED__, Eina_File_Direct_Info 
         eina_stringshare_del(type);
         stat(info->path, &st);
 
-        mtime = ems_database_file_mtime_get(ems_config->db, info->path);
+        if (!ems_utils_hash_compute(info->path, &hash, &size) || !size || !hash)
+          {
+             ERR("%s is corrupted ?", info->path);
+             return EINA_FALSE;
+          }
+
+        snprintf(uuid, sizeof(uuid), "%032"PRIx64"-%016"PRIx32,
+                 hash,
+                 (uint32_t)size);
+
+        mtime = ems_database_file_mtime_get(uuid);
 
         if (mtime < 0)
           {
-             uint64_t hash, size;
              /* File doesn't exists in the db, insert a new one, start time is here a markup, once the scan is finished we do a request on this value to see which files changed, these files can be then removed from the db, as they are removed on the filesystem*/
-             if (ems_utils_hash_compute(info->path, &hash, &size))
-               {
-                  if (size || hash)
-                    {
-                       char uuid[50];
-                       char ssize[17];
-                       char *tmp;
 
-                       snprintf(uuid, sizeof(uuid), "%032"PRIx64"-%016"PRIx32,
-                                hash,
-                                (uint32_t)size);
+             DBG("Insert %s with uuid : %s", info->path, uuid);
 
-                       DBG("Insert %s with uuid : %s", info->path, uuid);
+             ems_database_file_insert(uuid, info->path, (int64_t)st.st_mtime, _scanner->start_time);
+             snprintf(ssize, sizeof(ssize), "%"PRIx64, (uint32_t)size);
+             /* Insert metadata name, filesize and filename in database */
+             //ems_database_meta_insert(ems_config->db, info->path, "filesize", ssize);
+             //ems_database_meta_insert(ems_config->db, info->path, "filename", info->path);
+             /* Insert metadata clean_name in database based on searched string */
 
-                       ems_database_file_insert(ems_config->db, info->path, uuid, (int64_t)st.st_mtime, dir->type, _scanner->start_time);
-                       snprintf(ssize, sizeof(ssize), "%"PRIx64, (uint32_t)size);
-                       /* Insert metadata name, filesize and filename in database */
-                       ems_database_meta_insert(ems_config->db, info->path, "filesize", ssize);
-                       ems_database_meta_insert(ems_config->db, info->path, "filename", info->path);
-                       /* Insert metadata clean_name in database based on searched string */
-
-                       //FIXME: season, episode should be passed to the grabber
-                       tmp = ems_utils_decrapify(info->path, NULL, NULL);
-                       ems_database_meta_insert(ems_config->db, info->path, "clean_name", tmp);
-                       /* Queue file in grabber list */
-                       ems_parser_grab(info->path, dir->type);
-                    }
-                  else
-                    ERR("%s is corrupted ?", info->path);
-               }
-             else
-               {
-                  ERR("Unable to compute File hash");
-               }
+             //FIXME: season, episode should be passed to the grabber
+             tmp = ems_utils_decrapify(info->path, NULL, NULL);
+             //ems_database_meta_insert(ems_config->db, info->path, "clean_name", tmp);
+             /* Queue file in grabber list */
+             ems_parser_grab(info->path, dir->type);
           }
         else
           {
-             ems_database_file_update(ems_config->db, info->path, (int64_t)st.st_mtime, dir->type, _scanner->start_time);
+             //ems_database_file_update(ems_config->db, info->path, (int64_t)st.st_mtime, dir->type, _scanner->start_time);
              /* we grab only file who changed since the last scan */
              if (mtime != (int64_t)st.st_mtime)
                {
@@ -213,11 +209,8 @@ _file_filter_cb(void *data, Eio_File *handler __UNUSED__, Eina_File_Direct_Info 
                                                 eina_stringshare_add(info->path));
         /* Commit db each 100 files ? does it really works ?*/
         if (!eina_list_count(_scanner->scan_files) % 100)
-          {
-             ems_database_transaction_end(ems_config->db);
-             ems_database_transaction_begin(ems_config->db);
-          }
- 
+             ems_database_flush();
+
         return EINA_TRUE;
      }
    else
@@ -242,9 +235,9 @@ _file_done_cb(void *data __UNUSED__, Eio_File *handler __UNUSED__)
         double t;
         Eina_List *files;
 
-        ems_database_transaction_end(ems_config->db);
+        //ems_database_transaction_end(ems_config->db);
         /* TODO: get the list of deleted file */
-        ems_database_deleted_files_remove(ems_config->db, _scanner->start_time);
+        //ems_database_deleted_files_remove(ems_config->db, _scanner->start_time);
 
 	/* Schedule the next scan */
 	if (_scanner->schedule_timer)
@@ -273,7 +266,7 @@ _file_done_cb(void *data __UNUSED__, Eio_File *handler __UNUSED__)
         _scanner->start_time = 0;
 
         t = ecore_time_get();
-        files = ems_database_files_get(ems_config->db);
+        //files = ems_database_files_get(ems_config->db);
         INF("SELECT file_path,file_mtime FROM file:  %d files in %3.3fs",
             eina_list_count(files), ecore_time_get() - t);
         EINA_LIST_FREE(files, f)
@@ -302,15 +295,11 @@ ems_scanner_init(void)
    if (!_scanner)
      return EINA_FALSE;
 
-   if (!ems_config->db)
-       ems_config->db = ems_database_new(NULL);
-
-   if (!ems_config->db)
+   if (!ems_database_init())
      {
         ERR("Unable to create database");
         return EINA_FALSE;
      }
-
 
    return EINA_TRUE;
 }
@@ -329,7 +318,7 @@ ems_scanner_shutdown(void)
 	if (_scanner->schedule_timer)
 	  ecore_timer_del(_scanner->schedule_timer);
 
-        ems_database_free(ems_config->db);
+        ems_database_shutdown();
 
         free(_scanner);
      }
@@ -360,13 +349,13 @@ ems_scanner_start(void)
    /* return; */
 
    _scanner->start_time = ecore_time_get();
-   ems_database_prepare(ems_config->db);
-   ems_database_transaction_begin(ems_config->db);
+   //ems_database_prepare(ems_config->db);
+   //ems_database_transaction_begin(ems_config->db);
    /* TODO : get all files in the db and see if they exist on the disk */
 
    /* Scann all files on the disk */
    DBG("Scanning videos directories :");
-   EINA_LIST_FOREACH(ems_config->video_directories, l, dir)
+   EINA_LIST_FOREACH(ems_config->places, l, dir)
      {
         _scanner->is_running++;
         DBG("Scanning %s: %s", dir->label, dir->path);
@@ -379,45 +368,45 @@ ems_scanner_start(void)
 
      }
 
-   DBG("Scanning tvshow directories :");
-   EINA_LIST_FOREACH(ems_config->tvshow_directories, l, dir)
-     {
-        _scanner->is_running++;
-        DBG("Scanning %s: %s", dir->label, dir->path);
-        eio_dir_direct_ls(dir->path,
-                          _file_filter_cb,
-                          _file_main_cb,
-                          _file_done_cb,
-                          _file_error_cb,
-                          dir);
+   /* DBG("Scanning tvshow directories :"); */
+   /* EINA_LIST_FOREACH(ems_config->tvshow_directories, l, dir) */
+   /*   { */
+   /*      _scanner->is_running++; */
+   /*      DBG("Scanning %s: %s", dir->label, dir->path); */
+   /*      eio_dir_direct_ls(dir->path, */
+   /*                        _file_filter_cb, */
+   /*                        _file_main_cb, */
+   /*                        _file_done_cb, */
+   /*                        _file_error_cb, */
+   /*                        dir); */
 
-     }
+   /*   } */
 
-   DBG("Scanning tvshow directories :");
-   EINA_LIST_FOREACH(ems_config->music_directories, l, dir)
-     {
-        _scanner->is_running++;
-        DBG("Scanning %s: %s", dir->label, dir->path);
-        eio_dir_direct_ls(dir->path,
-                          _file_filter_cb,
-                          _file_main_cb,
-                          _file_done_cb,
-                          _file_error_cb,
-                          dir);
-     }
+   /* DBG("Scanning tvshow directories :"); */
+   /* EINA_LIST_FOREACH(ems_config->music_directories, l, dir) */
+   /*   { */
+   /*      _scanner->is_running++; */
+   /*      DBG("Scanning %s: %s", dir->label, dir->path); */
+   /*      eio_dir_direct_ls(dir->path, */
+   /*                        _file_filter_cb, */
+   /*                        _file_main_cb, */
+   /*                        _file_done_cb, */
+   /*                        _file_error_cb, */
+   /*                        dir); */
+   /*   } */
 
-   DBG("Scanning photo directories :");
-   EINA_LIST_FOREACH(ems_config->photo_directories, l, dir)
-     {
-        _scanner->is_running++;
-        DBG("Scanning %s: %s", dir->label, dir->path);
-        eio_dir_direct_ls(dir->path,
-                          _file_filter_cb,
-                          _file_main_cb,
-                          _file_done_cb,
-                          _file_error_cb,
-                          dir);
-     }
+   /* DBG("Scanning photo directories :"); */
+   /* EINA_LIST_FOREACH(ems_config->photo_directories, l, dir) */
+   /*   { */
+   /*      _scanner->is_running++; */
+   /*      DBG("Scanning %s: %s", dir->label, dir->path); */
+   /*      eio_dir_direct_ls(dir->path, */
+   /*                        _file_filter_cb, */
+   /*                        _file_main_cb, */
+   /*                        _file_done_cb, */
+   /*                        _file_error_cb, */
+   /*                        dir); */
+   /*   } */
 
 }
 
