@@ -300,10 +300,7 @@ ems_config_init(const char *config_file)
    ENNA_CONFIG_VAL(D, T, port, EET_T_SHORT);
    ENNA_CONFIG_VAL(D, T, port_stream, EET_T_SHORT);
    ENNA_CONFIG_VAL(D, T, name, EET_T_STRING);
-   ENNA_CONFIG_LIST(D, T, video_directories, directory_edd);
-   ENNA_CONFIG_LIST(D, T, tvshow_directories, directory_edd);
-   ENNA_CONFIG_LIST(D, T, music_directories, directory_edd);
-   ENNA_CONFIG_LIST(D, T, photo_directories, directory_edd);
+   ENNA_CONFIG_LIST(D, T, places, directory_edd);
    ENNA_CONFIG_VAL(D, T, video_extensions, EET_T_STRING);
    ENNA_CONFIG_VAL(D, T, music_extensions, EET_T_STRING);
    ENNA_CONFIG_VAL(D, T, photo_extensions, EET_T_STRING);
