@@ -68,13 +68,13 @@ ems_config_filename_get(void)
 static const char *
 ems_config_dirname_get(void)
 {
-   static const char *dirname = NULL;
+   static const char *dir_name = NULL;
    char *tmp;
-   if (dirname)
-       return dirname;
+   if (dir_name)
+       return dir_name;
 
    tmp = ecore_file_dir_get(ems_config_filename_get());
-   dirname = eina_stringshare_add(tmp);
+   dir_name = eina_stringshare_add(tmp);
    free(tmp);
 
    return tmp;
@@ -107,13 +107,13 @@ ems_config_tmp_filename_get(void)
 static const char *
 ems_config_tmp_dirname_get(void)
 {
-   static const char *dirname = NULL;
+   static const char *dir_name = NULL;
    char *tmp;
-   if (dirname)
-       return dirname;
+   if (dir_name)
+       return dir_name;
 
    tmp = ecore_file_dir_get(ems_config_tmp_filename_get());
-   dirname = eina_stringshare_add(tmp);
+   dir_name = eina_stringshare_add(tmp);
    free(tmp);
 
    return tmp;
@@ -248,11 +248,11 @@ _config_get(Eet_Data_Descriptor *edd)
 const char *
 ems_config_cache_dirname_get(void)
 {
-   static const char *dirname = NULL;
+   static const char *dir_name = NULL;
    char tmp[PATH_MAX];
 
-   if (dirname)
-       return dirname;
+   if (dir_name)
+       return dir_name;
 
    if (!ems_config)
      return NULL;
@@ -273,8 +273,8 @@ ems_config_cache_dirname_get(void)
    if (!ecore_file_is_dir(tmp))
      ecore_file_mkpath(tmp);
 
-   dirname = eina_stringshare_add(tmp);
-   return dirname;
+   dir_name = eina_stringshare_add(tmp);
+   return dir_name;
 }
 
 Eina_Bool
@@ -289,7 +289,6 @@ ems_config_init(const char *config_file)
    ENNA_CONFIG_VAL(D, T, path, EET_T_STRING);
    ENNA_CONFIG_VAL(D, T, label, EET_T_STRING);
    ENNA_CONFIG_VAL(D, T, type, EET_T_UINT);
-
 
    conf_edd = ENNA_CONFIG_DD_NEW("config", Ems_Config);
 #undef T
@@ -335,8 +334,6 @@ ems_config_init(const char *config_file)
        ems_config->blacklist,
        ems_config->scan_period,
        ems_config->cache_path);
-   
-
 
    return EINA_TRUE;
 }
