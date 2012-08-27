@@ -158,6 +158,7 @@ src/modules/Makefile
 src/modules/tmdb/Makefile
 src/modules/allocine/Makefile
 src/modules/thetvdb/Makefile
+src/modules/betaseries/Makefile
 src/tests/Makefile
 data/Makefile
 data/themes/Makefile

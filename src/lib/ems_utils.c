@@ -303,8 +303,6 @@ ems_utils_escape_string(const char *string)
    if(!ns)
      return NULL;
 
-   int p = 2;
-
    length = alloc-1;
    while(length--)
      {

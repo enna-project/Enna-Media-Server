@@ -69,13 +69,10 @@ static int _dom;
 #endif /* ifdef CRIT */
 #define CRIT(...) EINA_LOG_DOM_CRIT(_enna_log_dom_global, __VA_ARGS__)
 
-#define EMX_THETVDB_DEFAULT_LANG        "en"
-
-#define EMS_THETVDB_API_KEY             "7E2162A2014D5EC9"
-#define EMS_THETVDB_QUERY_SEARCH        "http://thetvdb.com/api/GetSeries.php?seriesname=%s"
-#define EMS_THETVDB_QUERY_INFO          "http://thetvdb.com/api/%s/series/%s/%s.xml"
-#define EMS_THETVDB_QUERY_EPISODE_INFO  "http://thetvdb.com/api/%s/series/%s/default/%u/%u/%s.xml"
-#define EMS_THETVDB_COVER               "http://thetvdb.com/banners/%s"
+#define EMS_BETASERIES_API_KEY             "a209ae2a0357"
+#define EMS_BETASERIES_QUERY_SEARCH        "http://api.betaseries.com/shows/search.xml?key=%s&title=%s"
+#define EMS_BETASERIES_QUERY_INFO          "http://api.betaseries.com/shows/display/%s.xml?key=%s"
+#define EMS_BETASERIES_QUERY_EPISODE_INFO  "http://api.betaseries.com/shows/episodes/%s.xml?key=%s&season=%d&episode=%d&hide_notes=1"
 
 using namespace tinyxml2;
 
@@ -86,7 +83,7 @@ typedef enum _Ems_Request_State
    EMS_REQUEST_STATE_EPISODE_INFO,
 } Ems_Request_State;
 
-typedef struct _Ems_TheTVDB_Req
+typedef struct _Ems_Betaseries_Req
 {
    const char *filename;
    const char *search;
@@ -97,19 +94,19 @@ typedef struct _Ems_TheTVDB_Req
    Ems_Grabber_End_Cb end_cb;
    Ems_Grabber_Params params;
    void *data;
-} Ems_TheTVDB_Req;
+} Ems_Betaseries_Req;
 
-typedef struct _Ems_TheTVDB_Stats
+typedef struct _Ems_Betaseries_Stats
 {
    int total;
    int files_grabbed;
    int covers_grabbed;
    int backdrop_grabbed;
    int multiple_results;
-} Ems_TheTVDB_Stats;
+} Ems_Betaseries_Stats;
 
 static Eina_Hash *_hash_req = NULL;
-static Ems_TheTVDB_Stats *_stats = NULL;
+static Ems_Betaseries_Stats *_stats = NULL;
 
 #define STORE_METADATA(key, val, where)                               \
    do {                                                               \
@@ -123,7 +120,7 @@ static Ems_TheTVDB_Stats *_stats = NULL;
 static void
 _grabber_thetvdb_shutdown(void)
 {
-   INF("Shutdown TheTVDB grabber");
+   INF("Shutdown Betaseries grabber");
    eina_hash_free(_hash_req);
    ecore_con_url_shutdown();
    ecore_con_shutdown();
@@ -132,7 +129,7 @@ _grabber_thetvdb_shutdown(void)
 static Eina_Bool
 _search_data_cb(void *data __UNUSED__, int type __UNUSED__, Ecore_Con_Event_Url_Data *ev)
 {
-   Ems_TheTVDB_Req *req = (Ems_TheTVDB_Req *)eina_hash_find(_hash_req, ev->url_con);
+   Ems_Betaseries_Req *req = (Ems_Betaseries_Req *)eina_hash_find(_hash_req, ev->url_con);
 
    if (!req)
      return  ECORE_CALLBACK_PASS_ON;
@@ -144,7 +141,7 @@ _search_data_cb(void *data __UNUSED__, int type __UNUSED__, Ecore_Con_Event_Url_
 }
 
 static void
-_call_end_cb(Ems_TheTVDB_Req *req, Eina_Bool del)
+_call_end_cb(Ems_Betaseries_Req *req, Eina_Bool del)
 {
    if (req && req->end_cb)
      {
@@ -158,7 +155,7 @@ static Eina_Bool
 _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info)
 {
    Ecore_Con_Event_Url_Complete *url_complete = (Ecore_Con_Event_Url_Complete *)event_info;
-   Ems_TheTVDB_Req *req = (Ems_TheTVDB_Req *)eina_hash_find(_hash_req, url_complete->url_con);
+   Ems_Betaseries_Req *req = (Ems_Betaseries_Req *)eina_hash_find(_hash_req, url_complete->url_con);
 
    if (!req)
      return ECORE_CALLBACK_PASS_ON;
@@ -201,15 +198,17 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
                    return ECORE_CALLBACK_DONE;
                 }
 
-              XMLElement *node = doc.FirstChildElement("Data");
+              XMLElement *node = doc.FirstChildElement("root");
               if (node)
-                node = node->FirstChildElement("Series");
+                node = node->FirstChildElement("shows");
+              if (node)
+                node = node->FirstChildElement("show");
               for(;node;node = node->NextSiblingElement())
                 {
                    nb_results++;
-                   if (node->FirstChildElement("seriesid") && !seriesid)
+                   if (node->FirstChildElement("url") && !seriesid)
                      {
-                        XMLText* textNode = node->FirstChildElement("seriesid")->FirstChild()->ToText();
+                        XMLText* textNode = node->FirstChildElement("url")->FirstChild()->ToText();
                         seriesid = strdup(textNode->Value());
                         DBG("Found series id %s", seriesid);
                      }
@@ -217,7 +216,7 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
 
               if (!seriesid)
                 {
-                   DBG("In %d results, can't find seriesid tag", nb_results);
+                   DBG("In %d results, can't find url tag", nb_results);
                    _call_end_cb(req, EINA_TRUE);
 
                    return ECORE_CALLBACK_DONE;
@@ -225,10 +224,9 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
 
               url = eina_strbuf_new();
               eina_strbuf_append_printf(url,
-                                        EMS_THETVDB_QUERY_INFO,
-                                        EMS_THETVDB_API_KEY,
+                                        EMS_BETASERIES_QUERY_INFO,
                                         seriesid,
-                                        EMX_THETVDB_DEFAULT_LANG); //TODO: get language from config
+                                        EMS_BETASERIES_API_KEY);
 
               ecore_con_url_url_set(req->ec_url, eina_strbuf_string_get(url));
               eina_strbuf_free(url);
@@ -272,44 +270,19 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
                    return ECORE_CALLBACK_DONE;
                 }
 
-              XMLElement *node = doc.FirstChildElement("Data");
+              XMLElement *node = doc.FirstChildElement("root");
               if (node)
-                node = node->FirstChildElement("Series");
+                node = node->FirstChildElement("show");
               if (node)
                 node = node->FirstChildElement();
               for(;node;node = node->NextSiblingElement())
                 {
-                   if (!strcmp(node->Value(), "Language"))
-                     {
-                        XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("language", textNode->Value(), data);
-                     }
-                   else if (!strcmp(node->Value(), "FirstAired"))
-                     {
-                        XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("first_aired", textNode->Value(), data);
-                     }
-                   else if (!strcmp(node->Value(), "Network"))
-                     {
-                        XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("network", textNode->Value(), data);
-                     }
-                   else if (!strcmp(node->Value(), "Overview"))
+                   if (!strcmp(node->Value(), "description"))
                      {
                         XMLText* textNode = node->FirstChild()->ToText();
                         STORE_METADATA("overview", textNode->Value(), data);
                      }
-                   else if (!strcmp(node->Value(), "Rating"))
-                     {
-                        XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("rating", (double)atoi(textNode->Value()), data);
-                     }
-                   else if (!strcmp(node->Value(), "RatingCount"))
-                     {
-                        XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("rating_count", (double)atoi(textNode->Value()), data);
-                     }
-                   else if (!strcmp(node->Value(), "SeriesName"))
+                   else if (!strcmp(node->Value(), "title"))
                      {
                         XMLText* textNode = node->FirstChild()->ToText();
                         STORE_METADATA("title", textNode->Value(), data);
@@ -319,27 +292,16 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
                         XMLText* textNode = node->FirstChild()->ToText();
                         STORE_METADATA("status", textNode->Value(), data);
                      }
-                   else if (!strcmp(node->Value(), "Actors"))
+                   else if (!strcmp(node->Value(), "network"))
                      {
                         XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("actors", textNode->Value(), data);
+                        STORE_METADATA("network", textNode->Value(), data);
                      }
-                   else if (!strcmp(node->Value(), "Genre"))
+                   else if (!strcmp(node->Value(), "url"))
                      {
                         XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("genre", textNode->Value(), data);
-                     }
-                   else if (!strcmp(node->Value(), "id"))
-                     {
-                        XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("thetvdb_id", textNode->Value(), data);
+                        STORE_METADATA("betaseries_id", textNode->Value(), data);
                         seriesid = strdup(textNode->Value());
-                     }
-                   else if (!strcmp(node->Value(), "banner") ||
-                            !strcmp(node->Value(), "fanart") ||
-                            !strcmp(node->Value(), "poster"))
-                     {
-                        //TODO: download images
                      }
                 }
 
@@ -351,12 +313,11 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
 
               url = eina_strbuf_new();
               eina_strbuf_append_printf(url,
-                                        EMS_THETVDB_QUERY_EPISODE_INFO,
-                                        EMS_THETVDB_API_KEY,
+                                        EMS_BETASERIES_QUERY_EPISODE_INFO,
                                         seriesid,
+                                        EMS_BETASERIES_API_KEY,
                                         req->params.season,
-                                        req->params.episode,
-                                        EMX_THETVDB_DEFAULT_LANG); //TODO: get language from config
+                                        req->params.episode);
 
               ecore_con_url_url_set(req->ec_url, eina_strbuf_string_get(url));
               eina_strbuf_free(url);
@@ -398,54 +359,30 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
                    return ECORE_CALLBACK_DONE;
                 }
 
-              XMLElement *node = doc.FirstChildElement("Data");
+              XMLElement *node = doc.FirstChildElement("root");
               if (node)
-                node = node->FirstChildElement("Episode");
+                node = node->FirstChildElement("seasons");
+              if (node)
+                node = node->FirstChildElement("season");
+              if (node)
+                node = node->FirstChildElement("episodes");
+              if (node)
+                node = node->FirstChildElement("episode");
               if (node)
                 node = node->FirstChildElement();
               for(;node;node = node->NextSiblingElement())
                 {
-                   if (!strcmp(node->Value(), "EpisodeName"))
+                   if (!strcmp(node->Value(), "title"))
                      {
                         XMLText* textNode = node->FirstChild()->ToText();
                         STORE_METADATA("title", textNode->Value(), episode_data);
                      }
-                   else if (!strcmp(node->Value(), "FirstAired"))
-                     {
-                        XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("first_aired", textNode->Value(), episode_data);
-                     }
-                   else if (!strcmp(node->Value(), "Director"))
-                     {
-                        XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("director", textNode->Value(), episode_data);
-                     }
-                   else if (!strcmp(node->Value(), "Overview"))
+                   else if (!strcmp(node->Value(), "description"))
                      {
                         XMLText* textNode = node->FirstChild()->ToText();
                         STORE_METADATA("overview", textNode->Value(), episode_data);
                      }
-                   else if (!strcmp(node->Value(), "Rating"))
-                     {
-                        XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("rating", (double)atoi(textNode->Value()), episode_data);
-                     }
-                   else if (!strcmp(node->Value(), "Language"))
-                     {
-                        XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("language", textNode->Value(), episode_data);
-                     }
-                   else if (!strcmp(node->Value(), "Writer"))
-                     {
-                        XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("writer", textNode->Value(), episode_data);
-                     }
-                   else if (!strcmp(node->Value(), "GuestStars"))
-                     {
-                        XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("guest_stars", textNode->Value(), episode_data);
-                     }
-                   else if (!strcmp(node->Value(), "filename"))
+                   else if (!strcmp(node->Value(), "screen"))
                      {
                         //TODO: download images
                      }
@@ -464,7 +401,7 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
 static void
 _request_free_cb(void *data)
 {
-   Ems_TheTVDB_Req *req = (Ems_TheTVDB_Req *)data;
+   Ems_Betaseries_Req *req = (Ems_Betaseries_Req *)data;
    if (!req)
      return;
    if (req->filename) eina_stringshare_del(req->filename);
@@ -476,7 +413,7 @@ _request_free_cb(void *data)
 static Eina_Bool
 _grabber_thetvdb_init(void)
 {
-   INF("Init TheTVDB grabber");
+   INF("Init Betaseries grabber");
    ecore_con_init();
    ecore_con_url_init();
 
@@ -485,9 +422,9 @@ _grabber_thetvdb_init(void)
    ecore_event_handler_add(ECORE_CON_EVENT_URL_COMPLETE, (Ecore_Event_Handler_Cb)_search_complete_cb, NULL);
    ecore_event_handler_add(ECORE_CON_EVENT_URL_DATA, (Ecore_Event_Handler_Cb)_search_data_cb, NULL);
 
-   _dom = eina_log_domain_register("ems_grabber_thetvdb", ENNA_DEFAULT_LOG_COLOR);
+   _dom = eina_log_domain_register("ems_grabber_betaseries", ENNA_DEFAULT_LOG_COLOR);
 
-   _stats = (Ems_TheTVDB_Stats *)calloc(1, sizeof(Ems_TheTVDB_Stats));
+   _stats = (Ems_Betaseries_Stats *)calloc(1, sizeof(Ems_Betaseries_Stats));
 
    return EINA_TRUE;
 }
@@ -504,7 +441,7 @@ ems_grabber_grab(const char *filename, Ems_Media_Type type, Ems_Grabber_Params p
    Ecore_Con_Url *ec_url = NULL;
    char *tmp;
    char *search = NULL;
-   Ems_TheTVDB_Req *req;
+   Ems_Betaseries_Req *req;
 
    if (type != EMS_MEDIA_TYPE_TVSHOW)
      {
@@ -517,7 +454,10 @@ ems_grabber_grab(const char *filename, Ems_Media_Type type, Ems_Grabber_Params p
    search = ems_utils_escape_string(filename);
 
    url = eina_strbuf_new();
-   eina_strbuf_append_printf(url, EMS_THETVDB_QUERY_SEARCH, search);
+   eina_strbuf_append_printf(url,
+                             EMS_BETASERIES_QUERY_SEARCH,
+                             EMS_BETASERIES_API_KEY,
+                             search);
 
    DBG("Search for %s", eina_strbuf_string_get(url));
 
@@ -529,7 +469,7 @@ ems_grabber_grab(const char *filename, Ems_Media_Type type, Ems_Grabber_Params p
         return;
      }
 
-   req = (Ems_TheTVDB_Req *)calloc(1, sizeof(Ems_TheTVDB_Req));
+   req = (Ems_Betaseries_Req *)calloc(1, sizeof(Ems_Betaseries_Req));
    req->filename = eina_stringshare_add(filename);
    req->search = eina_stringshare_add(search);
    if (search)
@@ -560,7 +500,7 @@ ems_grabber_grab(const char *filename, Ems_Media_Type type, Ems_Grabber_Params p
 EAPI void
 ems_grabber_stats(void)
 {
-   INF("Stats for TheTVDB module");
+   INF("Stats for Betaseries module");
    INF("Total files grabbed : %d", _stats->total);
    INF("Files grabbed : %d (%3.3f%%)", _stats->files_grabbed,  _stats->files_grabbed * 100.0 / _stats->total);
    INF("Covers grabbed : %d (%3.3f%%)", _stats->covers_grabbed,  _stats->files_grabbed * 100.0 / _stats->total);
