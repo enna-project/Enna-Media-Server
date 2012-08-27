@@ -177,9 +177,9 @@ _file_filter_cb(void *data, Eio_File *handler __UNUSED__, Eina_File_Direct_Info 
           {
              /* File doesn't exists in the db, insert a new one, start time is here a markup, once the scan is finished we do a request on this value to see which files changed, these files can be then removed from the db, as they are removed on the filesystem*/
 
-             DBG("Insert %s with uuid : %s", info->path, uuid);
+             DBG("Insert %s with hash : %s", info->path, uuid);
 
-             ems_database_file_insert(uuid, info->path, (int64_t)st.st_mtime, _scanner->start_time);
+             ems_database_file_insert(uuid, dir->label, info->path, (int64_t)st.st_mtime, _scanner->start_time);
              snprintf(ssize, sizeof(ssize), "%"PRIx64, (uint32_t)size);
              /* Insert metadata name, filesize and filename in database */
              //ems_database_meta_insert(ems_config->db, info->path, "filesize", ssize);
@@ -238,6 +238,9 @@ _file_done_cb(void *data __UNUSED__, Eio_File *handler __UNUSED__)
         //ems_database_transaction_end(ems_config->db);
         /* TODO: get the list of deleted file */
         //ems_database_deleted_files_remove(ems_config->db, _scanner->start_time);
+
+        /* Flush the database */
+        ems_database_flush();
 
 	/* Schedule the next scan */
 	if (_scanner->schedule_timer)
@@ -367,47 +370,6 @@ ems_scanner_start(void)
                           dir);
 
      }
-
-   /* DBG("Scanning tvshow directories :"); */
-   /* EINA_LIST_FOREACH(ems_config->tvshow_directories, l, dir) */
-   /*   { */
-   /*      _scanner->is_running++; */
-   /*      DBG("Scanning %s: %s", dir->label, dir->path); */
-   /*      eio_dir_direct_ls(dir->path, */
-   /*                        _file_filter_cb, */
-   /*                        _file_main_cb, */
-   /*                        _file_done_cb, */
-   /*                        _file_error_cb, */
-   /*                        dir); */
-
-   /*   } */
-
-   /* DBG("Scanning tvshow directories :"); */
-   /* EINA_LIST_FOREACH(ems_config->music_directories, l, dir) */
-   /*   { */
-   /*      _scanner->is_running++; */
-   /*      DBG("Scanning %s: %s", dir->label, dir->path); */
-   /*      eio_dir_direct_ls(dir->path, */
-   /*                        _file_filter_cb, */
-   /*                        _file_main_cb, */
-   /*                        _file_done_cb, */
-   /*                        _file_error_cb, */
-   /*                        dir); */
-   /*   } */
-
-   /* DBG("Scanning photo directories :"); */
-   /* EINA_LIST_FOREACH(ems_config->photo_directories, l, dir) */
-   /*   { */
-   /*      _scanner->is_running++; */
-   /*      DBG("Scanning %s: %s", dir->label, dir->path); */
-   /*      eio_dir_direct_ls(dir->path, */
-   /*                        _file_filter_cb, */
-   /*                        _file_main_cb, */
-   /*                        _file_done_cb, */
-   /*                        _file_error_cb, */
-   /*                        dir); */
-   /*   } */
-
 }
 
 
