@@ -29,297 +29,182 @@
 
 #include <uuid/uuid.h>
 
-#include <sqlite3.h>
 #include <Eina.h>
 #include <Ecore_File.h>
 
 #include "ems_private.h"
-#include "ems_database_statements.h"
 #include "ems_database.h"
 #include "ems_config.h"
 
+#define EMS_DATABASE_FILE "database.eet"
+#define DATABASES_SECTION "databases"
+#define VIDEOS_HASH_SECTION "videos_hash"
 /*============================================================================*
  *                                  Local                                     *
  *============================================================================*/
 
 
-#define EMS_DB_BIND_TEXT_OR_GOTO(stmt, col, value, label)               \
-  do                                                                    \
-    {                                                                   \
-       res = sqlite3_bind_text(stmt, col, value, -1, SQLITE_STATIC);    \
-       if (res != SQLITE_OK)                                            \
-         goto label;                                                    \
-    }                                                                   \
-  while (0)
-#define EMS_DB_BIND_INT_OR_GOTO(stmt, col, value, label)        \
-  do                                                            \
-    {                                                           \
-       res = sqlite3_bind_int(stmt, col, value);                \
-       if (res != SQLITE_OK)                                    \
-         goto label;                                            \
-    }                                                           \
-  while (0)
-#define EMS_DB_BIND_INT64_OR_GOTO(stmt, col, value, label)      \
-  do                                                            \
-    {                                                           \
-       res = sqlite3_bind_int64(stmt, col, value);              \
-       if (res != SQLITE_OK)                                    \
-         goto label;                                            \
-    }                                                           \
-  while (0)
+typedef struct _Ems_Db_Databases_Item Ems_Db_Databases_Item;
+typedef struct _Ems_Db_Databases Ems_Db_Databases;
+typedef struct _Ems_Db Ems_Db;
+typedef struct _Ems_Db_Places Ems_Db_Places;
+typedef struct _Ems_Db_Places_Item Ems_Db_Places_Item;
+typedef struct _Ems_Db_Place_Videos Ems_Db_Place_Videos;
+typedef struct _Ems_Db_Video_Item Ems_Db_Video_Item;
+typedef struct _Ems_Db_Videos Ems_Db_Videos;
+typedef struct _Ems_Db_Video_Infos Ems_Db_Video_Infos;
+typedef struct _Ems_Db_Videos_Hash Ems_Db_Videos_Hash;
 
-#define EMS_DB_BIND_DOUBLE_OR_GOTO(stmt, col, value, label)      \
-  do                                                            \
-    {                                                           \
-       res = sqlite3_bind_double(stmt, col, value);             \
-       if (res != SQLITE_OK)                                    \
-         goto label;                                            \
-    }                                                           \
-  while (0)
-
-struct _Ems_Database
+struct _Ems_Db
 {
-   sqlite3 *db;
    const char *filename;
-   sqlite3_stmt *file_stmt;
-   sqlite3_stmt *file_update_stmt;
-   sqlite3_stmt *file_get_stmt;
-   sqlite3_stmt *meta_get_stmt;
-   sqlite3_stmt *data_get_stmt;
-   sqlite3_stmt *fileid_get_stmt;
-   sqlite3_stmt *fileuuid_get_stmt;
-   sqlite3_stmt *file_delete_stmt;
-   sqlite3_stmt *filemtime_stmt;
-   sqlite3_stmt *filehash_stmt;
-   sqlite3_stmt *filemagic_stmt;
-   sqlite3_stmt *data_stmt;
-   sqlite3_stmt *meta_stmt;
-   sqlite3_stmt *assoc_file_meta_stmt;
-   sqlite3_stmt *begin_stmt;
-   sqlite3_stmt *end_stmt;
+   Eet_File *ef; /* The Eet file */
+   Ems_Db_Databases *databases; /* List of all database known*/
+   Eina_List *video_places; /* List containing section of each video place */
+   Ems_Db_Videos_Hash *videos_hash; /* One big hash table to store all video medias informations */
 };
 
-static int
-_table_get_id(Ems_Database *db,
-              sqlite3_stmt *stmt, const char *name)
+struct _Ems_Db_Databases
 {
-   int res, err = -1;
-   int64_t val = 0;
+   Eina_List *list;
+};
 
-   if (!name)
-     return 0;
-
-   EMS_DB_BIND_TEXT_OR_GOTO(stmt, 1, name, out);
-
-   res = sqlite3_step(stmt);
-   if (res == SQLITE_ROW)
-     val = sqlite3_column_int64(stmt, 0);
-
-   sqlite3_reset(stmt);
-   sqlite3_clear_bindings(stmt);
-   err = 0;
- out:
-   if (err < 0)
-     ERR("%s", sqlite3_errmsg (db->db));
-   return val;
-}
-
-
-static int64_t
-_step_rowid (Ems_Database *db,
-             sqlite3_stmt *stmt, int *res, int *err)
+struct _Ems_Db_Databases_Item
 {
-  int64_t val = 0, val_tmp;
+   const char *uuid;
+   Eina_Bool is_local;
+   Eina_List *places;
+};
 
-  val_tmp = sqlite3_last_insert_rowid(db->db);
-  *res = sqlite3_step(stmt);
-  if (*res == SQLITE_DONE)
-  {
-    *err = 0;
-    val = sqlite3_last_insert_rowid(db->db);
-
-    if (val == val_tmp)
- return 0;
-  }
-
-  return val;
-}
-
-static int64_t
-_data_insert(Ems_Database *db, const char *value, int64_t lang_id)
+struct _Ems_Db_Places
 {
-   int res;
-   int64_t val = 0;
-   /* char *str; */
-   int err = -1;
-   /* Eina_Value_Type *type; */
+   int rev;
+   Eina_List *list;
+};
 
-   /* str = eina_value_to_string(value); */
-   /* if (!str) */
-   /*   return 0; */
-
-   /* type = eina_value_type_get(value); */
-
-   /* if (type == EINA_VALUE_TYPE_STRINGSHARE || */
-   /*     type == EINA_VALUE_TYPE_STRING) */
-   /*   { */
-   /*      const char *s; */
-   /*      eina_value_get(value, &s); */
-   EMS_DB_BIND_TEXT_OR_GOTO(db->data_stmt, 1, value, out);
-   /*   } */
-   /* else if (type == EINA_VALUE_TYPE_INT64) */
-   /*   { */
-   /*      int v; */
-   /*      eina_value_get(value, &v); */
-   /*      EMS_DB_BIND_INT_OR_GOTO(db->data_stmt, 1, v, out); */
-   /*   } */
-   /* else if (type == EINA_VALUE_TYPE_LONG || */
-   /*          type == EINA_VALUE_TYPE_INT || */
-   /*          type == EINA_VALUE_TYPE_SHORT) */
-   /*   { */
-   /*      int64_t v; */
-   /*      eina_value_get(value, &v); */
-   /*      EMS_DB_BIND_INT64_OR_GOTO(db->data_stmt, 1, v, out); */
-   /*   } */
-   /* else if (type == EINA_VALUE_TYPE_DOUBLE || */
-   /*          type == EINA_VALUE_TYPE_FLOAT) */
-   /*   { */
-   /*      double v; */
-   /*      eina_value_get(value, &v); */
-   /*      EMS_DB_BIND_DOUBLE_OR_GOTO(db->data_stmt, 1, v, out); */
-   /*   } */
-   /* else */
-   /*   { */
-   /*      ERR("unknown value type"); */
-   /*      goto out; */
-   /*   } */
-
-   EMS_DB_BIND_INT64_OR_GOTO(db->data_stmt, 2, lang_id, out_clear);
-
-   val = _step_rowid(db, db->data_stmt, &res, &err);
-   sqlite3_reset(db->data_stmt);
- out_clear:
-   sqlite3_clear_bindings(db->data_stmt);
- out:
-   if (err < 0 && res != SQLITE_CONSTRAINT) /* ignore constraint violation */
-     ERR("%s", sqlite3_errmsg(db->db));
-
-   if (!val)
-     {
-        val = _table_get_id(db, db->data_get_stmt, value);
-     }
-
-   return val;
-}
-
-
-
-static int64_t
-_meta_insert(Ems_Database *db, const char *meta)
+struct _Ems_Db_Places_Item
 {
-   int res;
-   int64_t val = 0;
-   int err = -1;
+   const char *path;
+   const char *label;
+   int type;
+   int video_rev;
+   Eina_List *video_list;
+};
 
-   if (!db || !db->db || !meta)
-     return 0;
-
-   EMS_DB_BIND_TEXT_OR_GOTO(db->meta_stmt, 1, meta, out);
-
-   val = _step_rowid(db, db->meta_stmt, &res, &err);
-   sqlite3_reset(db->meta_stmt);
-   sqlite3_clear_bindings(db->meta_stmt);
-
- out:
-   if (err < 0 && res != SQLITE_CONSTRAINT) /* ignore constraint violation */
-     ERR("%s", sqlite3_errmsg (db->db));
-
-   if (!val)
-     {
-        val = _table_get_id(db, db->meta_get_stmt, meta);
-     }
-
-   return val;
-}
-
-static int64_t
-_file_get(Ems_Database *db, const char *filename)
+struct _Ems_Db_Place_Videos
 {
-   int res, err = -1;
-   int64_t val = 0;
+   int rev;
+   Eina_List *list;
+};
 
-   if (!db || !db->db || !filename)
-     return 0;
+struct _Ems_Db_Video_Item
+{
+   const char *hash_key;
+   const char *title;
+   uint64_t mtime;
+   double start_time;
+};
 
-   EMS_DB_BIND_TEXT_OR_GOTO(db->file_get_stmt, 1, filename, out);
-   res = sqlite3_step(db->file_get_stmt);
-   if (res == SQLITE_ROW)
-     val = sqlite3_column_int64(db->file_get_stmt, 0);
-   else
-     goto out;
-   sqlite3_reset(db->file_get_stmt);
-   sqlite3_clear_bindings(db->file_get_stmt);
-   err = 0;
- out:
-   if (err < 0)
-     ERR("%s", sqlite3_errmsg(db->db));
-   return val;
-}
+struct _Ems_Db_Videos_Hash
+{
+   Eina_Hash *hash;
+};
+
+struct _Ems_Db_Video_Infos
+{
+   int rev;
+   uint64_t mtime;
+   const char *title;
+   const char *title_original;
+   const char *synopsis;
+   const char *release_date;
+   const char *actors;
+   const char *directors;
+   const char *rating;
+   const char *cover;
+   const char *backdrop;
+   const char *trailer;
+   const char *nationality;
+   const char *genres;
+};
+
+static Ems_Db *_db;
+static int _ems_init_count = 0;
+
+static Eet_Data_Descriptor *_edd_databases;
+static Eet_Data_Descriptor *_edd_databases_item;
+static Eet_Data_Descriptor *_edd_places_item;
+static Eet_Data_Descriptor *_edd_video_item;
+static Eet_Data_Descriptor *_edd_video_infos;
+static Eet_Data_Descriptor *_edd_videos_hash;
+
 
 static void
-_table_info_set(Ems_Database *db, const char *name, const char *value)
+_init_edd(void)
 {
-  int res, err = -1;
-  sqlite3_stmt *stmt;
+   Eet_Data_Descriptor_Class eddc;
+   Eet_Data_Descriptor *edd;
 
-  res = sqlite3_prepare_v2(db->db, INSERT_INFO, -1, &stmt, NULL);
-  if (res != SQLITE_OK)
-    goto out_err;
+   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Db_Video_Item);
+   edd = eet_data_descriptor_stream_new(&eddc);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Item, "hash_key", hash_key, EET_T_STRING);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Item, "title", title, EET_T_STRING);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Item, "mtime", mtime, EET_T_LONG_LONG);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Item, "start_time", mtime, EET_T_DOUBLE);
 
-  EMS_DB_BIND_TEXT_OR_GOTO(stmt, 1, name,  out_free);
-  EMS_DB_BIND_TEXT_OR_GOTO(stmt, 2, value, out_free);
+   _edd_video_item = edd;
+   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Db_Places_Item);
+   edd = eet_data_descriptor_stream_new(&eddc);
 
-  res = sqlite3_step(stmt);
-  if (res == SQLITE_DONE)
-    err = 0;
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Places_Item, "path", path, EET_T_STRING);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Places_Item, "label", label, EET_T_STRING);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Places_Item, "type", type, EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Places_Item, "videos_rev", video_rev, EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_LIST(edd, Ems_Db_Places_Item, "video_list", video_list, _edd_video_item);
 
- out_free:
-  sqlite3_finalize(stmt);
- out_err:
-  if (err < 0)
-    ERR("%s", sqlite3_errmsg(db->db));
-}
+   _edd_places_item = edd;
 
-static char *
-_table_info_get(Ems_Database *db, const char *name)
-{
-  char *ret = NULL;
-  int res, err = -1;
-  sqlite3_stmt *stmt;
+   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Db_Databases_Item);
+   edd = eet_data_descriptor_stream_new(&eddc);
 
-  res = sqlite3_prepare_v2(db->db, SELECT_INFO_VALUE, -1, &stmt, NULL);
-  if (res != SQLITE_OK)
-    goto out_err;
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Databases_Item, "uuid", uuid, EET_T_STRING);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Databases_Item, "is_local", is_local, EET_T_UCHAR);
+   EET_DATA_DESCRIPTOR_ADD_LIST(edd, Ems_Db_Databases_Item, "places", places, _edd_places_item);
+   _edd_databases_item = edd;
 
-  EMS_DB_BIND_TEXT_OR_GOTO(stmt, 1, name, out_free);
+   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Db_Databases);
+   edd = eet_data_descriptor_stream_new(&eddc);
+   EET_DATA_DESCRIPTOR_ADD_LIST(edd, Ems_Db_Databases, "list", list, _edd_databases_item);
 
-  res = sqlite3_step(stmt);
-  if (res == SQLITE_ROW)
-  {
-    const char *val;
-    val = (const char *) sqlite3_column_text(stmt, 0);
-    ret = strdup (val);
-  }
+   _edd_databases = edd;
 
-  sqlite3_clear_bindings (stmt);
-  err = 0;
 
- out_free:
-  sqlite3_finalize (stmt);
- out_err:
-  if (err < 0)
-    ERR("%s", sqlite3_errmsg(db->db));
-  return ret;
+   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Db_Video_Infos);
+   edd = eet_data_descriptor_stream_new(&eddc);
+
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Infos, "rev", rev, EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Infos, "title", title, EET_T_STRING);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Infos, "title_original", title_original, EET_T_STRING);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Infos, "synopsis", synopsis, EET_T_STRING);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Infos, "release_data", release_date, EET_T_STRING);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Infos, "actors", actors, EET_T_STRING);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Infos, "directors", directors, EET_T_STRING);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Infos, "rating", rating, EET_T_STRING);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Infos, "cover", cover, EET_T_STRING);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Infos, "backdrop", backdrop, EET_T_STRING);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Infos, "trailer", trailer, EET_T_STRING);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Infos, "nationality", nationality, EET_T_STRING);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Infos, "genres", genres, EET_T_STRING);
+
+   _edd_video_infos = edd;
+
+   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Db_Videos_Hash);
+   edd = eet_data_descriptor_stream_new(&eddc);
+
+   EET_DATA_DESCRIPTOR_ADD_HASH(edd, Ems_Db_Videos_Hash, "hash", hash, _edd_video_infos);
+
+   _edd_videos_hash = edd;
+
 }
 
 /*============================================================================*
@@ -330,725 +215,291 @@ _table_info_get(Ems_Database *db, const char *name)
  *                                   API                                      *
  *============================================================================*/
 
-Ems_Database *
-ems_database_new(const char *filename)
+int
+ems_database_init(void)
 {
-   Ems_Database *db;
-   int res;
-   Eina_Bool exists;
+   char path[PATH_MAX];
+   Eina_Bool exists = EINA_FALSE;
 
-   db = calloc(1, sizeof(Ems_Database));
-   if (!db)
-     return NULL;
+   if (++_ems_init_count != 1)
+     return _ems_init_count;
 
-   res = sqlite3_initialize();
-   if (res != SQLITE_OK)
-     return NULL;
+   _db = calloc(1, sizeof(Ems_Db));
 
-   if (!filename)
+   snprintf(path, sizeof(path), "%s/"EMS_DATABASE_FILE, ems_config_cache_dirname_get());
+   _db->filename = eina_stringshare_add(path);
+   DBG("Try to load database stored in%s", path);
+   if (ecore_file_exists(path))
      {
-        char tmp[PATH_MAX];
-        snprintf(tmp, sizeof(tmp), "%s/%s", ems_config_cache_dirname_get(), EMS_DATABASE_FILE);
-        db->filename = eina_stringshare_add(tmp);
+        DBG("Database exists");
+        exists = EINA_TRUE;
      }
    else
      {
-        db->filename = eina_stringshare_add(filename);
+        DBG("Database doesn't exists");
+        exists = EINA_FALSE;
      }
 
-
-   exists = ecore_file_exists(db->filename);
-
-   INF("Database file : %s", db->filename);
-
-   res = sqlite3_open(db->filename, &db->db);
-   if (res)
+   _db->ef = eet_open(path, EET_FILE_MODE_READ_WRITE);
+   if (!_db->ef)
      {
-        ERR("Unable to open database: %s", sqlite3_errmsg(db->db));
-        goto err;
+        /* FIXME : is this necessary ? */
+        _db->ef = eet_open(path, EET_FILE_MODE_WRITE);
+        if (!_db->ef)
+          return 0;
      }
 
-   /* Create table in the new database*/
-   if (!exists)
+   _init_edd();
+
+   /* Database already exists, found the local one */
+   if (exists)
      {
-        uuid_t u;
+        _db->databases = eet_data_read(_db->ef, _edd_databases, DATABASES_SECTION);
+        DBG("Nb databases : %d", eina_list_count(_db->databases->list));
+
+        _db->videos_hash = eet_data_read(_db->ef, _edd_videos_hash, VIDEOS_HASH_SECTION);
+        if (!_db->videos_hash->hash)
+          _db->videos_hash->hash = eina_hash_string_superfast_new(NULL);
+     }
+   /* Database is virgin, create the section 'databases', and add our local database */
+   else
+     {
+        Ems_Db_Databases_Item *db;
+        Ems_Db_Places_Item *place_item;
+        Ems_Directory *dir;
+        Eina_List *l;
         char uuid[37];
+        uuid_t u ;
 
-        INF("Creating Database table");
-        ems_database_table_create(db);
-        _table_info_set(db, "version", EMS_DATABASE_VERSION);
+        /* Create Section Databases index*/
+
+        _db->databases = calloc(1, sizeof(Ems_Db_Databases));
         uuid_generate(u);
         uuid_unparse(u, uuid);
         INF("Generate UUID for database : %s", uuid);
-        _table_info_set(db, "uuid", uuid);
+
+        db = calloc(1, sizeof (Ems_Db_Databases_Item));
+        db->uuid = eina_stringshare_add(uuid);
+        db->is_local = EINA_TRUE;
+        /* For each place, create the media structure */
+        EINA_LIST_FOREACH(ems_config->places, l, dir)
+          {
+             place_item = calloc(1, sizeof(Ems_Db_Places_Item));
+             place_item->path = eina_stringshare_add(dir->path);
+             place_item->label = eina_stringshare_add(dir->label);
+             place_item->type = dir->type;
+             place_item->video_rev = 1;
+             db->places = eina_list_append(db->places, place_item);
+          }
+        _db->databases->list = eina_list_append(_db->databases->list, db);
+        eet_data_write(_db->ef, _edd_databases, DATABASES_SECTION, _db->databases, EINA_TRUE);
+
+        _db->videos_hash = calloc(1, sizeof(Ems_Db_Videos_Hash));
+        _db->videos_hash->hash = eina_hash_string_superfast_new(NULL);
+
+        eet_data_write(_db->ef, _edd_videos_hash, VIDEOS_HASH_SECTION, _db->videos_hash, EINA_TRUE);
+
+        eet_sync(_db->ef);
+     }
+
+   return _ems_init_count;
+}
+
+int
+ems_database_shutdown(void)
+{
+   if (--_ems_init_count != 0)
+     return _ems_init_count;
+
+   ems_database_flush();
+
+   eina_stringshare_del(_db->filename);
+   eet_close(_db->ef);
+
+   free(_db);
+   _db = NULL;
+
+   return _ems_init_count;
+}
+
+/* void */
+/* ems_database_table_create(Ems_Database *db) */
+/* { */
+
+/* } */
+
+/* void */
+/* ems_database_prepare(Ems_Database *db) */
+/* { */
+
+/* } */
+
+/* void */
+/* ems_database_release(Ems_Database *db) */
+/* { */
+
+/* } */
+
+/* Insert a new file into db it it does not exist or update it otherwise */
+void
+ems_database_file_insert(const char *hash, const char *place, const char *title, int64_t mtime, double start_time)
+{
+   Ems_Db_Video_Infos *info;
+   Ems_Db_Databases_Item *db;
+   Ems_Db_Places_Item *item;
+   Ems_Db_Video_Item *video_item;
+   Eina_List *l1, *l2;
+
+   if (!hash || !place || !_db)
+     return;
+
+   DBG("File insert %s", hash);
+
+   info = eina_hash_find(_db->videos_hash->hash, hash);
+   if (!info)
+     {
+        /* This file doesn't exist in database, add it */
+        info = calloc(1, sizeof(Ems_Db_Video_Infos));
+        info->rev = 1;
+        info->mtime = mtime;
+        info->title = eina_stringshare_add(title);
+        DBG("%p %p[%s] %p", _db->videos_hash->hash, hash, hash, info);
+        eina_hash_direct_add(_db->videos_hash->hash, eina_stringshare_add(hash), info);
+     }
+
+   /* Search for the right place to add the file*/
+   EINA_LIST_FOREACH(_db->databases->list, l1, db)
+     {
+        EINA_LIST_FOREACH(db->places, l2, item)
+          {
+             DBG("COMPARE %s / %s",place, item->label);
+             if (!strcmp(place, item->label))
+               {
+                  video_item = calloc(1, sizeof(Ems_Db_Video_Item));
+                  video_item->hash_key = eina_stringshare_add(hash);
+                  video_item->title = eina_stringshare_add(title);
+                  video_item->mtime = mtime;
+                  video_item->start_time = start_time;
+                  item->video_list = eina_list_append(item->video_list, video_item);
+                  return;
+               }
+          }
+     }
+
+
+}
+
+void
+ems_database_flush(void)
+{
+   if (!_db)
+     return;
+
+   eet_data_write(_db->ef, _edd_databases, DATABASES_SECTION, _db->databases, EINA_TRUE);
+   eet_data_write(_db->ef, _edd_videos_hash, VIDEOS_HASH_SECTION, _db->videos_hash, EINA_FALSE);
+   eet_sync(_db->ef);
+}
+
+/* void */
+/* ems_database_file_update(Ems_Database *db, const char *filename, int64_t mtime, Ems_Media_Type type __UNUSED__, int64_t magic) */
+/* { */
+
+/* } */
+
+/* void */
+/* ems_database_meta_insert(Ems_Database *db, const char *filename, const char *meta, const char *value) */
+/* { */
+
+/* } */
+
+/* void */
+/* ems_database_transaction_begin(Ems_Database *db) */
+/* { */
+
+/* } */
+
+/* void */
+/* ems_database_transaction_end(Ems_Database *db) */
+/* { */
+
+/* } */
+
+/* Eina_List * */
+/* ems_database_files_get(Ems_Database *db) */
+/* { */
+/*    return NULL; */
+/* } */
+
+/* const char * */
+/* ems_database_file_get(Ems_Database *db, int item_id) */
+/* { */
+/*    return file; */
+/* } */
+
+/* const char * */
+/* ems_database_file_uuid_get(Ems_Database *db, char *media_uuid) */
+/* { */
+/*    return NULL; */
+/* } */
+
+int64_t
+ems_database_file_mtime_get(const char *hash)
+{
+   Ems_Db_Video_Infos *it;
+
+   if (!hash || !_db)
+     return -1;
+
+   DBG("Search for %s in database", hash);
+
+   it = eina_hash_find(_db->videos_hash->hash, hash);
+   if (it)
+     {
+        DBG("Found %s", it->title);
+        return it->mtime;
      }
    else
      {
-        char *version = _table_info_get(db, "version");
-        DBG("Database in version %s", version);
-        if (!version || strcmp(version, EMS_DATABASE_VERSION))
-          {
-             ERR("BAD sqlite databse version (%s), please remove the database file %s", version, db->filename);
-             free(version);
-             goto err;
-          }
-        free(version);
+        DBG("%s not found", hash);
+        return -1;
      }
 
-   return db;
 
- err:
-   if (db)
-     {
-        if (db->filename) eina_stringshare_del(db->filename);
-        if (db->db) sqlite3_close(db->db);
-        free(db);
-     }
-   return NULL;
+  return -1;
 }
 
-void
-ems_database_free(Ems_Database *db)
-{
-    eina_stringshare_del(db->filename);
-    sqlite3_close(db->db);
-    free(db);
-    sqlite3_shutdown();
-}
-
-void
-ems_database_table_create(Ems_Database *db)
-{
-   char *m;
-
-   if (!db)
-     return;
-
-   sqlite3_exec(db->db, CREATE_TABLE_INFO, NULL, NULL, &m);
-   if (m)
-     goto err;
-   sqlite3_exec(db->db, BEGIN_TRANSACTION, NULL, NULL, &m);
-   if (m)
-     goto err;
-   sqlite3_exec(db->db, CREATE_TABLE_FILE, NULL, NULL, &m);
-   if (m)
-     goto err;
-   sqlite3_exec(db->db, CREATE_TABLE_META, NULL, NULL, &m);
-   if (m)
-     goto err;
-   sqlite3_exec(db->db, CREATE_TABLE_DATA, NULL, NULL, &m);
-   if (m)
-     goto err;
-   sqlite3_exec(db->db, CREATE_TABLE_ASSOC_FILE_METADATA, NULL, NULL, &m);
-   if (m)
-     goto err;
-   sqlite3_exec(db->db, CREATE_INDEX_ASSOC, NULL, NULL, &m);
-   if (m)
-     goto err;
-   sqlite3_exec(db->db, END_TRANSACTION, NULL, NULL, &m);
-   if (m)
-     goto err;
-
-   return;
-
- err:
-   ERR("%s", m);
-
-}
-
-void
-ems_database_prepare(Ems_Database *db)
-{
-   int res;
-
-   if (!db || !db->db)
-     return;
-
-   res = sqlite3_prepare_v2(db->db, INSERT_FILE, -1, &db->file_stmt, NULL);
-   if (res != SQLITE_OK)
-     {
-        ERR("%s", sqlite3_errmsg (db->db));
-        return;
-     }
-   res = sqlite3_prepare_v2(db->db, UPDATE_FILE, -1, &db->file_update_stmt, NULL);
-   if (res != SQLITE_OK)
-     {
-        ERR("%s", sqlite3_errmsg (db->db));
-        return;
-     }
-   res = sqlite3_prepare_v2(db->db, SELECT_FILE_ID, -1, &db->file_get_stmt, NULL);
-   if (res != SQLITE_OK)
-     {
-        ERR("%s", sqlite3_errmsg (db->db));
-        return;
-     }
-   res = sqlite3_prepare_v2(db->db, SELECT_META_ID, -1, &db->meta_get_stmt, NULL);
-   if (res != SQLITE_OK)
-     {
-        ERR("%s", sqlite3_errmsg (db->db));
-        return;
-     }
-   res = sqlite3_prepare_v2(db->db, SELECT_DATA_ID, -1, &db->data_get_stmt, NULL);
-   if (res != SQLITE_OK)
-     {
-        ERR("%s", sqlite3_errmsg (db->db));
-        return;
-     }
-   res = sqlite3_prepare_v2(db->db, DELETE_FILE, -1, &db->file_delete_stmt, NULL);
-   if (res != SQLITE_OK)
-     {
-        ERR("%s", sqlite3_errmsg (db->db));
-        return;
-     }
-   res = sqlite3_prepare_v2(db->db, SELECT_FILE_FROM_ID, -1, &db->fileid_get_stmt, NULL);
-   if (res != SQLITE_OK)
-     {
-        ERR("%s", sqlite3_errmsg (db->db));
-        return;
-     }
-   res = sqlite3_prepare_v2(db->db, SELECT_FILE_FROM_UUID, -1, &db->fileuuid_get_stmt, NULL);
-   if (res != SQLITE_OK)
-     {
-        ERR("%s", sqlite3_errmsg (db->db));
-        return;
-     }
-   res = sqlite3_prepare_v2(db->db, SELECT_FILE_MTIME, -1, &db->filemtime_stmt, NULL);
-   if (res != SQLITE_OK)
-     {
-        ERR("%s", sqlite3_errmsg (db->db));
-        return;
-     }
-   res = sqlite3_prepare_v2(db->db, SELECT_FILE_HASH, -1, &db->filehash_stmt, NULL);
-   if (res != SQLITE_OK)
-     {
-        ERR("%s", sqlite3_errmsg (db->db));
-        return;
-     }
-   res = sqlite3_prepare_v2(db->db, SELECT_FILE_SCAN_MAGIC, -1, &db->filemagic_stmt, NULL);
-   if (res != SQLITE_OK)
-     {
-        ERR("%s", sqlite3_errmsg (db->db));
-        return;
-     }
-   res = sqlite3_prepare_v2(db->db, INSERT_META, -1, &db->meta_stmt, NULL);
-   if (res != SQLITE_OK)
-     {
-        ERR("%s", sqlite3_errmsg (db->db));
-        return;
-     }
-   res = sqlite3_prepare_v2(db->db, INSERT_DATA, -1, &db->data_stmt, NULL);
-   if (res != SQLITE_OK)
-     {
-        ERR("%s", sqlite3_errmsg (db->db));
-        return;
-     }
-   res = sqlite3_prepare_v2(db->db, INSERT_ASSOC_FILE_METADATA, -1, &db->assoc_file_meta_stmt, NULL);
-   if (res != SQLITE_OK)
-     {
-        ERR("%s", sqlite3_errmsg (db->db));
-        return;
-     }
-   res = sqlite3_prepare_v2(db->db, BEGIN_TRANSACTION, -1, &db->begin_stmt, NULL);
-   if (res != SQLITE_OK)
-     {
-        ERR("%s", sqlite3_errmsg (db->db));
-        return;
-     }
-   res = sqlite3_prepare_v2(db->db, END_TRANSACTION, -1, &db->end_stmt, NULL);
-   if (res != SQLITE_OK)
-     {
-        ERR("%s", sqlite3_errmsg (db->db));
-        return;
-     }
-}
-
-void
-ems_database_release(Ems_Database *db)
-{
-   if (!db || !db->db)
-     return;
-
-   sqlite3_finalize(db->file_stmt);
-   sqlite3_finalize(db->file_update_stmt);
-   sqlite3_finalize(db->file_get_stmt);
-   sqlite3_finalize(db->meta_get_stmt);
-   sqlite3_finalize(db->data_get_stmt);
-   sqlite3_finalize(db->file_delete_stmt);
-   sqlite3_finalize(db->data_stmt);
-   sqlite3_finalize(db->meta_stmt);
-   sqlite3_finalize(db->assoc_file_meta_stmt);
-   sqlite3_finalize(db->filemtime_stmt);
-   sqlite3_finalize(db->filehash_stmt);
-   sqlite3_finalize(db->filemagic_stmt);
-   sqlite3_finalize(db->begin_stmt);
-   sqlite3_finalize(db->end_stmt);
-}
-
-void
-ems_database_file_insert(Ems_Database *db, const char *filename,
-                         const char *uuid, int64_t mtime,
-                         Ems_Media_Type type __UNUSED__, int64_t magic)
-{
-   int res, err = -1;
-   sqlite3_stmt *stmt = db->file_stmt;
-
-   if (!db || !db->db || !filename)
-     return;
-
-   EMS_DB_BIND_TEXT_OR_GOTO(stmt, 1, filename,  out);
-   EMS_DB_BIND_TEXT_OR_GOTO(stmt, 2, uuid,  out_clear);
-   EMS_DB_BIND_INT64_OR_GOTO(stmt, 3, type, out_clear);
-   EMS_DB_BIND_INT64_OR_GOTO(stmt, 4, mtime, out_clear);
-   EMS_DB_BIND_INT64_OR_GOTO(stmt, 5, magic, out_clear);
-
-   res = sqlite3_step (stmt);
-   if (res == SQLITE_DONE)
-     err = 0;
-
-   sqlite3_reset (stmt);
- out_clear:
-   sqlite3_clear_bindings (stmt);
- out:
-   if (err < 0)
-     ERR("%s", sqlite3_errmsg(db->db));
-}
-
-void
-ems_database_file_update(Ems_Database *db, const char *filename, int64_t mtime, Ems_Media_Type type __UNUSED__, int64_t magic)
-{
-  int res, err = -1;
-
-  EMS_DB_BIND_INT64_OR_GOTO(db->file_update_stmt, 1, mtime, out);
-  EMS_DB_BIND_INT_OR_GOTO(db->file_update_stmt, 2, magic,  out_clear);
-  EMS_DB_BIND_TEXT_OR_GOTO(db->file_update_stmt, 3, filename, out_clear);
-
-  res = sqlite3_step(db->file_update_stmt);
-  if (res == SQLITE_DONE)
-    err = 0;
-
-  sqlite3_reset(db->file_update_stmt);
- out_clear:
-  sqlite3_clear_bindings(db->file_update_stmt);
- out:
-  if (err < 0)
-    ERR("%s", sqlite3_errmsg (db->db));
-}
-
-void
-ems_database_meta_insert(Ems_Database *db, const char *filename, const char *meta, const char *value)
-{
-   int res = -1, err = -1;
-   int64_t meta_id = 0;
-   int64_t data_id = 0;
-   int64_t file_id = 0;
-
-   if (!db || !db->db || !filename || !meta || !value)
-     return;
-
-
-   file_id = _file_get(db, filename);
-   meta_id = _meta_insert(db, meta);
-   data_id = _data_insert(db, value, 0); /* TODO : handle lang correctly */
-
-   EMS_DB_BIND_INT64_OR_GOTO(db->assoc_file_meta_stmt, 1, file_id, out);
-   EMS_DB_BIND_INT64_OR_GOTO(db->assoc_file_meta_stmt, 2, meta_id, out_clear);
-   EMS_DB_BIND_INT64_OR_GOTO(db->assoc_file_meta_stmt, 3, data_id, out_clear);
-
-   res = sqlite3_step(db->assoc_file_meta_stmt);
-   if (res == SQLITE_DONE)
-     err = 0;
-
-   sqlite3_reset(db->assoc_file_meta_stmt);
- out_clear:
-   sqlite3_clear_bindings (db->assoc_file_meta_stmt);
- out:
-   if (err < 0 && res != SQLITE_CONSTRAINT) /* ignore constraint violation */
-     ERR("%s", sqlite3_errmsg(db->db));
-
-}
-
-void
-ems_database_transaction_begin(Ems_Database *db)
-{
-   if (!db || !db->db)
-     return;
-
-   sqlite3_step(db->begin_stmt);
-   sqlite3_reset(db->begin_stmt);
-}
-
-void
-ems_database_transaction_end(Ems_Database *db)
-{
-   if (!db || !db->db)
-     return;
-
-   sqlite3_step(db->end_stmt);
-   sqlite3_reset(db->end_stmt);
-}
-
-Eina_List *
-ems_database_files_get(Ems_Database *db)
-{
-   Eina_List *files = NULL;
-   sqlite3_stmt *stmt = NULL;
-   int res;
-
-   if (!db || !db->db)
-     return NULL;
-
-   res = sqlite3_prepare_v2 (db->db, "SELECT file_path FROM file;", -1, &stmt, NULL);
-   if (res != SQLITE_OK)
-     goto out;
-
-   while (1)
-     {
-
-        res = sqlite3_step (stmt);
-        if (res == SQLITE_ROW)
-          {
-             const char * text;
-
-             text  = (const char*)sqlite3_column_text(stmt, 0);
-             files = eina_list_append(files, eina_stringshare_add(text));
-          }
-        else if (res == SQLITE_DONE)
-          {
-             DBG("Request End");
-             break;
-          }
-        else
-          {
-             ERR("Request failed");
-          }
-     }
-
-   return files;
-
- out:
-   return NULL;
-}
-
-const char *
-ems_database_file_get(Ems_Database *db, int item_id)
-{
-   const char *file = NULL;
-   sqlite3_stmt *stmt = NULL;
-   int res = -1, err = -1;
-
-   if (!db || !db->db)
-     return NULL;
-
-   stmt = db->fileid_get_stmt;
-
-   EMS_DB_BIND_INT64_OR_GOTO(stmt, 1, item_id, out);
-
-   while (1)
-     {
-
-        res = sqlite3_step (stmt);
-        if (res == SQLITE_ROW)
-          {
-             file = eina_stringshare_add((const char *)sqlite3_column_text(stmt, 0));
-          }
-        else if (res == SQLITE_DONE)
-          {
-             err = 0;
-             break;
-          }
-        else
-          {
-             err = res;
-          }
-     }
-
-   sqlite3_reset (stmt);
-   sqlite3_clear_bindings (stmt);
- out:
-   if (err < 0)
-     ERR("%s", sqlite3_errmsg(db->db));
-
-   return file;
-}
-
-const char *
-ems_database_file_uuid_get(Ems_Database *db, char *media_uuid)
-{
-   const char *file = NULL;
-   sqlite3_stmt *stmt = NULL;
-   int res = -1, err = -1;
-
-   if (!db || !db->db)
-     return NULL;
-
-   stmt = db->fileuuid_get_stmt;
-
-   EMS_DB_BIND_TEXT_OR_GOTO(stmt, 1, media_uuid, out);
-
-   while (1)
-     {
-
-        res = sqlite3_step (stmt);
-        if (res == SQLITE_ROW)
-          {
-             file = eina_stringshare_add((const char *)sqlite3_column_text(stmt, 0));
-          }
-        else if (res == SQLITE_DONE)
-          {
-             err = 0;
-             break;
-          }
-        else
-          {
-             err = res;
-          }
-     }
-
-   sqlite3_reset (stmt);
-   sqlite3_clear_bindings (stmt);
- out:
-   if (err < 0)
-     ERR("%s", sqlite3_errmsg(db->db));
-
-   return file;
-}
-
-int64_t
-ems_database_file_mtime_get(Ems_Database *db, const char *filename)
-{
-  int res, err = -1;
-  int64_t val = -1;
-
-  if (!filename || !db || !db->db)
-    return -1;
-
-  EMS_DB_BIND_TEXT_OR_GOTO(db->filemtime_stmt, 1, filename, out);
-
-  res = sqlite3_step(db->filemtime_stmt);
-  if (res == SQLITE_ROW)
-    val = sqlite3_column_int64(db->filemtime_stmt, 0);
-
-  sqlite3_reset(db->filemtime_stmt);
-  sqlite3_clear_bindings(db->filemtime_stmt);
-  err = 0;
- out:
-  if (err < 0)
-    ERR("%s", sqlite3_errmsg(db->db));
-  return val;
-}
-
-const char *
-ems_database_file_hash_get(Ems_Database *db, const char *filename)
-{
-  int res, err = -1;
-  const char *val = NULL;
-
-  if (!filename || !db || !db->db)
-    return NULL;
-
-  EMS_DB_BIND_TEXT_OR_GOTO(db->filehash_stmt, 1, filename, out);
-
-  res = sqlite3_step(db->filehash_stmt);
-  if (res == SQLITE_ROW)
-    val = eina_stringshare_add((const char*)sqlite3_column_text(db->filehash_stmt, 0));
-
-  sqlite3_reset(db->filehash_stmt);
-  sqlite3_clear_bindings(db->filehash_stmt);
-  err = 0;
- out:
-  if (err < 0)
-    ERR("%s", sqlite3_errmsg(db->db));
-  return val;
-}
-
-int64_t
-ems_database_file_delete(Ems_Database *db, const char *filename)
-{
-  int res, err = -1;
-  int64_t val = -1;
-
-  if (!filename || !db || !db->db)
-    return -1;
-
-  EMS_DB_BIND_TEXT_OR_GOTO(db->file_delete_stmt, 1, filename, out);
-
-  res = sqlite3_step(db->file_delete_stmt);
-  if (res == SQLITE_ROW)
-    val = sqlite3_column_int64(db->file_delete_stmt, 0);
-
-  sqlite3_reset(db->file_delete_stmt);
-  sqlite3_clear_bindings(db->file_delete_stmt);
-  err = 0;
- out:
-  if (err < 0)
-    ERR("%s", sqlite3_errmsg(db->db));
-  return val;
-}
-
-
-void
-ems_database_deleted_files_remove(Ems_Database *db, int64_t magic)
-{
-   int res, err = -1;
-   sqlite3_stmt *stmt;
-   Eina_List *files = NULL;
-   Eina_List *l;
-   const char *file;
-
-   if (!db || !db->db)
-     return;
-
-   stmt= db->filemagic_stmt;
-
-
-   EMS_DB_BIND_INT64_OR_GOTO(stmt, 1, magic, out);
-
-   while (1)
-     {
-
-        res = sqlite3_step (stmt);
-        if (res == SQLITE_ROW)
-          {
-             file = eina_stringshare_add((const char *)sqlite3_column_text(stmt, 0));
-             files = eina_list_append(files, file);
-          }
-        else if (res == SQLITE_DONE)
-          {
-             err = 0;
-             break;
-          }
-        else
-          {
-             err = res;
-          }
-     }
-
-   sqlite3_reset(stmt);
-   sqlite3_clear_bindings(stmt);
-   err = 0;
-   ems_database_transaction_begin(db);
-   INF("Cleanup DB :");
-   EINA_LIST_FOREACH(files, l, file)
-     {
-        ems_database_file_delete(db, file);
-        INF("Removed %s", file);
-     }
-   ems_database_transaction_end(db);
- out:
-   if (err < 0)
-     ERR("%s", sqlite3_errmsg(db->db));
-   return;
-}
-
-const char *
-ems_database_uuid_get(Ems_Database *db)
-{
-   static const char *uuid = NULL;
-
-   if(uuid)
-     return uuid;
-
-   uuid = (const char*)_table_info_get(db, "uuid");
-
-   return uuid;
-}
-
-Eina_List *
-ems_database_collection_get(Ems_Database *db, Ems_Collection *collection)
-{
-   Eina_List *files = NULL;
-   sqlite3_stmt *stmt = NULL;
-   int res;
-   double t0;
-
-   if (!db || !db->db)
-     return NULL;
-
-   t0 = ecore_time_get();
-
-   res = sqlite3_prepare_v2 (db->db, "SELECT file_hash FROM file ORDER BY file_path;", -1, &stmt, NULL);
-   if (res != SQLITE_OK)
-     goto out;
-
-   while (1)
-     {
-
-        res = sqlite3_step (stmt);
-        if (res == SQLITE_ROW)
-          {
-             const char * text;
-             const char *file;
-             text  = (const char*)sqlite3_column_text(stmt, 0);
-             file = eina_stringshare_printf("%s-%s",
-                                            ems_database_uuid_get(db),
-                                            text);
-             files = eina_list_append(files, file);
-          }
-        else if (res == SQLITE_DONE)
-          {
-             DBG("Request End");
-             break;
-          }
-        else
-          {
-             ERR("Request failed");
-          }
-     }
-
-   DBG("Request time : %3.3f", ecore_time_get() - t0);
-   return files;
-
- out:
-   return NULL;
-}
-
-const char *
-ems_database_info_get(Ems_Database *db, const char *uuid, const char *metadata)
-{
-   int res, err = -1;
-   const char *val = NULL;
-   int64_t file_id = 0;
-   sqlite3_stmt *stmt = NULL;
-
-   if (!metadata || !db || !db->db)
-     return NULL;
-
-   res = sqlite3_prepare_v2(db->db, SELECT_FILE_HASH_ID, -1, &stmt, NULL);
-   if (res != SQLITE_OK)
-        goto out;
-
-   EMS_DB_BIND_TEXT_OR_GOTO(stmt, 1, uuid, out);
-   res = sqlite3_step(stmt);
-   if (res == SQLITE_ROW)
-     {
-        file_id = sqlite3_column_int64(stmt, 0);
-     }
-
-   sqlite3_reset(stmt);
-   sqlite3_clear_bindings(stmt);
-   err = -1;
-
-   res = sqlite3_prepare_v2(db->db, SELECT_METADATA, -1, &stmt, NULL);
-   if (res != SQLITE_OK)
-     {
-        goto out;
-     }
-
-   EMS_DB_BIND_INT64_OR_GOTO(stmt, 1, file_id, out);
-   EMS_DB_BIND_TEXT_OR_GOTO(stmt, 2, metadata, out);
-
-   res = sqlite3_step(stmt);
-   if (res == SQLITE_ROW)
-     {
-        val = eina_stringshare_add((const char*)sqlite3_column_text(stmt, 0));
-     }
-
-
-   sqlite3_reset(stmt);
-   sqlite3_clear_bindings(stmt);
-   err = 0;
- out:
-   if (err < 0)
-     ERR("%s", sqlite3_errmsg(db->db));
-   return val;
-}
+/* const char * */
+/* ems_database_file_hash_get(Ems_Database *db, const char *filename) */
+/* { */
+/*    return NULL; */
+/* } */
+
+/* int64_t */
+/* ems_database_file_delete(Ems_Database *db, const char *filename) */
+/* { */
+/*    return -1; */
+/* } */
+
+/* void */
+/* ems_database_deleted_files_remove(Ems_Database *db, int64_t magic) */
+/* { */
+/*    return; */
+/* } */
+
+/* const char * */
+/* ems_database_uuid_get(Ems_Database *db) */
+/* { */
+/*    return NULL; */
+/* } */
+
+/* Eina_List * */
+/* ems_database_collection_get(Ems_Database *db, Ems_Collection *collection) */
+/* { */
+/*    return NULL; */
+/* } */
+
+/* const char * */
+/* ems_database_info_get(Ems_Database *db, const char *uuid, const char *metadata) */
+/* { */
+/*    return val; */
+/* } */

@@ -28,29 +28,29 @@
 
 #include "Ems.h"
 
-typedef struct _Ems_Database Ems_Database;
+int ems_database_init(void);
+int ems_database_shutdown(void);
+void ems_database_flush(void);
 
-Ems_Database *ems_database_new(const char *filename);
-void ems_database_free(Ems_Database *db);
-
-void ems_database_table_create(Ems_Database *db);
-void ems_database_prepare(Ems_Database *db);
-void ems_database_release(Ems_Database *db);
-void ems_database_file_insert(Ems_Database *db, const char *filename, const char *uuid, int64_t mtime, Ems_Media_Type type, int64_t magic);
-void ems_database_file_update(Ems_Database *db, const char *filename, int64_t mtime, Ems_Media_Type type __UNUSED__, int64_t magic);
-void ems_database_meta_insert(Ems_Database *db, const char *filename, const char *meta, const char *value);
-Eina_Value *ems_database_file_meta_get(Ems_Database *db, const char *filename,
-                                       const char *meta);
+/* void ems_database_table_create(Ems_Database *db); */
+/* void ems_database_prepare(Ems_Database *db); */
+/* void ems_database_release(Ems_Database *db); */
+void ems_database_file_insert(const char *hash, const char *place, const char *title,
+                              int64_t mtime, double start_time);
+/* void ems_database_file_update(Ems_Database *db, const char *filename, int64_t mtime, Ems_Media_Type type __UNUSED__, int64_t magic); */
+/* void ems_database_meta_insert(Ems_Database *db, const char *filename, const char *meta, const char *value); */
+/* Eina_Value *ems_database_file_meta_get(Ems_Database *db, const char *filename, */
+/*                                        const char *meta); */
 
 
-void ems_database_transaction_begin(Ems_Database *db);
-void ems_database_transaction_end(Ems_Database *db);
-Eina_List *ems_database_files_get(Ems_Database *db);
-const char *ems_database_file_get(Ems_Database *db, int item_id);
-const char *ems_database_file_uuid_get(Ems_Database *db, char *media_uuid);
-int64_t ems_database_file_mtime_get(Ems_Database *db, const char *filename);
-void ems_database_deleted_files_remove(Ems_Database *db, int64_t magic);
-Eina_List * ems_database_collection_get(Ems_Database *db, Ems_Collection *collection);
-const char *ems_database_uuid_get(Ems_Database *db);
-const char *ems_database_info_get(Ems_Database *db, const char *uuid, const char *metadata);
+/* void ems_database_transaction_begin(Ems_Database *db); */
+/* void ems_database_transaction_end(Ems_Database *db); */
+/* Eina_List *ems_database_files_get(Ems_Database *db); */
+/* const char *ems_database_file_get(Ems_Database *db, int item_id); */
+/* const char *ems_database_file_uuid_get(Ems_Database *db, char *media_uuid); */
+int64_t ems_database_file_mtime_get(const char *hash);
+/* void ems_database_deleted_files_remove(Ems_Database *db, int64_t magic); */
+/* Eina_List * ems_database_collection_get(Ems_Database *db, Ems_Collection *collection); */
+/* const char *ems_database_uuid_get(Ems_Database *db); */
+/* const char *ems_database_info_get(Ems_Database *db, const char *uuid, const char *metadata); */
 #endif /* _EMS_DATABASE_H_ */

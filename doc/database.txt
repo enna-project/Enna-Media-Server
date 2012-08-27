@@ -135,6 +135,105 @@ In this case, the sever send a request to the client, with the hash of this new 
 In case a movie is removed from the server database, a request containing the removed movie's hash is sent to the client, who updated the videos_list.
 
 
+========================================================================================
+
+Raoul version :
+
+Database saved in directory .config/enna/db/
+
+-> we can access directly places by their uuid
+|----list.eet <-- list of all ems in the db, we need to know if it's only a cache for a remote ems or our local ems database
+|----ems_uuid1/
+|        |----videos/
+|        |      |----list.eet
+|        |      |----uuid_file1.eet <-- include everything for that file (infos, cover, fanart, etc...)
+.        .      .      .
+.        .      .      .
+.        .      .      .
+|        |      |----uuid_fileN.eet
+.
+.
+.
+|----ems_uuid2/
+         |----tvshows/
+         |      |----list.eet
+         |      |----uuid_file1.eet <-- include everything for that file (infos, cover, fanart, serie infos, episode specific infos)
+         .      .
+         .      .
+         |      |----uuid_fileN.eet 
+
+- list.eet :
+Contains an Eina_List of Place structure :
+ Place structure :
+     place name;
+     place icon;
+     uuid;
+     local;
+     remote cache;
+
+- ems_uuidN/ directory contains a folder for each Ems_Media_Type
+
+- ems_uuidN/_category_/list.eet :
+Contains Eina_List of Ems_Media.
+ Ems_Media structure:
+     uuid;
+     file hash;
+     file mtime;
+     real filename; (is this needed? maybe to search faster) 
+
+- Video1 :
+Directory containing information about a video. The name of the directory is the hash of the film.
+
+- infos-video1.eet :
+Contains information about the movie, this information are retrieved by grabbers.
+- title
+- original title
+- released date
+- synopsys
+- producer
+- director
+- actors
+- trailer url
+- cover.jpg
+- fanart.jpg
+- version <-- this is for versioning the file info and to update cached eet files when the eet is updated on a remote ems ? 
+
+This database is created by ems when it parses the directories of the config and all eet files are created during the scan period.
+
+When ems client ask for list of places it tries to load the local cached database. If nothing is founded it send a request on the server to retrieve the places list file, it saves the places_list.eet on the local chached database and send infos to the ui for display on screen.
+When ems server detects a new place, it send a request to the client, which contains informations about the new place.
+The client update the places_list.eet dynamically.
+
+We do the same thing with video_list.eet of a video place. The client try to read the file on the chaced database. If not found it send a request to the server. Then each time the server detects a new file on his system, it send a request to the client, and the client update the eet file dynamically.
 
 
+Finally :
 
+Section databases
+group "Ems_Db_Databases" struct {
+    group "list" list {
+        group "Ems_Db_Databases_Item" struct {
+            value "uuid" string: "3c690059-bcef-42db-b491-2cb86f41cf51";
+            value "is_local" uchar: 1;
+        }
+        group "Ems_Db_Databases_Item" struct {
+            value "uuid" string: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXX";
+            value "is_local" uchar: 0;
+        }
+    }
+}
+
+
+section uuid :
+group "Ems_Db_Places" struct {
+    group "list" list {
+        group "Ems_Db_Places_Item" struct {
+            value "path" string: "/home/nico/e17_src/test";
+            value "label" string: "Videos";
+            value "type" int: 1;
+        }
+    }
+}
+
+
+section uuid/place_label/videos:

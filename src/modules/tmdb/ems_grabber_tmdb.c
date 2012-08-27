@@ -33,7 +33,7 @@
 #include "Ems.h"
 #include "ems_private.h"
 #include "ems_utils.h"
-#include "ems_database.h"
+//#include "ems_database.h"
 #include "ems_downloader.h"
 #include "cJSON.h"
 
@@ -154,7 +154,7 @@ _poster_download_end_cb(void *data, const char *url,
 {
 
    DBG("insert poster for %s", (const char*)data);
-   ems_database_meta_insert(ems_config->db, data, "poster",  eina_stringshare_add(filename));
+   //   ems_database_meta_insert(ems_config->db, data, "poster",  eina_stringshare_add(filename));
    eina_stringshare_del(data);
    _stats->covers_grabbed++;
    return EINA_TRUE;
@@ -166,7 +166,7 @@ _backdrop_download_end_cb(void *data, const char *url,
 {
 
    DBG("insert backdrop for %s", (const char*)data);
-   ems_database_meta_insert(ems_config->db, data, "backdrop",  eina_stringshare_add(filename));
+   //   ems_database_meta_insert(ems_config->db, data, "backdrop",  eina_stringshare_add(filename));
    eina_stringshare_del(data);
    _stats->backdrop_grabbed++;
    return EINA_TRUE;

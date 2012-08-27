@@ -405,7 +405,7 @@ _stream_server_request_process(Ems_Stream_Client *client)
 
              if (nbtoken == 6)
                {
-                   file_path = ems_database_file_uuid_get(ems_config->db, arr[5]);
+                  //file_path = ems_database_file_uuid_get(ems_config->db, arr[5]);
                }
 
              free(arr[0]);

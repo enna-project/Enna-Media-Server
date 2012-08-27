@@ -107,7 +107,7 @@ int ems_init(const char *config_file)
    INF("Port : %d", ems_config->port);
    INF("Video Extensions : %s", ems_config->video_extensions);
 
-   EINA_LIST_FOREACH(ems_config->video_directories, l, dir)
+   EINA_LIST_FOREACH(ems_config->places, l, dir)
      {
         INF("%s: %s", dir->label, dir->path);
      }
