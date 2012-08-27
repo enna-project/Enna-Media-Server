@@ -169,7 +169,7 @@ ems_downloader_url_download(const char *url, const char *file,
 
    DBG("Url : %s\n", url);
 
-   hash = ems_database_file_hash_get(ems_config->db, file);
+   //hash = ems_database_file_hash_get(ems_config->db, file);
    if (!hash)
      goto err1;
 
