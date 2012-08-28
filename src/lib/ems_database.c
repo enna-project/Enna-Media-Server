@@ -423,7 +423,7 @@ ems_database_meta_insert(const char *hash, const char *meta, const char *value)
    eina_hash_foreach(_db->videos_hash->hash, hash_fn, NULL);
 
    info = eina_hash_find(_db->videos_hash->hash, hash);
-   if (!info)
+   if (info)
      {
         if (!info->metadatas)
           info->metadatas = eina_hash_string_superfast_new(NULL);
