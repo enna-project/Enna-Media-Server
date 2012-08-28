@@ -402,14 +402,6 @@ ems_database_flush(void)
 /* { */
 
 /* } */
-Eina_Bool hash_fn(const Eina_Hash *hash, const void *key,
-                  void *data, void *fdata)
-{
-   printf(" Hash entry: %s / %p\n",
-          (const char *)key, data);
-   return 1;
-}
-
 
 void
 ems_database_meta_insert(const char *hash, const char *meta, const char *value)
@@ -420,17 +412,14 @@ ems_database_meta_insert(const char *hash, const char *meta, const char *value)
    if (!hash || !meta || !value)
      return;
 
-   eina_hash_foreach(_db->videos_hash->hash, hash_fn, NULL);
-
    info = eina_hash_find(_db->videos_hash->hash, hash);
-   if (!info)
+   if (info)
      {
         if (!info->metadatas)
           info->metadatas = eina_hash_string_superfast_new(NULL);
         m = calloc(1, sizeof(Ems_Db_Metadata));
         m->value = eina_stringshare_add(value);
         eina_hash_add(info->metadatas, "title", m);
-        DBG("Add %s/%s to %s", meta, value, hash);
      }
    else
      ERR("I can't found %s in the database", hash);
@@ -474,14 +463,9 @@ ems_database_file_mtime_get(const char *hash)
    if (!hash || !_db)
      return -1;
 
-   DBG("Search for %s in database", hash);
-
    it = eina_hash_find(_db->videos_hash->hash, hash);
    if (it)
-     {
-        DBG("<<<<<<<<<<<<<<<<<<< mtime found : %d", it->mtime);
         return it->mtime;
-     }
    else
         return -1;
   return -1;
