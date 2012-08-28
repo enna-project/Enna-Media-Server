@@ -182,13 +182,13 @@ _file_filter_cb(void *data, Eio_File *handler __UNUSED__, Eina_File_Direct_Info 
              ems_database_file_insert(uuid, dir->label, info->path, (int64_t)st.st_mtime, _scanner->start_time);
              snprintf(ssize, sizeof(ssize), "%"PRIx64, (uint32_t)size);
              /* Insert metadata name, filesize and filename in database */
-             //ems_database_meta_insert(ems_config->db, info->path, "filesize", ssize);
-             //ems_database_meta_insert(ems_config->db, info->path, "filename", info->path);
+             ems_database_meta_insert(uuid, "filesize", ssize);
+             ems_database_meta_insert(uuid, "filename", info->path);
              /* Insert metadata clean_name in database based on searched string */
 
              //FIXME: season, episode should be passed to the grabber
              tmp = ems_utils_decrapify(info->path, NULL, NULL);
-             //ems_database_meta_insert(ems_config->db, info->path, "clean_name", tmp);
+             ems_database_meta_insert(uuid, "clean_name", tmp);
              /* Queue file in grabber list */
              ems_parser_grab(info->path, dir->type);
           }

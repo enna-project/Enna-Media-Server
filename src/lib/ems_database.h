@@ -38,7 +38,7 @@ void ems_database_flush(void);
 void ems_database_file_insert(const char *hash, const char *place, const char *title,
                               int64_t mtime, double start_time);
 /* void ems_database_file_update(Ems_Database *db, const char *filename, int64_t mtime, Ems_Media_Type type __UNUSED__, int64_t magic); */
-/* void ems_database_meta_insert(Ems_Database *db, const char *filename, const char *meta, const char *value); */
+void ems_database_meta_insert(const char *hash, const char *meta, const char *value);
 /* Eina_Value *ems_database_file_meta_get(Ems_Database *db, const char *filename, */
 /*                                        const char *meta); */
 

@@ -54,6 +54,12 @@ typedef struct _Ems_Db_Video_Item Ems_Db_Video_Item;
 typedef struct _Ems_Db_Videos Ems_Db_Videos;
 typedef struct _Ems_Db_Video_Infos Ems_Db_Video_Infos;
 typedef struct _Ems_Db_Videos_Hash Ems_Db_Videos_Hash;
+typedef struct _Ems_Db_Metadata Ems_Db_Metadata;
+
+struct _Ems_Db_Metadata
+{
+   const char *value;
+};
 
 struct _Ems_Db
 {
@@ -101,8 +107,6 @@ struct _Ems_Db_Video_Item
 {
    const char *hash_key;
    const char *title;
-   uint64_t mtime;
-   double start_time;
 };
 
 struct _Ems_Db_Videos_Hash
@@ -114,18 +118,8 @@ struct _Ems_Db_Video_Infos
 {
    int rev;
    uint64_t mtime;
-   const char *title;
-   const char *title_original;
-   const char *synopsis;
-   const char *release_date;
-   const char *actors;
-   const char *directors;
-   const char *rating;
-   const char *cover;
-   const char *backdrop;
-   const char *trailer;
-   const char *nationality;
-   const char *genres;
+   double start_time;
+   Eina_Hash *metadatas;
 };
 
 static Ems_Db *_db;
@@ -137,6 +131,7 @@ static Eet_Data_Descriptor *_edd_places_item;
 static Eet_Data_Descriptor *_edd_video_item;
 static Eet_Data_Descriptor *_edd_video_infos;
 static Eet_Data_Descriptor *_edd_videos_hash;
+static Eet_Data_Descriptor *_edd_metadata;
 
 
 static void
@@ -149,8 +144,6 @@ _init_edd(void)
    edd = eet_data_descriptor_stream_new(&eddc);
    EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Item, "hash_key", hash_key, EET_T_STRING);
    EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Item, "title", title, EET_T_STRING);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Item, "mtime", mtime, EET_T_LONG_LONG);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Item, "start_time", mtime, EET_T_DOUBLE);
 
    _edd_video_item = edd;
    EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Db_Places_Item);
@@ -170,31 +163,30 @@ _init_edd(void)
    EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Databases_Item, "uuid", uuid, EET_T_STRING);
    EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Databases_Item, "is_local", is_local, EET_T_UCHAR);
    EET_DATA_DESCRIPTOR_ADD_LIST(edd, Ems_Db_Databases_Item, "places", places, _edd_places_item);
+
    _edd_databases_item = edd;
 
    EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Db_Databases);
    edd = eet_data_descriptor_stream_new(&eddc);
+
    EET_DATA_DESCRIPTOR_ADD_LIST(edd, Ems_Db_Databases, "list", list, _edd_databases_item);
 
    _edd_databases = edd;
 
+   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Db_Metadata);
+   edd = eet_data_descriptor_stream_new(&eddc);
+
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Metadata, "value", value, EET_T_STRING);
+
+   _edd_metadata = edd;
 
    EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Db_Video_Infos);
    edd = eet_data_descriptor_stream_new(&eddc);
 
    EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Infos, "rev", rev, EET_T_INT);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Infos, "title", title, EET_T_STRING);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Infos, "title_original", title_original, EET_T_STRING);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Infos, "synopsis", synopsis, EET_T_STRING);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Infos, "release_data", release_date, EET_T_STRING);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Infos, "actors", actors, EET_T_STRING);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Infos, "directors", directors, EET_T_STRING);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Infos, "rating", rating, EET_T_STRING);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Infos, "cover", cover, EET_T_STRING);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Infos, "backdrop", backdrop, EET_T_STRING);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Infos, "trailer", trailer, EET_T_STRING);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Infos, "nationality", nationality, EET_T_STRING);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Infos, "genres", genres, EET_T_STRING);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Infos, "mtime", mtime, EET_T_LONG_LONG);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Infos, "start_time", mtime, EET_T_DOUBLE);
+   EET_DATA_DESCRIPTOR_ADD_HASH(edd, Ems_Db_Video_Infos, "metadatas", metadatas, _edd_metadata);
 
    _edd_video_infos = edd;
 
@@ -353,33 +345,38 @@ ems_database_file_insert(const char *hash, const char *place, const char *title,
    if (!hash || !place || !_db)
      return;
 
-   DBG("File insert %s", hash);
-
    info = eina_hash_find(_db->videos_hash->hash, hash);
    if (!info)
      {
+        Ems_Db_Metadata *meta;
         /* This file doesn't exist in database, add it */
         info = calloc(1, sizeof(Ems_Db_Video_Infos));
         info->rev = 1;
         info->mtime = mtime;
-        info->title = eina_stringshare_add(title);
-        DBG("%p %p[%s] %p", _db->videos_hash->hash, hash, hash, info);
-        eina_hash_direct_add(_db->videos_hash->hash, eina_stringshare_add(hash), info);
+        info->start_time = start_time;
+        info->metadatas = eina_hash_string_superfast_new(NULL);
+        meta = calloc(1, sizeof(Ems_Db_Metadata));
+        meta->value = eina_stringshare_add(title);
+        eina_hash_add(info->metadatas, "title", meta);
      }
+   else
+     info->rev++;
+
+   info->mtime = mtime;
+   info->start_time = start_time;
+
+   eina_hash_add(_db->videos_hash->hash, hash, info);
 
    /* Search for the right place to add the file*/
    EINA_LIST_FOREACH(_db->databases->list, l1, db)
      {
         EINA_LIST_FOREACH(db->places, l2, item)
           {
-             DBG("COMPARE %s / %s",place, item->label);
              if (!strcmp(place, item->label))
                {
                   video_item = calloc(1, sizeof(Ems_Db_Video_Item));
                   video_item->hash_key = eina_stringshare_add(hash);
                   video_item->title = eina_stringshare_add(title);
-                  video_item->mtime = mtime;
-                  video_item->start_time = start_time;
                   item->video_list = eina_list_append(item->video_list, video_item);
                   return;
                }
@@ -405,12 +402,39 @@ ems_database_flush(void)
 /* { */
 
 /* } */
+Eina_Bool hash_fn(const Eina_Hash *hash, const void *key,
+                  void *data, void *fdata)
+{
+   printf(" Hash entry: %s / %p\n",
+          (const char *)key, data);
+   return 1;
+}
 
-/* void */
-/* ems_database_meta_insert(Ems_Database *db, const char *filename, const char *meta, const char *value) */
-/* { */
 
-/* } */
+void
+ems_database_meta_insert(const char *hash, const char *meta, const char *value)
+{
+   Ems_Db_Video_Infos *info;
+   Ems_Db_Metadata *m;
+
+   if (!hash || !meta || !value)
+     return;
+
+   eina_hash_foreach(_db->videos_hash->hash, hash_fn, NULL);
+
+   info = eina_hash_find(_db->videos_hash->hash, hash);
+   if (!info)
+     {
+        if (!info->metadatas)
+          info->metadatas = eina_hash_string_superfast_new(NULL);
+        m = calloc(1, sizeof(Ems_Db_Metadata));
+        m->value = eina_stringshare_add(value);
+        eina_hash_add(info->metadatas, "title", m);
+        DBG("Add %s/%s to %s", meta, value, hash);
+     }
+   else
+     ERR("I can't found %s in the database", hash);
+}
 
 /* void */
 /* ems_database_transaction_begin(Ems_Database *db) */
@@ -455,16 +479,11 @@ ems_database_file_mtime_get(const char *hash)
    it = eina_hash_find(_db->videos_hash->hash, hash);
    if (it)
      {
-        DBG("Found %s", it->title);
+        DBG("<<<<<<<<<<<<<<<<<<< mtime found : %d", it->mtime);
         return it->mtime;
      }
    else
-     {
-        DBG("%s not found", hash);
         return -1;
-     }
-
-
   return -1;
 }
 
