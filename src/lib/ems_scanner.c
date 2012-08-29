@@ -194,7 +194,7 @@ _file_filter_cb(void *data, Eio_File *handler __UNUSED__, Eina_File_Direct_Info 
           }
         else
           {
-             //ems_database_file_update(ems_config->db, info->path, (int64_t)st.st_mtime, dir->type, _scanner->start_time);
+             ems_database_file_insert(uuid, dir->label, info->path, (int64_t)st.st_mtime, _scanner->start_time);
              /* we grab only file who changed since the last scan */
              if (mtime != (int64_t)st.st_mtime)
                {
@@ -235,9 +235,8 @@ _file_done_cb(void *data __UNUSED__, Eio_File *handler __UNUSED__)
         double t;
         Eina_List *files;
 
-        //ems_database_transaction_end(ems_config->db);
         /* TODO: get the list of deleted file */
-        //ems_database_deleted_files_remove(ems_config->db, _scanner->start_time);
+        //ems_database_deleted_files_remove(_scanner->start_time);
 
         /* Flush the database */
         ems_database_flush();
@@ -352,8 +351,6 @@ ems_scanner_start(void)
    /* return; */
 
    _scanner->start_time = ecore_time_get();
-   //ems_database_prepare(ems_config->db);
-   //ems_database_transaction_begin(ems_config->db);
    /* TODO : get all files in the db and see if they exist on the disk */
 
    /* Scann all files on the disk */

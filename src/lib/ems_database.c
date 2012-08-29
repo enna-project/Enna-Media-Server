@@ -425,23 +425,23 @@ ems_database_meta_insert(const char *hash, const char *meta, const char *value)
      ERR("I can't found %s in the database", hash);
 }
 
-/* void */
-/* ems_database_transaction_begin(Ems_Database *db) */
-/* { */
+Eina_List *
+ems_database_files_get(void)
+{
+   Eina_List *l1, *l2;
+   Eina_List *ret = NULL;
+   Ems_Db_Databases_Item *db;
+   Ems_Db_Places_Item *item;
 
-/* } */
-
-/* void */
-/* ems_database_transaction_end(Ems_Database *db) */
-/* { */
-
-/* } */
-
-/* Eina_List * */
-/* ems_database_files_get(Ems_Database *db) */
-/* { */
-/*    return NULL; */
-/* } */
+   EINA_LIST_FOREACH(_db->databases->list, l1, db)
+     {
+        EINA_LIST_FOREACH(db->places, l2, item)
+          {
+             ret = eina_list_merge(ret,  item->video_list);
+          }
+     }
+   return ret;
+}
 
 /* const char * */
 /* ems_database_file_get(Ems_Database *db, int item_id) */
@@ -483,11 +483,11 @@ ems_database_file_mtime_get(const char *hash)
 /*    return -1; */
 /* } */
 
-/* void */
-/* ems_database_deleted_files_remove(Ems_Database *db, int64_t magic) */
-/* { */
-/*    return; */
-/* } */
+void
+ems_database_deleted_files_remove(double start_time)
+{
+
+}
 
 /* const char * */
 /* ems_database_uuid_get(Ems_Database *db) */
