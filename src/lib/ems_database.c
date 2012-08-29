@@ -107,6 +107,7 @@ struct _Ems_Db_Video_Item
 {
    const char *hash_key;
    const char *title;
+   int64_t time;
 };
 
 struct _Ems_Db_Videos_Hash
@@ -118,7 +119,6 @@ struct _Ems_Db_Video_Infos
 {
    int rev;
    uint64_t mtime;
-   double start_time;
    Eina_Hash *metadatas;
 };
 
@@ -144,6 +144,7 @@ _init_edd(void)
    edd = eet_data_descriptor_stream_new(&eddc);
    EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Item, "hash_key", hash_key, EET_T_STRING);
    EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Item, "title", title, EET_T_STRING);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Item, "time", time, EET_T_LONG_LONG);
 
    _edd_video_item = edd;
    EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Db_Places_Item);
@@ -185,7 +186,6 @@ _init_edd(void)
 
    EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Infos, "rev", rev, EET_T_INT);
    EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Infos, "mtime", mtime, EET_T_LONG_LONG);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Infos, "start_time", mtime, EET_T_DOUBLE);
    EET_DATA_DESCRIPTOR_ADD_HASH(edd, Ems_Db_Video_Infos, "metadatas", metadatas, _edd_metadata);
 
    _edd_video_infos = edd;
@@ -334,13 +334,13 @@ ems_database_shutdown(void)
 
 /* Insert a new file into db it it does not exist or update it otherwise */
 void
-ems_database_file_insert(const char *hash, const char *place, const char *title, int64_t mtime, double start_time)
+ems_database_file_insert(const char *hash, const char *place, const char *title, int64_t mtime, int64_t time)
 {
    Ems_Db_Video_Infos *info;
    Ems_Db_Databases_Item *db;
    Ems_Db_Places_Item *item;
    Ems_Db_Video_Item *video_item;
-   Eina_List *l1, *l2;
+   Eina_List *l1, *l2, *l3;
 
    if (!hash || !place || !_db)
      return;
@@ -353,7 +353,6 @@ ems_database_file_insert(const char *hash, const char *place, const char *title,
         info = calloc(1, sizeof(Ems_Db_Video_Infos));
         info->rev = 1;
         info->mtime = mtime;
-        info->start_time = start_time;
         info->metadatas = eina_hash_string_superfast_new(NULL);
         meta = calloc(1, sizeof(Ems_Db_Metadata));
         meta->value = eina_stringshare_add(title);
@@ -363,7 +362,6 @@ ems_database_file_insert(const char *hash, const char *place, const char *title,
      info->rev++;
 
    info->mtime = mtime;
-   info->start_time = start_time;
 
    eina_hash_add(_db->videos_hash->hash, hash, info);
 
@@ -372,11 +370,21 @@ ems_database_file_insert(const char *hash, const char *place, const char *title,
      {
         EINA_LIST_FOREACH(db->places, l2, item)
           {
+             /* Play only with files of the right place */
              if (!strcmp(place, item->label))
                {
+                  /* Search if the file exists, if yes update the scann time and return */
+                  EINA_LIST_FOREACH(item->video_list, l3, video_item)
+                    if (!strcmp(video_item->hash_key, hash))
+                      {
+                         video_item->time = time;
+                         return;
+                      }
+                  /* File does not exist, add it to the list */
                   video_item = calloc(1, sizeof(Ems_Db_Video_Item));
                   video_item->hash_key = eina_stringshare_add(hash);
                   video_item->title = eina_stringshare_add(title);
+                  video_item->time = time;
                   item->video_list = eina_list_append(item->video_list, video_item);
                   return;
                }
@@ -485,9 +493,34 @@ ems_database_file_mtime_get(const char *hash)
 /* } */
 
 void
-ems_database_deleted_files_remove(double start_time)
+ems_database_deleted_files_remove(int64_t time, const char *place)
 {
+   Ems_Db_Databases_Item *db;
+   Ems_Db_Places_Item *item;
+   Eina_List *l1, *l2, *l3;
 
+   /* Search for the right place to add the file*/
+   EINA_LIST_FOREACH(_db->databases->list, l1, db)
+     {
+        EINA_LIST_FOREACH(db->places, l2, item)
+          {
+             if (!strcmp(place, item->label))
+               {
+                  Ems_Db_Video_Item *video_item;
+                  EINA_LIST_FOREACH(item->video_list, l3, video_item)
+                    {
+                       if (time != video_item->time)
+                         {
+                            INF("This file %s has been remove from disk (%lld / %lld)", video_item->title, time, video_item->time);
+                            item->video_list = eina_list_remove(item->video_list, video_item);
+                            eina_stringshare_del(video_item->hash_key);
+                            eina_stringshare_del(video_item->title);
+                            free(video_item);
+                         }
+                    }
+               }
+          }
+     }
 }
 
 /* const char * */

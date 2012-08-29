@@ -54,6 +54,7 @@ struct _Ems_Scanner
    Eina_List *scan_files;
    int progress;
    double start_time;
+   int64_t time;
 };
 
 static Eina_Bool _file_filter_cb(void *data, Eio_File *handler, Eina_File_Direct_Info *info);
@@ -179,7 +180,7 @@ _file_filter_cb(void *data, Eio_File *handler __UNUSED__, Eina_File_Direct_Info 
 
              DBG("Insert %s with hash : %s", info->path, uuid);
 
-             ems_database_file_insert(uuid, dir->label, info->path, (int64_t)st.st_mtime, _scanner->start_time);
+             ems_database_file_insert(uuid, dir->label, info->path, (int64_t)st.st_mtime, _scanner->time);
              snprintf(ssize, sizeof(ssize), "%"PRIx64, (uint32_t)size);
              /* Insert metadata name, filesize and filename in database */
              ems_database_meta_insert(uuid, "filesize", ssize);
@@ -194,7 +195,9 @@ _file_filter_cb(void *data, Eio_File *handler __UNUSED__, Eina_File_Direct_Info 
           }
         else
           {
-             ems_database_file_insert(uuid, dir->label, info->path, (int64_t)st.st_mtime, _scanner->start_time);
+             DBG("File %s already exists in db, update it", info->path);
+
+             ems_database_file_insert(uuid, dir->label, info->path, (int64_t)st.st_mtime, _scanner->time);
              /* we grab only file who changed since the last scan */
              if (mtime != (int64_t)st.st_mtime)
                {
@@ -225,8 +228,10 @@ _file_main_cb(void *data, Eio_File *handler __UNUSED__, const Eina_File_Direct_I
 }
 
 static void
-_file_done_cb(void *data __UNUSED__, Eio_File *handler __UNUSED__)
+_file_done_cb(void *data, Eio_File *handler __UNUSED__)
 {
+   Ems_Directory *dir = data;
+
    _scanner->is_running--;
 
    if (!_scanner->is_running)
@@ -236,7 +241,7 @@ _file_done_cb(void *data __UNUSED__, Eio_File *handler __UNUSED__)
         Eina_List *files;
 
         /* TODO: get the list of deleted file */
-        //ems_database_deleted_files_remove(_scanner->start_time);
+        ems_database_deleted_files_remove(_scanner->time, dir->label);
 
         /* Flush the database */
         ems_database_flush();
@@ -266,13 +271,6 @@ _file_done_cb(void *data __UNUSED__, Eio_File *handler __UNUSED__)
         _scanner->scan_files = NULL;
         _scanner->progress = 0;
         _scanner->start_time = 0;
-
-        t = ecore_time_get();
-        //files = ems_database_files_get(ems_config->db);
-        INF("SELECT file_path,file_mtime FROM file:  %d files in %3.3fs",
-            eina_list_count(files), ecore_time_get() - t);
-        EINA_LIST_FREE(files, f)
-          eina_stringshare_del(f);
 
      }
 }
@@ -350,7 +348,8 @@ ems_scanner_start(void)
    /* /\* Disable scan for now : EIO is broken *\/ */
    /* return; */
 
-   _scanner->start_time = ecore_time_get();
+   _scanner->time = time(NULL);
+   _scanner->start_time =  ecore_time_get();
    /* TODO : get all files in the db and see if they exist on the disk */
 
    /* Scann all files on the disk */

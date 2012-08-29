@@ -34,7 +34,7 @@ void ems_database_flush(void);
 
 /* void ems_database_table_create(Ems_Database *db); */
 void ems_database_file_insert(const char *hash, const char *place, const char *title,
-                              int64_t mtime, double start_time);
+                              int64_t mtime, int64_t start_time);
 void ems_database_meta_insert(const char *hash, const char *meta, const char *value);
 /* Eina_Value *ems_database_file_meta_get(Ems_Database *db, const char *filename, */
 /*                                        const char *meta); */
@@ -43,7 +43,7 @@ Eina_List *ems_database_files_get(void);
 /* const char *ems_database_file_get(Ems_Database *db, int item_id); */
 /* const char *ems_database_file_uuid_get(Ems_Database *db, char *media_uuid); */
 int64_t ems_database_file_mtime_get(const char *hash);
-/* void ems_database_deleted_files_remove(Ems_Database *db, int64_t magic); */
+void ems_database_deleted_files_remove(int64_t magic, const char *place);
 /* Eina_List * ems_database_collection_get(Ems_Database *db, Ems_Collection *collection); */
 /* const char *ems_database_uuid_get(Ems_Database *db); */
 /* const char *ems_database_info_get(Ems_Database *db, const char *uuid, const char *metadata); */
