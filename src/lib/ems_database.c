@@ -419,7 +419,8 @@ ems_database_meta_insert(const char *hash, const char *meta, const char *value)
           info->metadatas = eina_hash_string_superfast_new(NULL);
         m = calloc(1, sizeof(Ems_Db_Metadata));
         m->value = eina_stringshare_add(value);
-        eina_hash_add(info->metadatas, "title", m);
+        eina_hash_add(info->metadatas, meta, m);
+        DBG("Add %s/%s to %s", meta, value, hash);
      }
    else
      ERR("I can't found %s in the database", hash);
