@@ -12,7 +12,7 @@ AM_CPPFLAGS = \
 -DPACKAGE_DATA_DIR=\"$(pkgdatadir)\" \
 @EMS_CFLAGS@
 
-includes_HEADERS = Ems.h Ecore_Con_Eet.h
+includes_HEADERS = Ems.h
 includesdir = $(includedir)/enna
 
 lib_LTLIBRARIES = libems.la
@@ -42,8 +42,12 @@ ems_stream_server.c \
 ems_stream_server.h \
 ems_downloader.c \
 ems_downloader.h \
-extras/http_parser.c \
-ecore_con_eet.c
+extras/http_parser.c
+
+if HAVE_ECORE_CON_EET
+libems_la_SOURCES += ecore_con_eet.c
+includes_HEADERS += Ecore_Con_Eet.h
+endif
 
 if HAVE_MACOSX
 else
