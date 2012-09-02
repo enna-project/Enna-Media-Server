@@ -140,7 +140,6 @@ _decrapify_blacklist (char **list, char *str, unsigned int *se, unsigned int *ep
              for (i = 0; i < 2; i++)
                {
                   unsigned int val = i ? _ep : _se;
-                  char v[32];
 
                   if (!val)
                     continue;

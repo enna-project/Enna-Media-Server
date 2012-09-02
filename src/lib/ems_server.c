@@ -70,19 +70,17 @@ static Eina_List *_servers = NULL;
 static Eina_List *_servers_cb = NULL;
 
 static void
-_medias_cb(void *data, Ecore_Con_Reply *reply, const char *name, void *value)
+_medias_cb(void *data __UNUSED__, Ecore_Con_Reply *reply __UNUSED__, const char *name __UNUSED__, void *value __UNUSED__)
 {
-   DBG("");
 }
 
 static void
-_media_info_cb(void *data, Ecore_Con_Reply *reply, const char *name, void *value)
+_media_info_cb(void *data __UNUSED__, Ecore_Con_Reply *reply __UNUSED__, const char *name __UNUSED__, void *value __UNUSED__)
 {
-   DBG("");
 }
 
 static Eina_Bool
-_server_connected_cb(void *data, Ecore_Con_Reply *reply, Ecore_Con_Server *conn)
+_server_connected_cb(void *data, Ecore_Con_Reply *reply, Ecore_Con_Server *conn __UNUSED__)
 {
    Ems_Server *server = data;
    Eina_List *l_cb;
@@ -107,7 +105,7 @@ _server_connected_cb(void *data, Ecore_Con_Reply *reply, Ecore_Con_Server *conn)
 }
 
 static Eina_Bool
-_server_disconnected_cb(void *data, Ecore_Con_Reply *reply, Ecore_Con_Server *conn)
+_server_disconnected_cb(void *data, Ecore_Con_Reply *reply __UNUSED__, Ecore_Con_Server *conn __UNUSED__)
 {
 
    Ems_Server *server = data;
@@ -246,8 +244,6 @@ ems_server_cb_set(Ems_Server_Add_Cb server_add_cb,
 {
    Ems_Server_Cb *cb;
 
-   DBG("");
-
    cb = calloc(1, sizeof(Ems_Server_Cb));
    if (!cb)
      return;
@@ -354,8 +350,8 @@ ems_server_media_stream_url_get(Ems_Server *server, const char *media_uuid)
 }
 
 Ems_Observer *
-ems_server_dir_get(Ems_Server *server,
-                   const char *path,
+ems_server_dir_get(Ems_Server *server __UNUSED__,
+                   const char *path __UNUSED__,
                    Ems_Media_Type type __UNUSED__,
                    Ems_Media_Add_Cb media_add __UNUSED__,
                    Ems_Media_Del_Cb media_del __UNUSED__,
@@ -370,8 +366,9 @@ ems_server_dir_get(Ems_Server *server,
 Ems_Observer *
 ems_server_media_get(Ems_Server *server,
                      Ems_Collection *collection,
-                     Ems_Media_Add_Cb media_add,
-                     void *data)
+                     Ems_Media_Add_Cb media_add __UNUSED__,
+                     void *data __UNUSED__
+)
 {
    Medias_Req *req;
 
@@ -382,16 +379,17 @@ ems_server_media_get(Ems_Server *server,
 
    ecore_con_eet_send(server->reply, "medias_req", req);
 
+   return NULL;
 }
 
 Ems_Observer *
-ems_server_media_info_get(Ems_Server *server,
-                          const char *uuid,
-                          const char *info,
-                          Ems_Media_Info_Add_Cb info_add,
-                          Ems_Media_Info_Add_Cb info_del,
-                          Ems_Media_Info_Update_Cb info_update,
-                          void *data)
+ems_server_media_info_get(Ems_Server *server __UNUSED__,
+                          const char *uuid __UNUSED__,
+                          const char *info __UNUSED__,
+                          Ems_Media_Info_Add_Cb info_add __UNUSED__,
+                          Ems_Media_Info_Add_Cb info_del __UNUSED__,
+                          Ems_Media_Info_Update_Cb info_update __UNUSED__,
+                          void *data __UNUSED__)
 {
 
    return NULL;

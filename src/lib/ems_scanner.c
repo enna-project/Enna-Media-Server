@@ -181,7 +181,7 @@ _file_filter_cb(void *data, Eio_File *handler __UNUSED__, Eina_File_Direct_Info 
              DBG("Insert %s with hash : %s", info->path, uuid);
 
              ems_database_file_insert(uuid, dir->label, info->path, (int64_t)st.st_mtime, _scanner->time);
-             snprintf(ssize, sizeof(ssize), "%"PRIx64, (uint32_t)size);
+             snprintf(ssize, sizeof(ssize), "%"PRIx64, (uint64_t)size);
              /* Insert metadata name, filesize and filename in database */
              ems_database_meta_insert(uuid, "filesize", ssize);
              ems_database_meta_insert(uuid, "filename", info->path);
@@ -222,7 +222,7 @@ _file_filter_cb(void *data, Eio_File *handler __UNUSED__, Eina_File_Direct_Info 
 }
 
 static void
-_file_main_cb(void *data, Eio_File *handler __UNUSED__, const Eina_File_Direct_Info *info)
+_file_main_cb(void *data __UNUSED__, Eio_File *handler __UNUSED__, const Eina_File_Direct_Info *info __UNUSED__)
 {
 
 }
@@ -237,8 +237,6 @@ _file_done_cb(void *data, Eio_File *handler __UNUSED__)
    if (!_scanner->is_running)
      {
         const char *f;
-        double t;
-        Eina_List *files;
 
         /* TODO: get the list of deleted file */
         ems_database_deleted_files_remove(_scanner->time, dir->label);

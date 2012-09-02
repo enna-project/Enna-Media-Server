@@ -213,7 +213,6 @@ ems_database_init(void)
 {
    char path[PATH_MAX];
    Eina_Bool exists = EINA_FALSE;
-   Eina_Lock_Result l_ret;
 
    if (++_ems_init_count != 1)
      return _ems_init_count;
@@ -221,7 +220,6 @@ ems_database_init(void)
    _db = calloc(1, sizeof(Ems_Db));
 
    eina_lock_new(&_db->mutex);
-   l_ret = eina_lock_release(&_db->mutex);
 
    snprintf(path, sizeof(path), "%s/"EMS_DATABASE_FILE, ems_config_cache_dirname_get());
    _db->filename = eina_stringshare_add(path);
@@ -348,7 +346,6 @@ ems_database_file_insert(const char *hash, const char *place, const char *title,
    Ems_Db_Places_Item *item;
    Ems_Db_Video_Item *video_item;
    Eina_List *l1, *l2, *l3;
-   Eina_Lock_Result status;
 
    if (!hash || !place || !_db)
      return;

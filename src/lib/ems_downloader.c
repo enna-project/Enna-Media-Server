@@ -142,7 +142,7 @@ ems_downloader_init(void)
 }
 
 Eina_Bool
-ems_downloader_url_download(const char *url, const char *file,
+ems_downloader_url_download(const char *url, const char *file __UNUSED__,
                             Ems_Downloader_End_Cb end_cb, void *data )
 {
    Ems_Downloader_Req *req;

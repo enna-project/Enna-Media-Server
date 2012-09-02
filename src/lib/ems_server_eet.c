@@ -44,19 +44,17 @@
 static Ecore_Con_Eet *ece = NULL;
 
 static void
-_medias_req_cb(void *data, Ecore_Con_Reply *reply, const char *name, void *value)
+_medias_req_cb(void *data __UNUSED__, Ecore_Con_Reply *reply __UNUSED__, const char *name __UNUSED__, void *value __UNUSED__)
 {
-   DBG("");
 }
 
 static void
-_media_info_req_cb(void *data, Ecore_Con_Reply *reply, const char *name, void *value)
+_media_info_req_cb(void *data __UNUSED__, Ecore_Con_Reply *reply __UNUSED__, const char *name __UNUSED__, void *value __UNUSED__)
 {
-   DBG("");
 }
 
 static Eina_Bool
-_client_connected_cb(void *data, Ecore_Con_Reply *reply, Ecore_Con_Client *conn)
+_client_connected_cb(void *data __UNUSED__, Ecore_Con_Reply *reply __UNUSED__, Ecore_Con_Client *conn)
 {
    DBG("New client connected %s", ecore_con_client_ip_get(conn));
 
@@ -64,7 +62,7 @@ _client_connected_cb(void *data, Ecore_Con_Reply *reply, Ecore_Con_Client *conn)
 }
 
 static Eina_Bool
-_client_disconnected_cb(void *data, Ecore_Con_Reply *reply, Ecore_Con_Client *conn)
+_client_disconnected_cb(void *data __UNUSED__, Ecore_Con_Reply *reply __UNUSED__, Ecore_Con_Client *conn)
 {
    DBG("Client disconnected %s", ecore_con_client_ip_get(conn));
 

@@ -48,7 +48,7 @@ static Eina_List *_collections = NULL;
  *============================================================================*/
 
 Ems_Collection *
-ems_collection_new(Ems_Media_Type type, const char *arg, ...)
+ems_collection_new(Ems_Media_Type type __UNUSED__, const char *arg, ...)
 {
     va_list ap;
     char *metadata;
