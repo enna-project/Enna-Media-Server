@@ -63,6 +63,7 @@ _osd_timer_cb(void *data)
    Enna_View_Player_Video_Data *priv = data;
 
    elm_object_signal_emit(priv->layout, "hide,osd", "enna");
+   return EINA_TRUE;
 }
 
 static void
@@ -96,7 +97,7 @@ _update_time_part(Evas_Object *obj, const char *part, double t)
 }
 
 static void 
-_emotion_position_update_cb(void *data, Evas_Object *obj, void *event_info)
+_emotion_position_update_cb(void *data, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
 {
    Enna_View_Player_Video_Data *priv = data;
    Evas_Object *emotion;
@@ -130,7 +131,7 @@ _emotion_position_update_cb(void *data, Evas_Object *obj, void *event_info)
 }
 
 static void
-_item_file_name_get_cb(void *data, Ems_Server *server, const char *value)
+_item_file_name_get_cb(void *data, Ems_Server *server __UNUSED__, const char *value)
 {
    Enna_View_Player_Video_Data *priv = data;
 
@@ -162,7 +163,7 @@ _item_name_get_cb(void *data, Ems_Server *server, const char *value)
 }
 
 static void
-_item_poster_get_cb(void *data, Ems_Server *server, const char *value)
+_item_poster_get_cb(void *data, Ems_Server *server __UNUSED__, const char *value)
 {
    Enna_View_Player_Video_Data *priv = data;
 
@@ -182,7 +183,7 @@ _item_poster_get_cb(void *data, Ems_Server *server, const char *value)
 }
 
 static void
-_emotion_open_done_cb(void *data, Evas_Object *obj, void *event_info)
+_emotion_open_done_cb(void *data, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
 {
    Enna_View_Player_Video_Data *priv = data;
 
@@ -190,7 +191,7 @@ _emotion_open_done_cb(void *data, Evas_Object *obj, void *event_info)
 }
 
 static void
-_emotion_playback_started_cb(void *data, Evas_Object *obj, void *event_info)
+_emotion_playback_started_cb(void *data, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
 {
    Enna_View_Player_Video_Data *priv = data;
 
@@ -199,7 +200,7 @@ _emotion_playback_started_cb(void *data, Evas_Object *obj, void *event_info)
 }
 
 static void
-_enna_view_del(void *data, Evas *e , Evas_Object *obj, void *event_info)
+_enna_view_del(void *data, Evas *e  __UNUSED__, Evas_Object *obj, void *event_info __UNUSED__)
 {
    Enna_View_Player_Video_Data *priv = data;
 

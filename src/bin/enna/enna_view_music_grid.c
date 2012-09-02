@@ -96,7 +96,8 @@ static char *_media_text_get(void *data, Evas_Object *obj __UNUSED__, const char
      return NULL;
 }
 
-static char *_media_content_get(void *data, Evas_Object *obj, const char *part)
+static Evas_Object
+*_media_content_get(void *data, Evas_Object *obj, const char *part)
 {
    Enna_View_Music_Grid_Item *it = data;
 
@@ -145,20 +146,20 @@ _server_add_cb(void *data, Ems_Server *server)
 }
 
 static void
-_server_del_cb(void *data, Ems_Server *server)
+_server_del_cb(void *data __UNUSED__, Ems_Server *server)
 {
    DBG("Server %s deleted", ems_server_name_get(server));
 }
 
 
 static void
-_server_update_cb(void *data, Ems_Server *server)
+_server_update_cb(void *data __UNUSED__, Ems_Server *server)
 {
    DBG("Server %s updated", ems_server_name_get(server));
 }
 
 static void
-_add_item_file_name_cb(void *data, Ems_Server *server, const char *value)
+_add_item_file_name_cb(void *data, Ems_Server *server __UNUSED__, const char *value)
 {
    Enna_View_Music_Grid_Item *it = data;
 
@@ -188,12 +189,12 @@ _add_item_album_cb(void *data, Ems_Server *server, const char *value)
    else
      {
          ems_server_media_info_get(server, it->media, "name", _add_item_file_name_cb,
-                             NULL, NULL, it);
+                                   NULL, NULL, it);
      }
 }
 
 static void
-_add_item_poster_cb(void *data, Ems_Server *server, const char *value)
+_add_item_poster_cb(void *data, Ems_Server *server __UNUSED__, const char *value)
 {
    Enna_View_Music_Grid_Item *it = data;
 
@@ -209,16 +210,13 @@ _add_item_cb(void *data, Ems_Server *server, const char *media)
 {
    Enna_View_Music_Grid *act = data;
    Enna_View_Music_Grid_Item *it;
-   Enna_View_Music_Grid_Group *gr;
 
-   gr = eina_hash_find(act->servers, server);
 
    it = calloc(1, sizeof (Enna_View_Music_Grid_Item));
    it->server = server;
    it->act = act;
    it->media = eina_stringshare_add(media);
-   int i;
-   //for (i = 0; i < 100; i++)
+
    it->it = elm_gengrid_item_append(act->grid, &itc_item,
                                     it,
                                     NULL,
@@ -237,9 +235,7 @@ _add_item_cb(void *data, Ems_Server *server, const char *media)
 static void
 _server_connected_cb(void *data, Ems_Server *server)
 {
-   int i;
    Enna_View_Music_Grid_Group *gr;
-   Enna_View_Music_Grid_Item *it;
    Enna_View_Music_Grid *act = data;
    Ems_Collection *collection;
 
@@ -276,7 +272,7 @@ _server_disconnected_cb(void *data, Ems_Server *server)
 
 
 static void
-_grid_item_selected_cb(void *data, Evas_Object *obj __UNUSED__, void *event_info)
+_grid_item_selected_cb(void *data __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info)
 {
    Elm_Object_Item *it = event_info;
    Enna_View_Music_Grid_Item *item;
@@ -316,7 +312,7 @@ Evas_Object *enna_view_music_grid_add(Enna *enna __UNUSED__, Evas_Object *parent
        goto err2;
 
    elm_object_part_content_set(ly, "grid.swallow", grid);
-   elm_gengrid_bounce_set(grid, EINA_FALSE, EINA_TRUE);
+   elm_scroller_bounce_set(grid, EINA_FALSE, EINA_TRUE);
    elm_object_style_set(grid, "media");
 
    itc_group.item_style       = "group_index";

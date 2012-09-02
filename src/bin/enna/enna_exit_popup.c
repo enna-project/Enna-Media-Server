@@ -60,11 +60,9 @@ _no_clicked_cb(void *data __UNUSED__, Evas_Object *obj __UNUSED__, void *event_i
  *                                 Global                                     *
  *============================================================================*/
 
-void enna_exit_popup_show(Enna *enna, Evas_Object *parent)
+void enna_exit_popup_show(Enna *enna __UNUSED__, Evas_Object *parent)
 {
    Evas_Object *btn, *btn2;
-   Eina_List *l;
-   Evas_Object *obj;
 
    if (popup)
      {

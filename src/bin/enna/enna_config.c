@@ -39,9 +39,6 @@ static const char *_theme = NULL;
 Eina_Bool
 enna_config_init(void)
 {
-    const char *config;
-
-    config = enna_config_theme_get();
     enna_config_config_get();
 
     elm_theme_overlay_add(NULL, enna_config_theme_get());

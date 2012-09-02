@@ -41,7 +41,7 @@ static const struct
    const char *keyname;
    Ecore_Event_Modifier modifier;
    Enna_Input input;
-   const char *enna_input_name
+   const char *enna_input_name;
 } enna_keymap[] = {
   { "Super_R",      ECORE_NONE,              ENNA_INPUT_MENU          , "ENNA_INPUT_MENU"},
   { "Meta_R",       ECORE_NONE,              ENNA_INPUT_MENU          , "ENNA_INPUT_MENU"},
@@ -95,7 +95,7 @@ static const struct
 
   /* Special characters */
 
-  { NULL,           ECORE_NONE,              ENNA_INPUT_UNKNOWN       }
+  { NULL,           ECORE_NONE,              ENNA_INPUT_UNKNOWN        , "NULL"}
 };
 
 static Enna_Input
@@ -157,7 +157,7 @@ _get_input_from_event(Ecore_Event_Key *ev)
 }
 
 static Eina_Bool
-_ecore_event_key_down_cb(void *data, int type, void *event)
+_ecore_event_key_down_cb(void *data  __UNUSED__, int type __UNUSED__, void *event)
 {
     Ecore_Event_Key *e = event;
     Enna_Input in;
@@ -179,7 +179,7 @@ enna_keyboard_init(void)
 }
 
 const char *
-enna_keyboard_input_name_get(Enna_Input *ei)
+enna_keyboard_input_name_get(Enna_Input ei)
 {
    int i;
    for (i = 0; enna_keymap[i].keyname; i++)

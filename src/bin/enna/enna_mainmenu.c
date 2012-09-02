@@ -33,6 +33,7 @@
 #include "enna_config.h"
 #include "enna_mainmenu.h"
 #include "enna_input.h"
+#include "enna_keyboard.h"
 
 /*============================================================================*
  *                                  Local                                     *
@@ -67,7 +68,7 @@ _list_item_activated_cb(void *data, Evas_Object *obj __UNUSED__, void *event_inf
     label = elm_object_item_text_get(it);
     DBG("Item activated : %s", label);
 
-    evas_object_smart_callback_call(data, "selected", label);
+    evas_object_smart_callback_call(data, "selected", (void*)label);
 }
 
 static void
@@ -209,7 +210,6 @@ static Eina_Bool
 _input_event(void *data, Enna_Input event)
 {
    const char *tmp;
-   Elm_Object_Item *it;
    Enna_Mainmenu *mm = data;
 
    tmp = enna_keyboard_input_name_get(event);
@@ -238,7 +238,7 @@ _input_event(void *data, Enna_Input event)
              {
                 label = elm_object_item_text_get(it);
                 DBG("Item activated : %s", label);
-                evas_object_smart_callback_call(mm->ly, "selected", label);
+                evas_object_smart_callback_call(mm->ly, "selected", (void*)label);
              }
            return ENNA_EVENT_BLOCK;
         }
@@ -284,7 +284,7 @@ enna_mainmenu_add(Enna *enna __UNUSED__, Evas_Object *parent)
     elm_list_item_append(mm->list, "Exit", NULL, NULL, NULL, NULL);
     elm_object_part_content_set(mm->ly, "list.swallow", mm->list);
     evas_object_size_hint_align_set(mm->list, -1, 0.5);
-    elm_list_bounce_set(mm->list, EINA_FALSE, EINA_FALSE);
+    elm_scroller_bounce_set(mm->list, EINA_FALSE, EINA_FALSE);
     evas_object_smart_callback_add(mm->list, "activated", _list_item_activated_cb, mm->ly);
     elm_list_go(mm->list);
     evas_object_show(mm->list);

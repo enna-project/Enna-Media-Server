@@ -47,7 +47,7 @@ typedef void (*Ems_Media_Done_Cb)(void *data, Ems_Server *server);
 typedef void (*Ems_Media_Error_Cb)(void *data, Ems_Server *server,
                                    Ems_Error error);
 typedef void (*Ems_Media_Info_Add_Cb)(void *data, Ems_Server *server,
-                                      Ems_Media *media);
+                                      const char *value);
 typedef void (*Ems_Media_Info_Del_Cb)(void *data, Ems_Server *server,
                                       Ems_Media *media);
 typedef void (*Ems_Media_Info_Update_Cb)(void *data, Ems_Server *server,

@@ -37,6 +37,8 @@
 #include "enna_config.h"
 #include "enna_activity.h"
 #include "enna_input.h"
+#include "enna_view_player_video.h"
+#include "enna_keyboard.h"
 
 /*============================================================================*
  *                                  Local                                     *
@@ -137,20 +139,20 @@ _server_add_cb(void *data, Ems_Server *server)
 }
 
 static void
-_server_del_cb(void *data, Ems_Server *server)
+_server_del_cb(void *data __UNUSED__, Ems_Server *server)
 {
    DBG("Server %s deleted", ems_server_name_get(server));
 }
 
 
 static void
-_server_update_cb(void *data, Ems_Server *server)
+_server_update_cb(void *data __UNUSED__, Ems_Server *server)
 {
    DBG("Server %s updated", ems_server_name_get(server));
 }
 
 static void
-_add_item_file_name_cb(void *data, Ems_Server *server, const char *value)
+_add_item_file_name_cb(void *data, Ems_Server *server __UNUSED__, const char *value)
 {
    Enna_View_Video_List_Item *it = data;
 
@@ -189,7 +191,7 @@ _add_item_name_cb(void *data, Ems_Server *server, const char *value)
 }
 
 static void
-_add_item_poster_cb(void *data, Ems_Server *server, const char *value)
+_add_item_poster_cb(void *data, Ems_Server *server __UNUSED__, const char *value)
 {
    Enna_View_Video_List_Item *it = data;
 
@@ -202,7 +204,7 @@ _add_item_poster_cb(void *data, Ems_Server *server, const char *value)
 }
 
 static void
-_add_item_backdrop_cb(void *data, Ems_Server *server, const char *value)
+_add_item_backdrop_cb(void *data, Ems_Server *server __UNUSED__, const char *value)
 {
    Enna_View_Video_List_Item *it = data;
 
@@ -251,9 +253,7 @@ _add_item_cb(void *data, Ems_Server *server, const char *media)
 static void
 _server_connected_cb(void *data, Ems_Server *server)
 {
-   int i;
    Enna_View_Video_List_Group *gr;
-   Enna_View_Video_List_Item *it;
    Enna_View_Video_List *act = data;
    Ems_Collection *collection;
 
@@ -291,7 +291,7 @@ _server_disconnected_cb(void *data, Ems_Server *server)
 }
 
 static void
-_cover_del(void *data, Evas *e , Evas_Object *obj, void *event_info)
+_cover_del(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
 {
    Enna_View_Video_List_Item *item = data;
 
@@ -299,7 +299,7 @@ _cover_del(void *data, Evas *e , Evas_Object *obj, void *event_info)
 }
 
 static void
-_backdrop_del(void *data, Evas *e , Evas_Object *obj, void *event_info)
+_backdrop_del(void *data, Evas *e  __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
 {
    Enna_View_Video_List_Item *item = data;
 
@@ -310,8 +310,6 @@ static Eina_Bool
 _timer_cb(void *data)
 {
    Enna_View_Video_List_Item *item = data;
-   Evas_Object *cover;
-   Evas_Object *backdrop;
 
    if (!item || !item->act)
      return EINA_FALSE;
@@ -347,7 +345,7 @@ _timer_cb(void *data)
 }
 
 static void
-_list_item_selected_cb(void *data, Evas_Object *obj __UNUSED__, void *event_info)
+_list_item_selected_cb(void *data __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info)
 {
    Elm_Object_Item *it = event_info;
    Enna_View_Video_List_Item *item;
@@ -389,7 +387,7 @@ _play_pressed_cb(void *data, Evas_Object *obj __UNUSED__, void *event_info __UNU
 }
 
 static void
-_layout_object_del(void *data, Evas *e , Evas_Object *obj, void *event_info)
+_layout_object_del(void *data, Evas *e  __UNUSED__, Evas_Object *obj, void *event_info __UNUSED__)
 {
    Enna_View_Video_List *act = data;
 
@@ -521,7 +519,7 @@ Evas_Object *enna_view_video_list_add(Enna *enna, Evas_Object *parent)
        goto err2;
 
    elm_object_part_content_set(ly, "list.swallow", list);
-   elm_genlist_bounce_set(list, EINA_FALSE, EINA_TRUE);
+   elm_scroller_bounce_set(list, EINA_FALSE, EINA_TRUE);
    elm_object_style_set(list, "media");
 
    itc_group.item_style       = "group_index_media";
