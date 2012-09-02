@@ -68,6 +68,7 @@ struct _Ems_Db
    Ems_Db_Databases *databases; /* List of all database known*/
    Eina_List *video_places; /* List containing section of each video place */
    Ems_Db_Videos_Hash *videos_hash; /* One big hash table to store all video medias informations */
+   Eina_Lock mutex; /* Mutex to lock/unlock access to the database, and let the use of db in multiple threads */
 };
 
 struct _Ems_Db_Databases
@@ -212,11 +213,15 @@ ems_database_init(void)
 {
    char path[PATH_MAX];
    Eina_Bool exists = EINA_FALSE;
+   Eina_Lock_Result l_ret;
 
    if (++_ems_init_count != 1)
      return _ems_init_count;
 
    _db = calloc(1, sizeof(Ems_Db));
+
+   eina_lock_new(&_db->mutex);
+   l_ret = eina_lock_release(&_db->mutex);
 
    snprintf(path, sizeof(path), "%s/"EMS_DATABASE_FILE, ems_config_cache_dirname_get());
    _db->filename = eina_stringshare_add(path);
@@ -308,6 +313,8 @@ ems_database_shutdown(void)
    eina_stringshare_del(_db->filename);
    eet_close(_db->ef);
 
+   eina_lock_free(&_db->mutex);
+
    free(_db);
    _db = NULL;
 
@@ -341,11 +348,17 @@ ems_database_file_insert(const char *hash, const char *place, const char *title,
    Ems_Db_Places_Item *item;
    Ems_Db_Video_Item *video_item;
    Eina_List *l1, *l2, *l3;
+   Eina_Lock_Result status;
 
    if (!hash || !place || !_db)
      return;
 
+   /* db lock */
+
+   eina_lock_take(&_db->mutex);
+
    info = eina_hash_find(_db->videos_hash->hash, hash);
+
    if (!info)
      {
         Ems_Db_Metadata *meta;
@@ -378,6 +391,8 @@ ems_database_file_insert(const char *hash, const char *place, const char *title,
                     if (!strcmp(video_item->hash_key, hash))
                       {
                          video_item->time = time;
+                         eina_lock_release(&_db->mutex);
+                         /* db unlock */
                          return;
                       }
                   /* File does not exist, add it to the list */
@@ -386,12 +401,14 @@ ems_database_file_insert(const char *hash, const char *place, const char *title,
                   video_item->title = eina_stringshare_add(title);
                   video_item->time = time;
                   item->video_list = eina_list_append(item->video_list, video_item);
+                  eina_lock_release(&_db->mutex);
+                  /* db unlock */
                   return;
                }
           }
      }
-
-
+   eina_lock_release(&_db->mutex);
+   /* db unlock */
 }
 
 void
@@ -400,9 +417,13 @@ ems_database_flush(void)
    if (!_db)
      return;
 
+   /* db lock */
+   eina_lock_take(&_db->mutex);
    eet_data_write(_db->ef, _edd_databases, DATABASES_SECTION, _db->databases, EINA_TRUE);
    eet_data_write(_db->ef, _edd_videos_hash, VIDEOS_HASH_SECTION, _db->videos_hash, EINA_FALSE);
    eet_sync(_db->ef);
+   eina_lock_release(&_db->mutex);
+   /* db unlock */
 }
 
 /* void */
@@ -442,6 +463,8 @@ ems_database_files_get(void)
    Ems_Db_Databases_Item *db;
    Ems_Db_Places_Item *item;
 
+   /* db lock */
+   eina_lock_take(&_db->mutex);
    EINA_LIST_FOREACH(_db->databases->list, l1, db)
      {
         EINA_LIST_FOREACH(db->places, l2, item)
@@ -449,6 +472,8 @@ ems_database_files_get(void)
              ret = eina_list_merge(ret,  item->video_list);
           }
      }
+   eina_lock_release(&_db->mutex);
+   /* db unlock */
    return ret;
 }
 
@@ -472,7 +497,12 @@ ems_database_file_mtime_get(const char *hash)
    if (!hash || !_db)
      return -1;
 
+   /* db lock */
+   eina_lock_take(&_db->mutex);
    it = eina_hash_find(_db->videos_hash->hash, hash);
+   eina_lock_release(&_db->mutex);
+   /* db unlock */
+
    if (it)
         return it->mtime;
    else
@@ -499,6 +529,8 @@ ems_database_deleted_files_remove(int64_t time, const char *place)
    Ems_Db_Places_Item *item;
    Eina_List *l1, *l2, *l3;
 
+   /* db lock */
+   eina_lock_take(&_db->mutex);
    /* Search for the right place to add the file*/
    EINA_LIST_FOREACH(_db->databases->list, l1, db)
      {
@@ -521,6 +553,8 @@ ems_database_deleted_files_remove(int64_t time, const char *place)
                }
           }
      }
+   eina_lock_release(&_db->mutex);
+   /* db unlock */
 }
 
 /* const char * */
