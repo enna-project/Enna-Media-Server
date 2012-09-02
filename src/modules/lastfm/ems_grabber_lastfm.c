@@ -343,7 +343,7 @@ _grabber_lastfm_init(void)
  *============================================================================*/
 
 EAPI void
-ems_grabber_grab(const char *filename, Ems_Media_Type type, Ems_Grabber_End_Cb end_cb, void *data)
+ems_grabber_grab(const char *filename, Ems_Media_Type type, Ems_Grabber_Params params, Ems_Grabber_End_Cb end_cb, void *data)
 {
    char url[PATH_MAX];
    Ecore_Con_Url *ec_url = NULL;

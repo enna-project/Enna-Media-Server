@@ -60,6 +60,7 @@ _idler_cb(void *data)
    Ems_Parser_File *file;
    const char *filename = data;
    void (*grab)(const char *filename, Ems_Media_Type type,
+                Ems_Grabber_Params params,
                 void (*Ems_Grabber_End_Cb)(void *data, const char *filename),
                 void *data
                 );
@@ -83,12 +84,15 @@ _idler_cb(void *data)
      {
         EINA_ARRAY_ITER_NEXT(_modules, i, m, iterator)
           {
+             Ems_Grabber_Params params;
+
              grab = eina_module_symbol_get(m, "ems_grabber_grab");
              if (grab)
                {
                   Ems_Parser_File *f = eina_list_nth(_files, 0);
                   grab(f->filename,
                        f->type,
+                       params,
                        _end_grab_cb, NULL);
                }
              break;
