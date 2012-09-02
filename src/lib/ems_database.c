@@ -436,23 +436,27 @@ void
 ems_database_meta_insert(const char *hash, const char *meta, const char *value)
 {
    Ems_Db_Video_Infos *info;
-   Ems_Db_Metadata *m;
 
    if (!hash || !meta || !value)
      return;
 
+
    info = eina_hash_find(_db->videos_hash->hash, hash);
    if (info)
      {
+        Ems_Db_Metadata *m;
+
         if (!info->metadatas)
           info->metadatas = eina_hash_string_superfast_new(NULL);
-        m = calloc(1, sizeof(Ems_Db_Metadata));
+        m = eina_hash_find(info->metadatas, meta);
+        if (!m)
+          m = calloc(1, sizeof(Ems_Db_Metadata));
         m->value = eina_stringshare_add(value);
-        eina_hash_add(info->metadatas, meta, m);
-        DBG("Add %s/%s to %s", meta, value, hash);
+        eina_hash_set(info->metadatas, meta, m);
      }
    else
      ERR("I can't found %s in the database", hash);
+
 }
 
 Eina_List *
