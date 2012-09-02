@@ -369,14 +369,14 @@ ems_database_file_insert(const char *hash, const char *place, const char *title,
         info->metadatas = eina_hash_string_superfast_new(NULL);
         meta = calloc(1, sizeof(Ems_Db_Metadata));
         meta->value = eina_stringshare_add(title);
-        eina_hash_add(info->metadatas, "title", meta);
+        eina_hash_set(info->metadatas, "title", meta);
      }
    else
      info->rev++;
 
    info->mtime = mtime;
 
-   eina_hash_add(_db->videos_hash->hash, hash, info);
+   eina_hash_set(_db->videos_hash->hash, hash, info);
 
    /* Search for the right place to add the file*/
    EINA_LIST_FOREACH(_db->databases->list, l1, db)
