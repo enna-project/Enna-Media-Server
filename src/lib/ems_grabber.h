@@ -23,11 +23,11 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _EMS_PARSER_H_
-#define _EMS_PARSER_H_
+#ifndef _EMS_GRABBER_H_
+#define _EMS_GRABBER_H_
 
-Eina_Bool ems_parser_init(void);
-void ems_parser_shutdown(void);
-void ems_parser_grab(const char *filename, Ems_Media_Type type);
+Eina_Bool ems_grabber_init(void);
+void ems_grabber_shutdown(void);
+void ems_grabber_grab(const char *filename, Ems_Media_Type type);
 
-#endif /* _EMS_PARSER_H_ */
+#endif /* _EMS_GRABBER_H_ */

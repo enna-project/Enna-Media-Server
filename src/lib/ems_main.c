@@ -40,7 +40,7 @@
 #include "ems_avahi.h"
 #include "ems_scanner.h"
 #include "ems_server.h"
-#include "ems_parser.h"
+#include "ems_grabber.h"
 #include "ems_stream_server.h"
 #include "ems_downloader.h"
 
@@ -96,7 +96,7 @@ int ems_init(const char *config_file)
      goto shutdown_avahi;
    if (!ems_scanner_init())
      goto shutdown_server;
-   if (!ems_parser_init())
+   if (!ems_grabber_init())
      goto shutdown_parser;
    if (!ems_stream_server_init())
      goto shutdown_stream_server;
@@ -118,7 +118,7 @@ int ems_init(const char *config_file)
  shutdown_stream_server:
    ems_stream_server_shutdown();
  shutdown_parser:
-   ems_parser_shutdown();
+   ems_grabber_shutdown();
  shutdown_server:
    ems_server_shutdown();
  shutdown_avahi:
