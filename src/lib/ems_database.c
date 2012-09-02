@@ -440,7 +440,8 @@ ems_database_meta_insert(const char *hash, const char *meta, const char *value)
    if (!hash || !meta || !value)
      return;
 
-
+   /* db lock */
+   eina_lock_take(&_db->mutex);
    info = eina_hash_find(_db->videos_hash->hash, hash);
    if (info)
      {
@@ -456,7 +457,8 @@ ems_database_meta_insert(const char *hash, const char *meta, const char *value)
      }
    else
      ERR("I can't found %s in the database", hash);
-
+   eina_lock_release(&_db->mutex);
+   /* db unlock */
 }
 
 Eina_List *
