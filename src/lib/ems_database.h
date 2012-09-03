@@ -41,7 +41,7 @@ void ems_database_meta_insert(const char *hash, const char *meta, const char *va
 
 Eina_List *ems_database_files_get(void);
 /* const char *ems_database_file_get(Ems_Database *db, int item_id); */
-/* const char *ems_database_file_uuid_get(Ems_Database *db, char *media_uuid); */
+/* const char *ems_database_file_uuid_get(char *filename); */
 int64_t ems_database_file_mtime_get(const char *hash);
 void ems_database_deleted_files_remove(int64_t magic, const char *place);
 /* Eina_List * ems_database_collection_get(Ems_Database *db, Ems_Collection *collection); */
