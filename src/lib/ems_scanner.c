@@ -191,7 +191,7 @@ _file_filter_cb(void *data, Eio_File *handler __UNUSED__, Eina_File_Direct_Info 
              tmp = ems_utils_decrapify(info->path, NULL, NULL);
              ems_database_meta_insert(uuid, "clean_name", tmp);
              /* Queue file in grabber list */
-             ems_grabber_grab(info->path, dir->type);
+             ems_grabber_grab(uuid, tmp, dir->type);
           }
         else
           {
@@ -202,7 +202,7 @@ _file_filter_cb(void *data, Eio_File *handler __UNUSED__, Eina_File_Direct_Info 
              if (mtime != (int64_t)st.st_mtime)
                {
                   INF("File changed on disk %s", info->path);
-                  ems_grabber_grab(info->path, dir->type);
+                  //ems_grabber_grab(info->path, dir->type);
                }
 
           }

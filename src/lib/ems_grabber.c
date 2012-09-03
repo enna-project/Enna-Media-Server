@@ -36,11 +36,12 @@
 /*============================================================================*
  *                                  Local                                     *
  *============================================================================*/
-typedef struct _Ems_Parser_File Ems_Parser_File;
+typedef struct _Ems_Grabber_File Ems_Grabber_File;
 
-struct _Ems_Parser_File
+struct _Ems_Grabber_File
 {
    const char *filename;
+   const char *search;
    Ems_Media_Type type;
 };
 
@@ -48,7 +49,7 @@ static Eina_Array *_modules = NULL;
 static Eina_List *_files = NULL;
 static Ecore_Idler *_queue_idler = NULL;
 
-static void _end_grab_cb(void *data, const char *filename);
+static void _end_grab_cb(void *data, const char *filename, Ems_Grabber_Data *grabbed_data);
 
 static Eina_Bool
 _idler_cb(void *data)
@@ -57,11 +58,13 @@ _idler_cb(void *data)
    Eina_Module *m;
    unsigned int i;
    Eina_List *l;
-   Ems_Parser_File *file;
+   Ems_Grabber_File *file;
    const char *filename = data;
-   void (*grab)(const char *filename, Ems_Media_Type type,
+   void (*grab)(const char *filename,
+                const char *search,
+                Ems_Media_Type type,
                 Ems_Grabber_Params params,
-                void (*Ems_Grabber_End_Cb)(void *data, const char *filename),
+                void (*Ems_Grabber_End_Cb)(void *data, const char *filename, Ems_Grabber_Data *grabbed_data),
                 void *data
                 );
 
@@ -73,6 +76,7 @@ _idler_cb(void *data)
                {
                   _files = eina_list_remove(_files, file);
                   eina_stringshare_del(file->filename);
+                  eina_stringshare_del(file->search);
                   free(file);
                   break;
                }
@@ -89,8 +93,9 @@ _idler_cb(void *data)
              grab = eina_module_symbol_get(m, "ems_grabber_grab");
              if (grab)
                {
-                  Ems_Parser_File *f = eina_list_nth(_files, 0);
+                  Ems_Grabber_File *f = eina_list_nth(_files, 0);
                   grab(f->filename,
+                       f->search,
                        f->type,
                        params,
                        _end_grab_cb, NULL);
@@ -115,9 +120,33 @@ _idler_cb(void *data)
    return EINA_FALSE;
 }
 
-static void
-_end_grab_cb(void *data __UNUSED__, const char *filename)
+static Eina_Bool _print_hash_cb(const Eina_Hash *hash, const void *key,
+                  void *data, void *fdata)
 {
+   Eina_Value *v = data;
+   INF("Func data: Hash entry: [%s] -> %s", key, eina_value_to_string(v));
+   ems_database_meta_insert(fdata, key, eina_value_to_string(v));
+   return 1;
+}
+
+static void
+_end_grab_cb(void *data __UNUSED__, const char *filename, Ems_Grabber_Data *grabbed_data)
+{
+
+   DBG("End Grab %s", filename);
+   DBG("Grabbed data : %p", grabbed_data);
+   INF("Grabber language : %s", grabbed_data->lang);
+   INF("Grabber grabbed date : %lld", grabbed_data->date);
+   INF("Data:");
+   eina_hash_foreach(grabbed_data->data, _print_hash_cb, NULL);
+
+
+   if (grabbed_data->episode_data)
+     {
+        INF("Episode data:");
+        eina_hash_foreach(grabbed_data->episode_data, _print_hash_cb, filename);
+     }
+
    _queue_idler = ecore_idler_add(_idler_cb, filename);
 }
 
@@ -126,7 +155,7 @@ _end_grab_cb(void *data __UNUSED__, const char *filename)
  *============================================================================*/
 
 Eina_Bool
-ems_parser_init(void)
+ems_grabber_init(void)
 {
    _modules = eina_module_arch_list_get(NULL,
                                         PACKAGE_LIB_DIR "/ems/grabbers",
@@ -138,12 +167,13 @@ ems_parser_init(void)
 }
 
 void
-ems_parser_shutdown(void)
+ems_grabber_shutdown(void)
 {
-   Ems_Parser_File *file;
+   Ems_Grabber_File *file;
 
    EINA_LIST_FREE(_files, file)
      {
+        eina_stringshare_del(file->search);
         eina_stringshare_del(file->filename);
         free(file);
      }
@@ -161,15 +191,16 @@ ems_parser_shutdown(void)
  *============================================================================*/
 
 void
-ems_parser_grab(const char *filename, Ems_Media_Type type)
+ems_grabber_grab(const char *filename, const char *search, Ems_Media_Type type)
 {
-   Ems_Parser_File *file;
+   Ems_Grabber_File *file;
 
    if (!filename)
      return;
 
-   file = calloc(1, sizeof(Ems_Parser_File));
+   file = calloc(1, sizeof(Ems_Grabber_File));
    file->filename = eina_stringshare_add(filename);
+   file->search = eina_stringshare_add(search);
    file->type = type;
 
    _files = eina_list_append(_files, file);
