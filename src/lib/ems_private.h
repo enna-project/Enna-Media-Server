@@ -97,10 +97,8 @@ typedef void (*Ems_Grabber_End_Cb)(void *data,
                                    Ems_Grabber_Data *grabbed_data);
 
 /* Function exported by grabber modules */
-typedef void (*Ems_Grabber_Grab)(const char *filename,
-                                 Ems_Media_Type type,
-                                 Ems_Grabber_Params params,
-	                         Ems_Grabber_End_Cb end_cb,
+typedef void (*Ems_Grabber_Grab)(Ems_Grabber_Params *params,
+				 Ems_Grabber_End_Cb end_cb,
 	                         void *data);
 
 struct _Ems_Observer
@@ -176,6 +174,9 @@ struct _Ems_Grabber_Data
 
 struct _Ems_Grabber_Params
 {
+   const char *filename;
+   const char *search;
+   Ems_Media_Type type;
    //for tvshow grabbers
    unsigned int season;
    unsigned int episode;
