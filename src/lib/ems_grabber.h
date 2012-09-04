@@ -28,6 +28,6 @@
 
 Eina_Bool ems_grabber_init(void);
 void ems_grabber_shutdown(void);
-void ems_grabber_grab(const char *filename, const char *search, Ems_Media_Type type);
+void ems_grabber_grab(const char *filename, const char *search, Ems_Media_Type type, unsigned int season, unsigned int episode);
 
 #endif /* _EMS_GRABBER_H_ */
