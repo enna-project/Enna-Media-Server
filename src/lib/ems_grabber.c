@@ -167,9 +167,8 @@ ems_grabber_shutdown(void)
    if (_queue_idler)
      ecore_idler_del(_queue_idler);
 
+   eina_module_list_unload(_modules);
    eina_module_list_free(_modules);
-   if (_modules)
-      eina_array_free(_modules);
 }
 
 /*============================================================================*
