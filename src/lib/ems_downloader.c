@@ -149,7 +149,7 @@ ems_downloader_url_download(const char *url, const char *file __UNUSED__,
    char filename[PATH_MAX];
    char directory[PATH_MAX];
    const char *tmp;
-   const char *hash;
+   const char *hash = NULL;
    if (!url)
      return EINA_FALSE;
 
