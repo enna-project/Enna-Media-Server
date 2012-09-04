@@ -176,6 +176,8 @@ _file_filter_cb(void *data, Eio_File *handler __UNUSED__, Eina_File_Direct_Info 
 
         if (mtime < 0)
           {
+              unsigned int season, episode;
+
              /* File doesn't exists in the db, insert a new one, start time is here a markup, once the scan is finished we do a request on this value to see which files changed, these files can be then removed from the db, as they are removed on the filesystem*/
 
              DBG("Insert %s with hash : %s", info->path, uuid);
@@ -188,10 +190,10 @@ _file_filter_cb(void *data, Eio_File *handler __UNUSED__, Eina_File_Direct_Info 
              /* Insert metadata clean_name in database based on searched string */
 
              //FIXME: season, episode should be passed to the grabber
-             tmp = ems_utils_decrapify(info->path, NULL, NULL);
+             tmp = ems_utils_decrapify(info->path, &season, &episode);
              ems_database_meta_insert(uuid, "clean_name", tmp);
              /* Queue file in grabber list */
-             ems_grabber_grab(uuid, tmp, dir->type);
+             ems_grabber_grab(uuid, tmp, dir->type, season, episode);
           }
         else
           {
