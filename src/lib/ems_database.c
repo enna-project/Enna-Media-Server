@@ -54,6 +54,7 @@ typedef struct _Ems_Db_Video_Item Ems_Db_Video_Item;
 typedef struct _Ems_Db_Videos Ems_Db_Videos;
 typedef struct _Ems_Db_Video_Infos Ems_Db_Video_Infos;
 typedef struct _Ems_Db_Videos_Hash Ems_Db_Videos_Hash;
+typedef struct _Ems_Db_Metadata Ems_Db_Metadata;
 
 
 struct _Ems_Db_Metadata
@@ -200,6 +201,48 @@ _init_edd(void)
 
 }
 
+static void
+_metadata_free(void *data)
+{
+   Ems_Db_Metadata *meta = data;
+
+   DBG("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< metadata free");
+
+   if (!meta)
+     return;
+
+   eina_stringshare_del(meta->value);
+   free(meta);
+}
+
+static void
+_video_infos_free(void *data)
+{
+   Ems_Db_Video_Infos *infos = data;
+
+   if (!infos)
+     return;
+
+   DBG("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< video infos free");
+
+   eina_hash_free(infos->metadatas);
+   free(infos);
+}
+
+static void
+_video_hash_free(void *data)
+{
+   Ems_Db_Videos_Hash *infos = data;
+
+   DBG("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< hash free");
+
+   if (!infos)
+     return;
+
+   eina_hash_free(infos->hash);
+   free(infos);
+}
+
 /*============================================================================*
  *                                 Global                                     *
  *============================================================================*/
@@ -254,7 +297,7 @@ ems_database_init(void)
 
         _db->videos_hash = eet_data_read(_db->ef, _edd_videos_hash, VIDEOS_HASH_SECTION);
         if (!_db->videos_hash->hash)
-          _db->videos_hash->hash = eina_hash_string_superfast_new(NULL);
+          _db->videos_hash->hash = eina_hash_string_superfast_new(_video_hash_free);
      }
    /* Database is virgin, create the section 'databases', and add our local database */
    else
@@ -290,7 +333,7 @@ ems_database_init(void)
         eet_data_write(_db->ef, _edd_databases, DATABASES_SECTION, _db->databases, EINA_TRUE);
 
         _db->videos_hash = calloc(1, sizeof(Ems_Db_Videos_Hash));
-        _db->videos_hash->hash = eina_hash_string_superfast_new(NULL);
+        _db->videos_hash->hash = eina_hash_string_superfast_new(_video_hash_free);
 
         eet_data_write(_db->ef, _edd_videos_hash, VIDEOS_HASH_SECTION, _db->videos_hash, EINA_TRUE);
 
@@ -310,6 +353,11 @@ ems_database_shutdown(void)
 
    eina_stringshare_del(_db->filename);
    eet_close(_db->ef);
+
+   eina_list_free(_db->databases->list);
+   free(_db->databases);
+   eina_hash_free(_db->videos_hash->hash);
+   free(_db->videos_hash);
 
    eina_lock_free(&_db->mutex);
 
@@ -364,11 +412,11 @@ ems_database_file_insert(const char *hash, const char *place, const char *title,
         info = calloc(1, sizeof(Ems_Db_Video_Infos));
         info->rev = 1;
         info->mtime = mtime;
-        info->metadatas = eina_hash_string_superfast_new(NULL);
+        info->metadatas = eina_hash_string_superfast_new(_video_infos_free);
         meta = calloc(1, sizeof(Ems_Db_Metadata));
         meta->value = eina_stringshare_add(title);
         meta = eina_hash_set(info->metadatas, "title", meta);
-	ems_database_db_metadata_free(meta);
+	_metadata_free(meta);
      }
    else
      info->rev++;
@@ -425,15 +473,6 @@ ems_database_flush(void)
    /* db unlock */
 }
 
-void
-ems_database_db_metadata_free(Ems_Db_Metadata *meta)
-{
-   if (!meta)
-     return;
-
-   eina_stringshare_del(meta->value);
-   free(meta);
-}
 
 /* void */
 /* ems_database_file_update(Ems_Database *db, const char *filename, int64_t mtime, Ems_Media_Type type __UNUSED__, int64_t magic) */
@@ -457,13 +496,13 @@ ems_database_meta_insert(const char *hash, const char *meta, const char *value)
         Ems_Db_Metadata *m;
 
         if (!info->metadatas)
-          info->metadatas = eina_hash_string_superfast_new(NULL);
+          info->metadatas = eina_hash_string_superfast_new(_metadata_free);
         m = eina_hash_find(info->metadatas, meta);
         if (!m)
           m = calloc(1, sizeof(Ems_Db_Metadata));
         m->value = eina_stringshare_add(value);
         m = eina_hash_set(info->metadatas, meta, m);
-	ems_database_db_metadata_free(m);
+	_metadata_free(m);
      }
    else
      ERR("I can't found %s in the database", hash);
