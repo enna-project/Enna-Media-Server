@@ -28,9 +28,13 @@
 
 #include "Ems.h"
 
+typedef struct _Ems_Db_Metadata Ems_Db_Metadata;
+
 int ems_database_init(void);
 int ems_database_shutdown(void);
 void ems_database_flush(void);
+
+void ems_database_db_meta_free(Ems_Db_Metadata *meta);
 
 /* void ems_database_table_create(Ems_Database *db); */
 void ems_database_file_insert(const char *hash, const char *place, const char *title,

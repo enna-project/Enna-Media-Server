@@ -54,7 +54,7 @@ typedef struct _Ems_Db_Video_Item Ems_Db_Video_Item;
 typedef struct _Ems_Db_Videos Ems_Db_Videos;
 typedef struct _Ems_Db_Video_Infos Ems_Db_Video_Infos;
 typedef struct _Ems_Db_Videos_Hash Ems_Db_Videos_Hash;
-typedef struct _Ems_Db_Metadata Ems_Db_Metadata;
+
 
 struct _Ems_Db_Metadata
 {
@@ -359,6 +359,7 @@ ems_database_file_insert(const char *hash, const char *place, const char *title,
    if (!info)
      {
         Ems_Db_Metadata *meta;
+
         /* This file doesn't exist in database, add it */
         info = calloc(1, sizeof(Ems_Db_Video_Infos));
         info->rev = 1;
@@ -366,7 +367,8 @@ ems_database_file_insert(const char *hash, const char *place, const char *title,
         info->metadatas = eina_hash_string_superfast_new(NULL);
         meta = calloc(1, sizeof(Ems_Db_Metadata));
         meta->value = eina_stringshare_add(title);
-        eina_hash_set(info->metadatas, "title", meta);
+        meta = eina_hash_set(info->metadatas, "title", meta);
+	ems_database_db_metadata_free(meta);
      }
    else
      info->rev++;
@@ -423,6 +425,16 @@ ems_database_flush(void)
    /* db unlock */
 }
 
+void
+ems_database_db_metadata_free(Ems_Db_Metadata *meta)
+{
+   if (!meta)
+     return;
+
+   eina_stringshare_del(meta->value);
+   free(meta);
+}
+
 /* void */
 /* ems_database_file_update(Ems_Database *db, const char *filename, int64_t mtime, Ems_Media_Type type __UNUSED__, int64_t magic) */
 /* { */
@@ -450,7 +462,8 @@ ems_database_meta_insert(const char *hash, const char *meta, const char *value)
         if (!m)
           m = calloc(1, sizeof(Ems_Db_Metadata));
         m->value = eina_stringshare_add(value);
-        eina_hash_set(info->metadatas, meta, m);
+        m = eina_hash_set(info->metadatas, meta, m);
+	ems_database_db_metadata_free(m);
      }
    else
      ERR("I can't found %s in the database", hash);
