@@ -68,7 +68,7 @@ int main(int argc, char **argv)
    Ems_Media_Type type = 1;
    Ems_Grabber_Grab grab;
    char *title;
-   Ems_Grabber_Params params;
+   Ems_Grabber_Params *params;
 
    if (argc != 4)
      {
@@ -93,21 +93,23 @@ int main(int argc, char **argv)
        ERR("unable to load module (%s): %s", tmp, eina_error_msg_get(eina_error_get()));
      }
 
+   params = calloc(1, sizeof(Ems_Grabber_Params));
+   params->filename = argv[2];
+   params->search = ems_utils_decrapify(argv[2], &params->season, &params->episode);
+   params->type = atoi(argv[3]); 
+
    grab = eina_module_symbol_get(m, "ems_grabber_grab");
    if (grab)
      {
         INF("Grab title %s", argv[2]);
-        type = atoi(argv[3]);
 
-        title = ems_utils_decrapify(argv[2], &params.season, &params.episode);
-
-        grab(title,
-             type,
-             params,
+        grab(params,
              _end_grab_cb, NULL);
 
-        free(title);
      }
+
+   free(params->search);
+   free(params);
 
 
    ecore_main_loop_begin();
