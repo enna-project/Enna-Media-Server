@@ -540,7 +540,7 @@ _grabber_allocine_init(void)
  *============================================================================*/
 
 EAPI void
-ems_grabber_grab(const char *filename, Ems_Media_Type type, Ems_Grabber_Params params, Ems_Grabber_End_Cb end_cb, void *data)
+ems_grabber_grab(Ems_Grabber_Params *params, Ems_Grabber_End_Cb end_cb, void *data)
 {
    char url[PATH_MAX];
    Ecore_Con_Url *ec_url = NULL;
@@ -548,13 +548,16 @@ ems_grabber_grab(const char *filename, Ems_Media_Type type, Ems_Grabber_Params p
    char *search = NULL;
    Ems_Allocine_Req *req;
 
-   if (type != EMS_MEDIA_TYPE_VIDEO)
+   if(!params)
      return;
 
-   DBG("Grab %s of type %d", filename, type);
+   if (params->type != EMS_MEDIA_TYPE_VIDEO)
+     return;
+
+   DBG("Grab %s of type %d", params->filename, params->type);
    _stats->total++;
 
-   search = ems_utils_escape_string(filename);
+   search = ems_utils_escape_string(params->search);
 
    snprintf(url, sizeof (url), EMS_ALLOCINE_QUERY_SEARCH,
             EMS_ALLOCINE_API_KEY, search);
@@ -569,7 +572,7 @@ ems_grabber_grab(const char *filename, Ems_Media_Type type, Ems_Grabber_Params p
      }
 
    req = calloc(1, sizeof(Ems_Allocine_Req));
-   req->filename = eina_stringshare_add(filename);
+   req->filename = eina_stringshare_add(params->filename);
    req->search = eina_stringshare_add(search);
    if (search)
      free(search);
