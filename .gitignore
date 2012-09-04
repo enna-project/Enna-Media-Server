@@ -33,3 +33,9 @@ ems_rpc_*.[ch]
 massif.out.*
 enna-media-server*.tar.gz
 enna-media-server*.tar.bz2
+/src/bin/enna/enna
+/src/tests/test_avahi_service
+/src/tests/test_grabber
+/ems.pc
+/data/themes/default/default.edj
+/config.h.in
