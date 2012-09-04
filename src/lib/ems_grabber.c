@@ -104,8 +104,9 @@ _idler_cb(void *data)
    return EINA_FALSE;
 }
 
-static Eina_Bool _print_hash_cb(const Eina_Hash *hash, const void *key,
-                  void *data, void *fdata)
+static Eina_Bool
+_print_hash_cb(const Eina_Hash *hash, const void *key,
+               void *data, void *fdata)
 {
    Eina_Value *v = data;
    INF("Func data: Hash entry: [%s] -> %s", key, eina_value_to_string(v));
