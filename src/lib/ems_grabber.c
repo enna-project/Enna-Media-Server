@@ -111,6 +111,7 @@ _print_hash_cb(const Eina_Hash *hash, const void *key,
    Eina_Value *v = data;
    INF("Func data: Hash entry: [%s] -> %s", key, eina_value_to_string(v));
    ems_database_meta_insert(fdata, key, eina_value_to_string(v));
+   eina_value_free(v);
    return 1;
 }
 
