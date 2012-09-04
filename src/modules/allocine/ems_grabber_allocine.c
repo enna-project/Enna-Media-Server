@@ -122,9 +122,7 @@ static Ems_Allocine_Stats *_stats = NULL;
      v = eina_value_new(eina_type);                                     \
      it = cJSON_GetObjectItem(m, val);                                  \
      if (it) {                                                          \
-        const char *str;                                                \
         eina_value_set(v, it->type);                                    \
-        str = eina_stringshare_add(eina_value_to_string(v));            \
         eina_hash_add(req->grabbed_data->data, key, v);                 \
      }                                                                  \
   } while(0);                                                           \
@@ -145,6 +143,7 @@ _grabber_allocine_shutdown(void)
 {
    INF("Shutdown Allocine grabber");
    eina_hash_free(_hash_req);
+   free(_stats);
    ecore_con_url_shutdown();
    ecore_con_shutdown();
 }
@@ -249,7 +248,6 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
      {
         if (req->end_cb)
           req->end_cb(req->data, req->filename, req->grabbed_data);
-        //ecore_con_url_free(req->ec_url);
         eina_hash_del(_hash_req, req->ec_url, req);
         return ECORE_CALLBACK_DONE;
      }
@@ -347,7 +345,6 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
 		{
 		   ERR("could not realize request.");
 		   eina_hash_del(_hash_req, req->ec_url, req);
-		   ecore_con_url_free(req->ec_url);
 		   goto end_req;
 		}
 
@@ -417,7 +414,6 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
 		{
 		   ERR("could not realize request.");
 		   eina_hash_del(_hash_req, req->ec_url, req);
-		   ecore_con_url_free(req->ec_url);
 		   goto end_req;
 		}
 
@@ -486,19 +482,18 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
 	break;
      }
 
-   if (req->end_cb)
-     req->end_cb(req->data, req->filename, req->grabbed_data);
-   //ecore_con_url_free(req->ec_url);
-   eina_hash_del(_hash_req, req->ec_url, req);
+   /* if (req->end_cb) */
+   /*   req->end_cb(req->data, req->filename, req->grabbed_data); */
+   /* eina_hash_del(_hash_req, req->ec_url, req); */
+   /* ecore_con_url_free(req->ec_url); */
 
-   return ECORE_CALLBACK_DONE;
+   /* return ECORE_CALLBACK_DONE; */
 
  end_req:
    if (root) cJSON_Delete(root);
 
    if (req->end_cb)
      req->end_cb(req->data, req->filename, req->grabbed_data);
-   //ecore_con_url_free(req->ec_url);
    eina_hash_del(_hash_req, req->ec_url, req);
    return ECORE_CALLBACK_DONE;
 }
@@ -511,6 +506,8 @@ _request_free_cb(Ems_Allocine_Req *req)
    if (req->filename) eina_stringshare_del(req->filename);
    if (req->search) eina_stringshare_del(req->search);
    if (req->buf) eina_strbuf_free(req->buf);
+   if (req->ec_url) ecore_con_url_free(req->ec_url);
+
    free(req);
 }
 
@@ -591,7 +588,6 @@ ems_grabber_grab(Ems_Grabber_Params *params, Ems_Grabber_End_Cb end_cb, void *da
      {
         ERR("could not realize request.");
         eina_hash_del(_hash_req, ec_url, req);
-        ecore_con_url_free(ec_url);
      }
 }
 
