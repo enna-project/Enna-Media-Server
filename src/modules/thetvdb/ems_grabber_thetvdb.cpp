@@ -170,7 +170,7 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
         _call_end_cb(req, EINA_TRUE);
         return ECORE_CALLBACK_DONE;
      }
-   
+
    switch(req->state)
      {
       case EMS_REQUEST_STATE_SEARCH:
@@ -243,7 +243,7 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
                    _call_end_cb(req, EINA_TRUE);
                    ecore_con_url_free(req->ec_url);
                 }
-                                        
+
            }
          break;
       case EMS_REQUEST_STATE_INFO:
