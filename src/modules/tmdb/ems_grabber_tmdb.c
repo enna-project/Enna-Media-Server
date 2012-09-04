@@ -154,8 +154,7 @@ _poster_download_end_cb(void *data, const char *url,
 {
 
    DBG("insert poster for %s", (const char*)data);
-   //   ems_database_meta_insert(ems_config->db, data, "poster",  eina_stringshare_add(filename));
-   eina_stringshare_del(data);
+   ems_database_meta_insert(data, "poster",  eina_stringshare_add(filename));
    _stats->covers_grabbed++;
    return EINA_TRUE;
 }
@@ -166,8 +165,7 @@ _backdrop_download_end_cb(void *data, const char *url,
 {
 
    DBG("insert backdrop for %s", (const char*)data);
-   //   ems_database_meta_insert(ems_config->db, data, "backdrop",  eina_stringshare_add(filename));
-   eina_stringshare_del(data);
+   ems_database_meta_insert(data, "backdrop",  eina_stringshare_add(filename));
    _stats->backdrop_grabbed++;
    return EINA_TRUE;
 }
@@ -371,8 +369,7 @@ _grabber_tmdb_init(void)
  *============================================================================*/
 
 EAPI void
-ems_grabber_grab(const char *filename, const char *search,
-                 Ems_Media_Type type, Ems_Grabber_Params params, Ems_Grabber_End_Cb end_cb, void *data)
+ems_grabber_grab(Ems_Grabber_Params *params, Ems_Grabber_End_Cb end_cb, void *data)
 {
    char url[PATH_MAX];
    Ecore_Con_Url *ec_url = NULL;
@@ -380,13 +377,16 @@ ems_grabber_grab(const char *filename, const char *search,
    char *s;
    Ems_Tmdb_Req *req;
 
-   if (type != EMS_MEDIA_TYPE_VIDEO)
+   if (!params)
+       return;
+
+   if (params->type != EMS_MEDIA_TYPE_VIDEO)
      return;
 
-   DBG("Grab %s of type %d", filename, type);
+   DBG("Grab %s of type %d", params->filename, params->type);
    _stats->total++;
 
-   s = ems_utils_escape_string(search);
+   s = ems_utils_escape_string(params->search);
 
    snprintf(url, sizeof (url), EMS_TMDB_QUERY_SEARCH,
             EMS_TMDB_API_KEY, s);
@@ -401,7 +401,7 @@ ems_grabber_grab(const char *filename, const char *search,
      }
 
    req = calloc(1, sizeof(Ems_Tmdb_Req));
-   req->filename = eina_stringshare_add(filename);
+   req->filename = eina_stringshare_add(params->filename);
    req->search = eina_stringshare_add(s);
    if (s)
      free(s);
