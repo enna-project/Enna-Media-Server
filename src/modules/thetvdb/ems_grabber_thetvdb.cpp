@@ -95,7 +95,7 @@ typedef struct _Ems_TheTVDB_Req
    Ems_Request_State state;
    Ems_Grabber_Data *grabbed_data;
    Ems_Grabber_End_Cb end_cb;
-   Ems_Grabber_Params params;
+   Ems_Grabber_Params *params;
    void *data;
 } Ems_TheTVDB_Req;
 
@@ -354,8 +354,8 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
                                         EMS_THETVDB_QUERY_EPISODE_INFO,
                                         EMS_THETVDB_API_KEY,
                                         seriesid,
-                                        req->params.season,
-                                        req->params.episode,
+                                        req->params->season,
+                                        req->params->episode,
                                         EMX_THETVDB_DEFAULT_LANG); //TODO: get language from config
 
               ecore_con_url_url_set(req->ec_url, eina_strbuf_string_get(url));
@@ -498,7 +498,7 @@ _grabber_thetvdb_init(void)
  *============================================================================*/
 
 EAPI void
-ems_grabber_grab(const char *filename, Ems_Media_Type type, Ems_Grabber_Params params, Ems_Grabber_End_Cb end_cb, void *data)
+ems_grabber_grab(Ems_Grabber_Params *params, Ems_Grabber_End_Cb end_cb, void *data)
 {
    Eina_Strbuf *url = NULL;
    Ecore_Con_Url *ec_url = NULL;
@@ -506,15 +506,18 @@ ems_grabber_grab(const char *filename, Ems_Media_Type type, Ems_Grabber_Params p
    char *search = NULL;
    Ems_TheTVDB_Req *req;
 
-   if (type != EMS_MEDIA_TYPE_TVSHOW)
+   if (!params)
+     return;
+
+   if (params->type != EMS_MEDIA_TYPE_TVSHOW)
      {
-        DBG("Not for me: %d != %d", type, EMS_MEDIA_TYPE_TVSHOW);
+        DBG("Not for me: %d != %d", params->type, EMS_MEDIA_TYPE_TVSHOW);
         return;
      }
 
-   DBG("Grab %s of type %d (episode:%d season:%d)", filename, type, params.episode, params.season);
+   DBG("Grab %s of type %d (episode:%d season:%d)", params->filename, params->type, params->episode, params->season);
 
-   search = ems_utils_escape_string(filename);
+   search = ems_utils_escape_string(params->filename);
 
    url = eina_strbuf_new();
    eina_strbuf_append_printf(url, EMS_THETVDB_QUERY_SEARCH, search);
@@ -530,7 +533,7 @@ ems_grabber_grab(const char *filename, Ems_Media_Type type, Ems_Grabber_Params p
      }
 
    req = (Ems_TheTVDB_Req *)calloc(1, sizeof(Ems_TheTVDB_Req));
-   req->filename = eina_stringshare_add(filename);
+   req->filename = eina_stringshare_add(params->filename);
    req->search = eina_stringshare_add(search);
    if (search)
      free(search);
