@@ -45,6 +45,7 @@ ems_downloader.h \
 extras/http_parser.c
 
 if HAVE_ECORE_CON_EET
+else
 libems_la_SOURCES += ecore_con_eet.c
 includes_HEADERS += Ecore_Con_Eet.h
 endif
