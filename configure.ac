@@ -111,7 +111,7 @@ requirements_enna="elementary >= 0.9.0 emotion >= 1.0.0 ecore-input >= 1.0.0"
 PKG_CHECK_MODULES([ENNA], [${requirements_enna}])
 AC_SUBST([requirements_enna])
 
-PKG_CHECK_MODULES([ECORE_CON_EET], [ecore-con > 1.7], [have_ecore_con_eet="yes"], [have_ecore_con_eet="no"])
+PKG_CHECK_MODULES([ECORE_CON_EET], [ecore-con >= 1.7.99], [have_ecore_con_eet="yes"], [have_ecore_con_eet="no"])
 AM_CONDITIONAL([HAVE_ECORE_CON_EET], [test "x${have_ecore_con_eet}" = "xyes"])
 
 ### Checks for compiler characteristics
