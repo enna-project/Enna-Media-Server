@@ -68,17 +68,24 @@ struct _Ems_Server_Cb
 
 static Eina_List *_servers = NULL;
 static Eina_List *_servers_cb = NULL;
+static Eina_List *_media_get_cb = NULL;
 
 static void
-_medias_cb(void *data __UNUSED__, Ecore_Con_Reply *reply __UNUSED__, const char *name __UNUSED__, void *value)
+_medias_cb(void *data, Ecore_Con_Reply *reply __UNUSED__, const char *name __UNUSED__, void *value)
 {
    Medias *medias = value;
    Ems_Video *video;
-   Eina_List *l;
+   Eina_List *l, *l2;
+   Ems_Server_Media_Get_Cb* cb;
 
    EINA_LIST_FOREACH(medias->files, l, video)
      {
         DBG("Value read : %s", video->title);
+        EINA_LIST_FOREACH(_media_get_cb, l2, cb)
+          {
+             if (cb->add_cb)
+               cb->add_cb(cb->data, data, video->title);
+          }
      }
 
 
@@ -378,11 +385,17 @@ ems_server_dir_get(Ems_Server *server __UNUSED__,
 Ems_Observer *
 ems_server_media_get(Ems_Server *server,
                      Ems_Collection *collection,
-                     Ems_Media_Add_Cb media_add __UNUSED__,
-                     void *data __UNUSED__
-)
+                     Ems_Media_Add_Cb media_add,
+                     void *data)
 {
    Medias_Req *req;
+
+   Ems_Server_Media_Get_Cb *cb = calloc(1, sizeof(Ems_Server_Media_Get_Cb));
+
+   cb->add_cb = media_add;
+   cb->data = data;
+
+   _media_get_cb = eina_list_append(_media_get_cb, cb);
 
    DBG("Server reply : %p", server->reply);
 
