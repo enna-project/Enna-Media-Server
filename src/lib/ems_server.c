@@ -70,8 +70,18 @@ static Eina_List *_servers = NULL;
 static Eina_List *_servers_cb = NULL;
 
 static void
-_medias_cb(void *data __UNUSED__, Ecore_Con_Reply *reply __UNUSED__, const char *name __UNUSED__, void *value __UNUSED__)
+_medias_cb(void *data __UNUSED__, Ecore_Con_Reply *reply __UNUSED__, const char *name __UNUSED__, void *value)
 {
+   Medias *medias = value;
+   Ems_Video *video;
+   Eina_List *l;
+
+   EINA_LIST_FOREACH(medias->files, l, video)
+     {
+        DBG("Value read : %s", video->title);
+     }
+
+
 }
 
 static void
@@ -191,6 +201,8 @@ void ems_server_add(Ems_Server *server)
 	    }
        }
    _servers = eina_list_append(_servers, server);
+
+
 }
 
 void ems_server_del(const char *name)
