@@ -92,10 +92,12 @@ int ems_init(const char *config_file)
      goto shutdown_eio;
    if (!ems_avahi_init())
      goto shutdown_config;
+   if (!ems_database_init())
+     goto shutdown_server;
    if (!ems_server_init())
      goto shutdown_avahi;
    if (!ems_scanner_init())
-     goto shutdown_server;
+     goto shutdown_database;
    if (!ems_grabber_init())
      goto shutdown_parser;
    if (!ems_stream_server_init())
@@ -119,6 +121,8 @@ int ems_init(const char *config_file)
    ems_stream_server_shutdown();
  shutdown_parser:
    ems_grabber_shutdown();
+ shutdown_database:
+   ems_database_shutdown();
  shutdown_server:
    ems_server_shutdown();
  shutdown_avahi:
