@@ -295,12 +295,6 @@ ems_scanner_init(void)
    if (!_scanner)
      return EINA_FALSE;
 
-   if (!ems_database_init())
-     {
-        ERR("Unable to create database");
-        return EINA_FALSE;
-     }
-
    return EINA_TRUE;
 }
 
