@@ -50,7 +50,7 @@ typedef struct _Ems_Db Ems_Db;
 typedef struct _Ems_Db_Places Ems_Db_Places;
 typedef struct _Ems_Db_Places_Item Ems_Db_Places_Item;
 typedef struct _Ems_Db_Place_Videos Ems_Db_Place_Videos;
-typedef struct _Ems_Db_Video_Item Ems_Db_Video_Item;
+
 typedef struct _Ems_Db_Videos Ems_Db_Videos;
 typedef struct _Ems_Db_Video_Infos Ems_Db_Video_Infos;
 typedef struct _Ems_Db_Videos_Hash Ems_Db_Videos_Hash;
@@ -105,13 +105,6 @@ struct _Ems_Db_Place_Videos
    Eina_List *list;
 };
 
-struct _Ems_Db_Video_Item
-{
-   const char *hash_key;
-   const char *title;
-   int64_t time;
-};
-
 struct _Ems_Db_Videos_Hash
 {
    Eina_Hash *hash;
@@ -130,10 +123,11 @@ static int _ems_init_count = 0;
 static Eet_Data_Descriptor *_edd_databases;
 static Eet_Data_Descriptor *_edd_databases_item;
 static Eet_Data_Descriptor *_edd_places_item;
-static Eet_Data_Descriptor *_edd_video_item;
 static Eet_Data_Descriptor *_edd_video_infos;
 static Eet_Data_Descriptor *_edd_videos_hash;
 static Eet_Data_Descriptor *_edd_metadata;
+
+Eet_Data_Descriptor *ems_video_item_edd;
 
 
 static void
@@ -142,13 +136,13 @@ _init_edd(void)
    Eet_Data_Descriptor_Class eddc;
    Eet_Data_Descriptor *edd;
 
-   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Db_Video_Item);
+   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Video);
    edd = eet_data_descriptor_stream_new(&eddc);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Item, "hash_key", hash_key, EET_T_STRING);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Item, "title", title, EET_T_STRING);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Item, "time", time, EET_T_LONG_LONG);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Video, "hash_key", hash_key, EET_T_STRING);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Video, "title", title, EET_T_STRING);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Video, "time", time, EET_T_LONG_LONG);
 
-   _edd_video_item = edd;
+   ems_video_item_edd = edd;
    EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Db_Places_Item);
    edd = eet_data_descriptor_stream_new(&eddc);
 
@@ -156,7 +150,7 @@ _init_edd(void)
    EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Places_Item, "label", label, EET_T_STRING);
    EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Places_Item, "type", type, EET_T_INT);
    EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Places_Item, "videos_rev", video_rev, EET_T_INT);
-   EET_DATA_DESCRIPTOR_ADD_LIST(edd, Ems_Db_Places_Item, "video_list", video_list, _edd_video_item);
+   EET_DATA_DESCRIPTOR_ADD_LIST(edd, Ems_Db_Places_Item, "video_list", video_list, ems_video_item_edd);
 
    _edd_places_item = edd;
 
@@ -259,6 +253,8 @@ ems_database_init(void)
 
    if (++_ems_init_count != 1)
      return _ems_init_count;
+
+   DBG("Database init");
 
    _db = calloc(1, sizeof(Ems_Db));
 
@@ -392,7 +388,7 @@ ems_database_file_insert(const char *hash, const char *place, const char *title,
    Ems_Db_Video_Infos *info;
    Ems_Db_Databases_Item *db;
    Ems_Db_Places_Item *item;
-   Ems_Db_Video_Item *video_item;
+   Ems_Video *video_item;
    Eina_List *l1, *l2, *l3;
 
    if (!hash || !place || !_db)
@@ -443,7 +439,7 @@ ems_database_file_insert(const char *hash, const char *place, const char *title,
                          return;
                       }
                   /* File does not exist, add it to the list */
-                  video_item = calloc(1, sizeof(Ems_Db_Video_Item));
+                  video_item = calloc(1, sizeof(Ems_Video));
                   video_item->hash_key = eina_stringshare_add(hash);
                   video_item->title = eina_stringshare_add(title);
                   video_item->time = time;
@@ -544,7 +540,7 @@ ems_database_files_get(void)
 /*    Eina_List *l1, *l2, *l3; */
 /*    Ems_Db_Databases_Item *db; */
 /*    Ems_Db_Places_Item *item; */
-/*    Ems_Db_Video_Item *video_item; */
+/*    Ems_Video *video_item; */
 
 /*    /\* db lock *\/ */
 /*    eina_lock_take(&_db->mutex); */
@@ -617,7 +613,7 @@ ems_database_deleted_files_remove(int64_t time, const char *place)
           {
              if (!strcmp(place, item->label))
                {
-                  Ems_Db_Video_Item *video_item;
+                  Ems_Video *video_item;
                   EINA_LIST_FOREACH(item->video_list, l3, video_item)
                     {
                        if (time != video_item->time)

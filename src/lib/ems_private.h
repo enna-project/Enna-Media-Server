@@ -90,6 +90,8 @@ typedef struct _Ems_Directory Ems_Directory;
 typedef struct _Ems_Collection_Filter Ems_Collection_Filter;
 typedef struct _Ems_Grabber_Data Ems_Grabber_Data;
 typedef struct _Ems_Grabber_Params Ems_Grabber_Params;
+typedef struct _Ems_Video Ems_Video;
+
 
 /* Function typedef, called when grabber ends its work */
 typedef void (*Ems_Grabber_End_Cb)(void *data,
@@ -121,6 +123,13 @@ struct _Ems_Collection
 struct _Ems_Media
 {
    int dummy;
+};
+
+struct _Ems_Video
+{
+   const char *hash_key;
+   const char *title;
+   int64_t time;
 };
 
 struct _Ems_Media_Info
