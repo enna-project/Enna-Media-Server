@@ -28,6 +28,8 @@
 
 #include "Ems.h"
 
+extern Eet_Data_Descriptor *ems_video_item_edd;
+
 int ems_database_init(void);
 int ems_database_shutdown(void);
 void ems_database_flush(void);
