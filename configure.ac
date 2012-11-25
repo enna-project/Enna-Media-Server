@@ -103,13 +103,13 @@ AC_SUBST([pkgconfig_requires_private])
 
 ### Checks for libraries
 
-requirements_ems="eina >= 1.1.0 eet >= 1.4.0 ecore >= 1.0.0 ecore-file >= 1.0.0 ecore-con >= 1.0.0 eio >= 0.0.1 avahi-client >= 0.6.0 avahi-glib >= 0.6.0 uuid"
+requirements_ems="eina >= 1.7.0 eet >= 1.7.0 ecore >= 1.7.0 ecore-file >= 1.7.0 ecore-con >= 1.7.0 eio >= 1.7.0 avahi-client >= 0.6.0 avahi-glib >= 0.6.0 uuid"
 PKG_CHECK_MODULES([EMS], [${requirements_ems}])
 AC_SUBST([requirements_ems])
 
-requirements_enna="elementary >= 0.9.0 emotion >= 1.0.0 ecore-input >= 1.0.0"
 PKG_CHECK_MODULES([ENNA], [${requirements_enna}])
 AC_SUBST([requirements_enna])
+requirements_enna="elementary >= 1.7.0 emotion >= 1.7.0 ecore-input >= 1.7.0"
 
 PKG_CHECK_MODULES([ECORE_CON_EET], [ecore-con >= 1.7.99], [have_ecore_con_eet="yes"], [have_ecore_con_eet="no"])
 AM_CONDITIONAL([HAVE_ECORE_CON_EET], [test "x${have_ecore_con_eet}" = "xyes"])
