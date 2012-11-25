@@ -107,9 +107,9 @@ requirements_ems="eina >= 1.7.0 eet >= 1.7.0 ecore >= 1.7.0 ecore-file >= 1.7.0 
 PKG_CHECK_MODULES([EMS], [${requirements_ems}])
 AC_SUBST([requirements_ems])
 
-PKG_CHECK_MODULES([ENNA], [${requirements_enna}])
-AC_SUBST([requirements_enna])
 requirements_enna="elementary >= 1.7.0 emotion >= 1.7.0 ecore-input >= 1.7.0"
+PKG_CHECK_MODULES([ENNA], [${requirements_enna}], [have_enna_bin_dep="yes"], [have_ems_enna_dep="no"])
+AM_CONDITIONAL([HAVE_ENNA_BIN], [test "x${have_enna_bin_dep}" = "xyes"])
 
 PKG_CHECK_MODULES([ECORE_CON_EET], [ecore-con >= 1.7.99], [have_ecore_con_eet="yes"], [have_ecore_con_eet="no"])
 AM_CONDITIONAL([HAVE_ECORE_CON_EET], [test "x${have_ecore_con_eet}" = "xyes"])
