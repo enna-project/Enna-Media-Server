@@ -23,16 +23,16 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _EMS_SERVER_H_
-#define _EMS_SERVER_H_
+#ifndef _EMS_NODE_H_
+#define _EMS_NODE_H_
 
 #include "Ems.h"
 
-Eina_Bool ems_server_init(void);
-void ems_server_shutdown();
+Eina_Bool ems_node_init(void);
+void ems_node_shutdown();
 
-void ems_server_add(Ems_Server *server);
-void ems_server_del(const char *name);
-void ems_server_update(const char *name, Ems_Server *server);
+void ems_node_add(Ems_Node *server);
+void ems_node_del(const char *name);
+void ems_node_update(const char *name, Ems_Node *server);
 
-#endif /* _EMS_SERVER_H_ */
+#endif /* _EMS_NODE_H_ */

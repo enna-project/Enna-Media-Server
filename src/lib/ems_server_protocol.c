@@ -34,7 +34,7 @@
 
 #include "Ems.h"
 #include "ems_private.h"
-#include "ems_server.h"
+#include "ems_node.h"
 #include "ems_server_protocol.h"
 
 Eet_Data_Descriptor *ems_medias_req_edd = NULL;

@@ -39,7 +39,7 @@
 #include "ems_config.h"
 #include "ems_avahi.h"
 #include "ems_scanner.h"
-#include "ems_server.h"
+#include "ems_node.h"
 #include "ems_grabber.h"
 #include "ems_stream_server.h"
 #include "ems_downloader.h"
@@ -93,8 +93,8 @@ int ems_init(const char *config_file)
    if (!ems_avahi_init())
      goto shutdown_config;
    if (!ems_database_init())
-     goto shutdown_server;
-   if (!ems_server_init())
+     goto shutdown_node;
+   if (!ems_node_init())
      goto shutdown_avahi;
    if (!ems_scanner_init())
      goto shutdown_database;
@@ -123,8 +123,8 @@ int ems_init(const char *config_file)
    ems_grabber_shutdown();
  shutdown_database:
    ems_database_shutdown();
- shutdown_server:
-   ems_server_shutdown();
+ shutdown_node:
+   ems_node_shutdown();
  shutdown_avahi:
    ems_avahi_shutdown();
  shutdown_config:
@@ -150,7 +150,7 @@ int ems_shutdown(void)
    DBG("Shutdown");
 
    ems_scanner_shutdown();
-   ems_server_shutdown();
+   ems_node_shutdown();
    ems_avahi_shutdown();
    ems_config_shutdown();
 

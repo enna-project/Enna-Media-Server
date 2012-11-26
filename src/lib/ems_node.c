@@ -34,40 +34,40 @@
 
 #include "Ems.h"
 #include "ems_private.h"
-#include "ems_server.h"
+#include "ems_node.h"
 #include "ems_server_eet.h"
 #include "ems_server_protocol.h"
 /*============================================================================*
  *                                  Local                                     *
  *============================================================================*/
-typedef struct _Ems_Server_Cb Ems_Server_Cb;
-typedef struct _Ems_Server_Media_Get_Cb Ems_Server_Media_Get_Cb;
-typedef struct _Ems_Server_Media_Infos_Get_Cb Ems_Server_Media_Infos_Get_Cb;
+typedef struct _Ems_Node_Cb Ems_Node_Cb;
+typedef struct _Ems_Node_Media_Get_Cb Ems_Node_Media_Get_Cb;
+typedef struct _Ems_Node_Media_Infos_Get_Cb Ems_Node_Media_Infos_Get_Cb;
 
-struct _Ems_Server_Media_Get_Cb
+struct _Ems_Node_Media_Get_Cb
 {
-   void (*add_cb)(void *data, Ems_Server *server, const char *media);
+   void (*add_cb)(void *data, Ems_Node *node, const char *media);
    void *data;
 };
 
-struct _Ems_Server_Media_Infos_Get_Cb
+struct _Ems_Node_Media_Infos_Get_Cb
 {
-   void (*add_cb)(void *data, Ems_Server *server, const char *media);
+   void (*add_cb)(void *data, Ems_Node *node, const char *media);
    void *data;
 };
 
-struct _Ems_Server_Cb
+struct _Ems_Node_Cb
 {
-   void (*add_cb)(void *data, Ems_Server *server);
-   void (*del_cb)(void *data, Ems_Server *server);
-   void (*update_cb)(void *data, Ems_Server *server);
-   void (*connected_cb)(void *data, Ems_Server *server);
-   void (*disconnected_cb)(void *data, Ems_Server *server);
+   void (*add_cb)(void *data, Ems_Node *node);
+   void (*del_cb)(void *data, Ems_Node *node);
+   void (*update_cb)(void *data, Ems_Node *node);
+   void (*connected_cb)(void *data, Ems_Node *node);
+   void (*disconnected_cb)(void *data, Ems_Node *node);
    void *data;
 };
 
-static Eina_List *_servers = NULL;
-static Eina_List *_servers_cb = NULL;
+static Eina_List *_nodes = NULL;
+static Eina_List *_nodes_cb = NULL;
 static Eina_List *_media_get_cb = NULL;
 
 static void
@@ -76,7 +76,7 @@ _medias_cb(void *data, Ecore_Con_Reply *reply __UNUSED__, const char *name __UNU
    Medias *medias = value;
    Ems_Video *video;
    Eina_List *l, *l2;
-   Ems_Server_Media_Get_Cb* cb;
+   Ems_Node_Media_Get_Cb* cb;
 
    EINA_LIST_FOREACH(medias->files, l, video)
      {
@@ -99,23 +99,23 @@ _media_info_cb(void *data __UNUSED__, Ecore_Con_Reply *reply __UNUSED__, const c
 static Eina_Bool
 _server_connected_cb(void *data, Ecore_Con_Reply *reply, Ecore_Con_Server *conn __UNUSED__)
 {
-   Ems_Server *server = data;
+   Ems_Node *node = data;
    Eina_List *l_cb;
-   Ems_Server_Cb *cb;
-   DBG("Connected to %s:%d (%s)", server->ip, server->port, server->name);
+   Ems_Node_Cb *cb;
+   DBG("Connected to %s:%d (%s)", node->ip, node->port, node->name);
 
-   if (server->is_connected)
+   if (node->is_connected)
      return EINA_TRUE;
    else
-     server->is_connected = EINA_TRUE;
+     node->is_connected = EINA_TRUE;
 
-   server->reply = reply;
-   DBG("Server reply : %p", server->reply);
+   node->reply = reply;
+   DBG("Node reply : %p", node->reply);
 
-   EINA_LIST_FOREACH(_servers_cb, l_cb, cb)
+   EINA_LIST_FOREACH(_nodes_cb, l_cb, cb)
      {
         if (cb->add_cb)
-          cb->connected_cb(cb->data, server);
+          cb->connected_cb(cb->data, node);
      }
    return EINA_TRUE;
 
@@ -125,50 +125,50 @@ static Eina_Bool
 _server_disconnected_cb(void *data, Ecore_Con_Reply *reply __UNUSED__, Ecore_Con_Server *conn __UNUSED__)
 {
 
-   Ems_Server *server = data;
+   Ems_Node *node = data;
    Eina_List *l_cb;
-   Ems_Server_Cb *cb;
+   Ems_Node_Cb *cb;
 
-   DBG("Disconnected from  %s:%d (%s)", server->ip, server->port, server->name);
+   DBG("Disconnected from  %s:%d (%s)", node->ip, node->port, node->name);
 
-   server->reply = NULL;
+   node->reply = NULL;
 
-   server->is_connected = EINA_FALSE;
-   EINA_LIST_FOREACH(_servers_cb, l_cb, cb)
+   node->is_connected = EINA_FALSE;
+   EINA_LIST_FOREACH(_nodes_cb, l_cb, cb)
      {
         if (cb->disconnected_cb)
-          cb->disconnected_cb(cb->data, server);
+          cb->disconnected_cb(cb->data, node);
      }
    return EINA_TRUE;
 
 }
 
 static Eina_Bool
-_ems_server_connect(Ems_Server *server)
+_ems_node_connect(Ems_Node *node)
 {
    Ecore_Con_Server *conn;
 
-   if (!server)
+   if (!node)
      return EINA_FALSE;
 
-   INF("try to connect to %s:%d", server->name, server->port);
+   INF("try to connect to %s:%d", node->name, node->port);
 
-   if (server->is_connected)
+   if (node->is_connected)
      return EINA_TRUE;
 
-   conn = ecore_con_server_connect(ECORE_CON_REMOTE_TCP, server->ip, server->port, server);
-   server->ece = ecore_con_eet_client_new(conn);
-   ecore_con_eet_data_set(server->ece, conn);
-   ecore_con_eet_server_connect_callback_add(server->ece, _server_connected_cb, server);
-   ecore_con_eet_server_disconnect_callback_add(server->ece, _server_disconnected_cb, server);
+   conn = ecore_con_server_connect(ECORE_CON_REMOTE_TCP, node->ip, node->port, node);
+   node->ece = ecore_con_eet_client_new(conn);
+   ecore_con_eet_data_set(node->ece, conn);
+   ecore_con_eet_server_connect_callback_add(node->ece, _server_connected_cb, node);
+   ecore_con_eet_server_disconnect_callback_add(node->ece, _server_disconnected_cb, node);
 
-   ecore_con_eet_register(server->ece, "medias_req", ems_medias_req_edd);
-   ecore_con_eet_register(server->ece, "medias", ems_medias_add_edd);
-   ecore_con_eet_register(server->ece, "media_info_req", ems_media_infos_req_edd);
-   ecore_con_eet_register(server->ece, "media_info", ems_media_infos_edd);
+   ecore_con_eet_register(node->ece, "medias_req", ems_medias_req_edd);
+   ecore_con_eet_register(node->ece, "medias", ems_medias_add_edd);
+   ecore_con_eet_register(node->ece, "media_info_req", ems_media_infos_req_edd);
+   ecore_con_eet_register(node->ece, "media_info", ems_media_infos_edd);
 
-   ecore_con_eet_data_callback_add(server->ece, "medias", _medias_cb, server);
-   ecore_con_eet_data_callback_add(server->ece, "media_info", _media_info_cb, server);
+   ecore_con_eet_data_callback_add(node->ece, "medias", _medias_cb, node);
+   ecore_con_eet_data_callback_add(node->ece, "media_info", _media_info_cb, node);
 
    return EINA_TRUE;
 }
@@ -177,69 +177,69 @@ _ems_server_connect(Ems_Server *server)
  *                                 Global                                     *
  *============================================================================*/
 
-Eina_Bool ems_server_init(void)
+Eina_Bool ems_node_init(void)
 {
    ems_server_eet_init();
 
    return EINA_TRUE;
 }
 
-void ems_server_shutdown(void)
+void ems_node_shutdown(void)
 {
    ems_server_eet_shutdown();
 }
 
-void ems_server_add(Ems_Server *server)
+void ems_node_add(Ems_Node *node)
 {
    Eina_List *l_cb;
-   Ems_Server_Cb *cb;
+   Ems_Node_Cb *cb;
 
 
-   if (!server || !server->name)
+   if (!node || !node->name)
      return;
 
-   INF("Adding %s to the list of detected server", server->name);
+   INF("Adding %s to the list of detected node", node->name);
 
-   EINA_LIST_FOREACH(_servers_cb, l_cb, cb)
+   EINA_LIST_FOREACH(_nodes_cb, l_cb, cb)
        {
 	  if (cb->add_cb)
 	    {
-	       cb->add_cb(cb->data, server);
+	       cb->add_cb(cb->data, node);
 	    }
        }
-   _servers = eina_list_append(_servers, server);
+   _nodes = eina_list_append(_nodes, node);
 
 
 }
 
-void ems_server_del(const char *name)
+void ems_node_del(const char *name)
 {
    Eina_List *l;
-   Ems_Server *server;
+   Ems_Node *node;
 
-   if (!_servers || !name)
+   if (!_nodes || !name)
      return;
 
-   EINA_LIST_FOREACH(_servers, l, server)
+   EINA_LIST_FOREACH(_nodes, l, node)
      {
-        if (!server) continue;
-        if (!strcmp(name, server->name))
+        if (!node) continue;
+        if (!strcmp(name, node->name))
           {
              Eina_List *l_cb;
-             Ems_Server_Cb *cb;
+             Ems_Node_Cb *cb;
 
-             INF("Remove %s from the list of detected servers", server->name);
+             INF("Remove %s from the list of detected nodes", node->name);
 
-             EINA_LIST_FOREACH(_servers_cb, l_cb, cb)
+             EINA_LIST_FOREACH(_nodes_cb, l_cb, cb)
                {
                   if (cb->del_cb)
-                    cb->del_cb(cb->data, server);
+                    cb->del_cb(cb->data, node);
                }
 
-             _servers = eina_list_remove(_servers, server);
-             eina_stringshare_del(server->name);
-             if (server->ip) eina_stringshare_del(server->ip);
-             free(server);
+             _nodes = eina_list_remove(_nodes, node);
+             eina_stringshare_del(node->name);
+             if (node->ip) eina_stringshare_del(node->ip);
+             free(node);
           }
      }
 }
@@ -248,119 +248,137 @@ void ems_server_del(const char *name)
  *                                   API                                      *
  *============================================================================*/
 Eina_List *
-ems_server_list_get(void)
+ems_node_list_get(void)
 {
-   return _servers;
+   return _nodes;
 }
 
 void
-ems_server_cb_set(Ems_Server_Add_Cb server_add_cb,
-                  Ems_Server_Del_Cb server_del_cb,
-                  Ems_Server_Update_Cb server_update_cb,
-                  Ems_Server_Connected_Cb server_connected_cb,
-                  Ems_Server_Disconnected_Cb server_disconnected_cb,
+ems_node_cb_set(Ems_Node_Add_Cb node_add_cb,
+                  Ems_Node_Del_Cb node_del_cb,
+                  Ems_Node_Update_Cb node_update_cb,
+                  Ems_Node_Connected_Cb node_connected_cb,
+                  Ems_Node_Disconnected_Cb node_disconnected_cb,
                   void *data)
 {
-   Ems_Server_Cb *cb;
+   Ems_Node_Cb *cb;
 
-   cb = calloc(1, sizeof(Ems_Server_Cb));
+   cb = calloc(1, sizeof(Ems_Node_Cb));
    if (!cb)
      return;
 
-   cb->add_cb = server_add_cb;
-   cb->del_cb = server_del_cb;
-   cb->update_cb = server_update_cb;
-   cb->connected_cb = server_connected_cb;
-   cb->disconnected_cb = server_disconnected_cb;
+   cb->add_cb = node_add_cb;
+   cb->del_cb = node_del_cb;
+   cb->update_cb = node_update_cb;
+   cb->connected_cb = node_connected_cb;
+   cb->disconnected_cb = node_disconnected_cb;
    cb->data = data;
 
-   _servers_cb = eina_list_append(_servers_cb, cb);
+   _nodes_cb = eina_list_append(_nodes_cb, cb);
 }
 
 void
-ems_server_cb_del(Ems_Server_Add_Cb server_add_cb,
-                  Ems_Server_Del_Cb server_del_cb,
-                  Ems_Server_Update_Cb server_update_cb)
+ems_node_cb_del(Ems_Node_Add_Cb node_add_cb,
+                  Ems_Node_Del_Cb node_del_cb,
+                  Ems_Node_Update_Cb node_update_cb)
 {
    Eina_List *l;
-   Ems_Server_Cb *cb;
+   Ems_Node_Cb *cb;
 
-   EINA_LIST_FOREACH(_servers_cb, l, cb)
+   EINA_LIST_FOREACH(_nodes_cb, l, cb)
      {
         int cnt = 0;
-        if (server_add_cb == cb->add_cb)
+        if (node_add_cb == cb->add_cb)
           {
              cb->add_cb = NULL;
              cnt++;
           }
-        if (server_del_cb == cb->del_cb)
+        if (node_del_cb == cb->del_cb)
           {
              cb->del_cb = NULL;
              cnt++;
           }
-        if (server_update_cb == cb->update_cb)
+        if (node_update_cb == cb->update_cb)
           {
              cb->add_cb = NULL;
              cnt++;
           }
         if (cnt == 3)
           {
-             _servers_cb = eina_list_remove(_servers_cb, cb);
+             _nodes_cb = eina_list_remove(_nodes_cb, cb);
              free(cb);
           }
      }
 }
 
 const char *
-ems_server_name_get(Ems_Server *server)
+ems_node_name_get(Ems_Node *node)
 {
-   if (!server)
+   if (!node)
      return NULL;
 
-   return server->name;
+   return node->name;
+}
+
+const char *
+ems_node_ip_get(Ems_Node *node)
+{
+   if (!node)
+     return NULL;
+
+   return node->ip;
+}
+
+int
+ems_node_port_get(Ems_Node *node)
+{
+   if (!node)
+     return -1;
+
+   return node->port;
 }
 
 Eina_Bool
-ems_server_is_local(Ems_Server *server)
+ems_node_is_local(Ems_Node *node)
 {
-   if (server)
-     return server->is_local;
+   if (node)
+     return node->is_local;
    else
      return EINA_TRUE;
 }
 
 Eina_Bool
-ems_server_is_connected(Ems_Server *server)
+ems_node_is_connected(Ems_Node *node)
 {
-   if (server)
-     return server->is_connected;
+   if (node)
+     return node->is_connected;
    else
      return EINA_TRUE;
 }
 
 Eina_Bool
-ems_server_connect(Ems_Server *server)
+ems_node_connect(Ems_Node *node)
 {
-   if (!server)
+   if (!node)
      return EINA_FALSE;
 
-   if (server->is_connected)
+   if (node->is_connected)
      return EINA_TRUE;
 
-    return _ems_server_connect(server);
+    return _ems_node_connect(node);
 }
 
 char *
-ems_server_media_stream_url_get(Ems_Server *server, const char *media_uuid)
+ems_node_media_stream_url_get(Ems_Node *node, const char *media_uuid)
 {
    Eina_Strbuf *uri;
    char *str;
 
-   if (!server || !media_uuid)
+   if (!node || !media_uuid)
      return NULL;
 
    uri = eina_strbuf_new();
-   eina_strbuf_append_printf(uri, "http://%s:%d/item/%s", server->ip, ems_config->port_stream, media_uuid);
+   eina_strbuf_append_printf(uri, "http://%s:%d/item/%s", node->ip, ems_config->port_stream, media_uuid);
    DBG("url get: %s", eina_strbuf_string_get(uri));
    str = strdup(eina_strbuf_string_get(uri));
    eina_strbuf_free(uri);
@@ -369,7 +387,7 @@ ems_server_media_stream_url_get(Ems_Server *server, const char *media_uuid)
 }
 
 Ems_Observer *
-ems_server_dir_get(Ems_Server *server __UNUSED__,
+ems_node_dir_get(Ems_Node *node __UNUSED__,
                    const char *path __UNUSED__,
                    Ems_Media_Type type __UNUSED__,
                    Ems_Media_Add_Cb media_add __UNUSED__,
@@ -383,32 +401,32 @@ ems_server_dir_get(Ems_Server *server __UNUSED__,
 }
 
 Ems_Observer *
-ems_server_media_get(Ems_Server *server,
+ems_node_media_get(Ems_Node *node,
                      Ems_Collection *collection,
                      Ems_Media_Add_Cb media_add,
                      void *data)
 {
    Medias_Req *req;
 
-   Ems_Server_Media_Get_Cb *cb = calloc(1, sizeof(Ems_Server_Media_Get_Cb));
+   Ems_Node_Media_Get_Cb *cb = calloc(1, sizeof(Ems_Node_Media_Get_Cb));
 
    cb->add_cb = media_add;
    cb->data = data;
 
    _media_get_cb = eina_list_append(_media_get_cb, cb);
 
-   DBG("Server reply : %p", server->reply);
+   DBG("Node reply : %p", node->reply);
 
    req = calloc(1, sizeof(Medias_Req));
    req->collection = collection;
 
-   ecore_con_eet_send(server->reply, "medias_req", req);
+   ecore_con_eet_send(node->reply, "medias_req", req);
 
    return NULL;
 }
 
 Ems_Observer *
-ems_server_media_info_get(Ems_Server *server __UNUSED__,
+ems_node_media_info_get(Ems_Node *node __UNUSED__,
                           const char *uuid __UNUSED__,
                           const char *info __UNUSED__,
                           Ems_Media_Info_Add_Cb info_add __UNUSED__,

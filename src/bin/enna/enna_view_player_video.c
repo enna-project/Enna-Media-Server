@@ -54,7 +54,7 @@ struct _Enna_View_Player_Video_Data
     Evas_Object *cover;
 
     char *media;
-    Ems_Server *server;
+    Ems_Node *node;
 };
 
 static Eina_Bool
@@ -131,7 +131,7 @@ _emotion_position_update_cb(void *data, Evas_Object *obj __UNUSED__, void *event
 }
 
 static void
-_item_file_name_get_cb(void *data, Ems_Server *server __UNUSED__, const char *value)
+_item_file_name_get_cb(void *data, Ems_Node *node __UNUSED__, const char *value)
 {
    Enna_View_Player_Video_Data *priv = data;
 
@@ -147,7 +147,7 @@ _item_file_name_get_cb(void *data, Ems_Server *server __UNUSED__, const char *va
 }
 
 static void
-_item_name_get_cb(void *data, Ems_Server *server, const char *value)
+_item_name_get_cb(void *data, Ems_Node *node, const char *value)
 {
    Enna_View_Player_Video_Data *priv = data;
 
@@ -157,13 +157,13 @@ _item_name_get_cb(void *data, Ems_Server *server, const char *value)
      }
    else
      {
-        ems_server_media_info_get(server, priv->media, "clean_name", _item_file_name_get_cb,
+        ems_node_media_info_get(node, priv->media, "clean_name", _item_file_name_get_cb,
                              NULL, NULL, priv);
      }
 }
 
 static void
-_item_poster_get_cb(void *data, Ems_Server *server __UNUSED__, const char *value)
+_item_poster_get_cb(void *data, Ems_Node *node __UNUSED__, const char *value)
 {
    Enna_View_Player_Video_Data *priv = data;
 
@@ -251,23 +251,23 @@ enna_view_player_video_add(Enna *enna __UNUSED__, Evas_Object *parent)
    return layout;
 }
 
-void enna_view_player_video_uri_set(Evas_Object *o, Ems_Server *server, const char *media_uuid)
+void enna_view_player_video_uri_set(Evas_Object *o, Ems_Node *node, const char *media_uuid)
 {
    char *uri;
    PRIV_GET_OR_RETURN(o, Enna_View_Player_Video_Data, priv);
 
-   priv->server = server;
+   priv->node = node;
    priv->media = strdup(media_uuid);
 
-   uri = ems_server_media_stream_url_get(server, media_uuid);
+   uri = ems_node_media_stream_url_get(node, media_uuid);
    DBG("Start video player with item: %s", uri);
 
    elm_video_file_set(priv->video, uri);
    free(uri);
 
-   ems_server_media_info_get(server, media_uuid, "name", _item_name_get_cb,
+   ems_node_media_info_get(node, media_uuid, "name", _item_name_get_cb,
                              NULL, NULL, priv);
-   ems_server_media_info_get(server, media_uuid, "poster", _item_poster_get_cb,
+   ems_node_media_info_get(node, media_uuid, "poster", _item_poster_get_cb,
                              NULL, NULL, priv);
 }
 

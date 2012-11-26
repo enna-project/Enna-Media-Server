@@ -137,7 +137,7 @@ struct _Ems_Media_Info
    int dummy;
 };
 
-struct _Ems_Server
+struct _Ems_Node
 {
    const char *name;
    const char *ip;

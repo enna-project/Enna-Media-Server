@@ -49,7 +49,7 @@
 
 #include "Ems.h"
 #include "ems_private.h"
-#include "ems_server.h"
+#include "ems_node.h"
 
 /*============================================================================*
  *                                  Local                                     *
@@ -57,7 +57,7 @@
 
 static AvahiEntryGroup *group = NULL;
 static AvahiClient *client = NULL;
-static char *server_name = NULL;
+static char *node_name = NULL;
 static AvahiGLibPoll *glib_poll = NULL;
 static AvahiServiceBrowser *sb = NULL;
 
@@ -74,7 +74,7 @@ static void entry_group_callback(AvahiEntryGroup *g, AvahiEntryGroupState state,
      {
       case AVAHI_ENTRY_GROUP_ESTABLISHED :
          /* The entry group has been established successfully */
-         DBG("Service '%s' successfully established.", server_name);
+         DBG("Service '%s' successfully established.", node_name);
          break;
 
       case AVAHI_ENTRY_GROUP_COLLISION :
@@ -83,10 +83,10 @@ static void entry_group_callback(AvahiEntryGroup *g, AvahiEntryGroupState state,
 
            /* A service name collision with a remote service
             * happened. Let's pick a new name */
-           n = avahi_alternative_service_name(server_name);
-           avahi_free(server_name);
-           server_name = n;
-           WRN("Service name collision, renaming service to '%s'", server_name);
+           n = avahi_alternative_service_name(node_name);
+           avahi_free(node_name);
+           node_name = n;
+           WRN("Service name collision, renaming service to '%s'", node_name);
            /* And recreate the services */
            create_services(avahi_entry_group_get_client(g));
            break;
@@ -173,7 +173,7 @@ static void resolve_callback(AvahiServiceResolver *r,
          break;
       case AVAHI_RESOLVER_FOUND:
         {
-           Ems_Server *server;
+           Ems_Node *node;
            char a[AVAHI_ADDRESS_STR_MAX], *t;
 
            DBG("Service '%s' of type '%s' in domain '%s':", name, type, domain);
@@ -200,12 +200,12 @@ static void resolve_callback(AvahiServiceResolver *r,
            /* TODO: only ipv4 address for now, let other people with ipv6 knowledge play with it */
            if (address->proto == AVAHI_PROTO_INET)
              {
-                server = calloc(1, sizeof(Ems_Server));
-                server->name = eina_stringshare_add(name);
-                server->ip = eina_stringshare_add(a);
-                server->port = port;
-                server->is_local = !!(flags & AVAHI_LOOKUP_RESULT_LOCAL);
-                ems_server_add(server);
+                node = calloc(1, sizeof(Ems_Node));
+                node->name = eina_stringshare_add(name);
+                node->ip = eina_stringshare_add(a);
+                node->port = port;
+                node->is_local = !!(flags & AVAHI_LOOKUP_RESULT_LOCAL);
+                ems_node_add(node);
              }
            avahi_free(t);
            break;
@@ -247,7 +247,7 @@ static void browse_callback(AvahiServiceBrowser *b,
          break;
       case AVAHI_BROWSER_REMOVE:
          DBG("(Browser) REMOVE: service '%s' of type '%s' in domain '%s'", name, type, domain);
-         ems_server_del(name);
+         ems_node_del(name);
          break;
       case AVAHI_BROWSER_ALL_FOR_NOW:
       case AVAHI_BROWSER_CACHE_EXHAUSTED:
@@ -277,7 +277,7 @@ Eina_Bool ems_avahi_init(void)
         goto fail;
      }
 
-   server_name = avahi_strdup(ems_config->name);
+   node_name = avahi_strdup(ems_config->name);
    /* Allocate a new client */
    client = avahi_client_new(poll_api, 0, client_callback, NULL, &error);
    /* Check wether creating the client object succeeded */
@@ -307,7 +307,7 @@ Eina_Bool ems_avahi_init(void)
      avahi_client_free(client);
    if (glib_poll)
      avahi_glib_poll_free(glib_poll);
-   avahi_free(server_name);
+   avahi_free(node_name);
 
    return EINA_FALSE;
 }
@@ -320,7 +320,7 @@ void ems_avahi_shutdown(void)
      avahi_client_free(client);
    if (glib_poll)
      avahi_glib_poll_free(glib_poll);
-   avahi_free(server_name);
+   avahi_free(node_name);
 }
 
 /*============================================================================*
@@ -353,12 +353,12 @@ ems_avahi_start(void)
      {
         const char *name;
 
-        DBG("Adding service '%s' on port %d", server_name, ems_config->port);
+        DBG("Adding service '%s' on port %d", node_name, ems_config->port);
         name = eina_stringshare_printf("name=%s", ems_config->name);
         if ((ret = avahi_entry_group_add_service(group,
                                                  AVAHI_IF_UNSPEC,
                                                  AVAHI_PROTO_UNSPEC,
-                                                 0, server_name,
+                                                 0, node_name,
                                                  EMS_SERVER_JSONRPC_API_NAME,
                                                  NULL, NULL,
                                                  ems_config->port, name, NULL)) < 0)
@@ -382,10 +382,10 @@ ems_avahi_start(void)
  collision:
    /* A service name collision with a local service happened. Let's
     * pick a new name */
-   n = avahi_alternative_service_name(server_name);
-   avahi_free(server_name);
-   server_name = n;
-   ERR("Service name collision, renaming service to '%s'", server_name);
+   n = avahi_alternative_service_name(node_name);
+   avahi_free(node_name);
+   node_name = n;
+   ERR("Service name collision, renaming service to '%s'", node_name);
    avahi_entry_group_reset(group);
    ems_avahi_start();
    return EINA_TRUE;

@@ -52,14 +52,14 @@ typedef struct _Enna_View_Video_List Enna_View_Video_List;
 struct _Enna_View_Video_List_Group
 {
     Elm_Object_Item *it;
-    Ems_Server *server;
+    Ems_Node *node;
     Enna_View_Video_List *act;
 };
 
 struct _Enna_View_Video_List_Item
 {
    Elm_Object_Item *it;
-   Ems_Server *server;
+   Ems_Node *node;
    Enna_View_Video_List *act;
    const char *name;
    const char *description;
@@ -72,7 +72,7 @@ struct _Enna_View_Video_List_Item
 
 struct _Enna_View_Video_List
 {
-   Eina_Hash *servers;
+   Eina_Hash *nodes;
    Evas_Object *list;
    Evas_Object *ly;
    Evas_Object *btn_trailer;
@@ -91,7 +91,7 @@ static char *_genlist_text_get(void *data, Evas_Object *obj __UNUSED__, const ch
 {
    Enna_View_Video_List_Group *gr = data;
 
-   return strdup(ems_server_name_get(gr->server));
+   return strdup(ems_node_name_get(gr->node));
 }
 
 static char *_media_text_get(void *data, Evas_Object *obj __UNUSED__, const char *part)
@@ -117,42 +117,42 @@ static void _group_del(Enna_View_Video_List_Group *gr)
 }
 
 static void
-_server_add_cb(void *data, Ems_Server *server)
+_node_add_cb(void *data, Ems_Node *node)
 {
    Enna_View_Video_List *act = data;
 
-   DBG("Server %s added", ems_server_name_get(server));
+   DBG("Node %s added", ems_node_name_get(node));
 
-   if (!ems_server_connect(server))
-     DBG("An error occured during connection with server %s",
-         ems_server_name_get(server));
+   if (!ems_node_connect(node))
+     DBG("An error occured during connection with node %s",
+         ems_node_name_get(node));
    else
      {
         Enna_View_Video_List_Group *gr;
 
         gr = calloc(1, sizeof(Enna_View_Video_List_Group));
-        gr->server = server;
+        gr->node = node;
         gr->act = act;
-        eina_hash_add(act->servers, server, gr);
+        eina_hash_add(act->nodes, node, gr);
      }
 
 }
 
 static void
-_server_del_cb(void *data __UNUSED__, Ems_Server *server)
+_node_del_cb(void *data __UNUSED__, Ems_Node *node)
 {
-   DBG("Server %s deleted", ems_server_name_get(server));
+   DBG("Node %s deleted", ems_node_name_get(node));
 }
 
 
 static void
-_server_update_cb(void *data __UNUSED__, Ems_Server *server)
+_node_update_cb(void *data __UNUSED__, Ems_Node *node)
 {
-   DBG("Server %s updated", ems_server_name_get(server));
+   DBG("Node %s updated", ems_node_name_get(node));
 }
 
 static void
-_add_item_file_name_cb(void *data, Ems_Server *server __UNUSED__, const char *value)
+_add_item_file_name_cb(void *data, Ems_Node *node __UNUSED__, const char *value)
 {
    Enna_View_Video_List_Item *it = data;
 
@@ -173,7 +173,7 @@ _add_item_file_name_cb(void *data, Ems_Server *server __UNUSED__, const char *va
 
 
 static void
-_add_item_name_cb(void *data, Ems_Server *server, const char *value)
+_add_item_name_cb(void *data, Ems_Node *node, const char *value)
 {
    Enna_View_Video_List_Item *it = data;
 
@@ -185,13 +185,13 @@ _add_item_name_cb(void *data, Ems_Server *server, const char *value)
      }
    else
      {
-         ems_server_media_info_get(server, it->media, "clean_name", _add_item_file_name_cb,
+         ems_node_media_info_get(node, it->media, "clean_name", _add_item_file_name_cb,
                              NULL, NULL, it);
      }
 }
 
 static void
-_add_item_poster_cb(void *data, Ems_Server *server __UNUSED__, const char *value)
+_add_item_poster_cb(void *data, Ems_Node *node __UNUSED__, const char *value)
 {
    Enna_View_Video_List_Item *it = data;
 
@@ -204,7 +204,7 @@ _add_item_poster_cb(void *data, Ems_Server *server __UNUSED__, const char *value
 }
 
 static void
-_add_item_backdrop_cb(void *data, Ems_Server *server __UNUSED__, const char *value)
+_add_item_backdrop_cb(void *data, Ems_Node *node __UNUSED__, const char *value)
 {
    Enna_View_Video_List_Item *it = data;
 
@@ -217,16 +217,16 @@ _add_item_backdrop_cb(void *data, Ems_Server *server __UNUSED__, const char *val
 }
 
 static void
-_add_item_cb(void *data, Ems_Server *server, const char *media)
+_add_item_cb(void *data, Ems_Node *node, const char *media)
 {
    Enna_View_Video_List *act = data;
    Enna_View_Video_List_Item *it;
    Enna_View_Video_List_Group *gr;
 
-   gr = eina_hash_find(act->servers, server);
+   gr = eina_hash_find(act->nodes, node);
 
    it = calloc(1, sizeof (Enna_View_Video_List_Item));
-   it->server = server;
+   it->node = node;
    it->act = act;
    it->media = eina_stringshare_add(media);
    it->it = elm_genlist_item_append(act->list, &itc_item,
@@ -240,26 +240,26 @@ _add_item_cb(void *data, Ems_Server *server, const char *media)
 
    act->nb_items++;
 
-   ems_server_media_info_get(server, media, "name", _add_item_name_cb,
+   ems_node_media_info_get(node, media, "name", _add_item_name_cb,
                              NULL, NULL, it);
-   ems_server_media_info_get(server, media, "poster", _add_item_poster_cb,
+   ems_node_media_info_get(node, media, "poster", _add_item_poster_cb,
                              NULL, NULL, it);
-   ems_server_media_info_get(server, media, "backdrop", _add_item_backdrop_cb,
+   ems_node_media_info_get(node, media, "backdrop", _add_item_backdrop_cb,
                              NULL, NULL, it);
 
 
 }
 
 static void
-_server_connected_cb(void *data, Ems_Server *server)
+_node_connected_cb(void *data, Ems_Node *node)
 {
    Enna_View_Video_List_Group *gr;
    Enna_View_Video_List *act = data;
    Ems_Collection *collection;
 
-   DBG("Server %s connected", ems_server_name_get(server));
+   DBG("Node %s connected", ems_node_name_get(node));
 
-   gr = eina_hash_find(act->servers, server);
+   gr = eina_hash_find(act->nodes, node);
    gr->it = elm_genlist_item_append(act->list, &itc_group,
                                     gr,
                                     NULL/* parent */,
@@ -269,24 +269,24 @@ _server_connected_cb(void *data, Ems_Server *server)
    elm_genlist_item_select_mode_set(gr->it, ELM_OBJECT_SELECT_MODE_DISPLAY_ONLY);
 
    collection = ems_collection_new(EMS_MEDIA_TYPE_VIDEO, "films", "*", NULL);
-   ems_server_media_get(server, collection, _add_item_cb, act);
+   ems_node_media_get(node, collection, _add_item_cb, act);
 }
 
 static void
-_server_disconnected_cb(void *data, Ems_Server *server)
+_node_disconnected_cb(void *data, Ems_Node *node)
 {
    Enna_View_Video_List_Group *gr;
    Enna_View_Video_List *act = data;
 
-   DBG("Server %s disconnected", ems_server_name_get(server));
+   DBG("Node %s disconnected", ems_node_name_get(node));
 
-   gr = eina_hash_find(act->servers, server);
+   gr = eina_hash_find(act->nodes, node);
    if (!gr)
      DBG("gt is null");
    else
      {
         elm_object_item_del(gr->it);
-        eina_hash_del(act->servers, server, gr);
+        eina_hash_del(act->nodes, node, gr);
      }
 }
 
@@ -382,7 +382,7 @@ _play_pressed_cb(void *data, Evas_Object *obj __UNUSED__, void *event_info __UNU
      return;
 
    player = enna_activity_select(act->enna, "VideoPlayer");
-   enna_view_player_video_uri_set(player, item->server, item->media);
+   enna_view_player_video_uri_set(player, item->node, item->media);
    enna_view_player_video_play(player);
 }
 
@@ -397,7 +397,7 @@ _layout_object_del(void *data, Evas *e  __UNUSED__, Evas_Object *obj, void *even
    FREE_NULL_FUNC(evas_object_del, act->btn_trailer);
    FREE_NULL_FUNC(evas_object_del, act->btn_play);
    FREE_NULL_FUNC(ecore_timer_del, act->show_timer);
-   FREE_NULL_FUNC(eina_hash_free, act->servers);
+   FREE_NULL_FUNC(eina_hash_free, act->nodes);
    FREE_NULL_FUNC(enna_input_listener_del, act->il);
 
    free(act);
@@ -496,7 +496,7 @@ Evas_Object *enna_view_video_list_add(Enna *enna, Evas_Object *parent)
 {
    Evas_Object *ly;
    Evas_Object *list;
-   Ems_Server *server;
+   Ems_Node *node;
    Eina_List *l;
    Enna_View_Video_List *act;
 
@@ -537,27 +537,27 @@ Evas_Object *enna_view_video_list_add(Enna *enna, Evas_Object *parent)
    act->list = list;
    act->ly = ly;
 
-   act->servers = eina_hash_pointer_new((Eina_Free_Cb)_group_del);
-   ems_server_cb_set(_server_add_cb, _server_del_cb, _server_update_cb,
-                     _server_connected_cb, _server_disconnected_cb,
+   act->nodes = eina_hash_pointer_new((Eina_Free_Cb)_group_del);
+   ems_node_cb_set(_node_add_cb, _node_del_cb, _node_update_cb,
+                     _node_connected_cb, _node_disconnected_cb,
                      act);
 
-   EINA_LIST_FOREACH(ems_server_list_get(), l, server)
+   EINA_LIST_FOREACH(ems_node_list_get(), l, node)
    {
 
-      if (!ems_server_connect(server))
-        DBG("An error occured during connection with server %s",
-            ems_server_name_get(server));
+      if (!ems_node_connect(node))
+        DBG("An error occured during connection with node %s",
+            ems_node_name_get(node));
       else
         {
            Enna_View_Video_List_Group *gr;
 
            gr = calloc(1, sizeof(Enna_View_Video_List_Group));
-           gr->server = server;
+           gr->node = node;
            gr->act = act;
-           eina_hash_add(act->servers, server, gr);
+           eina_hash_add(act->nodes, node, gr);
 
-           DBG("Found new server: %s", ems_server_name_get(server));
+           DBG("Found new node: %s", ems_node_name_get(node));
         }
    }
 

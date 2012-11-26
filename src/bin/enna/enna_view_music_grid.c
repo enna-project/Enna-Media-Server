@@ -49,14 +49,14 @@ typedef struct _Enna_View_Music_Grid Enna_View_Music_Grid;
 struct _Enna_View_Music_Grid_Group
 {
     Elm_Object_Item *it;
-    Ems_Server *server;
+    Ems_Node *node;
     Enna_View_Music_Grid *act;
 };
 
 struct _Enna_View_Music_Grid_Item
 {
    Elm_Object_Item *it;
-   Ems_Server *server;
+   Ems_Node *node;
    Enna_View_Music_Grid *act;
    const char *album;
    const char *artist;
@@ -68,7 +68,7 @@ struct _Enna_View_Music_Grid_Item
 
 struct _Enna_View_Music_Grid
 {
-   Eina_Hash *servers;
+   Eina_Hash *nodes;
    Evas_Object *grid;
    Evas_Object *ly;
    int nb_items;
@@ -81,7 +81,7 @@ static char *_gengrid_text_get(void *data, Evas_Object *obj __UNUSED__, const ch
 {
    Enna_View_Music_Grid_Group *gr = data;
 
-   return strdup(ems_server_name_get(gr->server));
+   return strdup(ems_node_name_get(gr->node));
 }
 
 static char *_media_text_get(void *data, Evas_Object *obj __UNUSED__, const char *part)
@@ -124,42 +124,42 @@ static void _group_del(Enna_View_Music_Grid_Group *gr)
 }
 
 static void
-_server_add_cb(void *data, Ems_Server *server)
+_node_add_cb(void *data, Ems_Node *node)
 {
    Enna_View_Music_Grid *act = data;
 
-   DBG("Server %s added", ems_server_name_get(server));
+   DBG("Node %s added", ems_node_name_get(node));
 
-   if (!ems_server_connect(server))
-     DBG("An error occured during connection with server %s",
-         ems_server_name_get(server));
+   if (!ems_node_connect(node))
+     DBG("An error occured during connection with node %s",
+         ems_node_name_get(node));
    else
      {
         Enna_View_Music_Grid_Group *gr;
 
         gr = calloc(1, sizeof(Enna_View_Music_Grid_Group));
-        gr->server = server;
+        gr->node = node;
         gr->act = act;
-        eina_hash_add(act->servers, server, gr);
+        eina_hash_add(act->nodes, node, gr);
      }
 
 }
 
 static void
-_server_del_cb(void *data __UNUSED__, Ems_Server *server)
+_node_del_cb(void *data __UNUSED__, Ems_Node *node)
 {
-   DBG("Server %s deleted", ems_server_name_get(server));
+   DBG("Node %s deleted", ems_node_name_get(node));
 }
 
 
 static void
-_server_update_cb(void *data __UNUSED__, Ems_Server *server)
+_node_update_cb(void *data __UNUSED__, Ems_Node *node)
 {
-   DBG("Server %s updated", ems_server_name_get(server));
+   DBG("Node %s updated", ems_node_name_get(node));
 }
 
 static void
-_add_item_file_name_cb(void *data, Ems_Server *server __UNUSED__, const char *value)
+_add_item_file_name_cb(void *data, Ems_Node *node __UNUSED__, const char *value)
 {
    Enna_View_Music_Grid_Item *it = data;
 
@@ -177,7 +177,7 @@ _add_item_file_name_cb(void *data, Ems_Server *server __UNUSED__, const char *va
 
 
 static void
-_add_item_album_cb(void *data, Ems_Server *server, const char *value)
+_add_item_album_cb(void *data, Ems_Node *node, const char *value)
 {
    Enna_View_Music_Grid_Item *it = data;
 
@@ -188,13 +188,13 @@ _add_item_album_cb(void *data, Ems_Server *server, const char *value)
      }
    else
      {
-         ems_server_media_info_get(server, it->media, "name", _add_item_file_name_cb,
+         ems_node_media_info_get(node, it->media, "name", _add_item_file_name_cb,
                                    NULL, NULL, it);
      }
 }
 
 static void
-_add_item_poster_cb(void *data, Ems_Server *server __UNUSED__, const char *value)
+_add_item_poster_cb(void *data, Ems_Node *node __UNUSED__, const char *value)
 {
    Enna_View_Music_Grid_Item *it = data;
 
@@ -206,14 +206,14 @@ _add_item_poster_cb(void *data, Ems_Server *server __UNUSED__, const char *value
 }
 
 static void
-_add_item_cb(void *data, Ems_Server *server, const char *media)
+_add_item_cb(void *data, Ems_Node *node, const char *media)
 {
    Enna_View_Music_Grid *act = data;
    Enna_View_Music_Grid_Item *it;
 
 
    it = calloc(1, sizeof (Enna_View_Music_Grid_Item));
-   it->server = server;
+   it->node = node;
    it->act = act;
    it->media = eina_stringshare_add(media);
 
@@ -226,22 +226,22 @@ _add_item_cb(void *data, Ems_Server *server, const char *media)
 
    act->nb_items++;
 
-   ems_server_media_info_get(server, media, "album", _add_item_album_cb,
+   ems_node_media_info_get(node, media, "album", _add_item_album_cb,
                              NULL, NULL, it);
-   ems_server_media_info_get(server, media, "poster", _add_item_poster_cb,
+   ems_node_media_info_get(node, media, "poster", _add_item_poster_cb,
                              NULL, NULL, it);
 }
 
 static void
-_server_connected_cb(void *data, Ems_Server *server)
+_node_connected_cb(void *data, Ems_Node *node)
 {
    Enna_View_Music_Grid_Group *gr;
    Enna_View_Music_Grid *act = data;
    Ems_Collection *collection;
 
-   DBG("Server %s connected", ems_server_name_get(server));
+   DBG("Node %s connected", ems_node_name_get(node));
 
-   gr = eina_hash_find(act->servers, server);
+   gr = eina_hash_find(act->nodes, node);
    gr->it = elm_gengrid_item_append(act->grid, &itc_group,
                                     gr,
                                     NULL,
@@ -249,24 +249,24 @@ _server_connected_cb(void *data, Ems_Server *server)
    elm_gengrid_item_select_mode_set(gr->it, ELM_OBJECT_SELECT_MODE_DISPLAY_ONLY);
 
    collection = ems_collection_new(EMS_MEDIA_TYPE_VIDEO, "music", "*", NULL);
-   ems_server_media_get(server, collection, _add_item_cb, act);
+   ems_node_media_get(node, collection, _add_item_cb, act);
 }
 
 static void
-_server_disconnected_cb(void *data, Ems_Server *server)
+_node_disconnected_cb(void *data, Ems_Node *node)
 {
    Enna_View_Music_Grid_Group *gr;
    Enna_View_Music_Grid *act = data;
 
-   DBG("Server %s disconnected", ems_server_name_get(server));
+   DBG("Node %s disconnected", ems_node_name_get(node));
 
-   gr = eina_hash_find(act->servers, server);
+   gr = eina_hash_find(act->nodes, node);
    if (!gr)
      DBG("gt is null");
    else
      {
         elm_object_item_del(gr->it);
-        eina_hash_del(act->servers, server, gr);
+        eina_hash_del(act->nodes, node, gr);
      }
 }
 
@@ -292,7 +292,7 @@ Evas_Object *enna_view_music_grid_add(Enna *enna __UNUSED__, Evas_Object *parent
 {
    Evas_Object *ly;
    Evas_Object *grid;
-   Ems_Server *server;
+   Ems_Node *node;
    Eina_List *l;
    Enna_View_Music_Grid *act;
 
@@ -330,28 +330,28 @@ Evas_Object *enna_view_music_grid_add(Enna *enna __UNUSED__, Evas_Object *parent
    act->grid = grid;
    act->ly = ly;
 
-   act->servers = eina_hash_pointer_new((Eina_Free_Cb)_group_del);
-   ems_server_cb_set(_server_add_cb, _server_del_cb, _server_update_cb,
-                     _server_connected_cb, _server_disconnected_cb,
+   act->nodes = eina_hash_pointer_new((Eina_Free_Cb)_group_del);
+   ems_node_cb_set(_node_add_cb, _node_del_cb, _node_update_cb,
+                     _node_connected_cb, _node_disconnected_cb,
                      act);
 
    elm_gengrid_item_size_set(grid, 160, 200);
    elm_gengrid_group_item_size_set(grid, 31, 31);
 
-   EINA_LIST_FOREACH(ems_server_list_get(), l, server)
+   EINA_LIST_FOREACH(ems_node_list_get(), l, node)
    {
 
-      if (!ems_server_connect(server))
-        DBG("An error occured during connection with server %s",
-            ems_server_name_get(server));
+      if (!ems_node_connect(node))
+        DBG("An error occured during connection with node %s",
+            ems_node_name_get(node));
       else
         {
            Enna_View_Music_Grid_Group *gr;
 
            gr = calloc(1, sizeof(Enna_View_Music_Grid_Group));
-           gr->server = server;
+           gr->node = node;
            gr->act = act;
-           eina_hash_add(act->servers, server, gr);
+           eina_hash_add(act->nodes, node, gr);
         }
    }
 
