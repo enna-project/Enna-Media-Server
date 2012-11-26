@@ -19,6 +19,11 @@ typedef enum _Ems_Media_Type
   EMS_MEDIA_TYPE_TVSHOW = 1 << 3,
 } Ems_Media_Type;
 
+enum _Ems_Scanner_State
+{
+    EMS_SCANNER_STATE_IDLE,
+    EMS_SCANNER_STATE_RUNNING,
+};
 
 typedef struct _Ems_Node Ems_Node;
 typedef struct _Ems_Player Ems_Player;
@@ -190,6 +195,9 @@ void ems_player_playlist_del(Ems_Player *player, Ems_Media *media);
 Eina_List *ems_player_playlist_get(Ems_Player *player);
 
 void ems_scanner_start(void);
+void ems_scanner_state_get(Ems_Scanner_State *state, double *percent);
+
+
 Eina_Bool ems_avahi_start(void);
 
 
