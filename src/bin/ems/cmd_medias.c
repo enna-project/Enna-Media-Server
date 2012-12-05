@@ -22,8 +22,13 @@ static void
 _media_add_cb(void *data, Ems_Node *node,
                           Ems_Video *media)
 {
-   printf("[%s] %s\n", ems_video_hash_key_get(media),
-          ems_video_title_get(media));
+   const char *uuid;
+
+   uuid = ems_video_hash_key_get(media);
+
+   printf("[%s] %s\n\t%s\n", uuid,
+          ems_video_title_get(media),
+          ems_node_media_stream_url_get(node, uuid));
 }
 
 static void

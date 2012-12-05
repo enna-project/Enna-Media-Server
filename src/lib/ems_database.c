@@ -534,35 +534,35 @@ ems_database_files_get(void)
 /*    return file; */
 /* } */
 
-/* const char * */
-/* ems_database_file_uuid_get(char *filename) */
-/* { */
-/*    Eina_List *l1, *l2, *l3; */
-/*    Ems_Db_Databases_Item *db; */
-/*    Ems_Db_Places_Item *item; */
-/*    Ems_Video *video_item; */
+const char *
+ems_database_file_uuid_get(char *filename)
+{
+   Eina_List *l1, *l2, *l3;
+   Ems_Db_Databases_Item *db;
+   Ems_Db_Places_Item *item;
+   Ems_Video *video_item;
 
-/*    /\* db lock *\/ */
-/*    eina_lock_take(&_db->mutex); */
+   /* db lock */
+   eina_lock_take(&_db->mutex);
 
-/*    EINA_LIST_FOREACH(_db->databases->list, l1, db) */
-/*      { */
-/*         EINA_LIST_FOREACH(db->places, l2, item) */
-/*           { */
-/*              /\* Search if the file exists, if yes update the scann time and return *\/ */
-/*              EINA_LIST_FOREACH(item->video_list, l3, video_item) */
-/*                if (!strcmp(video_item->filename, filename)) */
-/*                  { */
-/*                     eina_lock_release(&_db->mutex); */
-/*                     /\* db unlock *\/ */
-/*                     return eina_stringshare_add(video_item->hash_key); */
-/*                  } */
-/*           } */
-/*      } */
-/*    eina_lock_release(&_db->mutex); */
-/*    /\* db unlock *\/ */
-/*    return NULL; */
-/* } */
+   EINA_LIST_FOREACH(_db->databases->list, l1, db)
+     {
+        EINA_LIST_FOREACH(db->places, l2, item)
+          {
+             /* Search if the file exists, if yes update the scann time and return */
+             EINA_LIST_FOREACH(item->video_list, l3, video_item)
+               if (!strcmp(video_item->hash_key, filename))
+                 {
+                    eina_lock_release(&_db->mutex);
+                    /* db unlock */
+                    return eina_stringshare_add(video_item->title);
+                 }
+          }
+     }
+   eina_lock_release(&_db->mutex);
+   /* db unlock */
+   return NULL;
+}
 
 int64_t
 ems_database_file_mtime_get(const char *hash)
