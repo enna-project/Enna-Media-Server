@@ -39,3 +39,4 @@ enna-media-server*.tar.bz2
 /ems.pc
 /data/themes/default/default.edj
 /config.h.in
+emc
