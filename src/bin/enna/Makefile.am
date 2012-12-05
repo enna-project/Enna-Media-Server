@@ -1,3 +1,5 @@
+if HAVE_ENNA_BIN
+
 MAINTAINERCLEANFILES = Makefile.in
 
 AM_CPPFLAGS = \
@@ -38,3 +40,4 @@ enna_LDADD = \
 @ENNA_LIBS@ \
 $(top_builddir)/src/lib/libems.la
 
+endif

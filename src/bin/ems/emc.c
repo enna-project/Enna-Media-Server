@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <syslog.h>
 #include <string.h>
+
 #include <Ecore.h>
 #include <Ems.h>
 
@@ -26,7 +27,7 @@ typedef struct _Commands
 
 const char ems_usage_string[] = 
   "ems [--version] [--help]\n"
-  "    <command>";
+  "    <command>\n";
 
 static int
 _print_usage(int argc, const char **argv)
@@ -73,59 +74,6 @@ _handle_options(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-
-   if (argc == 1)
-     {
-        pid_t pid;
-        pid_t sid;
-        int fp;
-        char str[32];
-
-        pid = fork();
-        if (pid < 0)
-          return EXIT_FAILURE;
-
-        if (pid > 0)
-           return EXIT_SUCCESS;
- 
-        umask(027);
-
-        sid = setsid();
-        if (sid < 0)
-          return EXIT_FAILURE;
-        
-        
-        if ((chdir("/")) < 0)
-          return EXIT_FAILURE;
-        
-        /* Close out the standard file descriptors */
-        close(STDIN_FILENO);
-        close(STDOUT_FILENO);
-        close(STDERR_FILENO);
-
-
-        fp = open("/run/lock/enna-media-server.lock", 
-                  O_RDWR|O_CREAT, 0640);
-        printf("Fp : %d\n", fp);
-	if (fp < 0)
-          return EXIT_FAILURE;
-
-	if (lockf(fp, F_TLOCK, 0) < 0) 
-          return EXIT_FAILURE;
-
-        snprintf(str, sizeof(str), "%d\n", getpid());
-	write(fp, str, strlen(str)); /* record pid to lockfile */
-
-        if (!ems_init(NULL))
-          return EXIT_FAILURE;
-        
-        ems_run();
-        ems_shutdown();
-        return EXIT_SUCCESS;
-
-  
-     }
-
    if (!ems_init(NULL))
      return EXIT_FAILURE;
 
@@ -133,7 +81,6 @@ int main(int argc, char **argv)
    argc--;
 
    _handle_options(argc, argv);
-
 
    return EXIT_SUCCESS;
 }
