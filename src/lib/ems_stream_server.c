@@ -378,8 +378,6 @@ _stream_server_request_process(Ems_Stream_Client *client)
    Eina_Strbuf *headers;
    long int range_start = 0, range_end = 0;
    const char *range;
-   char **arr;
-   unsigned int nbtoken;
 
    if (!client)
      return;
@@ -397,19 +395,7 @@ _stream_server_request_process(Ems_Stream_Client *client)
           }
         else if (cpt == 1)
           {
-             //Parse media UUID
-             arr = eina_str_split_full(path, "-", 6, &nbtoken);
-
-             DBG("parsing UUID: %s", path);
-             DBG("got %d tokens", nbtoken);
-
-             if (nbtoken == 6)
-               {
-                  file_path = ems_database_file_uuid_get(arr[5]);
-               }
-
-             free(arr[0]);
-             free(arr);
+	    file_path = ems_database_file_uuid_get((char*)path);
           }
         else
         {
