@@ -46,7 +46,7 @@ typedef struct _Ems_Node_Media_Infos_Get_Cb Ems_Node_Media_Infos_Get_Cb;
 
 struct _Ems_Node_Media_Get_Cb
 {
-   void (*add_cb)(void *data, Ems_Node *node, const char *media);
+   void (*add_cb)(void *data, Ems_Node *node, Ems_Video *media);
    void *data;
 };
 
@@ -84,7 +84,7 @@ _medias_cb(void *data, Ecore_Con_Reply *reply __UNUSED__, const char *name __UNU
         EINA_LIST_FOREACH(_media_get_cb, l2, cb)
           {
              if (cb->add_cb)
-               cb->add_cb(cb->data, data, video->title);
+               cb->add_cb(cb->data, data, video);
           }
      }
 

@@ -32,6 +32,7 @@ typedef struct _Ems_Collection Ems_Collection;
 typedef struct _Ems_Media Ems_Media;
 typedef struct _Ems_Media_Info Ems_Media_Info;
 typedef struct _Ems_Node_Dir Ems_Node_Dir;
+typedef struct _Ems_Video Ems_Video;
 
 typedef void (*Ems_Node_Add_Cb)(void *data, Ems_Node *node);
 typedef void (*Ems_Node_Del_Cb)(void *data, Ems_Node *node);
@@ -44,7 +45,7 @@ typedef void (*Ems_Player_Del_Cb)(void *data, Ems_Player *player);
 typedef void (*Ems_Player_Update_Cb)(void *data, Ems_Player *player);
 
 typedef void (*Ems_Media_Add_Cb)(void *data, Ems_Node *node,
-                                 const char *media);
+                                 Ems_Video *media);
 typedef void (*Ems_Media_Del_Cb)(void *data, Ems_Node *node,
                                  Eina_Iterator *it);
 typedef void (*Ems_Media_Done_Cb)(void *data, Ems_Node *node);
@@ -130,6 +131,9 @@ Eina_Bool ems_node_connect(Ems_Node *node);
 
 /* Return the type of the specified player */
 Ems_Media_Type ems_player_type_get(Ems_Player *player);
+
+const char *ems_video_hash_key_get(Ems_Video *video);
+const char *ems_video_title_get(Ems_Video *video);
 
 /*
  * Get the list of files and directories contains in path on the specified node

@@ -90,7 +90,7 @@ typedef struct _Ems_Directory Ems_Directory;
 typedef struct _Ems_Collection_Filter Ems_Collection_Filter;
 typedef struct _Ems_Grabber_Data Ems_Grabber_Data;
 typedef struct _Ems_Grabber_Params Ems_Grabber_Params;
-typedef struct _Ems_Video Ems_Video;
+
 
 
 /* Function typedef, called when grabber ends its work */

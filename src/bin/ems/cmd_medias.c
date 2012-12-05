@@ -20,9 +20,10 @@ _timer_cb(void *data)
 
 static void
 _media_add_cb(void *data, Ems_Node *node,
-                          const char *media)
+                          Ems_Video *media)
 {
-   printf("[%s]\n");
+   printf("[%s] %s\n", ems_video_hash_key_get(media),
+          ems_video_title_get(media));
 }
 
 static void

@@ -42,6 +42,8 @@ ems_stream_server.c \
 ems_stream_server.h \
 ems_downloader.c \
 ems_downloader.h \
+ems_video.c \
+ems_video.h \
 extras/http_parser.c
 
 if HAVE_ECORE_CON_EET
