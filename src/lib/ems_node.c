@@ -114,7 +114,7 @@ _server_connected_cb(void *data, Ecore_Con_Reply *reply, Ecore_Con_Server *conn 
 
    EINA_LIST_FOREACH(_nodes_cb, l_cb, cb)
      {
-        if (cb->add_cb)
+        if (cb->connected_cb)
           cb->connected_cb(cb->data, node);
      }
    return EINA_TRUE;
@@ -402,12 +402,11 @@ ems_node_dir_get(Ems_Node *node __UNUSED__,
 
 Ems_Observer *
 ems_node_media_get(Ems_Node *node,
-                     Ems_Collection *collection,
-                     Ems_Media_Add_Cb media_add,
-                     void *data)
+                   Ems_Collection *collection,
+                   Ems_Media_Add_Cb media_add,
+                   void *data)
 {
    Medias_Req *req;
-
    Ems_Node_Media_Get_Cb *cb = calloc(1, sizeof(Ems_Node_Media_Get_Cb));
 
    cb->add_cb = media_add;
