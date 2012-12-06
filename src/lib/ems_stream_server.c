@@ -403,9 +403,9 @@ _stream_server_request_process(Ems_Stream_Client *client)
              DBG("parsing UUID: %s", path);
              DBG("got %d tokens", nbtoken);
 
-             if (nbtoken == 6)
+             if (nbtoken == 1)
                {
-                  file_path = ems_database_file_uuid_get(arr[5]);
+                  file_path = ems_database_file_uuid_get(arr[1]);
                }
 
              free(arr[0]);
