@@ -80,8 +80,6 @@ cmd_medias(int argc, char **argv)
    Ems_Node *node;
    Eina_List *l;
 
-   //ems_avahi_start();
-
    argv++;
    argc--;
    node_name = argv[0];
@@ -106,9 +104,6 @@ cmd_medias(int argc, char **argv)
                         _node_connected_cb, NULL, NULL);
         timer = ecore_timer_add(DETECTION_TIMEOUT, _timer_cb, NULL);
      }
-
-   ems_run();
-   ems_shutdown();
 
    return EINA_TRUE;
 }

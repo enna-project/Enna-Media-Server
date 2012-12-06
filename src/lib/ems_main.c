@@ -65,12 +65,16 @@ int ems_init(const char *config_file)
 {
    Eina_List *l;
    Ems_Directory *dir;
+   Eina_Bool start_servers = EINA_TRUE;
 
    if (++_ems_init_count != 1)
      return _ems_init_count;
 
    if (!eina_init())
      return --_ems_init_count;
+
+   if (!config_file)
+     start_servers = EINA_FALSE;
 
 
    _ems_log_dom_global = eina_log_domain_register("ems", EMS_DEFAULT_LOG_COLOR);
@@ -113,6 +117,17 @@ int ems_init(const char *config_file)
      {
         INF("%s: %s", dir->label, dir->path);
      }
+
+   if (start_servers)
+     {
+       /* Start Servers and Annoucement services */
+       if (!ems_avahi_start())
+	 goto shutdown_downloader;
+       if (!ems_stream_server_start())
+	 goto shutdown_downloader;
+       
+   }
+     
 
    return _ems_init_count;
 

@@ -378,8 +378,6 @@ _stream_server_request_process(Ems_Stream_Client *client)
    Eina_Strbuf *headers;
    long int range_start = 0, range_end = 0;
    const char *range;
-   char **arr;
-   unsigned int nbtoken;
 
    if (!client)
      return;
@@ -397,19 +395,7 @@ _stream_server_request_process(Ems_Stream_Client *client)
           }
         else if (cpt == 1)
           {
-             //Parse media UUID
-             arr = eina_str_split_full(path, "-", 6, &nbtoken);
-
-             DBG("parsing UUID: %s", path);
-             DBG("got %d tokens", nbtoken);
-
-             if (nbtoken == 1)
-               {
-                  file_path = ems_database_file_uuid_get(arr[1]);
-               }
-
-             free(arr[0]);
-             free(arr);
+	    file_path = ems_database_file_uuid_get((char*)path);
           }
         else
         {
@@ -734,11 +720,6 @@ ems_stream_server_init(void)
 {
    _page_size = sysconf(_SC_PAGESIZE);
 
-   _server = ecore_con_server_add(ECORE_CON_REMOTE_TCP,
-                                  "0.0.0.0",
-                                  ems_config->port_stream,
-                                  NULL);
-
    _handler_add = ecore_event_handler_add(ECORE_CON_EVENT_CLIENT_ADD,
                            (Ecore_Event_Handler_Cb)_client_add, NULL);
    _handler_del = ecore_event_handler_add(ECORE_CON_EVENT_CLIENT_DEL,
@@ -756,6 +737,18 @@ ems_stream_server_init(void)
    _parser_settings.on_headers_complete = _parser_headers_complete;
    _parser_settings.on_body = NULL;
    _parser_settings.on_message_complete = _parser_message_complete;
+
+   return EINA_TRUE;
+}
+
+Eina_Bool
+ems_stream_server_start(void)
+{
+   _server = ecore_con_server_add(ECORE_CON_REMOTE_TCP,
+                                  "0.0.0.0",
+                                  ems_config->port_stream,
+                                  NULL);
+
 
    INF("Listening to port %d", ems_config->port_stream);
 
