@@ -58,8 +58,6 @@ cmd_list(int argc, char **argv)
    Ems_Node *node;
    Eina_List *l;
    
-   ems_avahi_start();
-
    timer = ecore_timer_add(DETECTION_TIMEOUT, _timer_cb, NULL); 
 
    printf("Nodes Detected:\n");
@@ -75,9 +73,6 @@ cmd_list(int argc, char **argv)
    ems_node_cb_set(_node_add_cb, NULL, NULL,
                      NULL, NULL, NULL);
  
-   ems_run();
-   ems_shutdown();
-
    return EINA_TRUE;
 }
 
@@ -99,8 +94,6 @@ cmd_ip(int argc, char **argv)
    
    pval = PRINT_IP;
 
-   ems_avahi_start();
-
    timer = ecore_timer_add(DETECTION_TIMEOUT, _timer_cb, NULL); 
 
    EINA_LIST_FOREACH(ems_node_list_get(), l, node)
@@ -115,9 +108,6 @@ cmd_ip(int argc, char **argv)
 
    ems_node_cb_set(_node_add_cb, NULL, NULL,
                      NULL, NULL, NULL);
- 
-   ems_run();
-   ems_shutdown();
 
    return EINA_TRUE;
 }
@@ -139,8 +129,6 @@ cmd_port(int argc, char **argv)
    
    pval = PRINT_PORT;
 
-   ems_avahi_start();
-
    timer = ecore_timer_add(DETECTION_TIMEOUT, _timer_cb, NULL); 
 
    EINA_LIST_FOREACH(ems_node_list_get(), l, node)
@@ -156,8 +144,5 @@ cmd_port(int argc, char **argv)
    ems_node_cb_set(_node_add_cb, NULL, NULL,
                      NULL, NULL, NULL);
  
-   ems_run();
-   ems_shutdown();
-
    return EINA_TRUE;
 }

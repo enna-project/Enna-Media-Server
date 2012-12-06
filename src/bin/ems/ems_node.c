@@ -33,9 +33,6 @@ cmd_nodes(int argc, char **argv)
    Ems_Server *node;
    Eina_List *l;
    
-   ems_scanner_start();
-   ems_avahi_start();
-
    timer = ecore_timer_add(DETECTION_TIMEOUT, _timer_cb, NULL); 
 
    printf("Nodes :\n");
@@ -53,8 +50,5 @@ cmd_nodes(int argc, char **argv)
    ems_server_cb_set(_server_add_cb, _server_del_cb, NULL, NULL
                      NULL, NULL, NULL);
  
-   ems_run();
-   ems_shutdown();
-
    return EINA_TRUE;
 }

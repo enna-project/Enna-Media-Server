@@ -26,9 +26,5 @@ cmd_scan(int argc, char **argv)
    
    timer = ecore_timer_add(1.0, _timer_cb, NULL);
 
-   ems_scanner_start();
-   ems_run();
-   ems_shutdown();
-
    return EINA_TRUE;
 }

@@ -82,5 +82,8 @@ int main(int argc, char **argv)
 
    _handle_options(argc, argv);
 
+   ems_run();
+   ems_shutdown();
+
    return EXIT_SUCCESS;
 }
