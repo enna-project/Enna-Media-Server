@@ -82,12 +82,20 @@ _client_disconnected_cb(void *data __UNUSED__, Ecore_Con_Reply *reply __UNUSED__
 Eina_Bool
 ems_server_eet_init(void)
 {
-   Ecore_Con_Server *conn = NULL;
-
    eina_init();
    eet_init();
    ecore_init();
    ecore_con_init();
+
+   ems_server_protocol_init();
+
+   return EINA_TRUE;
+}
+
+Eina_Bool
+ems_server_eet_start(void)
+{
+   Ecore_Con_Server *conn = NULL;
 
    /* Add Ems instance server */
    conn = ecore_con_server_add(ECORE_CON_REMOTE_TCP, "0.0.0.0", ems_config->port, NULL);
@@ -101,8 +109,6 @@ ems_server_eet_init(void)
 
    ecore_con_eet_client_connect_callback_add(ece, _client_connected_cb, NULL);
    //ecore_con_eet_client_disconnect_callback_add(ece, _client_disconnected_cb, NULL);
-
-   ems_server_protocol_init();
 
    ecore_con_eet_register(ece, "medias_req", ems_medias_req_edd);
    ecore_con_eet_register(ece, "medias", ems_medias_add_edd);

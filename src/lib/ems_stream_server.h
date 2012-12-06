@@ -27,6 +27,7 @@
 #define _EMS_STREAM_SERVER_H_
 
 Eina_Bool ems_stream_server_init(void);
+Eina_Bool ems_stream_server_start(void);
 void ems_stream_server_shutdown(void);
 
 #endif /* _EMS_STREAM_SERVER_H_ */

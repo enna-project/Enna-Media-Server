@@ -720,11 +720,6 @@ ems_stream_server_init(void)
 {
    _page_size = sysconf(_SC_PAGESIZE);
 
-   _server = ecore_con_server_add(ECORE_CON_REMOTE_TCP,
-                                  "0.0.0.0",
-                                  ems_config->port_stream,
-                                  NULL);
-
    _handler_add = ecore_event_handler_add(ECORE_CON_EVENT_CLIENT_ADD,
                            (Ecore_Event_Handler_Cb)_client_add, NULL);
    _handler_del = ecore_event_handler_add(ECORE_CON_EVENT_CLIENT_DEL,
@@ -742,6 +737,18 @@ ems_stream_server_init(void)
    _parser_settings.on_headers_complete = _parser_headers_complete;
    _parser_settings.on_body = NULL;
    _parser_settings.on_message_complete = _parser_message_complete;
+
+   return EINA_TRUE;
+}
+
+Eina_Bool
+ems_stream_server_start(void)
+{
+   _server = ecore_con_server_add(ECORE_CON_REMOTE_TCP,
+                                  "0.0.0.0",
+                                  ems_config->port_stream,
+                                  NULL);
+
 
    INF("Listening to port %d", ems_config->port_stream);
 

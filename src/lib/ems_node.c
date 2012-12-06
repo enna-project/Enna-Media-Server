@@ -177,11 +177,16 @@ _ems_node_connect(Ems_Node *node)
  *                                 Global                                     *
  *============================================================================*/
 
-Eina_Bool ems_node_init(void)
+Eina_Bool
+ems_node_init(void)
 {
-   ems_server_eet_init();
+   return ems_server_eet_init();
+}
 
-   return EINA_TRUE;
+Eina_Bool
+ems_node_start(void)
+{
+  return ems_server_eet_start();
 }
 
 void ems_node_shutdown(void)

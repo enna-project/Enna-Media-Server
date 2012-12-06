@@ -29,6 +29,7 @@
 #include "Ems.h"
 
 Eina_Bool ems_server_eet_init(void);
+Eina_Bool ems_server_eet_start(void);
 void ems_server_eet_shutdown(void);
 
 #endif /* _EMS_SERVER_EET_H_ */
