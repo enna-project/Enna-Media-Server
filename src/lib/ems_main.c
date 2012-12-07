@@ -120,7 +120,9 @@ int ems_init(const char *config_file, Eina_Bool start_servers)
 	 goto shutdown_downloader;
        if (!ems_stream_server_start())
 	 goto shutdown_downloader;
-       
+       if (!ems_node_start())
+	 goto shutdown_downloader;
+       ems_scanner_start();
    }
      
 

@@ -29,6 +29,7 @@
 #include "Ems.h"
 
 Eina_Bool ems_node_init(void);
+Eina_Bool ems_node_start(void);
 void ems_node_shutdown();
 
 void ems_node_add(Ems_Node *server);
