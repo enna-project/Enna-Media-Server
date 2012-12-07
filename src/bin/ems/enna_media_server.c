@@ -62,7 +62,7 @@ int main(int argc, char **argv)
        write(fp, str, strlen(str)); /* record pid to lockfile */
      }
    
-   if (!ems_init(NULL))
+   if (!ems_init(NULL, EINA_TRUE))
      return EXIT_FAILURE;
    ems_avahi_start();
    ems_scanner_start();

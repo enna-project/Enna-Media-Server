@@ -126,7 +126,7 @@ elm_main(int argc, char **argv)
    if (theme)
      enna_config_theme_set(theme);
 
-   if (!ems_init(enna_config_config_get()))
+   if (!ems_init(enna_config_config_get(), EINA_TRUE))
      goto shutdown_config;
 
    enna = enna_add(is_fullscreen, geometry);

@@ -61,21 +61,16 @@ Ems_Config *ems_config = NULL;
  *                                   API                                      *
  *============================================================================*/
 
-int ems_init(const char *config_file)
+int ems_init(const char *config_file, Eina_Bool start_servers)
 {
    Eina_List *l;
    Ems_Directory *dir;
-   Eina_Bool start_servers = EINA_TRUE;
 
    if (++_ems_init_count != 1)
      return _ems_init_count;
 
    if (!eina_init())
      return --_ems_init_count;
-
-   if (!config_file)
-     start_servers = EINA_FALSE;
-
 
    _ems_log_dom_global = eina_log_domain_register("ems", EMS_DEFAULT_LOG_COLOR);
    if (_ems_log_dom_global < 0)

@@ -74,7 +74,7 @@ _handle_options(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-   if (!ems_init(NULL))
+   if (!ems_init(NULL, EINA_FALSE))
      return EXIT_FAILURE;
 
    argv++;

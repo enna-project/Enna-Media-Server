@@ -78,7 +78,7 @@ int main(int argc, char **argv)
 	exit(-1);
      }
 
-   ems_init(NULL);
+   ems_init(NULL, EINA_FALSE);
    eina_init();
    ecore_init();
    ecore_con_init();

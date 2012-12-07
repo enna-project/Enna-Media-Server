@@ -61,7 +61,7 @@ typedef void (*Ems_Media_Info_Update_Cb)(void *data, Ems_Node *node,
 
 typedef enum _Ems_Scanner_State Ems_Scanner_State;
 
-int ems_init(const char *config_file);
+int ems_init(const char *config_file, Eina_Bool start_servers);
 int ems_shutdown(void);
 
 void ems_run(void);

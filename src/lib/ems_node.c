@@ -151,7 +151,7 @@ _ems_node_connect(Ems_Node *node)
    if (!node)
      return EINA_FALSE;
 
-   INF("try to connect to %s:%d", node->name, node->port);
+   INF("try to connect to [%s] %s:%d", node->name, node->ip, node->port);
 
    if (node->is_connected)
      return EINA_TRUE;
