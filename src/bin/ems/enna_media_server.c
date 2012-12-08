@@ -42,6 +42,8 @@ int main(int argc, char **argv)
         
        if ((chdir("/")) < 0)
 	 return EXIT_FAILURE;
+
+       printf("%s is launched in background.\n", argv[0]);
         
        /* Close out the standard file descriptors */
        close(STDIN_FILENO);
@@ -64,6 +66,7 @@ int main(int argc, char **argv)
    
    if (!ems_init(NULL, EINA_TRUE))
      return EXIT_FAILURE;
+
    ems_run();
    ems_shutdown();
    return EXIT_SUCCESS;
