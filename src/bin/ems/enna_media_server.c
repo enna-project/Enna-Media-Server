@@ -13,17 +13,69 @@
 #include <string.h>
 
 #include <Ecore.h>
+#include <Ecore_Getopt.h>
 #include <Ems.h>
+
+static const Ecore_Getopt options = 
+{
+        "enna-media-server",
+        "%prog [options]",
+        "1.0.0",
+        "(C) 2012 Nicolas Aguirre",
+        "GPLv2",
+        "Enna Media Server",
+        EINA_TRUE,
+        {
+                ECORE_GETOPT_STORE_DEF_BOOL
+                        ('n', "nodaemon", "Don't daemonize (stay in foreground)", 0),
+                ECORE_GETOPT_VERSION
+                        ('v', "version"),
+                ECORE_GETOPT_COPYRIGHT
+                        ('c', "copyright"),
+                ECORE_GETOPT_LICENSE
+                        ('l', "license"),
+                ECORE_GETOPT_HELP
+                        ('h', "help"),
+                ECORE_GETOPT_SENTINEL
+        }
+};
 
 int main(int argc, char **argv)
 {
-
+   int args;
    pid_t pid;
    pid_t sid;
    int fp;
    char str[32];
+   Eina_Bool nodaemon_opt = EINA_FALSE;
+   Eina_Bool quit_opt = EINA_FALSE;
 
-   if (argc == 1)
+   Ecore_Getopt_Value values[] = 
+        {
+                ECORE_GETOPT_VALUE_BOOL(nodaemon_opt),
+                ECORE_GETOPT_VALUE_BOOL(quit_opt),
+                ECORE_GETOPT_VALUE_BOOL(quit_opt),
+                ECORE_GETOPT_VALUE_BOOL(quit_opt),
+                ECORE_GETOPT_VALUE_BOOL(quit_opt),
+                ECORE_GETOPT_VALUE_NONE
+        };
+
+   eina_init();
+   ecore_init();
+
+   ecore_app_args_set(argc, (const char **) argv);
+   args = ecore_getopt_parse(&options, values, argc, argv);
+
+   if (args < 0)
+     {
+        printf("ERROR: could not parse options.\n");
+        return EXIT_FAILURE;
+     }
+   
+   if (quit_opt)
+     return EXIT_SUCCESS;
+
+   if (!nodaemon_opt)
      {
 
        pid = fork();
