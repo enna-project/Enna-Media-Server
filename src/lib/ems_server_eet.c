@@ -59,8 +59,15 @@ _medias_req_cb(void *data __UNUSED__, Ecore_Con_Reply *reply __UNUSED__, const c
 }
 
 static void
-_media_info_req_cb(void *data __UNUSED__, Ecore_Con_Reply *reply __UNUSED__, const char *name __UNUSED__, void *value __UNUSED__)
+_media_info_req_cb(void *data __UNUSED__, Ecore_Con_Reply *reply, const char *name __UNUSED__, void *value __UNUSED__)
 {
+   Media_Infos *req;
+
+   req = calloc(1, sizeof(Media_Infos_Req));
+   req->value = "THIS iS a TEST";
+   
+   ecore_con_eet_send(reply, "media_infos", req);
+   
 }
 
 static Eina_Bool

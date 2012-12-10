@@ -451,6 +451,8 @@ ems_node_media_info_get(Ems_Node *node __UNUSED__,
    Media_Infos_Req *req;
    Ems_Node_Media_Infos_Get_Cb *cb = calloc(1, sizeof(Ems_Node_Media_Infos_Get_Cb));
 
+   DBG("");
+
    cb->add_cb = info_add;
    cb->data = data;
 
