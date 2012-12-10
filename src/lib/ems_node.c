@@ -69,6 +69,7 @@ struct _Ems_Node_Cb
 static Eina_List *_nodes = NULL;
 static Eina_List *_nodes_cb = NULL;
 static Eina_List *_media_get_cb = NULL;
+static Eina_List *_media_infos_get_cb = NULL;
 
 static void
 _medias_cb(void *data, Ecore_Con_Reply *reply __UNUSED__, const char *name __UNUSED__, void *value)
@@ -94,6 +95,15 @@ _medias_cb(void *data, Ecore_Con_Reply *reply __UNUSED__, const char *name __UNU
 static void
 _media_info_cb(void *data __UNUSED__, Ecore_Con_Reply *reply __UNUSED__, const char *name __UNUSED__, void *value __UNUSED__)
 {
+   Eina_List *l;
+   Ems_Node_Media_Infos_Get_Cb *cb;
+
+   DBG("Value read : %s", value);
+   EINA_LIST_FOREACH(_media_info_cb, l, cb)
+     {
+        if (cb->add_cb)
+          cb->add_cb(cb->data, data, value);
+     }
 }
 
 static Eina_Bool
@@ -431,13 +441,28 @@ ems_node_media_get(Ems_Node *node,
 
 Ems_Observer *
 ems_node_media_info_get(Ems_Node *node __UNUSED__,
-                          const char *uuid __UNUSED__,
-                          const char *info __UNUSED__,
-                          Ems_Media_Info_Add_Cb info_add __UNUSED__,
+                          const char *sha1,
+                          const char *metadata,
+                          Ems_Media_Info_Add_Cb info_add,
                           Ems_Media_Info_Add_Cb info_del __UNUSED__,
                           Ems_Media_Info_Update_Cb info_update __UNUSED__,
-                          void *data __UNUSED__)
+                          void *data)
 {
+   Media_Infos_Req *req;
+   Ems_Node_Media_Infos_Get_Cb *cb = calloc(1, sizeof(Ems_Node_Media_Infos_Get_Cb));
+
+   cb->add_cb = info_add;
+   cb->data = data;
+
+   _media_infos_get_cb = eina_list_append(_media_infos_get_cb, cb);
+
+   DBG("Node reply : %p", node->reply);
+
+   req = calloc(1, sizeof(Media_Infos_Req));
+   req->sha1 = sha1;
+   req->metadata = metadata;
+
+   ecore_con_eet_send(node->reply, "media_info_req", req);
 
    return NULL;
 }

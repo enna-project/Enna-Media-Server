@@ -94,7 +94,7 @@ _media_infos_req_edd(void)
 
    EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Media_Infos_Req);
    edd =  eet_data_descriptor_stream_new(&eddc);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Media_Infos_Req, "uuid", uuid, EET_T_STRING);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Media_Infos_Req, "sha1", sha1, EET_T_STRING);
    EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Media_Infos_Req, "metadata", metadata, EET_T_STRING);
 
    return edd;

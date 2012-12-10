@@ -31,5 +31,6 @@ int cmd_list(int argc, char **argv);
 int cmd_ip(int argc, char **argv);
 int cmd_port(int argc, char **argv);
 int cmd_medias(int argc, char **argv);
+int cmd_media_info(int argc, char **argv);
 
 #endif /* _EMS_CMD_SCAN */
