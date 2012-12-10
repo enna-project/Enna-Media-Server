@@ -649,3 +649,28 @@ ems_database_deleted_files_remove(int64_t time, const char *place)
 /* { */
 /*    return val; */
 /* } */
+
+const char *
+ems_database_info_get(const char *sha1, const char *meta)
+{
+   Ems_Db_Video_Infos *info;
+
+   if (!sha1 || !meta)
+     return;
+
+   /* db lock */
+   eina_lock_take(&_db->mutex);
+   info = eina_hash_find(_db->videos_hash->hash, sha1);
+   if (info)
+     {
+        Ems_Db_Metadata *m;
+
+        m = eina_hash_find(info->metadatas, meta);
+        printf("Return %s\n", m->value);
+        
+     }
+   else
+     ERR("I can't found %s in the database", sha1);
+   eina_lock_release(&_db->mutex);
+   /* db unlock */
+}

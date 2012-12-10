@@ -48,5 +48,5 @@ int64_t ems_database_file_mtime_get(const char *hash);
 void ems_database_deleted_files_remove(int64_t magic, const char *place);
 /* Eina_List * ems_database_collection_get(Ems_Database *db, Ems_Collection *collection); */
 /* const char *ems_database_uuid_get(Ems_Database *db); */
-/* const char *ems_database_info_get(Ems_Database *db, const char *uuid, const char *metadata); */
+const char *ems_database_info_get(const char *sha1, const char *metadata);
 #endif /* _EMS_DATABASE_H_ */
