@@ -59,14 +59,15 @@ _medias_req_cb(void *data __UNUSED__, Ecore_Con_Reply *reply __UNUSED__, const c
 }
 
 static void
-_media_info_req_cb(void *data __UNUSED__, Ecore_Con_Reply *reply, const char *name __UNUSED__, void *value __UNUSED__)
+_media_info_req_cb(void *data __UNUSED__, Ecore_Con_Reply *reply, const char *name, void *value)
 {
    Media_Infos *req;
 
    req = calloc(1, sizeof(Media_Infos_Req));
-   req->value = "THIS iS a TEST";
+   printf("get info for : %s %s\n", name, value);
+   req->value = ems_database_info_get(value, name);;
    
-   ecore_con_eet_send(reply, "media_infos", req);
+   ecore_con_eet_send(reply, "media_info", req);
    
 }
 
