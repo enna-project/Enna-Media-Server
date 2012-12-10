@@ -134,11 +134,12 @@ _file_filter_cb(void *data, Eio_File *handler __UNUSED__, Eina_File_Direct_Info 
         const char *type;
         struct stat st;
         int64_t mtime;
-        uint64_t hash, size;
-        char uuid[50];
+        uint64_t size;
+        char uuid[41];
         char ssize[17];
         char *tmp;
-
+        unsigned char sha1[20];
+        unsigned int i;
 
         switch (dir->type)
           {
@@ -162,15 +163,21 @@ _file_filter_cb(void *data, Eio_File *handler __UNUSED__, Eina_File_Direct_Info 
         eina_stringshare_del(type);
         stat(info->path, &st);
 
-        if (!ems_utils_hash_compute(info->path, &hash, &size) || !size || !hash)
+        if (!ems_utils_sha1_compute(info->path, sha1))
           {
              ERR("%s is corrupted ?", info->path);
              return EINA_FALSE;
           }
 
-        snprintf(uuid, sizeof(uuid), "%032"PRIx64"-%016"PRIx32,
-                 hash,
-                 (uint32_t)size);
+        for (i = 0; i < sizeof(sha1); i++)
+          snprintf(&uuid[i*2], sizeof(uuid), "%02x", sha1[i]);
+        uuid[i*2] = '\0';
+
+        printf("uuid : %s\n", uuid);
+        
+        /* snprintf(uuid, sizeof(uuid), "%032"PRIx64"-%016"PRIx32, */
+        /*          hash, */
+        /*          (uint32_t)size); */
 
         mtime = ems_database_file_mtime_get(uuid);
 

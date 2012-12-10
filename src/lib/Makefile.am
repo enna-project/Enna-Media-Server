@@ -58,5 +58,7 @@ libems_la_SOURCES += ems_avahi.c ems_avahi.h
 endif
 
 
-libems_la_LIBADD = @EMS_LIBS@
+libems_la_LIBADD = @EMS_LIBS@ \
+	$(top_builddir)/src/lib/extras/libsha1.la
+
 libems_la_LDFLAGS = -no-undefined @lt_enable_auto_import@ -version-info @version_info@ @release_info@

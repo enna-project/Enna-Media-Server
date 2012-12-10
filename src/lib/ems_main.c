@@ -42,7 +42,9 @@
 #include "ems_node.h"
 #include "ems_grabber.h"
 #include "ems_stream_server.h"
+
 #include "ems_downloader.h"
+#include "sha1.h"
 
 /*============================================================================*
  *                                  Local                                     *

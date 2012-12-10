@@ -31,13 +31,14 @@
 
 #include <Eina.h>
 
+#include "ems_utils.h"
 #include "ems_private.h"
+#include "sha1.h"
+
 
 #define PATTERN_NUMBER "NUM"
 #define PATTERN_SEASON  "SE"
 #define PATTERN_EPISODE "EP"
-
-#define MAX(a, b) (((a) < (b)) ? (a) : (b))
 
 #define EMS_ISALNUM(c) isalnum ((int) (unsigned char) (c))
 #define EMS_ISGRAPH(c) isgraph ((int) (unsigned char) (c))
@@ -340,10 +341,14 @@ ems_utils_escape_string(const char *string)
 }
 
 Eina_Bool
-ems_utils_hash_compute(const char *filename, uint64_t *hash, uint64_t *fsize)
+ems_utils_sha1_compute(const char *filename, unsigned char *sha1)
 {
     FILE *fd;
-    uint64_t tmp, i;
+    int i;
+    uint64_t fsize;
+    unsigned int rsize = 0;
+    uint8_t *tmp;
+    SHA1 ctx;
 
     fd = fopen(filename, "rb");
     if (!fd)
@@ -352,25 +357,25 @@ ems_utils_hash_compute(const char *filename, uint64_t *hash, uint64_t *fsize)
          return EINA_FALSE;
       }
 
-    if (!fsize || !hash)
+    if (!sha1)
       return EINA_FALSE;
 
+    sha1_init(&ctx);
+
     fseek(fd, 0, SEEK_END);
-    *fsize = ftell(fd);
+    fsize = ftell(fd);
     fseek(fd, 0, SEEK_SET);
 
-    *hash = *fsize;
+    rsize = MIN(65536, fsize);
+    tmp = calloc(rsize, sizeof(uint8_t));
+    fread(tmp, 1, rsize, fd);
+    sha1_update(&ctx, tmp, rsize);
+    fseek(fd, (long)(fsize - 65536), SEEK_SET);
+    fread(tmp, 1, rsize, fd);
+    sha1_update(&ctx, tmp, rsize);
+    sha1_final(&ctx, sha1);
 
-    for(tmp = 0, i = 0; i < 65536/sizeof(tmp) &&
-          fread((char*)&tmp, sizeof(tmp), 1, fd);
-        *hash += tmp, i++);
-
-    fseek(fd, (long)MAX(0, fsize - 65536), SEEK_SET);
-
-    for(tmp = 0, i = 0; i < 65536/sizeof(tmp) &&
-          fread((char*)&tmp, sizeof(tmp), 1, fd);
-        *hash += tmp, i++);
-
+    free(tmp);
     fclose(fd);
 
     return EINA_TRUE;
