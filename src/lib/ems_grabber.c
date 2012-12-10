@@ -77,7 +77,6 @@ _idler_cb(void *data)
      {
         EINA_ARRAY_ITER_NEXT(_modules, i, m, iterator)
           {
-
              grab = eina_module_symbol_get(m, "ems_grabber_grab");
              if (grab)
                {
@@ -110,7 +109,7 @@ _print_hash_cb(const Eina_Hash *hash, const void *key,
 {
    Eina_Value *v = data;
    INF("Func data: Hash entry: [%s] -> %s", key, eina_value_to_string(v));
-   ems_database_meta_insert(fdata, key, eina_value_to_string(v));
+   ems_database_meta_insert(fdata, (const char*)key, eina_value_to_string(v));
    eina_value_free(v);
    return 1;
 }
@@ -124,8 +123,8 @@ _end_grab_cb(void *data __UNUSED__, const char *filename, Ems_Grabber_Data *grab
    INF("Grabber language : %s", grabbed_data->lang);
    INF("Grabber grabbed date : %lld", grabbed_data->date);
    INF("Data:");
-   eina_hash_foreach(grabbed_data->data, _print_hash_cb, NULL);
-
+   eina_hash_foreach(grabbed_data->data, _print_hash_cb, filename);
+   ems_database_flush();
 
    if (grabbed_data->episode_data)
      {

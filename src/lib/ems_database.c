@@ -200,8 +200,6 @@ _metadata_free(void *data)
 {
    Ems_Db_Metadata *meta = data;
 
-   DBG("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< metadata free");
-
    if (!meta)
      return;
 
@@ -210,25 +208,9 @@ _metadata_free(void *data)
 }
 
 static void
-_video_infos_free(void *data)
-{
-   Ems_Db_Video_Infos *infos = data;
-
-   if (!infos)
-     return;
-
-   DBG("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< video infos free");
-
-   eina_hash_free(infos->metadatas);
-   free(infos);
-}
-
-static void
 _video_hash_free(void *data)
 {
    Ems_Db_Videos_Hash *infos = data;
-
-   DBG("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< hash free");
 
    if (!infos)
      return;
@@ -408,11 +390,10 @@ ems_database_file_insert(const char *hash, const char *place, const char *title,
         info = calloc(1, sizeof(Ems_Db_Video_Infos));
         info->rev = 1;
         info->mtime = mtime;
-        info->metadatas = eina_hash_string_superfast_new(_video_infos_free);
+        info->metadatas = eina_hash_string_superfast_new(_metadata_free);
         meta = calloc(1, sizeof(Ems_Db_Metadata));
         meta->value = eina_stringshare_add(title);
         meta = eina_hash_set(info->metadatas, "title", meta);
-	_metadata_free(meta);
      }
    else
      info->rev++;
@@ -481,12 +462,15 @@ ems_database_meta_insert(const char *hash, const char *meta, const char *value)
 {
    Ems_Db_Video_Infos *info;
 
+   DBG(" %s %s %s", hash, meta, value);
+
    if (!hash || !meta || !value)
      return;
 
    /* db lock */
    eina_lock_take(&_db->mutex);
    info = eina_hash_find(_db->videos_hash->hash, hash);
+   printf("search %s %s\n", meta, value);
    if (info)
      {
         Ems_Db_Metadata *m;
@@ -497,8 +481,8 @@ ems_database_meta_insert(const char *hash, const char *meta, const char *value)
         if (!m)
           m = calloc(1, sizeof(Ems_Db_Metadata));
         m->value = eina_stringshare_add(value);
+        printf("Add %s %s\n", meta, value);
         m = eina_hash_set(info->metadatas, meta, m);
-	_metadata_free(m);
      }
    else
      ERR("I can't found %s in the database", hash);
@@ -656,10 +640,11 @@ ems_database_info_get(const char *sha1, const char *meta)
    Ems_Db_Video_Infos *info;
 
    if (!sha1 || !meta)
-     return;
+     return NULL;
 
    /* db lock */
    eina_lock_take(&_db->mutex);
+   
    info = eina_hash_find(_db->videos_hash->hash, sha1);
    if (info)
      {
@@ -667,10 +652,13 @@ ems_database_info_get(const char *sha1, const char *meta)
 
         m = eina_hash_find(info->metadatas, meta);
         printf("Return %s\n", m->value);
-        
+        eina_lock_release(&_db->mutex);
+        /* db unlock */
+        return m->value;
      }
    else
      ERR("I can't found %s in the database", sha1);
    eina_lock_release(&_db->mutex);
    /* db unlock */
+   return NULL;
 }

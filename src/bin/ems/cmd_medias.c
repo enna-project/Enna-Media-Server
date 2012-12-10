@@ -92,7 +92,7 @@ _node_info_connected_cb(void *data, Ems_Node *node)
              ecore_main_loop_quit();
           }
         printf("get medias : %s\n", sha1);
-        ems_node_media_info_get(node, sha1, "name",
+        ems_node_media_info_get(node, sha1, "clean_name",
                                 _info_add_cb, NULL, NULL, NULL);
         printf("TIMER DEL\n");
         ecore_timer_del(timer);
