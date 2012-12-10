@@ -120,8 +120,8 @@ struct _Match_Type {
 } match_type[] = {
   { "medias_req", _medias_req_edd, &ems_medias_req_edd },
   { "medias", _medias_edd, &ems_medias_add_edd },
-  { "media_infos", _media_infos_edd, &ems_media_infos_edd },
-  { "media_infos_req", _media_infos_req_edd, &ems_media_infos_req_edd },
+  { "media_info", _media_infos_edd, &ems_media_infos_edd },
+  { "media_info_req", _media_infos_req_edd, &ems_media_infos_req_edd },
   { NULL, 0, NULL }
 };
 
