@@ -29,11 +29,11 @@ extern const int sha1_size;
 
 typedef struct _SHA1 SHA1;
 
-typedef struct _SHA1 {
+struct _SHA1 {
     uint64_t count;
     uint8_t buffer[64];
     uint32_t state[5];
-} SHA1;
+};
 
 void sha1_init(SHA1* context);
 void sha1_update(SHA1* context, const uint8_t* data, unsigned int len);
