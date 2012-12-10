@@ -43,6 +43,7 @@ static Commands commands[] = {
   { "ip", cmd_ip },
   { "port", cmd_port },
   { "medias", cmd_medias },
+  { "infos", cmd_media_info },
 };
 
 static int

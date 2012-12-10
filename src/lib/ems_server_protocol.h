@@ -48,7 +48,7 @@ struct _Medias
 
 struct _Media_Infos_Req
 {
-   const char *uuid;
+   const char *sha1;
    const char *metadata;
 };
 

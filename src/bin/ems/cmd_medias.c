@@ -7,6 +7,7 @@
 
 static Ecore_Timer *timer = NULL;
 static const char *node_name = NULL;
+static const char *sha1 = NULL;
 
 static Eina_Bool
 _timer_cb(void *data)
@@ -71,6 +72,34 @@ _node_connected_cb(void *data, Ems_Node *node)
      }
 
 }
+static void _info_add_cb(void *data, Ems_Node *node,
+                            const char *value)
+{
+   printf("Value : %s\n", value);
+}
+
+static void
+_node_info_connected_cb(void *data, Ems_Node *node)
+{
+
+   if (!strcmp(ems_node_name_get(node), node_name))
+     {
+        Ems_Collection *c;
+
+        if (!ems_node_connect(node))
+          {
+             printf("Error connecting node %s\n", node_name);
+             ecore_main_loop_quit();
+          }
+        printf("get medias : %s\n", sha1);
+        ems_node_media_info_get(node, sha1, "name",
+                                _info_add_cb, NULL, NULL, NULL);
+        printf("TIMER DEL\n");
+        ecore_timer_del(timer);
+        timer = NULL;
+     }
+
+}
 
 
 int
@@ -104,6 +133,26 @@ cmd_medias(int argc, char **argv)
                         _node_connected_cb, NULL, NULL);
         timer = ecore_timer_add(DETECTION_TIMEOUT, _timer_cb, NULL);
      }
+
+   return EINA_TRUE;
+}
+
+int
+cmd_media_info(int argc, char **argv)
+{
+   argv++;
+   argc--;
+   sha1 = argv[0];
+
+   argv++;
+   argc--;
+   node_name = argv[0];
+
+   printf("search for %s on %s\n", sha1, node_name);
+
+   ems_node_cb_set(_node_add_cb, NULL, NULL,
+                   _node_info_connected_cb, NULL, NULL);
+   timer = ecore_timer_add(DETECTION_TIMEOUT, _timer_cb, NULL);
 
    return EINA_TRUE;
 }
