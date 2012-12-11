@@ -24,7 +24,7 @@ cmd_scan(int argc, char **argv)
 {
    printf("Cmd Scann\n");
    
-   timer = ecore_timer_add(1.0, _timer_cb, NULL);
+   timer = ecore_timer_add(DETECTION_TIMEOUT, _timer_cb, NULL);
 
    return EINA_TRUE;
 }

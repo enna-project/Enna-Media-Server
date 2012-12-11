@@ -101,7 +101,7 @@ _media_info_cb(void *data __UNUSED__, Ecore_Con_Reply *reply __UNUSED__, const c
 
 
    DBG("Value read : %s", info->value);
-   EINA_LIST_FOREACH(_media_info_cb, l, cb)
+   EINA_LIST_FOREACH(_media_infos_get_cb, l, cb)
      {
         if (cb->add_cb)
           cb->add_cb(cb->data, data, info->value);
