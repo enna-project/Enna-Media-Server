@@ -3,8 +3,6 @@
 
 #include "cmds.h"
 
-#define DETECTION_TIMEOUT 1.0
-
 typedef enum _Print_Value
 {
   PRINT_ALL,
