@@ -55,6 +55,7 @@ struct _Media_Infos_Req
 
 struct _Media_Infos
 {
+   const char *sha1;
    const char *value;
 };
 
