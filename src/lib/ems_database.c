@@ -651,10 +651,18 @@ ems_database_info_get(const char *sha1, const char *meta)
         Ems_Db_Metadata *m;
 
         m = eina_hash_find(info->metadatas, meta);
-        printf("Return %s\n", m->value);
-        eina_lock_release(&_db->mutex);
+        if (m)
+          {
+             printf("Return %s\n", m->value);
+             eina_lock_release(&_db->mutex);
         /* db unlock */
-        return m->value;
+             return m->value;
+          }
+        else
+          {
+             eina_lock_release(&_db->mutex);
+             return NULL;
+          }
      }
    else
      ERR("I can't found %s in the database", sha1);
