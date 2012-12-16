@@ -97,18 +97,21 @@ _medias_cb(void *data, Ecore_Con_Reply *reply __UNUSED__, const char *name __UNU
 static void
 _media_info_cb(void *data __UNUSED__, Ecore_Con_Reply *reply __UNUSED__, const char *name __UNUSED__, void *value)
 {
-   Eina_List *l;
+   Eina_List *l, *cb_list;
    Ems_Node_Media_Infos_Get_Cb *cb;
    Media_Infos *info = value;
 
    DBG("Value read : %s - %s", info->value, info->sha1);
 
-   /*   EINA_LIST_FOREACH(_media_infos_get_cb, l, cb)
+   cb_list = eina_hash_find(_media_info_hash_cb, info->sha1);
+   if (cb_list)
      {
-        if (cb->add_cb)
-          cb->add_cb(cb->data, data, info->value);
+        EINA_LIST_FOREACH(cb_list, l, cb) 
+          {
+             if (cb->add_cb)
+               cb->add_cb(cb->data, data, info->value);
+          }
      }
-   */
 }
 
 static Eina_Bool

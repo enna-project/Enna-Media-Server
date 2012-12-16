@@ -108,6 +108,7 @@ _media_infos_edd(void)
 
    EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Media_Infos);
    edd =  eet_data_descriptor_stream_new(&eddc);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Media_Infos, "sha1", sha1, EET_T_STRING);
    EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Media_Infos, "value", value, EET_T_STRING);
 
    return edd;
