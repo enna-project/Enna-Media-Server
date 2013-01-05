@@ -26,7 +26,7 @@
 #ifndef _EMS_CMD_SCAN
 #define _EMS_CMD_SCAN
 
-#define DETECTION_TIMEOUT 0.1
+#define DETECTION_TIMEOUT 0.5
 
 int cmd_scan(int argc, char **argv);
 int cmd_list(int argc, char **argv);

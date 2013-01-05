@@ -165,8 +165,8 @@ _add_item_file_name_cb(void *data, Ems_Node *node __UNUSED__, const char *value)
    else
      {
         it->name = eina_stringshare_add("Unknown");
-        elm_genlist_item_fields_update(it->it, "name",
-                                       ELM_GENLIST_ITEM_FIELD_TEXT);
+//        elm_genlist_item_fields_update(it->it, "name",
+//                                       ELM_GENLIST_ITEM_FIELD_TEXT);
         ERR("Cannot find a title for this file: :'(");
      }
 }
@@ -217,7 +217,7 @@ _add_item_backdrop_cb(void *data, Ems_Node *node __UNUSED__, const char *value)
 }
 
 static void
-_add_item_cb(void *data, Ems_Node *node, const char *media)
+_add_item_cb(void *data, Ems_Node *node, Ems_Video *media)
 {
    Enna_View_Video_List *act = data;
    Enna_View_Video_List_Item *it;
@@ -228,7 +228,8 @@ _add_item_cb(void *data, Ems_Node *node, const char *media)
    it = calloc(1, sizeof (Enna_View_Video_List_Item));
    it->node = node;
    it->act = act;
-   it->media = eina_stringshare_add(media);
+   it->media =  ems_video_hash_key_get(media);
+   printf("it->media %s\n", it->media);
    it->it = elm_genlist_item_append(act->list, &itc_item,
                                     it,
                                     gr->it/* parent */,
@@ -240,11 +241,11 @@ _add_item_cb(void *data, Ems_Node *node, const char *media)
 
    act->nb_items++;
 
-   ems_node_media_info_get(node, media, "name", _add_item_name_cb,
+   ems_node_media_info_get(node, it->media, "name", _add_item_name_cb,
                              NULL, NULL, it);
-   ems_node_media_info_get(node, media, "poster", _add_item_poster_cb,
+   ems_node_media_info_get(node, it->media, "poster", _add_item_poster_cb,
                              NULL, NULL, it);
-   ems_node_media_info_get(node, media, "backdrop", _add_item_backdrop_cb,
+   ems_node_media_info_get(node, it->media, "backdrop", _add_item_backdrop_cb,
                              NULL, NULL, it);
 
 

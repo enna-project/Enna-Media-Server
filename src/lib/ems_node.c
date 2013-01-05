@@ -69,7 +69,9 @@ struct _Ems_Node_Cb
 static Eina_List *_nodes = NULL;
 static Eina_List *_nodes_cb = NULL;
 static Eina_List *_media_get_cb = NULL;
-static Eina_List *_media_infos_get_cb = NULL;
+//static Eina_List *_media_infos_get_cb = NULL;
+
+static Eina_Hash *_media_info_hash_cb = NULL;
 
 static void
 _medias_cb(void *data, Ecore_Con_Reply *reply __UNUSED__, const char *name __UNUSED__, void *value)
@@ -95,16 +97,20 @@ _medias_cb(void *data, Ecore_Con_Reply *reply __UNUSED__, const char *name __UNU
 static void
 _media_info_cb(void *data __UNUSED__, Ecore_Con_Reply *reply __UNUSED__, const char *name __UNUSED__, void *value)
 {
-   Eina_List *l;
+   Eina_List *l, *cb_list;
    Ems_Node_Media_Infos_Get_Cb *cb;
    Media_Infos *info = value;
 
+   DBG("Value read : %s - %s", info->value, info->sha1);
 
-   DBG("Value read : %s", info->value);
-   EINA_LIST_FOREACH(_media_infos_get_cb, l, cb)
+   cb_list = eina_hash_find(_media_info_hash_cb, info->sha1);
+   if (cb_list)
      {
-        if (cb->add_cb)
-          cb->add_cb(cb->data, data, info->value);
+        EINA_LIST_FOREACH(cb_list, l, cb) 
+          {
+             if (cb->add_cb)
+               cb->add_cb(cb->data, data, info->value);
+          }
      }
 }
 
@@ -452,13 +458,19 @@ ems_node_media_info_get(Ems_Node *node __UNUSED__,
 {
    Media_Infos_Req *req;
    Ems_Node_Media_Infos_Get_Cb *cb = calloc(1, sizeof(Ems_Node_Media_Infos_Get_Cb));
+   Eina_List *cb_list;
 
    DBG("");
 
    cb->add_cb = info_add;
    cb->data = data;
 
-   _media_infos_get_cb = eina_list_append(_media_infos_get_cb, cb);
+   if (!_media_info_hash_cb)
+     _media_info_hash_cb = eina_hash_string_superfast_new(NULL/*_media_info_hash_free*/);
+
+   cb_list = eina_hash_find(_media_info_hash_cb, sha1);
+   cb_list = eina_list_append(cb_list, cb);
+   eina_hash_set(_media_info_hash_cb, sha1, cb_list);
 
    DBG("Node reply : %p", node->reply);
 

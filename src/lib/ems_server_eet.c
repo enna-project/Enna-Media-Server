@@ -67,6 +67,7 @@ _media_info_req_cb(void *data __UNUSED__, Ecore_Con_Reply *reply, const char *na
    ret = calloc(1, sizeof(Media_Infos));
    printf("get info for : %s %s\n", req->sha1, req->metadata);
    ret->value = ems_database_info_get(req->sha1, req->metadata);;
+   ret->sha1 = req->sha1;
    ecore_con_eet_send(reply, "media_info", ret);
    
 }

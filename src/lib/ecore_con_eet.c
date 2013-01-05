@@ -118,7 +118,6 @@ static const char *
 _ecore_con_eet_data_type_get(const void *data, Eina_Bool *unknow EINA_UNUSED)
 {
    const Ecore_Con_Eet_Protocol *p = data;
-   printf("Get type : %s\n", p->type);
    return p->type;
 }
 
@@ -126,7 +125,6 @@ static Eina_Bool
 _ecore_con_eet_data_type_set(const char *type, void *data, Eina_Bool unknow EINA_UNUSED)
 {
    Ecore_Con_Eet_Protocol *p = data;
-   printf("Set type : %s\n", p->type);
    p->type = type;
    return EINA_TRUE;
 }
@@ -155,13 +153,10 @@ _ecore_con_eet_read_cb(const void *eet_data, size_t size, void *user_data)
    Ecore_Con_Eet_Protocol *protocol;
    Ecore_Con_Eet_Data *cb;
 
-   printf("decode\n");
    protocol = eet_data_descriptor_decode(n->ece->edd, eet_data, size);
    if (!protocol) return EINA_TRUE;
 
-   printf("try to find %s\n", protocol->type);
    cb = eina_hash_find(n->ece->data_callbacks, protocol->type);
-   printf("Can't find ? %s\n", protocol->type);
    if (!cb) return EINA_TRUE; /* Should I report unknow protocol communication ? */
    
    cb->func((void*)cb->data, n, cb->name, protocol->data);
