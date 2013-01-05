@@ -81,7 +81,7 @@ _medias_edd(void)
 
    EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Medias);
    edd =  eet_data_descriptor_stream_new(&eddc);
-   EET_DATA_DESCRIPTOR_ADD_LIST(edd, Medias, "files", files, ems_video_item_edd);
+   EET_DATA_DESCRIPTOR_ADD_LIST(edd, Medias, "files", files, _edd_media);
 
    return edd;
 }

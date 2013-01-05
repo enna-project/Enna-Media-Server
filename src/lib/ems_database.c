@@ -38,97 +38,85 @@
 
 #define EMS_DATABASE_FILE "database.eet"
 #define DATABASES_SECTION "databases"
-#define VIDEOS_HASH_SECTION "videos_hash"
+#define METADATAS_SECTION "metadatas"
 /*============================================================================*
  *                                  Local                                     *
  *============================================================================*/
 
-
-typedef struct _Ems_Db_Databases_Item Ems_Db_Databases_Item;
-typedef struct _Ems_Db_Databases Ems_Db_Databases;
 typedef struct _Ems_Db Ems_Db;
-typedef struct _Ems_Db_Places Ems_Db_Places;
-typedef struct _Ems_Db_Places_Item Ems_Db_Places_Item;
-typedef struct _Ems_Db_Place_Videos Ems_Db_Place_Videos;
-
-typedef struct _Ems_Db_Videos Ems_Db_Videos;
-typedef struct _Ems_Db_Video_Infos Ems_Db_Video_Infos;
-typedef struct _Ems_Db_Videos_Hash Ems_Db_Videos_Hash;
+typedef struct _Ems_Db_Database Ems_Db_Database;
+typedef struct _Ems_Db_Place Ems_Db_Place;
+typedef struct _Ems_Db_Media Ems_Db_Media;
+typedef struct _Ems_Db_Metadatas Ems_Db_Metadatas;
 typedef struct _Ems_Db_Metadata Ems_Db_Metadata;
+typedef struct _Ems_Db_Metadatas_Cont Ems_Db_Metadatas_Cont;
+typedef struct _Ems_Db_Databases_Cont Ems_Db_Databases_Cont;
 
+struct _Ems_Db_Database
+{
+   const char  *sha1;
+   Eina_List   *places;
+};
+
+struct _Ems_Db_Place
+{
+   const char  *path;
+   const char  *label;
+   int          type;
+   Eina_List   *medias;
+};
+
+struct _Ems_Db_Media
+{
+   const char  *sha1;
+   const char  *path;
+   int64_t      time;
+};
+
+struct _Ems_Db_Metadatas
+{
+   const char  *sha1;
+   int          rev;
+   Eina_Hash   *metadatas;
+};
 
 struct _Ems_Db_Metadata
 {
-   const char *value;
+   const char  *meta;
+   const char  *value;
 };
 
-struct _Ems_Db
-{
-   const char *filename;
-   Eet_File *ef; /* The Eet file */
-   Ems_Db_Databases *databases; /* List of all database known*/
-   Eina_List *video_places; /* List containing section of each video place */
-   Ems_Db_Videos_Hash *videos_hash; /* One big hash table to store all video medias informations */
-   Eina_Lock mutex; /* Mutex to lock/unlock access to the database, and let the use of db in multiple threads */
-};
-
-struct _Ems_Db_Databases
+struct _Ems_Db_Databases_Cont
 {
    Eina_List *list;
 };
 
-struct _Ems_Db_Databases_Item
-{
-   const char *uuid;
-   Eina_Bool is_local;
-   Eina_List *places;
-};
-
-struct _Ems_Db_Places
-{
-   int rev;
-   Eina_List *list;
-};
-
-struct _Ems_Db_Places_Item
-{
-   const char *path;
-   const char *label;
-   int type;
-   int video_rev;
-   Eina_List *video_list;
-};
-
-struct _Ems_Db_Place_Videos
-{
-   int rev;
-   Eina_List *list;
-};
-
-struct _Ems_Db_Videos_Hash
+struct _Ems_Db_Metadatas_Cont
 {
    Eina_Hash *hash;
 };
 
-struct _Ems_Db_Video_Infos
+struct _Ems_Db
 {
-   int rev;
-   uint64_t mtime;
-   Eina_Hash *metadatas;
+   const char  *filename;
+   Eet_File    *ef; /* The Eet file */
+   Ems_Db_Databases_Cont   *databases; /* List of all database known*/
+   Ems_Db_Metadatas_Cont   *metadatas; /* One big hash table to store all video medias informations */
+   Eina_Lock    mutex; /* Mutex to lock/unlock access to the database, and let the use of db in multiple threads */
 };
 
 static Ems_Db *_db;
 static int _ems_init_count = 0;
 
-static Eet_Data_Descriptor *_edd_databases;
-static Eet_Data_Descriptor *_edd_databases_item;
-static Eet_Data_Descriptor *_edd_places_item;
-static Eet_Data_Descriptor *_edd_video_infos;
-static Eet_Data_Descriptor *_edd_videos_hash;
+static Eet_Data_Descriptor *_edd_databases_cont;
+static Eet_Data_Descriptor *_edd_metadatas_cont;
+
+static Eet_Data_Descriptor *_edd_metadatas;
 static Eet_Data_Descriptor *_edd_metadata;
 
-Eet_Data_Descriptor *ems_video_item_edd;
-
+Eet_Data_Descriptor *_edd_media;
+static Eet_Data_Descriptor *_edd_place;
+static Eet_Data_Descriptor *_edd_database;
 
 static void
 _init_edd(void)
@@ -136,89 +124,98 @@ _init_edd(void)
    Eet_Data_Descriptor_Class eddc;
    Eet_Data_Descriptor *edd;
 
-   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Video);
-   edd = eet_data_descriptor_stream_new(&eddc);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Video, "hash_key", hash_key, EET_T_STRING);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Video, "title", title, EET_T_STRING);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Video, "time", time, EET_T_LONG_LONG);
-
-   ems_video_item_edd = edd;
-   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Db_Places_Item);
+   /* Data Descriptor for medias */
+   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Db_Media);
    edd = eet_data_descriptor_stream_new(&eddc);
 
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Places_Item, "path", path, EET_T_STRING);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Places_Item, "label", label, EET_T_STRING);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Places_Item, "type", type, EET_T_INT);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Places_Item, "videos_rev", video_rev, EET_T_INT);
-   EET_DATA_DESCRIPTOR_ADD_LIST(edd, Ems_Db_Places_Item, "video_list", video_list, ems_video_item_edd);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Media, "sha1", sha1, EET_T_STRING);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Media, "path", path, EET_T_STRING);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Media, "time", time, EET_T_LONG_LONG);
 
-   _edd_places_item = edd;
+   _edd_media = edd;
 
-   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Db_Databases_Item);
+   /* Data Descriptor for places */
+   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Db_Place);
    edd = eet_data_descriptor_stream_new(&eddc);
 
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Databases_Item, "uuid", uuid, EET_T_STRING);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Databases_Item, "is_local", is_local, EET_T_UCHAR);
-   EET_DATA_DESCRIPTOR_ADD_LIST(edd, Ems_Db_Databases_Item, "places", places, _edd_places_item);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Place, "path", path, EET_T_STRING);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Place, "label", label, EET_T_STRING);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Place, "type", type, EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_LIST(edd, Ems_Db_Place, "medias", medias, _edd_media);
 
-   _edd_databases_item = edd;
+   _edd_place = edd;
 
-   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Db_Databases);
+   /* Data Descriptor for database */
+   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Db_Database);
    edd = eet_data_descriptor_stream_new(&eddc);
 
-   EET_DATA_DESCRIPTOR_ADD_LIST(edd, Ems_Db_Databases, "list", list, _edd_databases_item);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Database, "sha1", sha1, EET_T_STRING);
+   EET_DATA_DESCRIPTOR_ADD_LIST(edd, Ems_Db_Database, "places", places, _edd_place);
 
-   _edd_databases = edd;
+   _edd_database = edd;
 
+   /* Data Descriptor for list of medias */
+   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Db_Databases_Cont);
+   edd = eet_data_descriptor_stream_new(&eddc);
+
+   EET_DATA_DESCRIPTOR_ADD_LIST(edd, Ems_Db_Databases_Cont, "list", list, _edd_database);
+
+   _edd_databases_cont = edd;
+
+   /* Data Descritptors for a metadata item */
    EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Db_Metadata);
    edd = eet_data_descriptor_stream_new(&eddc);
 
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Metadata, "meta", meta, EET_T_STRING);
    EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Metadata, "value", value, EET_T_STRING);
 
    _edd_metadata = edd;
 
-   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Db_Video_Infos);
+   /* Data Descritptors for Content of Metadatas Hash */
+   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Db_Metadatas);
    edd = eet_data_descriptor_stream_new(&eddc);
 
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Infos, "rev", rev, EET_T_INT);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Video_Infos, "mtime", mtime, EET_T_LONG_LONG);
-   EET_DATA_DESCRIPTOR_ADD_HASH(edd, Ems_Db_Video_Infos, "metadatas", metadatas, _edd_metadata);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Metadatas, "sha1", sha1, EET_T_STRING);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Metadatas, "rev", rev, EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_HASH(edd, Ems_Db_Metadatas, "metadatas", metadatas, _edd_metadata);
 
-   _edd_video_infos = edd;
+   _edd_metadatas = edd;
 
-   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Db_Videos_Hash);
+   /* Data Descritptors for Metadatas Hash */
+   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Db_Metadatas_Cont);
    edd = eet_data_descriptor_stream_new(&eddc);
 
-   EET_DATA_DESCRIPTOR_ADD_HASH(edd, Ems_Db_Videos_Hash, "hash", hash, _edd_video_infos);
+   EET_DATA_DESCRIPTOR_ADD_HASH(edd, Ems_Db_Metadatas_Cont, "hash", hash, _edd_metadatas);
 
-   _edd_videos_hash = edd;
-
+   _edd_metadatas_cont = edd;
 }
 
 static void
-_metadata_free(void *data)
+_metadatas_cont_hash_free(void *data)
+{
+   Ems_Db_Metadatas *meta = data;
+
+   if (!meta)
+     return;
+
+   eina_stringshare_del(meta->sha1);
+   eina_hash_free(meta->metadatas);
+   free(meta);
+}
+
+static void
+_metadata_hash_free(void *data)
 {
    Ems_Db_Metadata *meta = data;
 
    if (!meta)
      return;
 
+
+   eina_stringshare_del(meta->meta);
    eina_stringshare_del(meta->value);
    free(meta);
 }
-
-static void
-_video_hash_free(void *data)
-{
-   Ems_Db_Videos_Hash *infos = data;
-
-   if (!infos)
-     return;
-
-   eina_hash_free(infos->hash);
-   free(infos);
-}
-
 /*============================================================================*
  *                                 Global                                     *
  *============================================================================*/
@@ -244,7 +241,7 @@ ems_database_init(void)
 
    snprintf(path, sizeof(path), "%s/"EMS_DATABASE_FILE, ems_config_cache_dirname_get());
    _db->filename = eina_stringshare_add(path);
-   DBG("Try to load database stored in%s", path);
+   DBG("Try to load database stored in %s", path);
    if (ecore_file_exists(path))
      {
         DBG("Database exists");
@@ -270,51 +267,55 @@ ems_database_init(void)
    /* Database already exists, found the local one */
    if (exists)
      {
-        _db->databases = eet_data_read(_db->ef, _edd_databases, DATABASES_SECTION);
+        _db->databases = eet_data_read(_db->ef, _edd_databases_cont, DATABASES_SECTION);
+        if (!_db->databases)
+          _db->databases = calloc(1, sizeof(Ems_Db_Databases_Cont));
         DBG("Nb databases : %d", eina_list_count(_db->databases->list));
 
-        _db->videos_hash = eet_data_read(_db->ef, _edd_videos_hash, VIDEOS_HASH_SECTION);
-        if (!_db->videos_hash->hash)
-          _db->videos_hash->hash = eina_hash_string_superfast_new(_video_hash_free);
+        _db->metadatas = eet_data_read(_db->ef, _edd_metadatas_cont, METADATAS_SECTION);
+        if (!_db->metadatas)
+          {
+             _db->metadatas = calloc(1, sizeof(Ems_Db_Metadatas_Cont));
+             _db->metadatas->hash = eina_hash_string_superfast_new(_metadatas_cont_hash_free);
+          }
      }
    /* Database is virgin, create the section 'databases', and add our local database */
    else
      {
-        Ems_Db_Databases_Item *db;
-        Ems_Db_Places_Item *place_item;
+        Ems_Db_Database *db;
+        Ems_Db_Place *place;
         Ems_Directory *dir;
         Eina_List *l;
         char uuid[37];
         uuid_t u ;
 
-        /* Create Section Databases index*/
+        /* Create Section Databases index */
+        _db->databases = calloc(1, sizeof(Ems_Db_Databases_Cont));
+        _db->metadatas = calloc(1, sizeof(Ems_Db_Metadatas_Cont));
+        _db->metadatas->hash = eina_hash_string_superfast_new(_metadatas_cont_hash_free);
 
-        _db->databases = calloc(1, sizeof(Ems_Db_Databases));
         uuid_generate(u);
         uuid_unparse(u, uuid);
         INF("Generate UUID for database : %s", uuid);
 
-        db = calloc(1, sizeof (Ems_Db_Databases_Item));
-        db->uuid = eina_stringshare_add(uuid);
-        db->is_local = EINA_TRUE;
+        db = calloc(1, sizeof (Ems_Db_Database));
+        db->sha1 = eina_stringshare_add(uuid);
         /* For each place, create the media structure */
         EINA_LIST_FOREACH(ems_config->places, l, dir)
           {
-             place_item = calloc(1, sizeof(Ems_Db_Places_Item));
-             place_item->path = eina_stringshare_add(dir->path);
-             place_item->label = eina_stringshare_add(dir->label);
-             place_item->type = dir->type;
-             place_item->video_rev = 1;
-             db->places = eina_list_append(db->places, place_item);
+             place = calloc(1, sizeof(Ems_Db_Place));
+             place->path = eina_stringshare_add(dir->path);
+             place->label = eina_stringshare_add(dir->label);
+             place->type = dir->type;
+             db->places = eina_list_append(db->places, place);
           }
         _db->databases->list = eina_list_append(_db->databases->list, db);
-        eet_data_write(_db->ef, _edd_databases, DATABASES_SECTION, _db->databases, EINA_TRUE);
 
-        _db->videos_hash = calloc(1, sizeof(Ems_Db_Videos_Hash));
-        _db->videos_hash->hash = eina_hash_string_superfast_new(_video_hash_free);
-
-        eet_data_write(_db->ef, _edd_videos_hash, VIDEOS_HASH_SECTION, _db->videos_hash, EINA_TRUE);
-
+        printf("before before write\n");
+        eet_data_write(_db->ef, _edd_databases_cont, DATABASES_SECTION, _db->databases, EINA_FALSE);
+        printf("before write\n");
+        eet_data_write(_db->ef, _edd_metadatas_cont, METADATAS_SECTION, _db->metadatas, EINA_FALSE);
+        printf("after write\n");
         eet_sync(_db->ef);
      }
 
@@ -334,8 +335,8 @@ ems_database_shutdown(void)
 
    eina_list_free(_db->databases->list);
    free(_db->databases);
-   eina_hash_free(_db->videos_hash->hash);
-   free(_db->videos_hash);
+   eina_hash_free(_db->metadatas->hash);
+   free(_db->metadatas);
 
    eina_lock_free(&_db->mutex);
 
@@ -367,9 +368,9 @@ ems_database_shutdown(void)
 void
 ems_database_file_insert(const char *hash, const char *place, const char *title, int64_t mtime, int64_t time)
 {
-   Ems_Db_Video_Infos *info;
-   Ems_Db_Databases_Item *db;
-   Ems_Db_Places_Item *item;
+   Ems_Db_Metadatas *infos;
+   Ems_Db_Database *db;
+   Ems_Db_Place *item;
    Ems_Video *video_item;
    Eina_List *l1, *l2, *l3;
 
@@ -377,30 +378,26 @@ ems_database_file_insert(const char *hash, const char *place, const char *title,
      return;
 
    /* db lock */
-
    eina_lock_take(&_db->mutex);
 
-   info = eina_hash_find(_db->videos_hash->hash, hash);
+   infos = eina_hash_find(_db->metadatas->hash, hash);
 
-   if (!info)
+   if (!infos)
      {
         Ems_Db_Metadata *meta;
 
         /* This file doesn't exist in database, add it */
-        info = calloc(1, sizeof(Ems_Db_Video_Infos));
-        info->rev = 1;
-        info->mtime = mtime;
-        info->metadatas = eina_hash_string_superfast_new(_metadata_free);
+        infos = calloc(1, sizeof(Ems_Db_Metadatas));
+        infos->rev = 1;
+        infos->metadatas = eina_hash_string_superfast_new(_metadata_hash_free);
         meta = calloc(1, sizeof(Ems_Db_Metadata));
         meta->value = eina_stringshare_add(title);
-        meta = eina_hash_set(info->metadatas, "title", meta);
+        meta = eina_hash_set(infos->metadatas, "title", meta);
      }
    else
-     info->rev++;
+     infos->rev++;
 
-   info->mtime = mtime;
-
-   eina_hash_set(_db->videos_hash->hash, hash, info);
+   eina_hash_set(_db->metadatas->hash, hash, infos);
 
    /* Search for the right place to add the file*/
    EINA_LIST_FOREACH(_db->databases->list, l1, db)
@@ -411,7 +408,7 @@ ems_database_file_insert(const char *hash, const char *place, const char *title,
              if (!strcmp(place, item->label))
                {
                   /* Search if the file exists, if yes update the scann time and return */
-                  EINA_LIST_FOREACH(item->video_list, l3, video_item)
+                  EINA_LIST_FOREACH(item->medias, l3, video_item)
                     if (!strcmp(video_item->hash_key, hash))
                       {
                          video_item->time = time;
@@ -424,7 +421,7 @@ ems_database_file_insert(const char *hash, const char *place, const char *title,
                   video_item->hash_key = eina_stringshare_add(hash);
                   video_item->title = eina_stringshare_add(title);
                   video_item->time = time;
-                  item->video_list = eina_list_append(item->video_list, video_item);
+                  item->medias = eina_list_append(item->medias, video_item);
                   eina_lock_release(&_db->mutex);
                   /* db unlock */
                   return;
@@ -443,8 +440,8 @@ ems_database_flush(void)
 
    /* db lock */
    eina_lock_take(&_db->mutex);
-   eet_data_write(_db->ef, _edd_databases, DATABASES_SECTION, _db->databases, EINA_TRUE);
-   eet_data_write(_db->ef, _edd_videos_hash, VIDEOS_HASH_SECTION, _db->videos_hash, EINA_FALSE);
+   eet_data_write(_db->ef, _edd_databases_cont, DATABASES_SECTION, _db->databases, EINA_FALSE);
+   eet_data_write(_db->ef, _edd_metadatas_cont, METADATAS_SECTION, _db->metadatas, EINA_FALSE);
    eet_sync(_db->ef);
    eina_lock_release(&_db->mutex);
    /* db unlock */
@@ -460,7 +457,7 @@ ems_database_flush(void)
 void
 ems_database_meta_insert(const char *hash, const char *meta, const char *value)
 {
-   Ems_Db_Video_Infos *info;
+   Ems_Db_Metadatas *infos;
 
    DBG(" %s %s %s", hash, meta, value);
 
@@ -469,20 +466,21 @@ ems_database_meta_insert(const char *hash, const char *meta, const char *value)
 
    /* db lock */
    eina_lock_take(&_db->mutex);
-   info = eina_hash_find(_db->videos_hash->hash, hash);
+   infos = eina_hash_find(_db->metadatas->hash, hash);
    printf("search %s %s\n", meta, value);
-   if (info)
+   if (infos)
      {
         Ems_Db_Metadata *m;
 
-        if (!info->metadatas)
-          info->metadatas = eina_hash_string_superfast_new(_metadata_free);
-        m = eina_hash_find(info->metadatas, meta);
+        if (!infos->metadatas)
+          infos->metadatas = eina_hash_string_superfast_new(_metadata_hash_free);
+        m = eina_hash_find(infos->metadatas, meta);
         if (!m)
           m = calloc(1, sizeof(Ems_Db_Metadata));
         m->value = eina_stringshare_add(value);
+        m->meta = eina_stringshare_add(meta);
         printf("Add %s %s\n", meta, value);
-        m = eina_hash_set(info->metadatas, meta, m);
+        m = eina_hash_set(infos->metadatas, meta, m);
      }
    else
      ERR("I can't found %s in the database", hash);
@@ -495,8 +493,8 @@ ems_database_files_get(void)
 {
    Eina_List *l1, *l2;
    Eina_List *ret = NULL;
-   Ems_Db_Databases_Item *db;
-   Ems_Db_Places_Item *item;
+   Ems_Db_Database *db;
+   Ems_Db_Place *item;
 
    /* db lock */
    eina_lock_take(&_db->mutex);
@@ -504,7 +502,7 @@ ems_database_files_get(void)
      {
         EINA_LIST_FOREACH(db->places, l2, item)
           {
-             ret = eina_list_merge(ret,  item->video_list);
+             ret = eina_list_merge(ret,  item->medias);
           }
      }
    eina_lock_release(&_db->mutex);
@@ -522,8 +520,8 @@ const char *
 ems_database_file_uuid_get(char *filename)
 {
    Eina_List *l1, *l2, *l3;
-   Ems_Db_Databases_Item *db;
-   Ems_Db_Places_Item *item;
+   Ems_Db_Database *db;
+   Ems_Db_Place *item;
    Ems_Video *video_item;
 
    /* db lock */
@@ -534,7 +532,7 @@ ems_database_file_uuid_get(char *filename)
         EINA_LIST_FOREACH(db->places, l2, item)
           {
              /* Search if the file exists, if yes update the scann time and return */
-             EINA_LIST_FOREACH(item->video_list, l3, video_item)
+             EINA_LIST_FOREACH(item->medias, l3, video_item)
                if (!strcmp(video_item->hash_key, filename))
                  {
                     eina_lock_release(&_db->mutex);
@@ -551,19 +549,19 @@ ems_database_file_uuid_get(char *filename)
 int64_t
 ems_database_file_mtime_get(const char *hash)
 {
-   Ems_Db_Video_Infos *it;
+   Ems_Db_Metadatas *it;
 
    if (!hash || !_db)
      return -1;
 
    /* db lock */
    eina_lock_take(&_db->mutex);
-   it = eina_hash_find(_db->videos_hash->hash, hash);
+   it = eina_hash_find(_db->metadatas->hash, hash);
    eina_lock_release(&_db->mutex);
    /* db unlock */
 
    if (it)
-        return it->mtime;
+        return -1;
    else
         return -1;
   return -1;
@@ -584,8 +582,8 @@ ems_database_file_mtime_get(const char *hash)
 void
 ems_database_deleted_files_remove(int64_t time, const char *place)
 {
-   Ems_Db_Databases_Item *db;
-   Ems_Db_Places_Item *item;
+   Ems_Db_Database *db;
+   Ems_Db_Place *item;
    Eina_List *l1, *l2, *l3;
 
    /* db lock */
@@ -598,12 +596,12 @@ ems_database_deleted_files_remove(int64_t time, const char *place)
              if (!strcmp(place, item->label))
                {
                   Ems_Video *video_item;
-                  EINA_LIST_FOREACH(item->video_list, l3, video_item)
+                  EINA_LIST_FOREACH(item->medias, l3, video_item)
                     {
                        if (time != video_item->time)
                          {
                             INF("This file %s has been remove from disk (%lld / %lld)", video_item->title, time, video_item->time);
-                            item->video_list = eina_list_remove(item->video_list, video_item);
+                            item->medias = eina_list_remove(item->medias, video_item);
                             eina_stringshare_del(video_item->hash_key);
                             eina_stringshare_del(video_item->title);
                             free(video_item);
@@ -637,7 +635,7 @@ ems_database_deleted_files_remove(int64_t time, const char *place)
 const char *
 ems_database_info_get(const char *sha1, const char *meta)
 {
-   Ems_Db_Video_Infos *info;
+   Ems_Db_Metadatas *infos;
 
    if (!sha1 || !meta)
      return NULL;
@@ -645,12 +643,12 @@ ems_database_info_get(const char *sha1, const char *meta)
    /* db lock */
    eina_lock_take(&_db->mutex);
    
-   info = eina_hash_find(_db->videos_hash->hash, sha1);
-   if (info)
+   infos = eina_hash_find(_db->metadatas->hash, sha1);
+   if (infos)
      {
         Ems_Db_Metadata *m;
 
-        m = eina_hash_find(info->metadatas, meta);
+        m = eina_hash_find(infos->metadatas, meta);
         if (m)
           {
              printf("Return %s\n", m->value);
