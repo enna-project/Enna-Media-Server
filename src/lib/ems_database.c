@@ -52,10 +52,41 @@ typedef struct _Ems_Db_Metadata Ems_Db_Metadata;
 typedef struct _Ems_Db_Metadatas_Cont Ems_Db_Metadatas_Cont;
 typedef struct _Ems_Db_Databases_Cont Ems_Db_Databases_Cont;
 
+typedef struct _Ems_Db_Database_Req Ems_Db_Database_Req;
+typedef struct _Ems_Db_Place_Req Ems_Db_Place_Req;
+typedef struct _Ems_Db_Media_Req Ems_Db_Media_Req;
+typedef struct _Ems_Db_Metadatas_Req Ems_Db_Metadatas_Req;
+typedef struct _Ems_Db_Metadata_Req Ems_Db_Metadata_Req;
+typedef struct _Ems_Db_Metadatas_Cont_Req Ems_Db_Metadatas_Cont_Req;
+typedef struct _Ems_Db_Databases_Cont_Req Ems_Db_Databases_Cont_Req;
+
+Eet_Data_Descriptor *ems_edd_databases_cont;
+Eet_Data_Descriptor *ems_edd_metadatas_cont;
+Eet_Data_Descriptor *ems_edd_metadatas;
+Eet_Data_Descriptor *ems_edd_metadata;
+Eet_Data_Descriptor *ems_edd_media;
+Eet_Data_Descriptor *ems_edd_place;
+Eet_Data_Descriptor *ems_edd_database;
+
+
+Eet_Data_Descriptor *ems_edd_databases_cont_req;
+Eet_Data_Descriptor *ems_edd_metadatas_cont_req;
+Eet_Data_Descriptor *ems_edd_metadatas_req;
+Eet_Data_Descriptor *ems_edd_metadata_req;
+Eet_Data_Descriptor *ems_edd_media_req;
+Eet_Data_Descriptor *ems_edd_place_req;
+Eet_Data_Descriptor *ems_edd_database_req;
+
+
 struct _Ems_Db_Database
 {
    const char  *sha1;
    Eina_List   *places;
+};
+
+struct _Ems_Db_Database_Req
+{
+   const char *filter;
 };
 
 struct _Ems_Db_Place
@@ -66,11 +97,21 @@ struct _Ems_Db_Place
    Eina_List   *medias;
 };
 
+struct _Ems_Db_Place_Req
+{
+   const char  *sha1;
+};
+
 struct _Ems_Db_Media
 {
    const char  *sha1;
    const char  *path;
    int64_t      time;
+};
+
+struct _Ems_Db_Media_Req
+{
+   const char  *sha1;
 };
 
 struct _Ems_Db_Metadatas
@@ -80,21 +121,43 @@ struct _Ems_Db_Metadatas
    Eina_Hash   *metadatas;
 };
 
+struct _Ems_Db_Metadatas_Req
+{
+   const char  *sha1;
+};
+
 struct _Ems_Db_Metadata
 {
    const char  *meta;
    const char  *value;
 };
 
+struct _Ems_Db_Metadata_Req
+{
+   const char  *meta;
+};
+
+
 struct _Ems_Db_Databases_Cont
 {
    Eina_List *list;
+};
+
+struct _Ems_Db_Databases_Cont_Req
+{
+   const char *dummy;
 };
 
 struct _Ems_Db_Metadatas_Cont
 {
    Eina_Hash *hash;
 };
+
+struct _Ems_Db_Metadatas_Cont_Req
+{
+   const char *dummy;
+};
+
 
 struct _Ems_Db
 {
@@ -107,16 +170,6 @@ struct _Ems_Db
 
 static Ems_Db *_db;
 static int _ems_init_count = 0;
-
-static Eet_Data_Descriptor *_edd_databases_cont;
-static Eet_Data_Descriptor *_edd_metadatas_cont;
-
-static Eet_Data_Descriptor *_edd_metadatas;
-static Eet_Data_Descriptor *_edd_metadata;
-
-Eet_Data_Descriptor *_edd_media;
-static Eet_Data_Descriptor *_edd_place;
-static Eet_Data_Descriptor *_edd_database;
 
 static void
 _init_edd(void)
@@ -132,35 +185,48 @@ _init_edd(void)
    EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Media, "path", path, EET_T_STRING);
    EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Media, "time", time, EET_T_LONG_LONG);
 
-   _edd_media = edd;
+   ems_edd_media = edd;
 
-   /* Data Descriptor for places */
-   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Db_Place);
+   /* Data Descriptor for medias request*/
+   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Db_Media_Req);
    edd = eet_data_descriptor_stream_new(&eddc);
 
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Place, "path", path, EET_T_STRING);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Place, "label", label, EET_T_STRING);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Place, "type", type, EET_T_INT);
-   EET_DATA_DESCRIPTOR_ADD_LIST(edd, Ems_Db_Place, "medias", medias, _edd_media);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Media_Req, "sha1", sha1, EET_T_STRING);
 
-   _edd_place = edd;
+   ems_edd_media_req = edd;
 
    /* Data Descriptor for database */
    EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Db_Database);
    edd = eet_data_descriptor_stream_new(&eddc);
 
    EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Database, "sha1", sha1, EET_T_STRING);
-   EET_DATA_DESCRIPTOR_ADD_LIST(edd, Ems_Db_Database, "places", places, _edd_place);
+   EET_DATA_DESCRIPTOR_ADD_LIST(edd, Ems_Db_Database, "places", places, ems_edd_place);
 
-   _edd_database = edd;
+   ems_edd_database = edd;
+
+   /* Data Descriptor for database request*/
+   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Db_Database_Req);
+   edd = eet_data_descriptor_stream_new(&eddc);
+
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Database_Req, "filter", filter, EET_T_STRING);
+
+   ems_edd_database_req = edd;
 
    /* Data Descriptor for list of medias */
    EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Db_Databases_Cont);
    edd = eet_data_descriptor_stream_new(&eddc);
 
-   EET_DATA_DESCRIPTOR_ADD_LIST(edd, Ems_Db_Databases_Cont, "list", list, _edd_database);
+   EET_DATA_DESCRIPTOR_ADD_LIST(edd, Ems_Db_Databases_Cont, "list", list, ems_edd_database);
 
-   _edd_databases_cont = edd;
+   ems_edd_databases_cont = edd;
+
+   /* Data Descriptor for list of medias request*/
+   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Db_Databases_Cont);
+   edd = eet_data_descriptor_stream_new(&eddc);
+
+   EET_DATA_DESCRIPTOR_ADD_LIST(edd, Ems_Db_Databases_Cont, "list", list, ems_edd_database);
+
+   ems_edd_databases_cont = edd;
 
    /* Data Descritptors for a metadata item */
    EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Db_Metadata);
@@ -169,7 +235,7 @@ _init_edd(void)
    EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Metadata, "meta", meta, EET_T_STRING);
    EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Metadata, "value", value, EET_T_STRING);
 
-   _edd_metadata = edd;
+   ems_edd_metadata = edd;
 
    /* Data Descritptors for Content of Metadatas Hash */
    EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Db_Metadatas);
@@ -177,17 +243,17 @@ _init_edd(void)
 
    EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Metadatas, "sha1", sha1, EET_T_STRING);
    EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Db_Metadatas, "rev", rev, EET_T_INT);
-   EET_DATA_DESCRIPTOR_ADD_HASH(edd, Ems_Db_Metadatas, "metadatas", metadatas, _edd_metadata);
+   EET_DATA_DESCRIPTOR_ADD_HASH(edd, Ems_Db_Metadatas, "metadatas", metadatas, ems_edd_metadata);
 
-   _edd_metadatas = edd;
+   ems_edd_metadatas = edd;
 
    /* Data Descritptors for Metadatas Hash */
    EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Db_Metadatas_Cont);
    edd = eet_data_descriptor_stream_new(&eddc);
 
-   EET_DATA_DESCRIPTOR_ADD_HASH(edd, Ems_Db_Metadatas_Cont, "hash", hash, _edd_metadatas);
+   EET_DATA_DESCRIPTOR_ADD_HASH(edd, Ems_Db_Metadatas_Cont, "hash", hash, ems_edd_metadatas);
 
-   _edd_metadatas_cont = edd;
+   ems_edd_metadatas_cont = edd;
 }
 
 static void
@@ -267,12 +333,12 @@ ems_database_init(void)
    /* Database already exists, found the local one */
    if (exists)
      {
-        _db->databases = eet_data_read(_db->ef, _edd_databases_cont, DATABASES_SECTION);
+        _db->databases = eet_data_read(_db->ef, ems_edd_databases_cont, DATABASES_SECTION);
         if (!_db->databases)
           _db->databases = calloc(1, sizeof(Ems_Db_Databases_Cont));
         DBG("Nb databases : %d", eina_list_count(_db->databases->list));
 
-        _db->metadatas = eet_data_read(_db->ef, _edd_metadatas_cont, METADATAS_SECTION);
+        _db->metadatas = eet_data_read(_db->ef, ems_edd_metadatas_cont, METADATAS_SECTION);
         if (!_db->metadatas)
           {
              _db->metadatas = calloc(1, sizeof(Ems_Db_Metadatas_Cont));
@@ -312,9 +378,9 @@ ems_database_init(void)
         _db->databases->list = eina_list_append(_db->databases->list, db);
 
         printf("before before write\n");
-        eet_data_write(_db->ef, _edd_databases_cont, DATABASES_SECTION, _db->databases, EINA_FALSE);
+        eet_data_write(_db->ef, ems_edd_databases_cont, DATABASES_SECTION, _db->databases, EINA_FALSE);
         printf("before write\n");
-        eet_data_write(_db->ef, _edd_metadatas_cont, METADATAS_SECTION, _db->metadatas, EINA_FALSE);
+        eet_data_write(_db->ef, ems_edd_metadatas_cont, METADATAS_SECTION, _db->metadatas, EINA_FALSE);
         printf("after write\n");
         eet_sync(_db->ef);
      }
@@ -440,8 +506,8 @@ ems_database_flush(void)
 
    /* db lock */
    eina_lock_take(&_db->mutex);
-   eet_data_write(_db->ef, _edd_databases_cont, DATABASES_SECTION, _db->databases, EINA_FALSE);
-   eet_data_write(_db->ef, _edd_metadatas_cont, METADATAS_SECTION, _db->metadatas, EINA_FALSE);
+   eet_data_write(_db->ef, ems_edd_databases_cont, DATABASES_SECTION, _db->databases, EINA_FALSE);
+   eet_data_write(_db->ef, ems_edd_metadatas_cont, METADATAS_SECTION, _db->metadatas, EINA_FALSE);
    eet_sync(_db->ef);
    eina_lock_release(&_db->mutex);
    /* db unlock */

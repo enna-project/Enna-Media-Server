@@ -28,7 +28,7 @@
 
 #include "Ems.h"
 
-extern Eet_Data_Descriptor *_edd_media;
+extern Eet_Data_Descriptor *ems_edd_media;
 
 int ems_database_init(void);
 int ems_database_shutdown(void);
