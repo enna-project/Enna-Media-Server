@@ -43,32 +43,11 @@
 
 static Ecore_Con_Eet *ece = NULL;
 
-static void
-_medias_req_cb(void *data __UNUSED__, Ecore_Con_Reply *reply __UNUSED__, const char *name __UNUSED__, void *value __UNUSED__)
-{
-   Medias *req;
-
-   DBG("Server reply : %p", reply);
-
-   req = calloc(1, sizeof(Medias));
-   req->files = ems_database_files_get();
-
-   ecore_con_eet_send(reply, "medias", req);
-
-   return;
-}
 
 static void
-_media_info_req_cb(void *data __UNUSED__, Ecore_Con_Reply *reply, const char *name __UNUSED__, void *value)
+_database_get_cb(void *data __UNUSED__, Ecore_Con_Reply *reply, const char *name __UNUSED__, void *value)
 {
-   Media_Infos *ret;
-   Media_Infos_Req *req = value;
-
-   ret = calloc(1, sizeof(Media_Infos));
-   printf("get info for : %s %s\n", req->sha1, req->metadata);
-   ret->value = ems_database_info_get(req->sha1, req->metadata);;
-   ret->sha1 = req->sha1;
-   ecore_con_eet_send(reply, "media_info", ret);
+   DBG("");
    
 }
 
@@ -119,13 +98,9 @@ ems_server_eet_start(void)
    ecore_con_eet_client_connect_callback_add(ece, _client_connected_cb, NULL);
    //ecore_con_eet_client_disconnect_callback_add(ece, _client_disconnected_cb, NULL);
 
-   ecore_con_eet_register(ece, "medias_req", ems_medias_req_edd);
-   ecore_con_eet_register(ece, "medias", ems_medias_add_edd);
-   ecore_con_eet_register(ece, "media_info_req", ems_media_infos_req_edd);
-   ecore_con_eet_register(ece, "media_info", ems_media_infos_edd);
+   ecore_con_eet_register(ece, "database_update", ems_database_req_edd);
+   ecore_con_eet_data_callback_add(ece, "database_get", _database_get_cb, NULL);
 
-   ecore_con_eet_data_callback_add(ece, "medias_req", _medias_req_cb, NULL);
-   ecore_con_eet_data_callback_add(ece, "media_info_req", _media_info_req_cb, NULL);
 
    return EINA_TRUE;
 }

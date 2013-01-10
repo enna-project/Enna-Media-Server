@@ -28,42 +28,18 @@
 #include <Eina.h>
 #include <Eet.h>
 
-typedef struct _Medias Medias;
-typedef struct _Medias_Req Medias_Req;
-typedef struct _Medias_Infos Medias_Infos;
-typedef struct _Media_Infos_Req Media_Infos_Req;
-typedef struct _Media_Infos Media_Infos;
 typedef enum _Ems_Server_Protocol_Type Ems_Server_Protocol_Type;
 typedef struct _Ems_Server_Protocol Ems_Server_Protocol;
 
-struct _Medias_Req
-{
-   Ems_Collection *collection;
-};
+typedef struct _Ems_Database_Req Ems_Database_Req;
 
-struct _Medias
+struct _Ems_Database_Req
 {
-   Eina_List *files;
-};
-
-struct _Media_Infos_Req
-{
-   const char *sha1;
-   const char *metadata;
-};
-
-
-struct _Media_Infos
-{
-   const char *sha1;
-   const char *value;
+   const char *uuid;
 };
 
 void ems_server_protocol_init(void);
 
-extern Eet_Data_Descriptor *ems_medias_req_edd;
-extern Eet_Data_Descriptor *ems_medias_add_edd;
-extern Eet_Data_Descriptor *ems_media_infos_edd;
-extern Eet_Data_Descriptor *ems_media_infos_req_edd;
+extern Eet_Data_Descriptor *ems_database_req_edd;
 
 #endif /* _EMS_SERVER_PROTOCOL_H_ */

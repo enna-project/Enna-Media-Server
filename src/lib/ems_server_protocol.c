@@ -37,92 +37,34 @@
 #include "ems_node.h"
 #include "ems_server_protocol.h"
 
-Eet_Data_Descriptor *ems_medias_req_edd = NULL;
-Eet_Data_Descriptor *ems_medias_add_edd = NULL;
-Eet_Data_Descriptor *ems_media_infos_edd = NULL;
-Eet_Data_Descriptor *ems_media_infos_req_edd = NULL;
-
 /*============================================================================*
  *                                  Local                                     *
  *============================================================================*/
 
+
+Eet_Data_Descriptor *ems_database_req_edd;
+
 static Eet_Data_Descriptor *
-_medias_req_edd(void)
+_database_req_edd(void)
 {
-   Eet_Data_Descriptor *edd = NULL;
-   Eet_Data_Descriptor *collection_edd = NULL;
-   Eet_Data_Descriptor *collection_filter_edd = NULL;
    Eet_Data_Descriptor_Class eddc;
+   Eet_Data_Descriptor *edd;
 
-   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Collection_Filter);
-   collection_filter_edd =  eet_data_descriptor_stream_new(&eddc);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(collection_filter_edd, Ems_Collection_Filter, "metadata", metadata, EET_T_STRING);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(collection_filter_edd, Ems_Collection_Filter, "value", value, EET_T_STRING);
-
-
-   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Collection);
-   collection_edd =  eet_data_descriptor_stream_new(&eddc);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(collection_edd, Ems_Collection, "type", type, EET_T_INT);
-   EET_DATA_DESCRIPTOR_ADD_LIST(collection_edd, Ems_Collection, "filters", filters, collection_filter_edd);
-
-
-   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Medias_Req);
+   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Ems_Database_Req);
    edd = eet_data_descriptor_stream_new(&eddc);
-   EET_DATA_DESCRIPTOR_ADD_SUB(edd, Medias_Req, "collection", collection, collection_edd);
+
+   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Ems_Database_Req, "uuid", uuid, EET_T_STRING);
 
    return edd;
 }
 
-static Eet_Data_Descriptor *
-_medias_edd(void)
-{
-   Eet_Data_Descriptor *edd = NULL;
-   Eet_Data_Descriptor_Class eddc;
-
-   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Medias);
-   edd =  eet_data_descriptor_stream_new(&eddc);
-   EET_DATA_DESCRIPTOR_ADD_LIST(edd, Medias, "files", files, ems_edd_media);
-
-   return edd;
-}
-
-static Eet_Data_Descriptor *
-_media_infos_req_edd(void)
-{
-   Eet_Data_Descriptor *edd = NULL;
-   Eet_Data_Descriptor_Class eddc;
-
-   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Media_Infos_Req);
-   edd =  eet_data_descriptor_stream_new(&eddc);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Media_Infos_Req, "sha1", sha1, EET_T_STRING);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Media_Infos_Req, "metadata", metadata, EET_T_STRING);
-
-   return edd;
-}
-
-static Eet_Data_Descriptor *
-_media_infos_edd(void)
-{
-   Eet_Data_Descriptor *edd = NULL;
-   Eet_Data_Descriptor_Class eddc;
-
-   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Media_Infos);
-   edd =  eet_data_descriptor_stream_new(&eddc);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Media_Infos, "sha1", sha1, EET_T_STRING);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(edd, Media_Infos, "value", value, EET_T_STRING);
-
-   return edd;
-}
 
 struct _Match_Type {
    const char *name;
    Eet_Data_Descriptor *(*func)(void);
    Eet_Data_Descriptor **edd;
 } match_type[] = {
-  { "medias_req", _medias_req_edd, &ems_medias_req_edd },
-  { "medias", _medias_edd, &ems_medias_add_edd },
-  { "media_info", _media_infos_edd, &ems_media_infos_edd },
-  { "media_info_req", _media_infos_req_edd, &ems_media_infos_req_edd },
+  { "database_get", _database_req_edd, &ems_database_req_edd },
   { NULL, 0, NULL }
 };
 

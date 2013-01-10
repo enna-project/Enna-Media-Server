@@ -73,45 +73,11 @@ static Eina_List *_media_get_cb = NULL;
 
 static Eina_Hash *_media_info_hash_cb = NULL;
 
-static void
-_medias_cb(void *data, Ecore_Con_Reply *reply __UNUSED__, const char *name __UNUSED__, void *value)
-{
-   Medias *medias = value;
-   Ems_Video *video;
-   Eina_List *l, *l2;
-   Ems_Node_Media_Get_Cb* cb;
-
-   EINA_LIST_FOREACH(medias->files, l, video)
-     {
-        DBG("Value read : %s", video->title);
-        EINA_LIST_FOREACH(_media_get_cb, l2, cb)
-          {
-             if (cb->add_cb)
-               cb->add_cb(cb->data, data, video);
-          }
-     }
-
-
-}
 
 static void
-_media_info_cb(void *data __UNUSED__, Ecore_Con_Reply *reply __UNUSED__, const char *name __UNUSED__, void *value)
+_database_update_cb(void *data __UNUSED__, Ecore_Con_Reply *reply __UNUSED__, const char *name __UNUSED__, void *value)
 {
-   Eina_List *l, *cb_list;
-   Ems_Node_Media_Infos_Get_Cb *cb;
-   Media_Infos *info = value;
-
-   DBG("Value read : %s - %s", info->value, info->sha1);
-
-   cb_list = eina_hash_find(_media_info_hash_cb, info->sha1);
-   if (cb_list)
-     {
-        EINA_LIST_FOREACH(cb_list, l, cb) 
-          {
-             if (cb->add_cb)
-               cb->add_cb(cb->data, data, info->value);
-          }
-     }
+   
 }
 
 static Eina_Bool
@@ -120,6 +86,8 @@ _server_connected_cb(void *data, Ecore_Con_Reply *reply, Ecore_Con_Server *conn 
    Ems_Node *node = data;
    Eina_List *l_cb;
    Ems_Node_Cb *cb;
+   Ems_Database_Req *req;
+
    DBG("Connected to %s:%d (%s)", node->ip, node->port, node->name);
 
    if (node->is_connected)
@@ -135,6 +103,11 @@ _server_connected_cb(void *data, Ecore_Con_Reply *reply, Ecore_Con_Server *conn 
         if (cb->connected_cb)
           cb->connected_cb(cb->data, node);
      }
+
+   req = calloc(1, sizeof(Ems_Database_Req));
+   req->uuid = node->uuid;
+   ecore_con_eet_send(node->reply, "database_get", req);
+
    return EINA_TRUE;
 
 }
@@ -180,13 +153,8 @@ _ems_node_connect(Ems_Node *node)
    ecore_con_eet_server_connect_callback_add(node->ece, _server_connected_cb, node);
    ecore_con_eet_server_disconnect_callback_add(node->ece, _server_disconnected_cb, node);
 
-   ecore_con_eet_register(node->ece, "medias_req", ems_medias_req_edd);
-   ecore_con_eet_register(node->ece, "medias", ems_medias_add_edd);
-   ecore_con_eet_register(node->ece, "media_info_req", ems_media_infos_req_edd);
-   ecore_con_eet_register(node->ece, "media_info", ems_media_infos_edd);
-
-   ecore_con_eet_data_callback_add(node->ece, "medias", _medias_cb, node);
-   ecore_con_eet_data_callback_add(node->ece, "media_info", _media_info_cb, node);
+   ecore_con_eet_register(node->ece, "database_get", ems_database_req_edd);
+   ecore_con_eet_data_callback_add(node->ece, "database_update", _database_update_cb, node);
 
    return EINA_TRUE;
 }
@@ -429,20 +397,7 @@ ems_node_media_get(Ems_Node *node,
                    Ems_Media_Add_Cb media_add,
                    void *data)
 {
-   Medias_Req *req;
-   Ems_Node_Media_Get_Cb *cb = calloc(1, sizeof(Ems_Node_Media_Get_Cb));
-
-   cb->add_cb = media_add;
-   cb->data = data;
-
-   _media_get_cb = eina_list_append(_media_get_cb, cb);
-
-   DBG("Node reply : %p", node->reply);
-
-   req = calloc(1, sizeof(Medias_Req));
-   req->collection = collection;
-
-   ecore_con_eet_send(node->reply, "medias_req", req);
+  
 
    return NULL;
 }
@@ -456,29 +411,7 @@ ems_node_media_info_get(Ems_Node *node __UNUSED__,
                           Ems_Media_Info_Update_Cb info_update __UNUSED__,
                           void *data)
 {
-   Media_Infos_Req *req;
-   Ems_Node_Media_Infos_Get_Cb *cb = calloc(1, sizeof(Ems_Node_Media_Infos_Get_Cb));
-   Eina_List *cb_list;
 
-   DBG("");
-
-   cb->add_cb = info_add;
-   cb->data = data;
-
-   if (!_media_info_hash_cb)
-     _media_info_hash_cb = eina_hash_string_superfast_new(NULL/*_media_info_hash_free*/);
-
-   cb_list = eina_hash_find(_media_info_hash_cb, sha1);
-   cb_list = eina_list_append(cb_list, cb);
-   eina_hash_set(_media_info_hash_cb, sha1, cb_list);
-
-   DBG("Node reply : %p", node->reply);
-
-   req = calloc(1, sizeof(Media_Infos_Req));
-   req->sha1 = sha1;
-   req->metadata = metadata;
-
-   ecore_con_eet_send(node->reply, "media_info_req", req);
 
    return NULL;
 }

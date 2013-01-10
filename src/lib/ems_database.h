@@ -28,8 +28,6 @@
 
 #include "Ems.h"
 
-extern Eet_Data_Descriptor *ems_edd_media;
-
 int ems_database_init(void);
 int ems_database_shutdown(void);
 void ems_database_flush(void);
@@ -49,4 +47,5 @@ void ems_database_deleted_files_remove(int64_t magic, const char *place);
 /* Eina_List * ems_database_collection_get(Ems_Database *db, Ems_Collection *collection); */
 /* const char *ems_database_uuid_get(Ems_Database *db); */
 const char *ems_database_info_get(const char *sha1, const char *metadata);
+const char *ems_database_uuid_get(void);
 #endif /* _EMS_DATABASE_H_ */
