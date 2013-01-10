@@ -91,10 +91,10 @@ int ems_init(const char *config_file, Eina_Bool start_servers)
 
    if (!ems_config_init(config_file))
      goto shutdown_eio;
-   if (!ems_avahi_init())
-     goto shutdown_config;
    if (!ems_database_init())
      goto shutdown_node;
+   if (!ems_avahi_init())
+     goto shutdown_config;
    if (!ems_node_init())
      goto shutdown_avahi;
    if (!ems_scanner_init())
@@ -137,10 +137,10 @@ int ems_init(const char *config_file, Eina_Bool start_servers)
    ems_grabber_shutdown();
  shutdown_database:
    ems_database_shutdown();
- shutdown_node:
-   ems_node_shutdown();
  shutdown_avahi:
    ems_avahi_shutdown();
+ shutdown_node:
+   ems_node_shutdown();
  shutdown_config:
    ems_config_shutdown();
  shutdown_eio:
