@@ -164,6 +164,9 @@ static void resolve_callback(AvahiServiceResolver *r,
                              AvahiLookupResultFlags flags,
                              AVAHI_GCC_UNUSED void* userdata)
 {
+   AvahiStringList *txtlist;
+   char* txtstr;
+
    assert(r);
    /* Called whenever a service has been resolved successfully or timed out */
    switch (event)
@@ -196,6 +199,9 @@ static void resolve_callback(AvahiServiceResolver *r,
                !!(flags & AVAHI_LOOKUP_RESULT_WIDE_AREA),
                !!(flags & AVAHI_LOOKUP_RESULT_MULTICAST),
                !!(flags & AVAHI_LOOKUP_RESULT_CACHED));
+           
+           
+           
 
            /* TODO: only ipv4 address for now, let other people with ipv6 knowledge play with it */
            if (address->proto == AVAHI_PROTO_INET)
@@ -205,6 +211,13 @@ static void resolve_callback(AvahiServiceResolver *r,
                 node->ip = eina_stringshare_add(a);
                 node->port = port;
                 node->is_local = !!(flags & AVAHI_LOOKUP_RESULT_LOCAL);
+                txtlist = avahi_string_list_find(txt, "uuid");
+                if (txtlist)
+                  {
+                     txtstr = (char*)avahi_string_list_get_text(txtlist);
+                     if (txtstr && !strncmp(txtstr, "uuid=", 5))
+                       node->uuid = eina_stringshare_add(txtstr + 5);
+                  }
                 ems_node_add(node);
              }
            avahi_free(t);
@@ -332,6 +345,7 @@ ems_avahi_start(void)
 {
    char *n;
    int ret;
+   AvahiStringList *strlst = NULL;
 
    if (!client)
      return EINA_FALSE;
@@ -351,17 +365,15 @@ ems_avahi_start(void)
 
    if (avahi_entry_group_is_empty(group))
      {
-        const char *name;
-
         DBG("Adding service '%s' on port %d", node_name, ems_config->port);
-        name = eina_stringshare_printf("name=%s", ems_config->name);
-        if ((ret = avahi_entry_group_add_service(group,
-                                                 AVAHI_IF_UNSPEC,
-                                                 AVAHI_PROTO_UNSPEC,
-                                                 0, node_name,
-                                                 EMS_SERVER_JSONRPC_API_NAME,
-                                                 NULL, NULL,
-                                                 ems_config->port, name, NULL)) < 0)
+        strlst = avahi_string_list_add_pair(strlst, "uuid", ems_database_uuid_get());
+        if ((ret = avahi_entry_group_add_service_strlst(group,
+                                                        AVAHI_IF_UNSPEC,
+                                                        AVAHI_PROTO_UNSPEC,
+                                                        0, node_name,
+                                                        EMS_SERVER_JSONRPC_API_NAME,
+                                                        NULL, NULL,
+                                                        ems_config->port, strlst)) < 0)
           {
              if (ret == AVAHI_ERR_COLLISION)
                goto collision;
