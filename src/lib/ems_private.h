@@ -170,6 +170,7 @@ struct _Ems_Config
    const char *cache_path;
    Eina_List *places;
    unsigned int scan_period;
+   const char *uuid;
 };
 
 extern Ems_Config *ems_config;

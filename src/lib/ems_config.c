@@ -47,9 +47,11 @@
 
 static Eet_Data_Descriptor *conf_edd = NULL;
 static Eet_Data_Descriptor *directory_edd = NULL;
+static char *conf_filename = NULL;
+
 
 static const char *
-ems_config_filename_get(void)
+ems_config_filename_default_get(void)
 {
    static const char *filename = NULL;
    char tmp[PATH_MAX];
@@ -63,6 +65,13 @@ ems_config_filename_get(void)
    DBG("CONFIG filename : %s", filename);
 
    return filename;
+}
+
+static const char *
+ems_config_filename_get(void)
+{
+   printf("%s\n", conf_filename);
+   return conf_filename;
 }
 
 static const char *
@@ -153,23 +162,25 @@ _make_config(const char *config_file)
    FILE *f;
    int textlen;
    char *text;
-   const char *config;
 
-   if (!ecore_file_is_dir(ems_config_tmp_dirname_get()))
-     ecore_file_mkpath(ems_config_tmp_dirname_get());
-
-   if (config_file)
-     {
-        config = config_file;
-     }
-   else
-     {
+   /* Create default config path and file */
+   if (!config_file)
+     {        
+        conf_filename = eina_stringshare_add(ems_config_filename_default_get());
         if (!ecore_file_is_dir(ems_config_dirname_get()))
           ecore_file_mkpath(ems_config_dirname_get());
-        config = ems_config_filename_get();
+     }
+   else if (!ecore_file_exists(config_file))
+     {
+        conf_filename = eina_stringshare_add(config_file);
+        ecore_file_mkpath(ecore_file_dir_get(config_file));
+     }    
+   else 
+     {
+        conf_filename = eina_stringshare_add(config_file);
      }
 
-   INF("Config file : %s", config);
+   INF("Config file : %s", conf_filename);
 
    ef = eet_open(ems_config_tmp_filename_get(),
                  EET_FILE_MODE_READ_WRITE);
@@ -177,7 +188,7 @@ _make_config(const char *config_file)
      ef = eet_open(ems_config_tmp_filename_get(),
                    EET_FILE_MODE_WRITE);
 
-   f = fopen(config, "rb");
+   f = fopen(conf_filename, "rb");
    if (!f)
      {
         WRN("Could not open '%s', setup default config.", ems_config_filename_get());
@@ -213,7 +224,7 @@ _make_config(const char *config_file)
 
    fclose(f);
    if (eet_data_undump(ef, "config", text, textlen, 1))
-     INF("Updating configuration %s", config);
+     INF("Updating configuration %s", conf_filename);
    free(text);
    eet_close(ef);
 }
@@ -241,9 +252,37 @@ _config_get(Eet_Data_Descriptor *edd)
    return config;
 }
 
+void
+_dump_cb(void *data, const char *str)
+{
+   FILE *fp = data;
+   fprintf(fp, "%s", str);
+   printf("%s", str);
+}
+
 /*============================================================================*
  *                                 Global                                     *
  *============================================================================*/
+
+void
+ems_config_save(void)
+{ 
+   Eet_File *file;
+   FILE *fp;
+
+   file = eet_open(ems_config_tmp_filename_get(),
+                   EET_FILE_MODE_READ_WRITE);
+   eet_data_write(file, conf_edd, "config", ems_config, EINA_FALSE);
+   printf("save to : %s\n", ems_config_filename_get());
+   fp = fopen(ems_config_filename_get(), "w");
+   if (!fp)
+     goto error;
+   eet_data_dump(file, "config", _dump_cb, fp);
+   fclose(fp);
+
+ error:
+   eet_close(file);
+}
 
 const char *
 ems_config_cache_dirname_get(void)
@@ -306,11 +345,9 @@ ems_config_init(const char *config_file)
    ENNA_CONFIG_VAL(D, T, blacklist, EET_T_STRING);
    ENNA_CONFIG_VAL(D, T, scan_period, EET_T_UINT);
    ENNA_CONFIG_VAL(D, T, cache_path, EET_T_STRING);
+   ENNA_CONFIG_VAL(D, T, uuid, EET_T_STRING);
 
-   if (ecore_file_exists(config_file))
-     _make_config(config_file);
-   else
-     _make_config(NULL);
+   _make_config(config_file);
 
    ems_config = _config_get(conf_edd);
 
@@ -323,7 +360,8 @@ ems_config_init(const char *config_file)
        "\tphoto ext: %s\n"
        "\tblacklist: %s\n"
        "\tscan period : %d\n"
-       "\tcache path : %s",
+       "\tcache path : %s\n"
+       "\tuuid : %s\n",
        ems_config->version,
        ems_config->port,
        ems_config->port_stream,
@@ -333,7 +371,8 @@ ems_config_init(const char *config_file)
        ems_config->photo_extensions,
        ems_config->blacklist,
        ems_config->scan_period,
-       ems_config->cache_path);
+       ems_config->cache_path,
+       ems_config->uuid);
 
    return EINA_TRUE;
 }

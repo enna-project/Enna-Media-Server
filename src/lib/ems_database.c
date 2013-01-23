@@ -249,6 +249,8 @@ ems_database_init(void)
 {
    char path[PATH_MAX];
    Eina_Bool exists = EINA_FALSE;
+   char uuid[37];
+   uuid_t u ;
 
    if (++_ems_init_count != 1)
      return _ems_init_count;
@@ -258,6 +260,16 @@ ems_database_init(void)
    _db = calloc(1, sizeof(Ems_Db));
 
    eina_lock_new(&_db->mutex);
+
+   /* Uuid is not set in the config file, set it and save config file */
+   if (!ems_config->uuid)
+     {
+        uuid_generate(u);
+        uuid_unparse(u, uuid);
+        INF("Generate UUID for database : %s", uuid);
+        ems_config->uuid = eina_stringshare_add(uuid);
+        ems_config_save();
+     }
 
    snprintf(path, sizeof(path), "%s/"EMS_DATABASE_FILE, ems_config_cache_dirname_get());
    _db->filename = eina_stringshare_add(path);
@@ -312,17 +324,14 @@ ems_database_init(void)
         Ems_Db_Place *place;
         Ems_Directory *dir;
         Eina_List *l;
-        char uuid[37];
-        uuid_t u ;
+
 
         /* Create Section Databases index */
         _db->databases = calloc(1, sizeof(Ems_Db_Databases_Cont));
         _db->metadatas = calloc(1, sizeof(Ems_Db_Metadatas_Cont));
         _db->metadatas->hash = eina_hash_string_superfast_new(_metadatas_cont_hash_free);
 
-        uuid_generate(u);
-        uuid_unparse(u, uuid);
-        INF("Generate UUID for database : %s", uuid);
+       
 
         _db->infos = calloc(1, sizeof(Ems_Db_Infos));
         _db->infos->uuid = eina_stringshare_add(uuid);
