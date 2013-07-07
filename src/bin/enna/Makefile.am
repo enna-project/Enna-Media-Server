@@ -6,13 +6,13 @@ AM_CPPFLAGS = \
 -I. \
 -DPACKAGE_BIN_DIR=\"$(bindir)\" \
 -DPACKAGE_LIB_DIR=\"$(libdir)\" \
--DPACKAGE_DATA_DIR=\"$(datadir)/enna-media-server\" \
+-DPACKAGE_DATA_DIR=\"$(datadir)/enna2\" \
 -I$(top_builddir)/src/lib \
 @ENNA_CFLAGS@
 
-bin_PROGRAMS = enna
+bin_PROGRAMS = enna2
 
-enna_SOURCES = \
+enna2_SOURCES = \
 main.c \
 enna_main.c \
 enna_main.h \
@@ -36,7 +36,7 @@ enna_view_video_list.h \
 enna_view_player_video.c \
 enna_view_player_video.h
 
-enna_LDADD = \
+enna2_LDADD = \
 @ENNA_LIBS@ \
 $(top_builddir)/src/lib/libems.la
 

@@ -11,7 +11,7 @@ EDJE_VERB = $(EDJE_VERB_$(V))
 EDJE_VERB_ = $(EDJE_VERB_$(AM_DEFAULT_VERBOSITY))
 EDJE_VERB_1 = -v
 
-defaultdir = $(pkgdatadir)/theme
+defaultdir = $(datadir)/enna2/theme
 
 default_DATA = default.edj
 
