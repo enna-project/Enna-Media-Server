@@ -36,7 +36,12 @@ _media_add_cb(void *data, Ems_Node *node,
 static void
 _node_add_cb(void *data, Ems_Node *node)
 {
-   if (!strcmp(ems_node_name_get(node), node_name))
+   const char *name = ems_node_name_get(node);
+
+   if (!name || !node_name)
+     return;
+
+   if (!strcmp(name, node_name))
      {
         Ems_Collection *c;
 
