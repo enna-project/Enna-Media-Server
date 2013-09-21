@@ -18,6 +18,7 @@ includesdir = $(includedir)/enna
 lib_LTLIBRARIES = libems.la
 
 libems_la_SOURCES = \
+Ems.h \
 ems_config.c \
 ems_main.c \
 ems_scanner.c \
