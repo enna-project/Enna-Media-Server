@@ -158,9 +158,9 @@ src/bin/ems/Makefile
 src/bin/enna/Makefile
 src/modules/Makefile
 src/modules/tmdb/Makefile
-src/modules/allocine/Makefile
 src/modules/thetvdb/Makefile
 src/modules/betaseries/Makefile
+src/modules/t411/Makefile
 src/tests/Makefile
 data/Makefile
 data/themes/Makefile
