@@ -75,7 +75,7 @@ static Eina_Hash *_media_info_hash_cb = NULL;
 
 
 static void
-_database_update_cb(void *data __UNUSED__, Ecore_Con_Reply *reply __UNUSED__, const char *name __UNUSED__, void *value)
+_database_update_cb(void *data __UNUSED__, Ecore_Con_Reply *reply __UNUSED__, const char *name __UNUSED__, void *value __UNUSED__)
 {
    
 }
@@ -360,35 +360,52 @@ ems_node_connect(Ems_Node *node)
 }
 
 char *
-ems_node_media_stream_url_get(Ems_Node *node, const char *media_uuid)
+ems_node_media_stream_url_get(Ems_Node *node, Ems_Video *media)
 {
    Eina_Strbuf *uri;
    char *str;
 
-   if (!node || !media_uuid)
+   if (!node || !media)
      return NULL;
 
-   uri = eina_strbuf_new();
-   eina_strbuf_append_printf(uri, "http://%s:%d/item/%s", node->ip, ems_config->port_stream, media_uuid);
-   DBG("url get: %s", eina_strbuf_string_get(uri));
-   str = strdup(eina_strbuf_string_get(uri));
-   eina_strbuf_free(uri);
+   if (node->is_local)
+   {
+       uri = eina_strbuf_new();
+       eina_strbuf_append_printf(uri, "file://%s", media->title);
+       DBG("url get: %s", eina_strbuf_string_get(uri));
+       str = strdup(eina_strbuf_string_get(uri));
+       eina_strbuf_free(uri);
+   }
+   else
+   {
+       uri = eina_strbuf_new();
+       eina_strbuf_append_printf(uri, "http://%s:%d/item/%s", node->ip, ems_config->port_stream, media->hash_key);
+       DBG("url get: %s", eina_strbuf_string_get(uri));
+       str = strdup(eina_strbuf_string_get(uri));
+       eina_strbuf_free(uri);
+   }
 
    return str;
 }
 
-Ems_Observer *
-ems_node_dir_get(Ems_Node *node __UNUSED__,
-                   const char *path __UNUSED__,
-                   Ems_Media_Type type __UNUSED__,
-                   Ems_Media_Add_Cb media_add __UNUSED__,
-                   Ems_Media_Del_Cb media_del __UNUSED__,
-                   Ems_Media_Done_Cb media_done __UNUSED__,
-                   Ems_Media_Error_Cb media_error __UNUSED__,
-                   void *data __UNUSED__)
+Ems_Db_Database *
+ems_node_database_get(Ems_Node *node)
 {
+    if (!node)
+        return;
 
-   return NULL;
+    DBG("Get the database for node [%s] %s", node->name, node->uuid);
+    if (node->is_local)
+    {
+        DBG("Db is local nothing to do\n");
+        return ems_database_get(node->uuid);
+    }
+    else
+    {
+        ERR("Not implemented yet! Database has to be retrieved !");
+        return NULL;
+    }
+
 }
 
 Ems_Observer *
@@ -397,13 +414,24 @@ ems_node_media_get(Ems_Node *node,
                    Ems_Media_Add_Cb media_add,
                    void *data)
 {
-  
+
+   Ems_Db_Database *db;
+   Eina_List *l, *files;
+   Ems_Video *v;
+   db = ems_node_database_get(node);
+
+   files = ems_database_files_get(db);
+   EINA_LIST_FOREACH(files, l, v)
+   {
+       if(media_add)
+           media_add(data, node, v);
+   }
 
    return NULL;
 }
 
 Ems_Observer *
-ems_node_media_info_get(Ems_Node *node __UNUSED__,
+ems_node_media_info_get(Ems_Node *node,
                           const char *sha1,
                           const char *metadata,
                           Ems_Media_Info_Add_Cb info_add,
@@ -411,7 +439,6 @@ ems_node_media_info_get(Ems_Node *node __UNUSED__,
                           Ems_Media_Info_Update_Cb info_update __UNUSED__,
                           void *data)
 {
-
-
-   return NULL;
+    if (info_add)
+        info_add(data, node, ems_database_info_get(sha1, metadata));
 }

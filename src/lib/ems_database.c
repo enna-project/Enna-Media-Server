@@ -46,7 +46,6 @@
 
 typedef struct _Ems_Db Ems_Db;
 typedef struct _Ems_Db_Infos Ems_Db_Infos;
-typedef struct _Ems_Db_Database Ems_Db_Database;
 typedef struct _Ems_Db_Place Ems_Db_Place;
 typedef struct _Ems_Db_Media Ems_Db_Media;
 typedef struct _Ems_Db_Metadatas Ems_Db_Metadatas;
@@ -350,9 +349,7 @@ ems_database_init(void)
         _db->databases->list = eina_list_append(_db->databases->list, db);
 
         eet_data_write(_db->ef, ems_edd_databases_cont, DATABASES_SECTION, _db->databases, EINA_FALSE);
-        printf("before write\n");
         eet_data_write(_db->ef, ems_edd_metadatas_cont, METADATAS_SECTION, _db->metadatas, EINA_FALSE);
-        printf("after write\n");
         eet_data_write(_db->ef, ems_edd_infos, INFOS_SECTION, _db->infos, EINA_FALSE);
         eet_sync(_db->ef);
      }
@@ -528,22 +525,24 @@ ems_database_meta_insert(const char *hash, const char *meta, const char *value)
 }
 
 Eina_List *
-ems_database_files_get(void)
+ems_database_files_get(Ems_Db_Database *db)
 {
    Eina_List *l1, *l2;
    Eina_List *ret = NULL;
-   Ems_Db_Database *db;
    Ems_Db_Place *item;
+   Ems_Video *video_item;
 
    /* db lock */
    eina_lock_take(&_db->mutex);
-   EINA_LIST_FOREACH(_db->databases->list, l1, db)
-     {
-        EINA_LIST_FOREACH(db->places, l2, item)
-          {
-             ret = eina_list_merge(ret,  item->medias);
-          }
-     }
+
+   EINA_LIST_FOREACH(db->places, l1, item)
+   {
+       EINA_LIST_FOREACH(item->medias, l2, video_item)
+       {
+           ret = eina_list_append(ret,  video_item);
+       }
+   }
+
    eina_lock_release(&_db->mutex);
    /* db unlock */
    return ret;
@@ -715,4 +714,25 @@ ems_database_uuid_get(void)
      return NULL;
 
    return _db->infos->uuid;
+}
+
+Ems_Db_Database *
+ems_database_get(const char *uuid)
+{
+    Ems_Db_Database *db = NULL;
+    Eina_List *l;
+
+    /* db lock */
+    eina_lock_take(&_db->mutex);
+    /* Search for the right place to add the file*/
+    EINA_LIST_FOREACH(_db->databases->list, l, db)
+    {
+        if (!strcmp(uuid, db->uuid))
+        {
+            eina_lock_release(&_db->mutex);
+            return db;
+        }
+    }
+    eina_lock_release(&_db->mutex);
+    return NULL;
 }
