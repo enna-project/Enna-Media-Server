@@ -47,7 +47,7 @@
 
 static Eet_Data_Descriptor *conf_edd = NULL;
 static Eet_Data_Descriptor *directory_edd = NULL;
-static char *conf_filename = NULL;
+static const char *conf_filename = NULL;
 
 
 static const char *
