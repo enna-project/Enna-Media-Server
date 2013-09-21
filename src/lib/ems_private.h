@@ -88,15 +88,8 @@ extern int _ems_log_dom_global;
 typedef struct _Ems_Config Ems_Config;
 typedef struct _Ems_Directory Ems_Directory;
 typedef struct _Ems_Collection_Filter Ems_Collection_Filter;
-typedef struct _Ems_Grabber_Data Ems_Grabber_Data;
+
 typedef struct _Ems_Grabber_Params Ems_Grabber_Params;
-
-
-
-/* Function typedef, called when grabber ends its work */
-typedef void (*Ems_Grabber_End_Cb)(void *data,
-                                   const char *filename,
-                                   Ems_Grabber_Data *grabbed_data);
 
 /* Function exported by grabber modules */
 typedef void (*Ems_Grabber_Grab)(Ems_Grabber_Params *params,
@@ -174,14 +167,6 @@ struct _Ems_Config
 };
 
 extern Ems_Config *ems_config;
-
-struct _Ems_Grabber_Data
-{
-   Eina_Hash *data;
-   Eina_Hash *episode_data; //episode specific data
-   time_t date;
-   const char *lang;
-};
 
 struct _Ems_Grabber_Params
 {

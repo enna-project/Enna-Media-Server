@@ -74,14 +74,15 @@ _idler_cb(void *data)
 
    DBG("Still %d to grab", eina_list_count(_files));
    if (eina_list_count(_files))
-     {
+     { 
+        Ems_Grabber_Params *f = eina_list_nth(_files, 0);
         EINA_ARRAY_ITER_NEXT(_modules, i, m, iterator)
           {
+
              grab = eina_module_symbol_get(m, "ems_grabber_grab");
              if (grab)
                {
-                  Ems_Grabber_Params *f = eina_list_nth(_files, 0);
-                  grab(f, _end_grab_cb, NULL);
+                  //grab(f, _end_grab_cb, NULL);
                }
              break;
           }
@@ -190,4 +191,51 @@ void ems_grabber_grab(const char *filename, const char *search, Ems_Media_Type t
 
 }
 
+void ems_grabber_module_grab(const char *filename,
+                             const char *search,
+                             Ems_Media_Type type,
+                             unsigned int season, unsigned int episode,
+                             const char* module_name,
+                             Ems_Grabber_End_Cb end_grab_cb, void *data)
+{
+   Ems_Grabber_Params *file;
+   Eina_Module *m;
+   Eina_Array_Iterator iterator;
+   const char *mod_name;
+   int i;
+   void (*grab)(Ems_Grabber_Params *params,
+                void (*Ems_Grabber_End_Cb)(void *data, const char *filename, Ems_Grabber_Data *grabbed_data),
+                void *data);
 
+   file = calloc(1, sizeof(Ems_Grabber_Params));
+   file->filename = eina_stringshare_add(filename);
+   file->search = eina_stringshare_add(search);
+   file->type = type;
+   file->season = season;
+   file->episode = episode;
+   
+   _files = eina_list_append(_files, file);
+   if (!_queue_idler)
+     _queue_idler = ecore_idler_add(_idler_cb, NULL);
+
+   m = eina_module_find(_modules, module_name);
+   grab = eina_module_symbol_get(m, "ems_grabber_grab");
+
+   EINA_ARRAY_ITER_NEXT(_modules, i, m, iterator)
+   {
+       mod_name = eina_module_file_get(m);
+       if (strstr(mod_name, module_name))
+       {
+           grab = eina_module_symbol_get(m, "ems_grabber_grab");
+           if (grab)
+           {
+               grab(file, end_grab_cb, data);
+           }
+           break;
+       }
+
+   }
+
+
+  
+}

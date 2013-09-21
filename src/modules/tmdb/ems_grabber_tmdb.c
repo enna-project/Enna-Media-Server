@@ -118,9 +118,10 @@ static Ems_Tmdb_Stats *_stats = NULL;
      it = cJSON_GetObjectItem(m, val);                                  \
      if (it) {                                                          \
         eina_value_set(v, it->type);                                    \
-        eina_hash_add(req->grabbed_data->data, key, v);                 \
+        eina_hash_add(hash, key, v);                                    \
      }                                                                  \
   } while(0);                                                           \
+
 
 static void
 _grabber_tmdb_shutdown(void)
@@ -151,8 +152,11 @@ static Eina_Bool
 _poster_download_end_cb(void *data, const char *url,
                         const char *filename)
 {
+   Ems_Tmdb_Req *req = data;
 
-   DBG("insert poster for %s", (const char*)data);
+
+   DBG("insert poster for %s", req->filename);
+
    ems_database_meta_insert(data, "poster",  eina_stringshare_add(filename));
    _stats->covers_grabbed++;
    return EINA_TRUE;
@@ -171,8 +175,8 @@ _backdrop_download_end_cb(void *data, const char *url,
 
 
 
-static void
-_tmdb_images_get(Ems_Tmdb_Req *req, cJSON *parent, const char *name, Ems_Downloader_End_Cb end_cb)
+static cJSON *
+_tmdb_images_get(Ems_Tmdb_Req *req, cJSON *parent, const char *name)
 {
    int size = 0;
    int i;
@@ -199,20 +203,14 @@ _tmdb_images_get(Ems_Tmdb_Req *req, cJSON *parent, const char *name, Ems_Downloa
                        it = cJSON_GetObjectItem(it_image, "url");
                        if (it && it->valuestring)
                          {
-                            poster = eina_stringshare_add(it->valuestring);
-                            DBG("start %s download for %s", name, req->filename);
-                            ems_downloader_url_download(poster, req->filename,
-                                                        end_cb,
-                                                        eina_stringshare_add(req->filename));
-                            eina_stringshare_del(poster);
-                            break;
+                           return it;
                          }
                     }
                }
           }
      }
 
-
+   return NULL;
 }
 
 static Eina_Bool
@@ -260,7 +258,7 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
               root = cJSON_Parse(buf);
               if (root)
                 size = cJSON_GetArraySize(root);
-              //DBG("%s", cJSON_Print(root));
+              DBG("%s", cJSON_Print(root));
               //DBG("Size %d", size);
 
               if (!size)
@@ -274,37 +272,61 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
                    DBG("More then one result, take the first");
                    _stats->multiple_results++;
                 }
+              {
+                  m = cJSON_GetArrayItem(root, 0);
+                  if (!m)
+                  {
+                      ERR("Unable to get movie info");
+                      goto end_req;
+                  }
+                  _stats->files_grabbed++;
 
-              m = cJSON_GetArrayItem(root, 0);
-              if (!m)
-                {
-                   ERR("Unable to get movie info");
-                   goto end_req;
-                }
-              _stats->files_grabbed++;
-              DBG("find info for %s", req->filename);
-              PUTVAL("score", "score", valuedouble, EINA_VALUE_TYPE_DOUBLE);
-              PUTVAL("popularity", "popularity", valueint, EINA_VALUE_TYPE_INT);
-              PUTVAL("translated", "translated", valueint, EINA_VALUE_TYPE_INT);
-              PUTVAL("adult", "adult", valueint, EINA_VALUE_TYPE_INT);
-              PUTVAL("language", "language", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
-              PUTVAL("original_name", "original_title", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
-              PUTVAL("name", "title", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
-              PUTVAL("alternative_name", "alternative_title", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
-              PUTVAL("id", "tmdb_id", valueint, EINA_VALUE_TYPE_INT);
-              PUTVAL("imdb", "imdb_id", valueint, EINA_VALUE_TYPE_INT);
-              PUTVAL("type", "type", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
-              PUTVAL("url", "url", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
-              PUTVAL("votes", "votes", valueint, EINA_VALUE_TYPE_INT);
-              PUTVAL("rating", "rating", valuedouble, EINA_VALUE_TYPE_DOUBLE);
-              PUTVAL("certification", "certification", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
-              PUTVAL("overview", "overview", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
-              PUTVAL("released", "released", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
-              PUTVAL("version", "version", valueint, EINA_VALUE_TYPE_INT);
-              PUTVAL("last_modified_at", "last_modified_at", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
-              _tmdb_images_get(req, m, "posters", _poster_download_end_cb);
-              _tmdb_images_get(req, m, "backdrops", _backdrop_download_end_cb);
-              cJSON_Delete(root);
+
+                  Eina_Hash *hash = eina_hash_string_superfast_new(NULL);
+
+                  req->grabbed_data->data = eina_list_append(req->grabbed_data->data, hash);
+                  DBG("find info for %s", req->filename);
+                  PUTVAL("score", "score", valuedouble, EINA_VALUE_TYPE_DOUBLE);
+                  PUTVAL("popularity", "popularity", valueint, EINA_VALUE_TYPE_INT);
+                  PUTVAL("translated", "translated", valueint, EINA_VALUE_TYPE_INT);
+                  PUTVAL("adult", "adult", valueint, EINA_VALUE_TYPE_INT);
+                  PUTVAL("language", "language", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+                  PUTVAL("original_name", "original_title", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+                  PUTVAL("name", "title", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+                  PUTVAL("alternative_name", "alternative_title", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+                  PUTVAL("id", "tmdb_id", valueint, EINA_VALUE_TYPE_INT);
+                  PUTVAL("imdb", "imdb_id", valueint, EINA_VALUE_TYPE_INT);
+                  PUTVAL("type", "type", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+                  PUTVAL("url", "url", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+                  PUTVAL("votes", "votes", valueint, EINA_VALUE_TYPE_INT);
+                  PUTVAL("rating", "rating", valuedouble, EINA_VALUE_TYPE_DOUBLE);
+                  PUTVAL("certification", "certification", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+                  PUTVAL("overview", "overview", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+
+
+                  cJSON *it;
+                  it = cJSON_GetObjectItem(m, "overview");
+                  if (it) printf("Overview : %s", it->valuestring);
+
+
+
+                  PUTVAL("released", "released", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+                  PUTVAL("version", "version", valueint, EINA_VALUE_TYPE_INT);
+                  PUTVAL("last_modified_at", "last_modified_at", valuestring, EINA_VALUE_TYPE_STRINGSHARE);
+
+                  cJSON *poster, *backdrops;
+
+                  poster = _tmdb_images_get(req, m, "posters");
+                  if (poster) printf("pster : %s", poster->valuestring);
+
+                  backdrops = _tmdb_images_get(req, m, "backdrops");
+                  if (backdrops) printf("backdrop : %s", backdrops->valuestring);
+
+                  /*ems_downloader_url_download(poster, "tmdb",
+                                              end_cb,
+                                              req->filename);*/
+                  cJSON_Delete(root);
+              }
            end_req:
               if (req->end_cb)
                   req->end_cb(req->data, req->filename, req->grabbed_data);
@@ -411,7 +433,7 @@ ems_grabber_grab(Ems_Grabber_Params *params, Ems_Grabber_End_Cb end_cb, void *da
    req->data = data;
    req->buf = eina_strbuf_new();
    req->grabbed_data = calloc(1, sizeof(Ems_Grabber_Data));
-   req->grabbed_data->data = eina_hash_string_superfast_new(NULL);
+   req->grabbed_data->data = NULL;
    req->state = EMS_REQUEST_STATE_SEARCH;
 
    eina_hash_add(_hash_req, ec_url, req);

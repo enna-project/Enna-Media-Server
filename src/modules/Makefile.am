@@ -1,3 +1,3 @@
 MAINTAINERCLEANFILES = Makefile.in
 
-SUBDIRS = allocine tmdb thetvdb betaseries
+SUBDIRS = tmdb thetvdb betaseries t411

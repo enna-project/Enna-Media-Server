@@ -64,7 +64,7 @@ static int _dom;
 #endif /* ifdef CRIT */
 #define CRIT(...) EINA_LOG_DOM_CRIT(_enna_log_dom_global, __VA_ARGS__)
 
-#define EMS_ALLOCINE_API_KEY "YW5kcm9pZC12M3M"
+#define EMS_ALLOCINE_API_KEY "QUNXZWItQWxsb0Npbuk"
 #define EMS_ALLOCINE_QUERY_SEARCH  "http://api.allocine.fr/rest/v3/search?partner=%s&filter=movie&q=%s&format=json"
 #define EMS_ALLOCINE_QUERY_INFO    "http://api.allocine.fr/rest/v3/movie?partner=%s&code=%d&mediafmt=mp4-lc&format=json&filter=movie"
 #define EMS_ALLOCINE_QUERY_TRAILER "http://api.allocine.fr/rest/v3/media?partner=%s&code=%d&mediafmt=mp4-hip&format=json&profile=large"

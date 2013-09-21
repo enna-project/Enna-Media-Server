@@ -112,7 +112,7 @@ static Ems_Betaseries_Stats *_stats = NULL;
    do {                                                               \
         Eina_Value *v = eina_value_new(EINA_VALUE_TYPE_STRINGSHARE);  \
         eina_value_set(v, val);                                       \
-        eina_hash_add(req->grabbed_data->where, key, v);              \
+        eina_hash_add(where, key, v);              \
         DBG("Store metadata \"%s\" --> \"%s\"", key,                  \
             eina_value_to_string(v));                                 \
    } while(0);                                                        \
@@ -250,6 +250,7 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
               const char *buf = eina_strbuf_string_get(req->buf);
               Eina_Strbuf *url;
               char *seriesid = NULL;
+              Eina_Hash *hash;
 
               if (!buf)
                 {
@@ -275,32 +276,36 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
                 node = node->FirstChildElement("show");
               if (node)
                 node = node->FirstChildElement();
+
+              hash = eina_hash_string_superfast_new(NULL);
+              req->grabbed_data->data = eina_list_append(req->grabbed_data->data, hash);
+
               for(;node;node = node->NextSiblingElement())
                 {
                    if (!strcmp(node->Value(), "description"))
                      {
                         XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("overview", textNode->Value(), data);
+                        STORE_METADATA("overview", textNode->Value(), hash);
                      }
                    else if (!strcmp(node->Value(), "title"))
                      {
                         XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("title", textNode->Value(), data);
+                        STORE_METADATA("title", textNode->Value(), hash);
                      }
                    else if (!strcmp(node->Value(), "Status"))
                      {
                         XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("status", textNode->Value(), data);
+                        STORE_METADATA("status", textNode->Value(), hash);
                      }
                    else if (!strcmp(node->Value(), "network"))
                      {
                         XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("network", textNode->Value(), data);
+                        STORE_METADATA("network", textNode->Value(), hash);
                      }
                    else if (!strcmp(node->Value(), "url"))
                      {
                         XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("betaseries_id", textNode->Value(), data);
+                        STORE_METADATA("betaseries_id", textNode->Value(), hash);
                         seriesid = strdup(textNode->Value());
                      }
                 }
@@ -375,12 +380,12 @@ _search_complete_cb(void *data __UNUSED__, int type __UNUSED__, void *event_info
                    if (!strcmp(node->Value(), "title"))
                      {
                         XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("title", textNode->Value(), episode_data);
+                        STORE_METADATA("title", textNode->Value(), req->grabbed_data->episode_data);
                      }
                    else if (!strcmp(node->Value(), "description"))
                      {
                         XMLText* textNode = node->FirstChild()->ToText();
-                        STORE_METADATA("overview", textNode->Value(), episode_data);
+                        STORE_METADATA("overview", textNode->Value(), req->grabbed_data->episode_data);
                      }
                    else if (!strcmp(node->Value(), "screen"))
                      {
@@ -482,7 +487,7 @@ ems_grabber_grab(Ems_Grabber_Params *params, Ems_Grabber_End_Cb end_cb, void *da
    req->data = data;
    req->buf = eina_strbuf_new();
    req->grabbed_data = (Ems_Grabber_Data *)calloc(1, sizeof (Ems_Grabber_Data));
-   req->grabbed_data->data = eina_hash_string_superfast_new(NULL);
+   req->grabbed_data->data = NULL;
    req->grabbed_data->episode_data = eina_hash_string_superfast_new(NULL);
    req->grabbed_data->lang = "fr"; //FIXME
    req->params = params;

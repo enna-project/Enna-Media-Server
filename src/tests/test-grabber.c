@@ -30,31 +30,36 @@
 #include "ems_private.h"
 #include "ems_utils.h"
 
-static Eina_Bool _print_hash_cb(const Eina_Hash *hash, const void *key,
-                  void *data, void *fdata)
+static Eina_Bool _print_hash_cb(const Eina_Hash *hash __UNUSED__, const void *key,
+                  void *data, void *fdata __UNUSED__)
 {
    Eina_Value *v = data;
 
-   INF("Func data: Hash entry: [%s] -> %s", key, eina_value_to_string(v));
+   printf("Func data: Hash entry: [%s] -> %s\n", (char*)key, eina_value_to_string(v));
    eina_value_free(v);
 
    return 1;
 }
 
+
 static void
 _end_grab_cb(void *data __UNUSED__, const char *filename __UNUSED__, Ems_Grabber_Data *grabbed_data)
 {
+   Eina_Hash *h;
    DBG("End Grab %s", filename);
    DBG("Grabbed data : %p", grabbed_data);
    INF("Grabber language : %s", grabbed_data->lang);
-   INF("Grabber grabbed date : %lld", grabbed_data->date);
+   INF("Grabber grabbed date : %lu", grabbed_data->date);
    INF("Data:");
-   eina_hash_foreach(grabbed_data->data, _print_hash_cb, NULL);
-   if (grabbed_data->episode_data)
-     {
-        INF("Episode data:");
-        eina_hash_foreach(grabbed_data->episode_data, _print_hash_cb, NULL);
-     }
+   EINA_LIST_FREE(grabbed_data->data, h)
+   {
+       eina_hash_foreach(h, _print_hash_cb, NULL);
+       if (grabbed_data->episode_data)
+       {
+           INF("Episode data:");
+           eina_hash_foreach(grabbed_data->episode_data, _print_hash_cb, NULL);
+       }
+   }
    ecore_main_loop_quit();
 }
 
@@ -67,9 +72,7 @@ int main(int argc, char **argv)
 {
    Eina_Module *m;
    char tmp[PATH_MAX];
-   Ems_Media_Type type = 1;
    Ems_Grabber_Grab grab;
-   char *title;
    Ems_Grabber_Params *params;
 
    if (argc != 4)
@@ -104,13 +107,13 @@ int main(int argc, char **argv)
    if (grab)
      {
         INF("Grab title %s", argv[2]);
-
+        
         grab(params,
              _end_grab_cb, NULL);
 
      }
 
-   free(params->search);
+   eina_stringshare_del(params->search);
    free(params);
 
 
