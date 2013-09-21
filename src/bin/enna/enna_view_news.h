@@ -23,13 +23,9 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _ENNA_VIEW_PLAYER_VIDEO_H
-#define _ENNA_VIEW_PLAYER_VIDEO_H
+#ifndef _ENNA_VIEW_NEWS_H
+#define _ENNA_VIEW_NEWS_H
 
-Evas_Object *enna_view_player_video_add(Enna *enna, Evas_Object *parent);
-void enna_view_player_video_uri_set(Evas_Object *o, Ems_Node *node, Ems_Video *media);
-void enna_view_player_video_play(Evas_Object *o);
-void enna_view_player_video_pause(Evas_Object *o);
-void enna_view_player_video_stop(Evas_Object *o);
+Evas_Object *enna_view_news_add(Enna *enna, Evas_Object *parent);
 
-#endif /* _ENNA_VIEW_PLAYER_VIDEO_H */
+#endif /* _ENNA_VIEW_NEWS_H */

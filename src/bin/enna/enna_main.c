@@ -37,6 +37,7 @@
 #include "enna_activity.h"
 #include "enna_config.h"
 #include "enna_view_video_list.h"
+#include "enna_view_news.h"
 #include "enna_exit_popup.h"
 #include "enna_mainmenu.h"
 #include "enna_view_player_video.h"
@@ -231,6 +232,7 @@ enna_init(void)
    enna_activity_register("Videos", enna_view_video_list_add);
    enna_activity_register("Music", enna_view_music_grid_add);
    enna_activity_register("VideoPlayer", enna_view_player_video_add);
+   enna_activity_register("News", enna_view_news_add);
 
    INF("Enna init done");
 

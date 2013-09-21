@@ -277,6 +277,7 @@ enna_mainmenu_add(Enna *enna __UNUSED__, Evas_Object *parent)
 
     it = elm_list_item_append(mm->list, "Videos", NULL, NULL, NULL, NULL);
 
+    elm_list_item_append(mm->list, "News", NULL, NULL, NULL, NULL);
     elm_list_item_append(mm->list, "TV Shows", NULL, NULL, NULL, NULL);
     elm_list_item_append(mm->list, "Music", NULL, NULL, NULL, NULL);
     elm_list_item_append(mm->list, "Photos", NULL, NULL, NULL, NULL);

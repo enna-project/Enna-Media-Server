@@ -65,7 +65,7 @@ struct _Enna_View_Video_List_Item
    const char *description;
    const char *cover;
    const char *backdrop;
-   const char *media;
+   Ems_Video *media;
    Evas_Object *o_cover;
    Evas_Object *o_backdrop;
 };
@@ -185,7 +185,7 @@ _add_item_name_cb(void *data, Ems_Node *node, const char *value)
      }
    else
      {
-         ems_node_media_info_get(node, it->media, "clean_name", _add_item_file_name_cb,
+         ems_node_media_info_get(node, ems_video_hash_key_get(it->media), "clean_name", _add_item_file_name_cb,
                              NULL, NULL, it);
      }
 }
@@ -228,8 +228,7 @@ _add_item_cb(void *data, Ems_Node *node, Ems_Video *media)
    it = calloc(1, sizeof (Enna_View_Video_List_Item));
    it->node = node;
    it->act = act;
-   it->media =  ems_video_hash_key_get(media);
-   printf("it->media %s\n", it->media);
+   it->media =  media;
    it->it = elm_genlist_item_append(act->list, &itc_item,
                                     it,
                                     gr->it/* parent */,
@@ -241,11 +240,11 @@ _add_item_cb(void *data, Ems_Node *node, Ems_Video *media)
 
    act->nb_items++;
 
-   ems_node_media_info_get(node, it->media, "name", _add_item_name_cb,
+   ems_node_media_info_get(node, ems_video_hash_key_get(it->media), "name", _add_item_name_cb,
                              NULL, NULL, it);
-   ems_node_media_info_get(node, it->media, "poster", _add_item_poster_cb,
+   ems_node_media_info_get(node, ems_video_hash_key_get(it->media), "poster", _add_item_poster_cb,
                              NULL, NULL, it);
-   ems_node_media_info_get(node, it->media, "backdrop", _add_item_backdrop_cb,
+   ems_node_media_info_get(node, ems_video_hash_key_get(it->media), "backdrop", _add_item_backdrop_cb,
                              NULL, NULL, it);
 
 
@@ -468,25 +467,39 @@ _list_select_do(Evas_Object *obj, const char direction)
 static Eina_Bool
 _input_event(void *data, Enna_Input event)
 {
-   Enna_View_Video_List *act = data;
-   const char *tmp;
+    Enna_View_Video_List *act = data;
+    const char *tmp;
 
-   tmp = enna_keyboard_input_name_get(event);
-   INF("view video list input event %s", tmp);
+    tmp = enna_keyboard_input_name_get(event);
+    INF("view video list input event %s", tmp);
 
-   switch(event)
-     {
-      case ENNA_INPUT_DOWN:
-         _list_select_do(act->list, 1);
-         return ENNA_EVENT_BLOCK;
-      case ENNA_INPUT_UP:
-         _list_select_do(act->list, 0);
-         return ENNA_EVENT_BLOCK;
-      default:
-         break;
-     }
+    switch(event)
+    {
+    case ENNA_INPUT_DOWN:
+        _list_select_do(act->list, 1);
+        return ENNA_EVENT_BLOCK;
+    case ENNA_INPUT_UP:
+        _list_select_do(act->list, 0);
+        return ENNA_EVENT_BLOCK;
+    case ENNA_INPUT_OK:
+    {
+        Evas_Object *o;
+        Elm_Object_Item *it;
+        Enna_View_Video_List_Item *list_it;
 
-   return ENNA_EVENT_CONTINUE;
+        it = elm_genlist_selected_item_get(act->list);
+        list_it = elm_object_item_data_get(it);
+
+        o = enna_activity_select(act->enna, "VideoPlayer");
+        enna_view_player_video_uri_set(o, list_it->node, list_it->media);
+
+        return ENNA_EVENT_BLOCK;
+    }
+    default:
+        break;
+    }
+
+    return ENNA_EVENT_CONTINUE;
 }
 
 /*============================================================================*

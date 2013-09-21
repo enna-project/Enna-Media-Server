@@ -53,7 +53,7 @@ struct _Enna_View_Player_Video_Data
     Ecore_Timer *osd_timer;
     Evas_Object *cover;
 
-    char *media;
+    Ems_Video *media;
     Ems_Node *node;
 };
 
@@ -251,23 +251,23 @@ enna_view_player_video_add(Enna *enna __UNUSED__, Evas_Object *parent)
    return layout;
 }
 
-void enna_view_player_video_uri_set(Evas_Object *o, Ems_Node *node, const char *media_uuid)
+void enna_view_player_video_uri_set(Evas_Object *o, Ems_Node *node, Ems_Video *media)
 {
    char *uri;
    PRIV_GET_OR_RETURN(o, Enna_View_Player_Video_Data, priv);
 
    priv->node = node;
-   priv->media = strdup(media_uuid);
+   priv->media = media;
 
-   uri = ems_node_media_stream_url_get(node, media_uuid);
+   uri = ems_node_media_stream_url_get(node, media);
    DBG("Start video player with item: %s", uri);
 
    elm_video_file_set(priv->video, uri);
    free(uri);
 
-   ems_node_media_info_get(node, media_uuid, "name", _item_name_get_cb,
+   ems_node_media_info_get(node, media, "name", _item_name_get_cb,
                              NULL, NULL, priv);
-   ems_node_media_info_get(node, media_uuid, "poster", _item_poster_get_cb,
+   ems_node_media_info_get(node, media, "poster", _item_poster_get_cb,
                              NULL, NULL, priv);
 }
 

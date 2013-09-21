@@ -133,8 +133,8 @@ elm_main(int argc, char **argv)
    if (!enna)
      goto shutdown_config;
 
-   INF("Start scanner");
-   ems_scanner_start();
+   //   INF("Start scanner");
+   //   ems_scanner_start();
    INF("Start services annoucement");
    ems_avahi_start();
 
