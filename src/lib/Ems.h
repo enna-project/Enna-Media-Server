@@ -25,6 +25,7 @@ enum _Ems_Scanner_State
     EMS_SCANNER_STATE_RUNNING,
 };
 
+typedef struct _Ems_Db_Database Ems_Db_Database;
 typedef struct _Ems_Node Ems_Node;
 typedef struct _Ems_Player Ems_Player;
 typedef struct _Ems_Observer Ems_Observer;
@@ -33,6 +34,7 @@ typedef struct _Ems_Media Ems_Media;
 typedef struct _Ems_Media_Info Ems_Media_Info;
 typedef struct _Ems_Node_Dir Ems_Node_Dir;
 typedef struct _Ems_Video Ems_Video;
+typedef struct _Ems_Grabber_Data Ems_Grabber_Data;
 
 typedef void (*Ems_Node_Add_Cb)(void *data, Ems_Node *node);
 typedef void (*Ems_Node_Del_Cb)(void *data, Ems_Node *node);
@@ -58,6 +60,12 @@ typedef void (*Ems_Media_Info_Del_Cb)(void *data, Ems_Node *node,
                                       Ems_Media *media);
 typedef void (*Ems_Media_Info_Update_Cb)(void *data, Ems_Node *node,
                                          Ems_Media *media);
+
+/* Function typedef, called when grabber ends its work */
+typedef void (*Ems_Grabber_End_Cb)(void *data,
+                                   const char *filename,
+                                   Ems_Grabber_Data *grabbed_data);
+
 
 typedef enum _Ems_Scanner_State Ems_Scanner_State;
 
@@ -180,10 +188,8 @@ Ems_Observer *ems_node_media_info_get(Ems_Node *node,
                                         Ems_Media_Info_Update_Cb info_update,
                                         void *data);
 
-void ems_media_info_observer_del(Ems_Observer *obs);
-
 //Helper function to get a valid url from an Ems_Node and a media UUID
-char *ems_node_media_stream_url_get(Ems_Node *node, const char *media_uuid);
+char *ems_node_media_stream_url_get(Ems_Node *node, Ems_Video *media);
 
 /* Set the info of a media on the specified node */
 void ems_node_media_info_set(Ems_Node *node, Ems_Media *media, Ems_Media_Info *info, const char *value);
@@ -208,6 +214,27 @@ Eina_Bool ems_avahi_start(void);
 /* More ideas */
 void ems_player_synchronise(Ems_Player *master, Ems_Player *slave);
 void ems_player_desyncronise(Ems_Player *slave);
+
+/* Grabbers */
+
+struct _Ems_Grabber_Data
+{
+   Eina_List *data;
+   Eina_Hash *episode_data; //episode specific data
+   time_t date;
+   const char *lang;
+};
+
+void ems_grabber_module_grab(const char *filename, 
+                             const char *search, 
+                             Ems_Media_Type type, 
+                             unsigned int season, 
+                             unsigned int episode, 
+                             const char* module_name, 
+                             Ems_Grabber_End_Cb end_grab_cb, void *data);
+
+
+char *ems_utils_decrapify(const char *file, unsigned int *season, unsigned int *episode);
 
 #ifdef __cplusplus
 }
