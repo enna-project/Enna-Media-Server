@@ -34,8 +34,9 @@ enna_view_music_grid.h \
 enna_view_video_list.c \
 enna_view_video_list.h \
 enna_view_player_video.c \
-enna_view_player_video.h
-
+enna_view_player_video.h \
+enna_view_news.c \
+enna_view_news.h
 enna2_LDADD = \
 @ENNA_LIBS@ \
 $(top_builddir)/src/lib/libems.la
