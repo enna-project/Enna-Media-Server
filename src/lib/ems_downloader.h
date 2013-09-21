@@ -31,7 +31,7 @@ typedef void (*Ems_Downloader_End_Cb)(void *data, const char *url,
 
 Eina_Bool ems_downloader_init(void);
 void ems_downloader_shutdown(void);
-Eina_Bool ems_downloader_url_download(const char *url, const char *file,
+Eina_Bool ems_downloader_url_download(const char *url, const char *domain,
                                       Ems_Downloader_End_Cb end_cb, void *data );
 
 #endif /* _EMS_DOWNLOADER_H_ */
