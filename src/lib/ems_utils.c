@@ -39,6 +39,7 @@
 #define PATTERN_NUMBER "NUM"
 #define PATTERN_SEASON  "SE"
 #define PATTERN_EPISODE "EP"
+#define PATTERN_YEAR "YEAR"
 
 #define EMS_ISALNUM(c) isalnum ((int) (unsigned char) (c))
 #define EMS_ISGRAPH(c) isgraph ((int) (unsigned char) (c))
@@ -160,7 +161,10 @@ _decrapify_blacklist (char **list, char *str, unsigned int *se, unsigned int *ep
                }
              continue;
           }
+        else if (!strstr(*l, PATTERN_YEAR))
+        {
 
+        }
         p = strcasestr (str, *l);
         if (!p)
           continue;
@@ -344,7 +348,6 @@ Eina_Bool
 ems_utils_sha1_compute(const char *filename, unsigned char *sha1)
 {
     FILE *fd;
-    int i;
     uint64_t fsize;
     unsigned int rsize = 0;
     uint8_t *tmp;

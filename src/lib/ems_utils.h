@@ -29,7 +29,6 @@
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
-char *ems_utils_decrapify(const char *file, unsigned int *season, unsigned int *episode);
 char *ems_utils_escape_string(const char *string); 
 Eina_Bool ems_utils_sha1_compute(const char *filename, unsigned char *sha1);
 #endif /* _EMS_UTILS_H_ */
