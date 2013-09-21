@@ -19,6 +19,12 @@ _timer_cb(void *data)
    return EINA_FALSE;
 }
 
+_media_info_add_cb(void *data, Ems_Node *node,
+                   const char *value)
+{
+    printf("Value : %s", value);
+}
+
 static void
 _media_add_cb(void *data, Ems_Node *node,
                           Ems_Video *media)
@@ -29,7 +35,17 @@ _media_add_cb(void *data, Ems_Node *node,
 
    printf("[%s] %s\n\t%s\n", uuid,
           ems_video_title_get(media),
-          ems_node_media_stream_url_get(node, uuid));
+          ems_node_media_stream_url_get(node, media));
+
+   ems_node_media_info_get(node,
+                           uuid,
+                           "title",
+                           _media_info_add_cb,
+                           NULL,
+                           NULL,
+                           NULL);
+
+
    nb_medias++;
 }
 
@@ -67,6 +83,8 @@ _node_connected_cb(void *data, Ems_Node *node)
              ecore_main_loop_quit();
           }
 
+        ems_node_database_get(node);
+
         c = ems_collection_new(EMS_MEDIA_TYPE_VIDEO, "films", "*", NULL);
         ems_node_media_get(node,
                            c,
@@ -95,6 +113,9 @@ _node_info_connected_cb(void *data, Ems_Node *node)
              printf("Error connecting node %s\n", node_name);
              ecore_main_loop_quit();
           }
+
+        ems_node_database_get(node);
+
         ems_node_media_info_get(node, sha1, "clean_name",
                                 _info_add_cb, NULL, NULL, NULL);
         ecore_timer_reset(timer);
