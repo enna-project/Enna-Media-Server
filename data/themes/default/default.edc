@@ -24,6 +24,12 @@ collections
             name: "background";
             description {
                image.normal: "background.png";
+               fill {
+                  size {
+                  relative: 0.0 0.0;
+                  offset: 180 180;
+                  }
+               }
             }
          }
 
@@ -299,5 +305,22 @@ collections
          }
       }
    }
+group { name: "activity/layout/news";
+      images {
+         image: "cover_reflect.png" COMP;
+         image: "cover_shadow.png" COMP;
+         image: "list_deco.png" COMP;
+      }
+      parts {
+
+         part {
+            name: "list.swallow";
+            type: SWALLOW;
+            
+            description {
+               align: 0.5 0.5;
+            }
+         }
+      }
 
 }
