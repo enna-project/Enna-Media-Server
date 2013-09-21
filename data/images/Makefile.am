@@ -1,6 +1,6 @@
 MAINTAINERCLEANFILES = Makefile.in
 
-filesdir = $(datadir)/enna-media-server/images
+filesdir = $(datadir)/enna2/images
 files_DATA = \
 	cover1.jpg \
 	cover2.jpg \
