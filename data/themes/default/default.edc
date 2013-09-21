@@ -195,9 +195,10 @@ collections
             type: SWALLOW;
             description {
                align: 0 0.5;
-               rel1.offset: 0 80;
-               rel2.relative: 0.3 1.0;
-               rel2.offset: 0 -81;
+               rel1.offset: 0 0;
+               rel2.relative: 0.3 0.0;
+               rel2.to_y: "shelf_background";
+               //               rel2.offset: 0 -81;
             }
          }
       }
