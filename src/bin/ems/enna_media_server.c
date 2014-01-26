@@ -16,111 +16,111 @@
 #include <Ecore_Getopt.h>
 #include <Ems.h>
 
-static const Ecore_Getopt options = 
+static const Ecore_Getopt options =
 {
-        "enna-media-server",
-        "%prog [options]",
-        "1.0.0",
-        "(C) 2012 Nicolas Aguirre",
-        "GPLv2",
-        "Enna Media Server",
-        EINA_TRUE,
-        {
-                ECORE_GETOPT_STORE_DEF_BOOL
-                        ('n', "nodaemon", "Don't daemonize (stay in foreground)", 0),
-                ECORE_GETOPT_VERSION
-                        ('v', "version"),
-                ECORE_GETOPT_COPYRIGHT
-                        ('c', "copyright"),
-                ECORE_GETOPT_LICENSE
-                        ('l', "license"),
-                ECORE_GETOPT_HELP
-                        ('h', "help"),
-                ECORE_GETOPT_SENTINEL
-        }
+	"enna-media-server",
+	"%prog [options]",
+	"1.0.0",
+	"(C) 2012 Nicolas Aguirre",
+	"GPLv2",
+	"Enna Media Server",
+	EINA_TRUE,
+	{
+		ECORE_GETOPT_STORE_DEF_BOOL
+		('n', "nodaemon", "Don't daemonize (stay in foreground)", 0),
+		ECORE_GETOPT_VERSION
+		('v', "version"),
+		ECORE_GETOPT_COPYRIGHT
+		('c', "copyright"),
+		ECORE_GETOPT_LICENSE
+		('l', "license"),
+		ECORE_GETOPT_HELP
+		('h', "help"),
+		ECORE_GETOPT_SENTINEL
+	}
 };
 
 int main(int argc, char **argv)
 {
-   int args;
-   pid_t pid;
-   pid_t sid;
-   int fp;
-   char str[32];
-   Eina_Bool nodaemon_opt = EINA_FALSE;
-   Eina_Bool quit_opt = EINA_FALSE;
+	int args;
+	pid_t pid;
+	pid_t sid;
+	int fp;
+	char str[32];
+	Eina_Bool nodaemon_opt = EINA_FALSE;
+	Eina_Bool quit_opt = EINA_FALSE;
 
-   Ecore_Getopt_Value values[] = 
-        {
-                ECORE_GETOPT_VALUE_BOOL(nodaemon_opt),
-                ECORE_GETOPT_VALUE_BOOL(quit_opt),
-                ECORE_GETOPT_VALUE_BOOL(quit_opt),
-                ECORE_GETOPT_VALUE_BOOL(quit_opt),
-                ECORE_GETOPT_VALUE_BOOL(quit_opt),
-                ECORE_GETOPT_VALUE_NONE
-        };
+	Ecore_Getopt_Value values[] =
+		{
+			ECORE_GETOPT_VALUE_BOOL(nodaemon_opt),
+			ECORE_GETOPT_VALUE_BOOL(quit_opt),
+			ECORE_GETOPT_VALUE_BOOL(quit_opt),
+			ECORE_GETOPT_VALUE_BOOL(quit_opt),
+			ECORE_GETOPT_VALUE_BOOL(quit_opt),
+			ECORE_GETOPT_VALUE_NONE
+		};
 
-   eina_init();
-   ecore_init();
+	eina_init();
+	ecore_init();
 
-   ecore_app_args_set(argc, (const char **) argv);
-   args = ecore_getopt_parse(&options, values, argc, argv);
+	ecore_app_args_set(argc, (const char **) argv);
+	args = ecore_getopt_parse(&options, values, argc, argv);
 
-   if (args < 0)
-     {
-        printf("ERROR: could not parse options.\n");
-        return EXIT_FAILURE;
-     }
-   
-   if (quit_opt)
-     return EXIT_SUCCESS;
+	if (args < 0)
+	{
+		printf("ERROR: could not parse options.\n");
+		return EXIT_FAILURE;
+	}
 
-   if (!nodaemon_opt)
-     {
+	if (quit_opt)
+		return EXIT_SUCCESS;
 
-       pid = fork();
-       if (pid < 0)
-	 return EXIT_FAILURE;
+	if (!nodaemon_opt)
+	{
 
-       if (pid > 0)
-	 return EXIT_SUCCESS;
- 
-       umask(027);
+		pid = fork();
+		if (pid < 0)
+			return EXIT_FAILURE;
 
-       sid = setsid();
-       if (sid < 0)
-	 return EXIT_FAILURE;
-        
-        
-       if ((chdir("/")) < 0)
-	 return EXIT_FAILURE;
+		if (pid > 0)
+			return EXIT_SUCCESS;
 
-       printf("%s is launched in background.\n", argv[0]);
-        
-       /* Close out the standard file descriptors */
-       close(STDIN_FILENO);
-       close(STDOUT_FILENO);
-       close(STDERR_FILENO);
+		umask(027);
+
+		sid = setsid();
+		if (sid < 0)
+			return EXIT_FAILURE;
 
 
-       fp = open("/tmp/enna-media-server.lock", 
-		 O_RDWR|O_CREAT, 0640);
-       printf("Fp : %d\n", fp);
-       if (fp < 0)
-	 return EXIT_FAILURE;
+		if ((chdir("/")) < 0)
+			return EXIT_FAILURE;
 
-       if (lockf(fp, F_TLOCK, 0) < 0) 
-	 return EXIT_FAILURE;
+		printf("%s is launched in background.\n", argv[0]);
 
-       snprintf(str, sizeof(str), "%d\n", getpid());
-       write(fp, str, strlen(str)); /* record pid to lockfile */
-     }
-   
-   if (!ems_init(NULL, EINA_TRUE))
-     return EXIT_FAILURE;
+		/* Close out the standard file descriptors */
+		close(STDIN_FILENO);
+		close(STDOUT_FILENO);
+		close(STDERR_FILENO);
 
-   ems_run();
-   ems_shutdown();
-   return EXIT_SUCCESS;
+
+		fp = open("/tmp/enna-media-server.lock",
+		          O_RDWR|O_CREAT, 0640);
+		printf("Fp : %d\n", fp);
+		if (fp < 0)
+			return EXIT_FAILURE;
+
+		if (lockf(fp, F_TLOCK, 0) < 0)
+			return EXIT_FAILURE;
+
+		snprintf(str, sizeof(str), "%d\n", getpid());
+		write(fp, str, strlen(str)); /* record pid to lockfile */
+	}
+
+	if (!ems_init(NULL, EINA_TRUE))
+		return EXIT_FAILURE;
+
+	ems_run();
+	ems_shutdown();
+	return EXIT_SUCCESS;
 
 }
