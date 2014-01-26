@@ -80,7 +80,10 @@ int main(int argc, char **argv)
 
 		pid = fork();
 		if (pid < 0)
+		{
+			perror("Fork");
 			return EXIT_FAILURE;
+		}
 
 		if (pid > 0)
 			return EXIT_SUCCESS;
@@ -89,13 +92,19 @@ int main(int argc, char **argv)
 
 		sid = setsid();
 		if (sid < 0)
+		{
+			perror("sid");
 			return EXIT_FAILURE;
+		}
 
 
 		if ((chdir("/")) < 0)
+		{
+			perror("chdir");
 			return EXIT_FAILURE;
+		}
 
-		printf("%s is launched in background.\n", argv[0]);
+		printf("%s is launched in background pid = %u.\n", argv[0], getpid());
 
 		/* Close out the standard file descriptors */
 		close(STDIN_FILENO);
@@ -107,10 +116,16 @@ int main(int argc, char **argv)
 		          O_RDWR|O_CREAT, 0640);
 		printf("Fp : %d\n", fp);
 		if (fp < 0)
+		{
+			perror("Open lock file");
 			return EXIT_FAILURE;
+		}
 
 		if (lockf(fp, F_TLOCK, 0) < 0)
+		{
+			perror("lockf");
 			return EXIT_FAILURE;
+		}
 
 		snprintf(str, sizeof(str), "%d\n", getpid());
 		write(fp, str, strlen(str)); /* record pid to lockfile */
