@@ -53,211 +53,211 @@ static const char *conf_filename = NULL;
 static const char *
 ems_config_filename_default_get(void)
 {
-   static const char *filename = NULL;
-   char tmp[PATH_MAX];
+	static const char *filename = NULL;
+	char tmp[PATH_MAX];
 
-   if (filename)
-     return filename;
+	if (filename)
+		return filename;
 
-   snprintf(tmp, sizeof(tmp), "%s/.config/enna-media-server/%s", getenv("HOME"), EMS_CONFIG_FILE);
-   filename =  eina_stringshare_add(tmp);
+	snprintf(tmp, sizeof(tmp), "%s/.config/enna-media-server/%s", getenv("HOME"), EMS_CONFIG_FILE);
+	filename =  eina_stringshare_add(tmp);
 
-   DBG("CONFIG filename : %s", filename);
+	DBG("CONFIG filename : %s", filename);
 
-   return filename;
+	return filename;
 }
 
 static const char *
 ems_config_filename_get(void)
 {
-   printf("%s\n", conf_filename);
-   return conf_filename;
+	printf("%s\n", conf_filename);
+	return conf_filename;
 }
 
 static const char *
 ems_config_dirname_get(void)
 {
-   static const char *dir_name = NULL;
-   char *tmp;
-   if (dir_name)
-       return dir_name;
+	static const char *dir_name = NULL;
+	char *tmp;
+	if (dir_name)
+		return dir_name;
 
-   tmp = ecore_file_dir_get(ems_config_filename_get());
-   dir_name = eina_stringshare_add(tmp);
-   free(tmp);
+	tmp = ecore_file_dir_get(ems_config_filename_get());
+	dir_name = eina_stringshare_add(tmp);
+	free(tmp);
 
-   return tmp;
+	return tmp;
 }
 
 
 static const char *
 ems_config_tmp_filename_get(void)
 {
-   static const char *filename = NULL;
-   char tmp[PATH_MAX];
+	static const char *filename = NULL;
+	char tmp[PATH_MAX];
 
-   if (filename)
-     return filename;
+	if (filename)
+		return filename;
 
-   if (!filename)
-     {
-        filename = getenv("TMPDIR");
-        if (!filename) filename = "/tmp";
-     }
+	if (!filename)
+	{
+		filename = getenv("TMPDIR");
+		if (!filename) filename = "/tmp";
+	}
 
-   snprintf(tmp, sizeof(tmp), "%s/enna-media-server/%s", filename, EMS_CONFIG_FILE);
-   filename = eina_stringshare_add(tmp);
+	snprintf(tmp, sizeof(tmp), "%s/enna-media-server/%s", filename, EMS_CONFIG_FILE);
+	filename = eina_stringshare_add(tmp);
 
-   DBG("TMP filename : %s", filename);
+	DBG("TMP filename : %s", filename);
 
-   return filename;
+	return filename;
 }
 
 static const char *
 ems_config_tmp_dirname_get(void)
 {
-   static const char *dir_name = NULL;
-   char *tmp;
-   if (dir_name)
-       return dir_name;
+	static const char *dir_name = NULL;
+	char *tmp;
+	if (dir_name)
+		return dir_name;
 
-   tmp = ecore_file_dir_get(ems_config_tmp_filename_get());
-   dir_name = eina_stringshare_add(tmp);
-   free(tmp);
+	tmp = ecore_file_dir_get(ems_config_tmp_filename_get());
+	dir_name = eina_stringshare_add(tmp);
+	free(tmp);
 
-   return tmp;
+	return tmp;
 }
 
 static const char *
 ems_config_default_filename_get(void)
 {
-   static const char *filename = NULL;
-   char tmp[PATH_MAX];
+	static const char *filename = NULL;
+	char tmp[PATH_MAX];
 
-   if (filename)
-     return filename;
+	if (filename)
+		return filename;
 
-   snprintf(tmp, sizeof(tmp), "%s/%s", PACKAGE_DATA_DIR, EMS_CONFIG_FILE);
-   filename = eina_stringshare_add(tmp);
+	snprintf(tmp, sizeof(tmp), "%s/%s", PACKAGE_DATA_DIR, EMS_CONFIG_FILE);
+	filename = eina_stringshare_add(tmp);
 
-   return filename;
+	return filename;
 }
 
 static Eet_Data_Descriptor *
 ems_config_descriptor_new(const char *name, int size)
 {
-   Eet_Data_Descriptor_Class eddc;
+	Eet_Data_Descriptor_Class eddc;
 
-   if (!eet_eina_stream_data_descriptor_class_set(&eddc, sizeof (eddc), name, size))
-     return NULL;
+	if (!eet_eina_stream_data_descriptor_class_set(&eddc, sizeof (eddc), name, size))
+		return NULL;
 
-   return eet_data_descriptor_stream_new(&eddc);
+	return eet_data_descriptor_stream_new(&eddc);
 }
 
 
 static void
 _make_config(const char *config_file)
 {
-   Eet_File *ef;
-   FILE *f;
-   int textlen;
-   char *text;
+	Eet_File *ef;
+	FILE *f;
+	int textlen;
+	char *text;
 
-   /* Create default config path and file */
-   if (!config_file)
-     {        
-        conf_filename = eina_stringshare_add(ems_config_filename_default_get());
-        if (!ecore_file_is_dir(ems_config_dirname_get()))
-          ecore_file_mkpath(ems_config_dirname_get());
-     }
-   else if (!ecore_file_exists(config_file))
-     {
-        conf_filename = eina_stringshare_add(config_file);
-        ecore_file_mkpath(ecore_file_dir_get(config_file));
-     }    
-   else 
-     {
-        conf_filename = eina_stringshare_add(config_file);
-     }
+	/* Create default config path and file */
+	if (!config_file)
+	{
+		conf_filename = eina_stringshare_add(ems_config_filename_default_get());
+		if (!ecore_file_is_dir(ems_config_dirname_get()))
+			ecore_file_mkpath(ems_config_dirname_get());
+	}
+	else if (!ecore_file_exists(config_file))
+	{
+		conf_filename = eina_stringshare_add(config_file);
+		ecore_file_mkpath(ecore_file_dir_get(config_file));
+	}
+	else
+	{
+		conf_filename = eina_stringshare_add(config_file);
+	}
 
-   INF("Config file : %s", conf_filename);
+	INF("Config file : %s", conf_filename);
 
-   ef = eet_open(ems_config_tmp_filename_get(),
-                 EET_FILE_MODE_READ_WRITE);
-   if (!ef)
-     ef = eet_open(ems_config_tmp_filename_get(),
-                   EET_FILE_MODE_WRITE);
+	ef = eet_open(ems_config_tmp_filename_get(),
+	              EET_FILE_MODE_READ_WRITE);
+	if (!ef)
+		ef = eet_open(ems_config_tmp_filename_get(),
+		              EET_FILE_MODE_WRITE);
 
-   f = fopen(conf_filename, "rb");
-   if (!f)
-     {
-        WRN("Could not open '%s', setup default config.", ems_config_filename_get());
-        if (ecore_file_exists(ems_config_default_filename_get()))
-          {
-             ecore_file_cp(ems_config_default_filename_get(), ems_config_filename_get());
-             f = fopen(ems_config_filename_get(), "rb");
-             if (!f)
-               return;
-          }
-        else
-          return;
-     }
+	f = fopen(conf_filename, "rb");
+	if (!f)
+	{
+		WRN("Could not open '%s', setup default config.", ems_config_filename_get());
+		if (ecore_file_exists(ems_config_default_filename_get()))
+		{
+			ecore_file_cp(ems_config_default_filename_get(), ems_config_filename_get());
+			f = fopen(ems_config_filename_get(), "rb");
+			if (!f)
+				return;
+		}
+		else
+			return;
+	}
 
-   fseek(f, 0, SEEK_END);
-   textlen = ftell(f);
-   rewind(f);
-   text = (char *)malloc(textlen);
-   if (!text)
-     {
-        fclose(f);
-        eet_close(ef);
-        return;
-     }
+	fseek(f, 0, SEEK_END);
+	textlen = ftell(f);
+	rewind(f);
+	text = (char *)malloc(textlen);
+	if (!text)
+	{
+		fclose(f);
+		eet_close(ef);
+		return;
+	}
 
-   if (fread(text, textlen, 1, f) != 1)
-     {
-        free(text);
-        fclose(f);
-        eet_close(ef);
-        return;
-     }
+	if (fread(text, textlen, 1, f) != 1)
+	{
+		free(text);
+		fclose(f);
+		eet_close(ef);
+		return;
+	}
 
-   fclose(f);
-   if (eet_data_undump(ef, "config", text, textlen, 1))
-     INF("Updating configuration %s", conf_filename);
-   free(text);
-   eet_close(ef);
+	fclose(f);
+	if (eet_data_undump(ef, "config", text, textlen, 1))
+		INF("Updating configuration %s", conf_filename);
+	free(text);
+	eet_close(ef);
 }
 
 static Ems_Config *
 _config_get(Eet_Data_Descriptor *edd)
 {
-   Ems_Config *config = NULL;
-   Eet_File *file;
+	Ems_Config *config = NULL;
+	Eet_File *file;
 
-   if (!ecore_file_is_dir(ems_config_tmp_dirname_get()))
-     ecore_file_mkdir(ems_config_tmp_dirname_get());
-   file = eet_open(ems_config_tmp_filename_get(),
-                   EET_FILE_MODE_READ_WRITE);
+	if (!ecore_file_is_dir(ems_config_tmp_dirname_get()))
+		ecore_file_mkdir(ems_config_tmp_dirname_get());
+	file = eet_open(ems_config_tmp_filename_get(),
+	                EET_FILE_MODE_READ_WRITE);
 
-   config = eet_data_read(file, edd, "config");
-   if (!config)
-     {
-        WRN("Warning no configuration found! This must not happen, we will go back to a void configuration");
-        return NULL;
-     }
+	config = eet_data_read(file, edd, "config");
+	if (!config)
+	{
+		WRN("Warning no configuration found! This must not happen, we will go back to a void configuration");
+		return NULL;
+	}
 
-   eet_close(file);
+	eet_close(file);
 
-   return config;
+	return config;
 }
 
 void
 _dump_cb(void *data, const char *str)
 {
-   FILE *fp = data;
-   fprintf(fp, "%s", str);
-   printf("%s", str);
+	FILE *fp = data;
+	fprintf(fp, "%s", str);
+	printf("%s", str);
 }
 
 /*============================================================================*
@@ -266,115 +266,115 @@ _dump_cb(void *data, const char *str)
 
 void
 ems_config_save(void)
-{ 
-   Eet_File *file;
-   FILE *fp;
+{
+	Eet_File *file;
+	FILE *fp;
 
-   file = eet_open(ems_config_tmp_filename_get(),
-                   EET_FILE_MODE_READ_WRITE);
-   eet_data_write(file, conf_edd, "config", ems_config, EINA_FALSE);
-   printf("save to : %s\n", ems_config_filename_get());
-   fp = fopen(ems_config_filename_get(), "w");
-   if (!fp)
-     goto error;
-   eet_data_dump(file, "config", _dump_cb, fp);
-   fclose(fp);
+	file = eet_open(ems_config_tmp_filename_get(),
+	                EET_FILE_MODE_READ_WRITE);
+	eet_data_write(file, conf_edd, "config", ems_config, EINA_FALSE);
+	printf("save to : %s\n", ems_config_filename_get());
+	fp = fopen(ems_config_filename_get(), "w");
+	if (!fp)
+		goto error;
+	eet_data_dump(file, "config", _dump_cb, fp);
+	fclose(fp);
 
- error:
-   eet_close(file);
+error:
+	eet_close(file);
 }
 
 const char *
 ems_config_cache_dirname_get(void)
 {
-   static const char *dir_name = NULL;
-   char tmp[PATH_MAX];
+	static const char *dir_name = NULL;
+	char tmp[PATH_MAX];
 
-   if (dir_name)
-       return dir_name;
+	if (dir_name)
+		return dir_name;
 
-   if (!ems_config)
-     return NULL;
+	if (!ems_config)
+		return NULL;
 
-   /* cache path is not set or doesn't exist : save cache in $HOME/.cache/enna-media-server */
-   if (!ems_config->cache_path || !ems_config->cache_path[0] || !ecore_file_exists(ems_config->cache_path))
-     {
-        snprintf(tmp, sizeof(tmp), "%s/.cache/enna-media-server", getenv("HOME"));
-        WRN("Cache directory is not set, save cache data in %s", tmp);
-     }
-   else
-     {
-        /* create a directory enna-media-server into cache specified in config */
-        snprintf(tmp, sizeof(tmp), "%s/enna-media-server", ems_config->cache_path);
-        INF("Save cache data in %s\n", tmp);
-     }
+	/* cache path is not set or doesn't exist : save cache in $HOME/.cache/enna-media-server */
+	if (!ems_config->cache_path || !ems_config->cache_path[0] || !ecore_file_exists(ems_config->cache_path))
+	{
+		snprintf(tmp, sizeof(tmp), "%s/.cache/enna-media-server", getenv("HOME"));
+		WRN("Cache directory is not set, save cache data in %s", tmp);
+	}
+	else
+	{
+		/* create a directory enna-media-server into cache specified in config */
+		snprintf(tmp, sizeof(tmp), "%s/enna-media-server", ems_config->cache_path);
+		INF("Save cache data in %s\n", tmp);
+	}
 
-   if (!ecore_file_is_dir(tmp))
-     ecore_file_mkpath(tmp);
+	if (!ecore_file_is_dir(tmp))
+		ecore_file_mkpath(tmp);
 
-   dir_name = eina_stringshare_add(tmp);
-   return dir_name;
+	dir_name = eina_stringshare_add(tmp);
+	return dir_name;
 }
 
 Eina_Bool
 ems_config_init(const char *config_file)
 {
-   directory_edd = ENNA_CONFIG_DD_NEW("Ems_Directory",
-                                      Ems_Directory);
+	directory_edd = ENNA_CONFIG_DD_NEW("Ems_Directory",
+	                                   Ems_Directory);
 #undef T
 #undef D
 #define T Ems_Directory
 #define D directory_edd
-   ENNA_CONFIG_VAL(D, T, path, EET_T_STRING);
-   ENNA_CONFIG_VAL(D, T, label, EET_T_STRING);
-   ENNA_CONFIG_VAL(D, T, type, EET_T_UINT);
+	ENNA_CONFIG_VAL(D, T, path, EET_T_STRING);
+	ENNA_CONFIG_VAL(D, T, label, EET_T_STRING);
+	ENNA_CONFIG_VAL(D, T, type, EET_T_UINT);
 
-   conf_edd = ENNA_CONFIG_DD_NEW("config", Ems_Config);
+	conf_edd = ENNA_CONFIG_DD_NEW("config", Ems_Config);
 #undef T
 #undef D
 #define T Ems_Config
 #define D conf_edd
-   ENNA_CONFIG_VAL(D, T, version, EET_T_UINT);
-   ENNA_CONFIG_VAL(D, T, port, EET_T_SHORT);
-   ENNA_CONFIG_VAL(D, T, port_stream, EET_T_SHORT);
-   ENNA_CONFIG_VAL(D, T, name, EET_T_STRING);
-   ENNA_CONFIG_LIST(D, T, places, directory_edd);
-   ENNA_CONFIG_VAL(D, T, video_extensions, EET_T_STRING);
-   ENNA_CONFIG_VAL(D, T, music_extensions, EET_T_STRING);
-   ENNA_CONFIG_VAL(D, T, photo_extensions, EET_T_STRING);
-   ENNA_CONFIG_VAL(D, T, blacklist, EET_T_STRING);
-   ENNA_CONFIG_VAL(D, T, scan_period, EET_T_UINT);
-   ENNA_CONFIG_VAL(D, T, cache_path, EET_T_STRING);
-   ENNA_CONFIG_VAL(D, T, uuid, EET_T_STRING);
+	ENNA_CONFIG_VAL(D, T, version, EET_T_UINT);
+	ENNA_CONFIG_VAL(D, T, port, EET_T_SHORT);
+	ENNA_CONFIG_VAL(D, T, port_stream, EET_T_SHORT);
+	ENNA_CONFIG_VAL(D, T, name, EET_T_STRING);
+	ENNA_CONFIG_LIST(D, T, places, directory_edd);
+	ENNA_CONFIG_VAL(D, T, video_extensions, EET_T_STRING);
+	ENNA_CONFIG_VAL(D, T, music_extensions, EET_T_STRING);
+	ENNA_CONFIG_VAL(D, T, photo_extensions, EET_T_STRING);
+	ENNA_CONFIG_VAL(D, T, blacklist, EET_T_STRING);
+	ENNA_CONFIG_VAL(D, T, scan_period, EET_T_UINT);
+	ENNA_CONFIG_VAL(D, T, cache_path, EET_T_STRING);
+	ENNA_CONFIG_VAL(D, T, uuid, EET_T_STRING);
 
-   _make_config(config_file);
+	_make_config(config_file);
 
-   ems_config = _config_get(conf_edd);
+	ems_config = _config_get(conf_edd);
 
-   DBG("Config values :\n\tversion: %d\n"
-       "\tport: %d\n"
-       "\tport stream: %d\n"
-       "\tname: %s\n"
-       "\tvideo ext: %s\n"
-       "\tmusic ext: %s\n"
-       "\tphoto ext: %s\n"
-       "\tblacklist: %s\n"
-       "\tscan period : %d\n"
-       "\tcache path : %s\n"
-       "\tuuid : %s\n",
-       ems_config->version,
-       ems_config->port,
-       ems_config->port_stream,
-       ems_config->name,
-       ems_config->video_extensions,
-       ems_config->music_extensions,
-       ems_config->photo_extensions,
-       ems_config->blacklist,
-       ems_config->scan_period,
-       ems_config->cache_path,
-       ems_config->uuid);
+	DBG("Config values :\n\tversion: %d\n"
+	    "\tport: %d\n"
+	    "\tport stream: %d\n"
+	    "\tname: %s\n"
+	    "\tvideo ext: %s\n"
+	    "\tmusic ext: %s\n"
+	    "\tphoto ext: %s\n"
+	    "\tblacklist: %s\n"
+	    "\tscan period : %d\n"
+	    "\tcache path : %s\n"
+	    "\tuuid : %s\n",
+	    ems_config->version,
+	    ems_config->port,
+	    ems_config->port_stream,
+	    ems_config->name,
+	    ems_config->video_extensions,
+	    ems_config->music_extensions,
+	    ems_config->photo_extensions,
+	    ems_config->blacklist,
+	    ems_config->scan_period,
+	    ems_config->cache_path,
+	    ems_config->uuid);
 
-   return EINA_TRUE;
+	return EINA_TRUE;
 }
 
 void
