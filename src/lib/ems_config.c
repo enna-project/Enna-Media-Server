@@ -125,7 +125,7 @@ ems_config_tmp_dirname_get(void)
 	dir_name = eina_stringshare_add(tmp);
 	free(tmp);
 
-	return tmp;
+	return dir_name;
 }
 
 static const char *
@@ -182,6 +182,8 @@ _make_config(const char *config_file)
 
 	INF("Config file : %s", conf_filename);
 
+	if (!ecore_file_is_dir(ems_config_tmp_dirname_get()))
+		ecore_file_mkdir(ems_config_tmp_dirname_get());
 	ef = eet_open(ems_config_tmp_filename_get(),
 	              EET_FILE_MODE_READ_WRITE);
 	if (!ef)
@@ -235,8 +237,6 @@ _config_get(Eet_Data_Descriptor *edd)
 	Ems_Config *config = NULL;
 	Eet_File *file;
 
-	if (!ecore_file_is_dir(ems_config_tmp_dirname_get()))
-		ecore_file_mkdir(ems_config_tmp_dirname_get());
 	file = eet_open(ems_config_tmp_filename_get(),
 	                EET_FILE_MODE_READ_WRITE);
 
