@@ -10,7 +10,7 @@ CONFIG += c++11
 
 
 TEMPLATE = app
-TARGET = EnnaMediaServer2
+TARGET = enna-media-server
 INCLUDEPATH +=
 
 # Input
@@ -32,6 +32,3 @@ SOURCES += Database.cpp \
            sha1.cpp \
            WebSocketServer.cpp \
            Application.cpp
-
-DISTFILES += \
-    Protocol.txt
