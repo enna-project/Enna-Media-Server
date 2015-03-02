@@ -57,10 +57,7 @@ void WebSocketServer::processMessage(QString message)
     QWebSocket *pSender = qobject_cast<QWebSocket *>(sender());
     Q_FOREACH (QWebSocket *pClient, m_clients)
     {
-        if (pClient != pSender) //don't echo message back to sender
-        {
-            pClient->sendTextMessage(message);
-        }
+        pClient->sendTextMessage(message);
     }
 }
 
