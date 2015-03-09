@@ -1,8 +1,5 @@
 #include "Application.h"
-
-/* Define WEB for websocket port FIXME: move to a globel .h file*/
-#define EMS_WEBSOCKET_PORT 7337
-
+#include "DefaultSettings.h"
 
 /*
  * Derived form QCoreApplication
@@ -34,6 +31,8 @@ Application::Application(int & argc, char ** argv) :
     }
     settings.endArray();
 
+    /* Open Database */
+    Database::instance()->open();
     /* Create Websocket server */
     m_webSocketServer = new WebSocketServer(m_websocketPort, this);
     /* Create Discovery Server */
@@ -43,6 +42,7 @@ Application::Application(int & argc, char ** argv) :
 
 Application::~Application()
 {
-
+    /* Close properly the database */
+    Database::instance()->close();
 }
 

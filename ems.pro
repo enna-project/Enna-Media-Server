@@ -21,7 +21,9 @@ HEADERS += Database.h \
            Scanner.h \
            sha1.h \
            WebSocketServer.h \          
-           Application.h
+           Application.h \
+    Data.h \
+    DefaultSettings.h
 
 SOURCES += Database.cpp \
            DirectoryWorker.cpp \

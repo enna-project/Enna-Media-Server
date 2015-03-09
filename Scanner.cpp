@@ -10,6 +10,7 @@
 
 Scanner::Scanner(QObject *parent) : QObject(parent)
 {
+    db = Database::instance();
     grabbersThread = new QThread;
     grabbers = new Grabbers();
     grabbers->moveToThread(grabbersThread);
@@ -45,10 +46,8 @@ void Scanner::locationAdd(const QString &location)
     connect(directoryThread, SIGNAL(finished()), directoryThread, SLOT(deleteLater()));
     // Call fileFound slot when a new file is found
     connect(dirWorker, SIGNAL(fileFound(QString, QByteArray)), this, SLOT(fileFound(QString, QByteArray)), Qt::DirectConnection);
-    // Start db transaction
-    db.beginTransaction();
-    //Start the thread
 
+    //Start the thread
     directoryThread->start();
     qDebug() << Q_FUNC_INFO << QThread::currentThreadId();
 }
@@ -57,7 +56,7 @@ void Scanner::fileFound(QString filename, QByteArray sha1)
 {    
     qDebug() << Q_FUNC_INFO << QThread::currentThreadId();
     // Insert a new file in the db
-    db.fileInsert(filename, sha1);
+    //db.fileInsert(filename, sha1);
     emit grab(filename, sha1);
 }
 
@@ -65,7 +64,7 @@ void Scanner::filesProcessed()
 {
     qDebug() << Q_FUNC_INFO << QThread::currentThreadId() << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<";
     // End db transaction (commit)
-    db.endTransaction();
+    //db.endTransaction();
 #if 0
     QJsonDocument doc(db.albumsListGet());
     qDebug() << "Albums list found : " << doc.toJson();

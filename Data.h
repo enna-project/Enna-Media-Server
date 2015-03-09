@@ -30,6 +30,30 @@ enum EMSTrackFormat
     MP3
 };
 
+class EMSArtist
+{
+public:
+    unsigned long id; /* Unique identifier (primary key in db) */
+    QString name; /* Full name or pseudonyme of the artist */
+    QString picture;
+};
+
+class EMSAlbum
+{
+public:
+    unsigned long id; /* Unique identifier (primary key in db) */
+    QString name; /* Album title */
+    QString cover;
+};
+
+class EMSGenre
+{
+public:
+    unsigned long id; /* Unique identifier (primary key in db) */
+    QString name; /* Genre label */
+    QString picture;
+};
+
 class EMSTrack
 {
 public:
@@ -46,27 +70,6 @@ public:
     EMSArtist artist;
     EMSAlbum album;
     EMSGenre genre;
-};
-
-class EMSArtist
-{
-public:
-    unsigned long id; /* Unique identifier (primary key in db) */
-    QString name; /* Full name or pseudonyme of the artist */
-};
-
-class EMSAlbum
-{
-public:
-    unsigned long id; /* Unique identifier (primary key in db) */
-    QString name; /* Album title */
-};
-
-class EMSGenre
-{
-public:
-    unsigned long id; /* Unique identifier (primary key in db) */
-    QString name; /* Genre label */
 };
 
 /* Playlist management

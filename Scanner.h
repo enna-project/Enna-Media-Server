@@ -14,7 +14,7 @@ public:
     void locationAdd(const QString &location);
 
 private:
-    Database db;
+    Database *db;
     QThread *grabbersThread;
     Grabbers *grabbers;
 

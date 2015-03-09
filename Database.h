@@ -5,47 +5,93 @@
 #include <QVariant>
 #include <QJsonObject>
 #include <QMap>
-
-
+#include <QMutex>
 #include <QSqlError>
 #include <QtSql/QSql>
 #include <QtSql/QSqlDatabase>
 #include <QtSql/QSqlQuery>
 #include <QTime>
 
+#include "Data.h"
+
 class Database : public QObject
 {
     Q_OBJECT
+
 public:
-    explicit Database(QObject *parent = 0);
-    ~Database();
+    /* Internal interface for managing this object */
+    bool open(); /* Open the database */
+    void close(); /* Close the database. For performance, let it open. */
 
-    void beginTransaction();
-    void endTransaction();
+    /* Interface for track management (server-side actions) */
+    bool insertNewTrack(EMSTrack newTrack);
+    bool searchExistingTrack(QString sha1, EMSTrack *existingTrack);
 
-    void fileInsert(QString filename, QByteArray sha1);
-    void songInsert(QString song, QJsonObject *metadata);
-    void artistInsert(QString artist, QJsonObject *metadata);
-    void albumInsert(QString album, QJsonObject *metadata);
-    void artistAlbumInsert(QString artist, QString album, QJsonObject *metadata);
-    QJsonObject artistsListGet();
-    QJsonObject albumsListGet();
-    QJsonObject songsListGet();
-    QJsonObject artistDataGet(QString artist);
-    QJsonObject albumDataGet(QString album);
-    QJsonObject songDataGet(QString song);
+    /* Interface for browsing */
+    void getTracks(QVector<EMSTrack> *tracksList);
+    void getTracksByArtist(QVector<EMSTrack> *tracksList, unsigned long artistId);
+    void getTracksByAlbum(QVector<EMSTrack> *tracksList, unsigned long albumId);
+    void getTracksByGenre(QVector<EMSTrack> *tracksList, unsigned long genreId);
+    void getAlbumList(QVector<EMSAlbum> *albumList);
+    void getGenreList(QVector<EMSGenre> *genreList);
 
+    /* Data accessor (search) */
+    bool getTrackById(EMSTrack *track, unsigned long trackId);
+    void getTracksByName(QVector<EMSTrack> *tracksList, QString name);
+    bool getArtistById(EMSArtist *artist, unsigned long artistId);
+    bool getArtistByName(EMSArtist *artist, QString name);
+    bool getAlbumById(EMSAlbum *album, unsigned long albumId);
+    void getAlbumsByName(QVector<EMSAlbum> *albumsList, QString name);
+    bool getGenreById(EMSGenre *genre, unsigned long genreId);
+    bool getGenreByName(EMSGenre *genre, QString name);
 
+    /* Signleton pattern
+     * See: http://www.qtcentre.org/wiki/index.php?title=Singleton_pattern
+     */
+    static Database* instance()
+    {
+        static QMutex mutex;
+        if (!_instance)
+        {
+            mutex.lock();
+
+            if (!_instance)
+                _instance = new Database;
+
+            mutex.unlock();
+        }
+        return _instance;
+    }
+
+    static void drop()
+    {
+        static QMutex mutex;
+        mutex.lock();
+        delete _instance;
+        _instance = 0;
+        mutex.unlock();
+    }
 
 private:
-    int insertFileMagic;
-    QSqlError initDb();
+    /* Current state of the opened database */
+    bool opened;
+    unsigned int version;
     QSqlDatabase db;
-    QSqlQuery *insertTrackQuery;
-    QSqlQuery *insertFileQuery;
-    QVariantList m_filenames;
-    QVariantList m_sha1s;
-    QVariantList m_magics;
+
+    /* Data parsed from the QSetting file */
+    QString dbSettingPath;
+    QString dbSettingCreateScript;
+    unsigned int dbSettingVersion;
+
+    /* Internal method */
+    bool createSchema(QString filePath);
+
+    /* Hide all other access to this class */
+    static Database* _instance;
+    Database(QObject *parent = 0);
+    Database(const Database &);
+    Database& operator=(const Database &);
+    ~Database();
 
 signals:
 
