@@ -1,6 +1,8 @@
 #ifndef DATA_H
 #define DATA_H
 
+#include <QVector>
+
 /* All these classes reprensent the data structures stored
  * in the persistent database (SQlite).
  *
@@ -19,21 +21,10 @@
  * linked to anything.
  */
 
-/* Supported format */
-enum EMSTrackFormat
-{
-    UNKNOWN,
-    WAV,
-    FLAC,
-    RAW,
-    AIFF,
-    MP3
-};
-
 class EMSArtist
 {
 public:
-    unsigned long id; /* Unique identifier (primary key in db) */
+    unsigned long long id; /* Unique identifier (primary key in db) */
     QString name; /* Full name or pseudonyme of the artist */
     QString picture;
 };
@@ -41,7 +32,7 @@ public:
 class EMSAlbum
 {
 public:
-    unsigned long id; /* Unique identifier (primary key in db) */
+    unsigned long long id; /* Unique identifier (primary key in db) */
     QString name; /* Album title */
     QString cover;
 };
@@ -49,7 +40,7 @@ public:
 class EMSGenre
 {
 public:
-    unsigned long id; /* Unique identifier (primary key in db) */
+    unsigned long long id; /* Unique identifier (primary key in db) */
     QString name; /* Genre label */
     QString picture;
 };
@@ -57,19 +48,20 @@ public:
 class EMSTrack
 {
 public:
-    unsigned long id; /* Unique identifier (primary key in db) */
+    unsigned long long id; /* Unique identifier (primary key in db) */
     unsigned int position; /* Position in the album */
     QString name; /* Name of the track, could be empty */
     QString filename; /* Full path of _one_ file of this track. */
     QByteArray sha1; /* Custom calculation of the SHA1 of the file. (Unique for each track) */
-    EMSTrackFormat format; /* Audio file format */
-    unsigned long sample_rate; /* Sample rate in Hz, could be 0 for some format */
+    QString format; /* Audio file format */
+    unsigned long long sample_rate; /* Sample rate in Hz, could be 0 for some format */
     unsigned int duration; /* Duration of the track in seconds */
     QString format_parameters; /* Format specific data */
 
-    EMSArtist artist;
     EMSAlbum album;
-    EMSGenre genre;
+
+    QVector<EMSArtist> artists;
+    QVector<EMSGenre> genres;
 };
 
 /* Playlist management
@@ -81,7 +73,7 @@ public:
  */
 class EMSPlaylist
 {
-    unsigned long id; /* Unique identifier (primary key in db) */
+    unsigned long long id; /* Unique identifier (primary key in db) */
     QString name;
     QString subdir;
 };

@@ -28,22 +28,22 @@ public:
     bool searchExistingTrack(QString sha1, EMSTrack *existingTrack);
 
     /* Interface for browsing */
+    // TODO
     void getTracks(QVector<EMSTrack> *tracksList);
-    void getTracksByArtist(QVector<EMSTrack> *tracksList, unsigned long artistId);
-    void getTracksByAlbum(QVector<EMSTrack> *tracksList, unsigned long albumId);
-    void getTracksByGenre(QVector<EMSTrack> *tracksList, unsigned long genreId);
+    void getTracksByArtist(QVector<EMSTrack> *tracksList, unsigned long long artistId);
+    void getTracksByAlbum(QVector<EMSTrack> *tracksList, unsigned long long albumId);
+    void getTracksByGenre(QVector<EMSTrack> *tracksList, unsigned long long genreId);
     void getAlbumList(QVector<EMSAlbum> *albumList);
     void getGenreList(QVector<EMSGenre> *genreList);
-
-    /* Data accessor (search) */
-    bool getTrackById(EMSTrack *track, unsigned long trackId);
-    void getTracksByName(QVector<EMSTrack> *tracksList, QString name);
-    bool getArtistById(EMSArtist *artist, unsigned long artistId);
+    // DONE
+    bool getTrackById(EMSTrack *track, unsigned long long trackId);
+    bool getArtistById(EMSArtist *artist, unsigned long long artistId);
     bool getArtistByName(EMSArtist *artist, QString name);
-    bool getAlbumById(EMSAlbum *album, unsigned long albumId);
-    void getAlbumsByName(QVector<EMSAlbum> *albumsList, QString name);
-    bool getGenreById(EMSGenre *genre, unsigned long genreId);
+    void getArtistsByTrackId(QVector<EMSArtist> *artistsList, unsigned long long trackId);
+    bool getAlbumById(EMSAlbum *album, unsigned long long albumId);
+    bool getGenreById(EMSGenre *genre, unsigned long long genreId);
     bool getGenreByName(EMSGenre *genre, QString name);
+    void getGenresByTrackId(QVector<EMSGenre> *genresList, unsigned long long trackId);
 
     /* Signleton pattern
      * See: http://www.qtcentre.org/wiki/index.php?title=Singleton_pattern
