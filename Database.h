@@ -24,22 +24,22 @@ public:
     void close(); /* Close the database. For performance, let it open. */
 
     /* Interface for track management (server-side actions) */
-    // TODO
+    bool insertNewAlbum(EMSAlbum *album);
     bool insertNewTrack(EMSTrack *newTrack);
-    bool searchExistingTrack(QString sha1, EMSTrack *existingTrack);
+    bool insertNewFilename(QString filename, unsigned long long trackId);
 
     /* Interface for browsing */
-    // TODO
-    void getAlbumList(QVector<EMSAlbum> *albumList);
-    void getGenreList(QVector<EMSGenre> *genreList);
-    bool getAlbumById(EMSAlbum *album, unsigned long long albumId);
-    // DONE
     void getTracks(QVector<EMSTrack> *tracksList);
     void getTracksByAlbum(QVector<EMSTrack> *tracksList, unsigned long long albumId);
     bool getTrackById(EMSTrack *track, unsigned long long trackId);
+    bool getTrackBySha1(EMSTrack *track, QString sha1);
+    void getAlbumsList(QVector<EMSAlbum> *albumsList);
+    bool getAlbumById(EMSAlbum *album, unsigned long long albumId);
+    void getArtistsList(QVector<EMSArtist> *artistsList);
     bool getArtistById(EMSArtist *artist, unsigned long long artistId);
     bool getArtistByName(EMSArtist *artist, QString name);
     void getArtistsByTrackId(QVector<EMSArtist> *artistsList, unsigned long long trackId);
+    void getGenresList(QVector<EMSGenre> *genresList);
     bool getGenreById(EMSGenre *genre, unsigned long long genreId);
     bool getGenreByName(EMSGenre *genre, QString name);
     void getGenresByTrackId(QVector<EMSGenre> *genresList, unsigned long long trackId);
@@ -84,6 +84,7 @@ private:
 
     /* Internal method */
     bool createSchema(QString filePath);
+    bool storeTrack(QSqlQuery *q, EMSTrack *track);
     void storeTrackList(QSqlQuery *q, QVector<EMSTrack> *tracksList);
     void storeArtistsInTrackList(QSqlQuery *q, QVector<EMSTrack> *tracksList);
     void storeGenresInTrackList(QSqlQuery *q, QVector<EMSTrack> *tracksList);
