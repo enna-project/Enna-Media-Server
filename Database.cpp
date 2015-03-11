@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QFile>
 #include <QSettings>
+#include <qtest.h>
 
 Database* Database::_instance = 0;
 
@@ -19,7 +20,6 @@ Database* Database::_instance = 0;
  * If a genre or an artist does not exist in the database, it will be created.
  * The argument newTrack will be updated with the corresponding database ID (
  * for track, artist and genre).
- * TODO: do not do select queries to retrieve inserted values, it takes time.
  */
 bool Database::insertNewTrack(EMSTrack *newTrack)
 {
@@ -74,24 +74,15 @@ bool Database::insertNewTrack(EMSTrack *newTrack)
         }
 
         /* Retrieve the new ID */
-        if (!getTrackBySha1(&dbTrack, newTrack->sha1))
-        {
-            qCritical() << "Cannot retrieve the track ID for SHA1 : " + newTrack->sha1;
-            q.exec("ROLLBACK;");
-            return false;
-        }
+        newTrack->id = q.lastInsertId().toULongLong();
 
         /* Insert new filename */
-        if(!insertNewFilename(newTrack->filename, dbTrack.id))
+        if(!insertNewFilename(newTrack->filename, newTrack->id))
         {
-            qCritical() << "Error while inserting new filename for track ID : " + QString("%1").arg(dbTrack.id);
+            qCritical() << "Error while inserting new filename for track ID : " + QString("%1").arg(newTrack->id);
             q.exec("ROLLBACK;");
             return false;
         }
-
-        /* Update data in EMSTrack */
-        dbTrack.filename = newTrack->filename;
-        *newTrack = dbTrack;
     }
 
     /* Look for the artists in the db (use the "name" as key) */
@@ -116,16 +107,8 @@ bool Database::insertNewTrack(EMSTrack *newTrack)
                 return false;
             }
             /* Retrieve the new id in the database */
-            if (getArtistByName(&dbArtist, newTrack->artists[i].name))
-            {
-                newTrack->artists[i] = dbArtist;
-            }
-            else
-            {
-                qCritical() << "Database error: cannot find artist name '" + newTrack->artists[i].name + "' which has been added.";
-                q.exec("ROLLBACK;");
-                return false;
-            }
+            newTrack->artists[i].id = q.lastInsertId().toULongLong();
+
         }
 
         /* Link the artist to the new track */
@@ -162,16 +145,7 @@ bool Database::insertNewTrack(EMSTrack *newTrack)
                 return false;
             }
             /* Retrieve the new id in the database */
-            if (getGenreByName(&dbGenre, newTrack->genres[i].name))
-            {
-                newTrack->genres[i] = dbGenre;
-            }
-            else
-            {
-                qCritical() << "Database error: cannot find genre name '" + newTrack->genres[i].name + "' which has been added.";
-                q.exec("ROLLBACK;");
-                return false;
-            }
+            newTrack->genres[i].id = q.lastInsertId().toULongLong();
         }
 
         /* Link the genre to the new track */
@@ -204,23 +178,18 @@ bool Database::insertNewAlbum(EMSAlbum *album)
 
     /* Get all possible data in one row */
     QSqlQuery q(db);
-    q.prepare("INSERT INTO album(name, cover) VALUES (?,?);");
+    q.prepare("INSERT INTO albums(name, cover) VALUES (?,?);");
     q.bindValue(0, album->name);
     q.bindValue(1, album->cover);
     if(!q.exec())
     {
-        qCritical() << "Querying track data failed : " + q.lastError().text();
+        qCritical() << "Inserting album data failed : " + q.lastError().text();
         return false;
     }
 
     /* Return the new album ID */
-    q.prepare("SELECT last_insert_rowid();");
-    if(!q.exec() || !q.next())
-    {
-        qCritical() << "Querying track data failed : " + q.lastError().text();
-        return false;
-    }
-    album->id = q.value(0).toULongLong();
+    album->id = q.lastInsertId().toULongLong();
+
     return true;
 }
 
@@ -242,7 +211,7 @@ bool Database::insertNewFilename(QString filename, unsigned long long trackId)
     q.bindValue(1, trackId);
     if(!q.exec())
     {
-        qCritical() << "Querying track data failed : " + q.lastError().text();
+        qCritical() << "Inserting filename failed for track ID " + QString("%1").arg(trackId) + " : " + q.lastError().text();
         return false;
     }
     return true;
@@ -261,7 +230,7 @@ const QString select_track_data1 = \
 "       tracks.sample_rate, tracks.duration, tracks.format_parameters, "
 "       albums.id, albums.name, albums.cover, "
 "       files.filename "
-"FROM   tracks, albums "
+"FROM   tracks, files, albums "
 "WHERE  tracks.album_id = albums.id AND "
 "       tracks.id = files.track_id ";
 
@@ -270,7 +239,7 @@ const QString select_track_from_artist_data1 = \
 "       tracks.sample_rate, tracks.duration, tracks.format_parameters, "
 "       albums.id, albums.name, albums.cover, "
 "       files.filename "
-"FROM   tracks, albums, artists, tracks_artists "
+"FROM   tracks, files, albums, artists, tracks_artists "
 "WHERE  tracks.album_id = albums.id AND "
 "       tracks.id = files.track_id AND "
 "       tracks.id = tracks_artists.track_id AND "
@@ -281,7 +250,7 @@ const QString select_track_from_genre_data1 = \
 "       tracks.sample_rate, tracks.duration, tracks.format_parameters, "
 "       albums.id, albums.name, albums.cover, "
 "       files.filename "
-"FROM   tracks, albums, genres, tracks_genres "
+"FROM   tracks, files, albums, genres, tracks_genres "
 "WHERE  tracks.album_id = albums.id AND "
 "       tracks.id = files.track_id AND "
 "       tracks.id = tracks_genres.track_id AND "
@@ -305,7 +274,7 @@ const QString select_genre_from_track_data1 = \
 "SELECT tracks.id, genre.id, genre.name, genre.picture "
 "FROM   tracks, genres, tracks_genres "
 "WHERE  tracks.id = tracks_genres.track_id AND "
-"       genre.id = tracks_genres.genre_id ";
+"       genres.id = tracks_genres.genre_id ";
 
 const QString select_genre_from_artist_data1 = \
 "SELECT tracks.id, genre.id, genre.name, genre.picture "
@@ -343,11 +312,11 @@ bool Database::getTrackById(EMSTrack *track, unsigned long long trackId)
 
     /* Get all possible data in one row */
     QSqlQuery q(db);
-    q.prepare(select_track_data1 + " AND tracks.id = '?' LIMIT 1;");
+    q.prepare(select_track_data1 + " AND tracks.id = ? LIMIT 1;");
     q.bindValue(0, trackId);
     if (!storeTrack(&q, track))
     {
-        qDebug() << "The track ID " + QString("%1").arg(trackId) + " does not exist in database";
+        /* The ID does not exist in the database */
         return false;
     }
 
@@ -372,11 +341,11 @@ bool Database::getTrackBySha1(EMSTrack *track, QString sha1)
 
     /* Get all possible data in one row */
     QSqlQuery q(db);
-    q.prepare(select_track_data1 + " AND tracks.sha1 = '?' LIMIT 1;");
+    q.prepare(select_track_data1 + " AND tracks.sha1 = ? LIMIT 1;");
     q.bindValue(0, sha1);
     if (!storeTrack(&q, track))
     {
-        qDebug() << "The track SHA1 " + sha1 + " does not exist in database";
+        /* The sha1 does not exist in the database */
         return false;
     }
 
@@ -401,13 +370,13 @@ bool Database::storeTrack(QSqlQuery *q, EMSTrack *track)
         return false;
     }
     unsigned int colId = 1;
-    if (q->size() >= 1 && !q->next())
+    if (q->next())
     {
         /* Follow the same order as in the SQL query */
         track->id = q->value(colId++).toULongLong();
         track->position = q->value(colId++).toUInt();
         track->name = q->value(colId++).toUInt();
-        track->sha1 = QByteArray().fromHex(q->value(colId++).toByteArray());
+        track->sha1 = q->value(colId++).toString();
         track->format = q->value(colId++).toString();
         track->sample_rate = q->value(colId++).toULongLong();
         track->duration = q->value(colId++).toUInt();
@@ -446,7 +415,7 @@ void Database::storeTrackList(QSqlQuery *q, QVector<EMSTrack> *tracksList)
         track.id = q->value(colId++).toULongLong();
         track.position = q->value(colId++).toUInt();
         track.name = q->value(colId++).toUInt();
-        track.sha1 = QByteArray().fromHex(q->value(colId++).toByteArray());
+        track.sha1 = q->value(colId++).toString();
         track.format = q->value(colId++).toString();
         track.sample_rate = q->value(colId++).toULongLong();
         track.duration = q->value(colId++).toUInt();
@@ -577,7 +546,7 @@ void Database::getTracksByAlbum(QVector<EMSTrack> *tracksList, unsigned long lon
 
     /* Get all the tracks data */
     QSqlQuery q(db);
-    q.prepare(select_track_data1 + " WHERE tracks.album_id = '?' ORDER BY tracks.id GROUP BY tracks.id;");
+    q.prepare(select_track_data1 + " WHERE tracks.album_id = ? ORDER BY tracks.id GROUP BY tracks.id;");
     q.bindValue(0, albumId);
     if(!q.exec())
     {
@@ -593,12 +562,12 @@ void Database::getTracksByAlbum(QVector<EMSTrack> *tracksList, unsigned long lon
     }
 
     /* Get all artists data */
-    q.prepare(select_artist_from_track_data1 + " WHERE tracks.album_id = '?' ORDER BY tracks.id;");
+    q.prepare(select_artist_from_track_data1 + " WHERE tracks.album_id = ? ORDER BY tracks.id;");
     q.bindValue(0, albumId);
     storeArtistsInTrackList(&q, tracksList);
 
     /* Get all genres data */
-    q.prepare(select_genre_from_track_data1 + " WHERE tracks.album_id = '?' ORDER BY tracks.id;");
+    q.prepare(select_genre_from_track_data1 + " WHERE tracks.album_id = ? ORDER BY tracks.id;");
     q.bindValue(0, albumId);
     storeGenresInTrackList(&q, tracksList);
 }
@@ -638,15 +607,11 @@ bool Database::getArtistById(EMSArtist *artist, unsigned long long artistId)
         return false;
     }
     QSqlQuery q(db);
-    q.prepare(select_artist_data1 + " WHERE id='?';");
+    q.prepare(select_artist_data1 + " WHERE id=?;");
     q.bindValue(0, artistId);
     q.exec();
-    if (q.size() >= 1 && !q.next())
+    if (q.next())
     {
-        if (q.size() > 1)
-        {
-            qCritical() << "Database consistency error: several artist with ID " + QString().arg(artistId);
-        }
         artist->id = q.value(0).toULongLong();
         artist->name = q.value(1).toString();
         artist->picture = q.value(2).toString();
@@ -662,21 +627,47 @@ bool Database::getArtistByName(EMSArtist *artist, QString name)
         return false;
     }
     QSqlQuery q(db);
-    q.prepare(select_artist_data1 + " WHERE name='?';");
+    q.prepare(select_artist_data1 + " WHERE name = '" +  name + "';");
     q.bindValue(0, name);
     q.exec();
-    if (q.size() >= 1 && !q.next())
+
+    if (q.next())
     {
-        if (q.size() > 1)
-        {
-            qCritical() << "Database consistency error: several artist with name " + name;
-        }
         artist->id = q.value(0).toULongLong();
         artist->name = q.value(1).toString();
         artist->picture = q.value(2).toString();
         return true;
     }
     return false;
+}
+
+/* Return the list of all artists present in a album.
+ * To be select, the artist must appear in at least one track of the album
+ */
+void Database::getArtistsByAlbumId(QVector<EMSArtist> *artistsList, unsigned long long albumId)
+{
+    if (!opened)
+    {
+        return;
+    }
+    QSqlQuery q(db);
+    q.prepare(select_artist_from_track_data1 + " AND tracks.album_id = ? GROUP BY artists.id;");
+    q.bindValue(0, albumId);
+    if(!q.exec())
+    {
+        qCritical() << "Querying artist data failed : " + q.lastError().text();
+        return;
+    }
+    artistsList->clear();
+    while (q.next())
+    {
+        // tracks.id, artists.id, artists.name, artists.picture
+        EMSArtist artist;
+        artist.id = q.value(1).toULongLong();
+        artist.name = q.value(2).toString();
+        artist.picture = q.value(3).toString();
+        artistsList->append(artist);
+    }
 }
 
 void Database::getArtistsByTrackId(QVector<EMSArtist> *artistsList, unsigned long long trackId)
@@ -686,11 +677,11 @@ void Database::getArtistsByTrackId(QVector<EMSArtist> *artistsList, unsigned lon
         return;
     }
     QSqlQuery q(db);
-    q.prepare(select_artist_from_track_data1 + " AND tracks.id = '?';");
+    q.prepare(select_artist_from_track_data1 + " AND tracks.id = ?;");
     q.bindValue(0, trackId);
     if(!q.exec())
     {
-        qCritical() << "Querying track data failed : " + q.lastError().text();
+        qCritical() << "Querying artist data failed : " + q.lastError().text();
         return;
     }
     artistsList->clear();
@@ -740,19 +731,15 @@ bool Database::getAlbumById(EMSAlbum *album, unsigned long long albumId)
         return false;
     }
     QSqlQuery q(db);
-    q.prepare(select_album_data1 + " AND albums.id = '?';");
+    q.prepare(select_album_data1 + " AND albums.id = ?;");
     q.bindValue(0, albumId);
     if(!q.exec())
     {
         qCritical() << "Querying album data failed : " + q.lastError().text();
         return false;
     }
-    if (q.size() >= 1 && !q.next())
+    if (q.next())
     {
-        if (q.size() > 1)
-        {
-            qCritical() << "Database consistency error: several albums with ID " + QString("%1").arg(albumId);
-        }
         album->id = q.value(0).toULongLong();
         album->name = q.value(1).toString();
         album->cover = q.value(2).toString();
@@ -796,15 +783,11 @@ bool Database::getGenreById(EMSGenre *genre, unsigned long long genreId)
         return false;
     }
     QSqlQuery q(db);
-    q.prepare(select_genre_data1 + " WHERE id='?';");
+    q.prepare(select_genre_data1 + " WHERE id=?;");
     q.bindValue(0, genreId);
     q.exec();
-    if (q.size() >= 1 && !q.next())
+    if (q.next())
     {
-        if (q.size() > 1)
-        {
-            qCritical() << "Database consistency error: several genre with ID " + QString("%1").arg(genreId);
-        }
         genre->id = q.value(0).toULongLong();
         genre->name = q.value(1).toString();
         genre->picture = q.value(2).toString();
@@ -820,15 +803,11 @@ bool Database::getGenreByName(EMSGenre *genre, QString name)
         return false;
     }
     QSqlQuery q(db);
-    q.prepare(select_genre_data1 + " WHERE name='?';");
+    q.prepare(select_genre_data1 + " WHERE name=?;");
     q.bindValue(0, name);
     q.exec();
-    if (q.size() >= 1 && !q.next())
+    if (q.next())
     {
-        if (q.size() > 1)
-        {
-            qCritical() << "Database consistency error: several genre with name " + name;
-        }
         genre->id = q.value(0).toULongLong();
         genre->name = q.value(1).toString();
         genre->picture = q.value(2).toString();
@@ -844,11 +823,11 @@ void Database::getGenresByTrackId(QVector<EMSGenre> *genresList, unsigned long l
         return;
     }
     QSqlQuery q(db);
-    q.prepare(select_genre_from_track_data1 + " AND tracks.id = '?';");
+    q.prepare(select_genre_from_track_data1 + " AND tracks.id = ?;");
     q.bindValue(0, trackId);
     if(!q.exec())
     {
-        qCritical() << "Querying track data failed : " + q.lastError().text();
+        qCritical() << "Querying genre data failed : " + q.lastError().text();
         return;
     }
     genresList->clear();
@@ -893,6 +872,7 @@ bool Database::open()
     /* Try to open the database
      * If the file does not exist, an empty database is created
      */
+    qDebug() << "Opening Sqlite database : " + dbSettingPath;
     db = QSqlDatabase::addDatabase("QSQLITE");
     db.setDatabaseName(dbSettingPath);
     if (!db.open())
@@ -908,7 +888,7 @@ bool Database::open()
     {
         QSqlQuery query(db);
         query.exec("SELECT config_value FROM configuration WHERE config_name='version'");
-        if (query.size() == 1 && !query.next())
+        if (query.next())
         {
             version = query.value(0).toUInt();
         }
@@ -918,6 +898,7 @@ bool Database::open()
     }
     else
     {
+        qDebug() << "Database not created. Create a new one...";
         if(!createSchema(dbSettingCreateScript))
         {
             qCritical() << "Database creation has failed using the script " + dbSettingCreateScript;
@@ -943,6 +924,7 @@ void Database::close()
  */
 bool Database::createSchema(QString filePath)
 {
+    qDebug() << "Creating new database using schema " + filePath;
     QFile schemaFile(filePath);
     if(!schemaFile.open(QFile::ReadOnly))
     {
@@ -981,4 +963,74 @@ Database::~Database()
     }
 }
 
+/*****************************************************************************
+ *    DEVELOPMENT PURPOSE - AUTOTETS
+ ****************************************************************************/
+void Database::autotestFillDb()
+{
+    /* Fill the database with 20K tracks */
+    for(int i=0; i<2000; i++)
+    {
+        /* Albums */
+        EMSAlbum album;
+        album.id = 0;
+        album.cover = QString("images/covers/defaultcover.jpg");
+        album.name = QString("Album number %1").arg(i);
+        insertNewAlbum(&album); // album.id should have been updated
 
+        for(int j=0; i<10; i++)
+        {
+            /* Track */
+            EMSTrack track;
+            track.album = album;
+            track.position = j+1;
+            track.name = QString("Track number %1 of album %2").arg(j, i);
+            track.duration = 450;
+            track.sha1 = QString("4e1243bd22c66e76c2ba9eddc1f91394e57f9f83");
+            track.filename = QString("/media/storage/music/%1/%2.wav").arg(album.id).arg(track.id);
+            track.format = QString("FLAC");
+            track.format_parameters = QString("additional_parameter=102342");
+            track.sample_rate = 192000;
+
+            /* Genres */
+            EMSGenre genre1;
+            genre1.name = QString("rap");
+            genre1.picture = QString("images/genres/rap.jpg");
+            track.genres.append(genre1);
+            if (j%2)
+            {
+                EMSGenre genre2;
+                genre2.name = QString("celtic");
+                genre2.picture = QString("images/genres/celtic.jpg");
+                track.genres.append(genre2);
+            }
+
+            /* Unique artists for this track */
+            EMSArtist artist1;
+            artist1.name = QString("Artist %1").arg(i*10+j);
+            artist1.picture = QString("images/artist/nopic.jpg");
+            track.artists.append(artist1);
+            if (j%2)
+            {
+                /* Artist for all even track */
+                EMSArtist artist2;
+                artist2.name = QString("Vincent Dehors");
+                artist2.picture = QString("images/artist/nopic.jpg");
+                track.artists.append(artist2);
+            }
+
+            if(!insertNewTrack(&track))
+            {
+                qCritical() << "Insertion of track " + QString("%1").arg(i*10+j) + " failed.";
+                return;
+            }
+        }
+    }
+}
+
+void Database::autotest()
+{
+    qDebug() << "Fill the database with fake data...";
+
+    autotestFillDb();
+}

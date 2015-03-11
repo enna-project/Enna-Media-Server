@@ -39,6 +39,7 @@ public:
     bool getArtistById(EMSArtist *artist, unsigned long long artistId);
     bool getArtistByName(EMSArtist *artist, QString name);
     void getArtistsByTrackId(QVector<EMSArtist> *artistsList, unsigned long long trackId);
+    void getArtistsByAlbumId(QVector<EMSArtist> *artistsList, unsigned long long albumId);
     void getGenresList(QVector<EMSGenre> *genresList);
     bool getGenreById(EMSGenre *genre, unsigned long long genreId);
     bool getGenreByName(EMSGenre *genre, QString name);
@@ -70,6 +71,10 @@ public:
         _instance = 0;
         mutex.unlock();
     }
+
+    /* For dev */
+    void autotest();
+    void autotestFillDb();
 
 private:
     /* Current state of the opened database */

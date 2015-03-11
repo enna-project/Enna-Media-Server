@@ -52,7 +52,7 @@ public:
     unsigned int position; /* Position in the album */
     QString name; /* Name of the track, could be empty */
     QString filename; /* Full path of _one_ file of this track. */
-    QByteArray sha1; /* Custom calculation of the SHA1 of the file. (Unique for each track) */
+    QString sha1; /* Custom calculation of the SHA1 of the file. (Unique for each track) */
     QString format; /* Audio file format */
     unsigned long long sample_rate; /* Sample rate in Hz, could be 0 for some format */
     unsigned int duration; /* Duration of the track in seconds */
