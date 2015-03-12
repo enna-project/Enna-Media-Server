@@ -33,7 +33,6 @@ Application::Application(int & argc, char ** argv) :
 
     /* Open Database */
     Database::instance()->open();
-    Database::instance()->autotest();
 
     /* Create Websocket server */
     m_webSocketServer = new WebSocketServer(m_websocketPort, this);

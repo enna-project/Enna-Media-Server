@@ -33,7 +33,7 @@ bool Database::insertNewTrack(EMSTrack *newTrack)
     QSqlQuery q(db);
     if (!q.exec("BEGIN;"))
     {
-        qCritical() << "Failed to begin a transaction : " + q.lastError().text();
+        qCritical() << "Failed to begin a transaction : " << q.lastError().text();
         return false;
     }
 
@@ -45,7 +45,7 @@ bool Database::insertNewTrack(EMSTrack *newTrack)
 
         if(!insertNewFilename(newTrack->filename, trackID))
         {
-            qCritical() << "Error while inserting new track : " + q.lastError().text();
+            qCritical() << "Error while inserting new track : " << q.lastError().text();
             q.exec("ROLLBACK;");
             return false;
         }
@@ -74,7 +74,7 @@ bool Database::insertNewTrack(EMSTrack *newTrack)
         q.bindValue(7, newTrack->format_parameters);
         if(!q.exec())
         {
-            qCritical() << "Error while inserting new track : " + q.lastError().text();
+            qCritical() << "Error while inserting new track : " << q.lastError().text();
             q.exec("ROLLBACK;");
             return false;
         }
@@ -87,7 +87,7 @@ bool Database::insertNewTrack(EMSTrack *newTrack)
         qDebug() << "Adding filename " << newTrack->filename << " in the table files...";
         if(!insertNewFilename(newTrack->filename, newTrack->id))
         {
-            qCritical() << "Error while inserting new filename for track ID : " + QString("%1").arg(newTrack->id);
+            qCritical() << "Error while inserting new filename for track ID : " << QString("%1").arg(newTrack->id);
             q.exec("ROLLBACK;");
             return false;
         }
@@ -114,7 +114,7 @@ bool Database::insertNewTrack(EMSTrack *newTrack)
             q.bindValue(1, newTrack->artists[i].picture);
             if(!q.exec())
             {
-                qCritical() << "Error while inserting new artist : " + q.lastError().text();
+                qCritical() << "Error while inserting new artist : " << q.lastError().text();
                 q.exec("ROLLBACK;");
                 return false;
             }
@@ -130,7 +130,7 @@ bool Database::insertNewTrack(EMSTrack *newTrack)
         q.bindValue(1, newTrack->artists[i].id);
         if(!q.exec())
         {
-            qCritical() << "Error while inserting the relation track-artist : " + q.lastError().text();
+            qCritical() << "Error while inserting the relation track-artist : " << q.lastError().text();
             q.exec("ROLLBACK;");
             return false;
         }
@@ -157,7 +157,7 @@ bool Database::insertNewTrack(EMSTrack *newTrack)
             q.bindValue(1, newTrack->genres[i].picture);
             if(!q.exec())
             {
-                qCritical() << "Error while inserting new genre : " + q.lastError().text();
+                qCritical() << "Error while inserting new genre : " << q.lastError().text();
                 q.exec("ROLLBACK;");
                 return false;
             }
@@ -204,7 +204,7 @@ bool Database::insertNewAlbum(EMSAlbum *album)
     q.bindValue(1, album->cover);
     if(!q.exec())
     {
-        qCritical() << "Inserting album data failed : " + q.lastError().text();
+        qCritical() << "Inserting album data failed : " << q.lastError().text();
         return false;
     }
 
@@ -232,7 +232,7 @@ bool Database::insertNewFilename(QString filename, unsigned long long trackId)
     q.bindValue(1, trackId);
     if(!q.exec())
     {
-        qCritical() << "Inserting filename failed for track ID " + QString("%1").arg(trackId) + " : " + q.lastError().text();
+        qCritical() << "Inserting filename failed for track ID " << QString("%1").arg(trackId) << " : " << q.lastError().text();
         return false;
     }
     return true;
@@ -393,7 +393,7 @@ bool Database::storeTrack(QSqlQuery *q, EMSTrack *track)
 {
     if(!q->exec())
     {
-        qCritical() << "Querying track data failed : " + q->lastError().text();
+        qCritical() << "Querying track data failed : " << q->lastError().text();
         return false;
     }
     unsigned int colId = 1;
@@ -430,7 +430,7 @@ void Database::storeTrackList(QSqlQuery *q, QVector<EMSTrack> *tracksList)
 {
     if(!q->exec())
     {
-        qCritical() << "Querying tracks list failed : " + q->lastError().text();
+        qCritical() << "Querying tracks list failed : " << q->lastError().text();
         return;
     }
     tracksList->clear();
@@ -462,7 +462,7 @@ void Database::storeArtistsInTrackList(QSqlQuery *q, QVector<EMSTrack> *tracksLi
 {
     if(!q->exec())
     {
-        qCritical() << "Querying tracks list (artists) failed : " + q->lastError().text();
+        qCritical() << "Querying tracks list (artists) failed : " << q->lastError().text();
         return;
     }
     int currentListId = 0;
@@ -491,7 +491,7 @@ void Database::storeGenresInTrackList(QSqlQuery *q, QVector<EMSTrack> *tracksLis
 {
     if(!q->exec())
     {
-        qCritical() << "Querying tracks list (genres) failed : " + q->lastError().text();
+        qCritical() << "Querying tracks list (genres) failed : " << q->lastError().text();
         return;
     }
     int currentListId = 0;
@@ -537,7 +537,7 @@ void Database::getTracks(QVector<EMSTrack> *tracksList)
     q.prepare(select_track_data1 + " ORDER BY tracks.id GROUP BY tracks.id;");
     if(!q.exec())
     {
-        qCritical() << "Querying tracks list failed : " + q.lastError().text();
+        qCritical() << "Querying tracks list failed : " << q.lastError().text();
         return;
     }
     storeTrackList(&q, tracksList);
@@ -577,7 +577,7 @@ void Database::getTracksByAlbum(QVector<EMSTrack> *tracksList, unsigned long lon
     q.bindValue(0, albumId);
     if(!q.exec())
     {
-        qCritical() << "Querying tracks list failed : " + q.lastError().text();
+        qCritical() << "Querying tracks list failed : " << q.lastError().text();
         return;
     }
     storeTrackList(&q, tracksList);
@@ -613,7 +613,7 @@ void Database::getArtistsList(QVector<EMSArtist> *artistsList)
     q.prepare(select_artist_data1 + ";");
     if(!q.exec())
     {
-        qCritical() << "Querying artists list failed : " + q.lastError().text();
+        qCritical() << "Querying artists list failed : " << q.lastError().text();
         return;
     }
     artistsList->clear();
@@ -683,7 +683,7 @@ void Database::getArtistsByAlbumId(QVector<EMSArtist> *artistsList, unsigned lon
     q.bindValue(0, albumId);
     if(!q.exec())
     {
-        qCritical() << "Querying artist data failed : " + q.lastError().text();
+        qCritical() << "Querying artist data failed : " << q.lastError().text();
         return;
     }
     artistsList->clear();
@@ -709,7 +709,7 @@ void Database::getArtistsByTrackId(QVector<EMSArtist> *artistsList, unsigned lon
     q.bindValue(0, trackId);
     if(!q.exec())
     {
-        qCritical() << "Querying artist data failed : " + q.lastError().text();
+        qCritical() << "Querying artist data failed : " << q.lastError().text();
         return;
     }
     artistsList->clear();
@@ -737,7 +737,7 @@ void Database::getAlbumsList(QVector<EMSAlbum> *albumsList)
     q.prepare(select_album_data1 + ";");
     if(!q.exec())
     {
-        qCritical() << "Querying album data failed : " + q.lastError().text();
+        qCritical() << "Querying album data failed : " << q.lastError().text();
         return;
     }
     albumsList->clear();
@@ -763,7 +763,7 @@ bool Database::getAlbumById(EMSAlbum *album, unsigned long long albumId)
     q.bindValue(0, albumId);
     if(!q.exec())
     {
-        qCritical() << "Querying album data failed : " + q.lastError().text();
+        qCritical() << "Querying album data failed : " << q.lastError().text();
         return false;
     }
     if (q.next())
@@ -789,7 +789,7 @@ void Database::getGenresList(QVector<EMSGenre> *genresList)
     q.prepare(select_genre_data1 + ";");
     if(!q.exec())
     {
-        qCritical() << "Querying genre data failed : " + q.lastError().text();
+        qCritical() << "Querying genre data failed : " << q.lastError().text();
         return;
     }
     genresList->clear();
@@ -901,12 +901,12 @@ bool Database::open()
     /* Try to open the database
      * If the file does not exist, an empty database is created
      */
-    qDebug() << "Opening Sqlite database : " + dbSettingPath;
+    qDebug() << "Opening Sqlite database : " << dbSettingPath;
     db = QSqlDatabase::addDatabase("QSQLITE");
     db.setDatabaseName(dbSettingPath);
     if (!db.open())
     {
-        qCritical() << "Unable to open database " + dbSettingPath;
+        qCritical() << "Unable to open database " << dbSettingPath;
         return false;
     }
 
@@ -930,7 +930,7 @@ bool Database::open()
         qDebug() << "Database not created. Create a new one...";
         if(!createSchema(dbSettingCreateScript))
         {
-            qCritical() << "Database creation has failed using the script " + dbSettingCreateScript;
+            qCritical() << "Database creation has failed using the script " << dbSettingCreateScript;
             return false;
         }
         version = dbSettingVersion;
@@ -991,7 +991,7 @@ void Database::configure()
  */
 bool Database::createSchema(QString filePath)
 {
-    qDebug() << "Creating new database using schema " + filePath;
+    qDebug() << "Creating new database using schema " << filePath;
     QFile schemaFile(filePath);
     if(!schemaFile.open(QFile::ReadOnly))
     {
@@ -1006,8 +1006,8 @@ bool Database::createSchema(QString filePath)
             QSqlQuery q(db);
             if(!q.exec(schemaTable))
             {
-                qCritical() << "Error while executing query : " + schemaTable;
-                qCritical() << "Error : " + q.lastError().text();
+                qCritical() << "Error while executing query : " << schemaTable;
+                qCritical() << "Error : " << q.lastError().text();
                 return false;
             }
         }
@@ -1089,7 +1089,7 @@ void Database::autotestFillDb()
 
             if(!insertNewTrack(&track))
             {
-                qCritical() << "Insertion of track " + QString("%1").arg(i*10+j) + " failed.";
+                qCritical() << "Insertion of track " << QString("%1").arg(i*10+j) << " failed.";
                 return;
             }
         }
