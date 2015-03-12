@@ -145,7 +145,8 @@ QJsonObject JsonApi::processMessageBrowseLibrary(const QJsonObject &message, boo
 QJsonObject JsonApi::processMessageBrowseLibraryArtists(QStringList &list, bool &ok)
 {
     QJsonObject obj;
-
+    int artistId;
+    int albumId;
     switch (list.size())
     {
     case 0:
@@ -153,12 +154,12 @@ QJsonObject JsonApi::processMessageBrowseLibraryArtists(QStringList &list, bool 
         break;
     case 1:
         // get list of albums of artistId
-        artistId = list[0];
+         artistId = list[0].toInt();
         break;
     case 2:
         // get list of tracks of albumId of ArtistId
-        artistId = list[0];
-        albumId = list[1];
+        artistId = list[0].toInt();
+        albumId = list[1].toInt();
         break;
     default:
         ok = false;
