@@ -32,7 +32,7 @@ public:
     void getTracks(QVector<EMSTrack> *tracksList);
     void getTracksByAlbum(QVector<EMSTrack> *tracksList, unsigned long long albumId);
     bool getTrackById(EMSTrack *track, unsigned long long trackId);
-    bool getTrackBySha1(EMSTrack *track, QString sha1);
+    bool getTrackIdBySha1(unsigned long long *trackID, QString sha1);
     void getAlbumsList(QVector<EMSAlbum> *albumsList);
     bool getAlbumById(EMSAlbum *album, unsigned long long albumId);
     void getArtistsList(QVector<EMSArtist> *artistsList);
@@ -88,6 +88,7 @@ private:
     unsigned int dbSettingVersion;
 
     /* Internal method */
+    void configure();
     bool createSchema(QString filePath);
     bool storeTrack(QSqlQuery *q, EMSTrack *track);
     void storeTrackList(QSqlQuery *q, QVector<EMSTrack> *tracksList);

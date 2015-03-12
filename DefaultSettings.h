@@ -1,6 +1,10 @@
 #ifndef DEFAULTSETTINGS_H
 #define DEFAULTSETTINGS_H
 
+/* You can redefine all these value in your user setting file
+ * in ~/.config/Enna/EnnaMediaServer.conf
+ */
+
 #define EMS_WEBSOCKET_PORT 7337
 
 // database/path
