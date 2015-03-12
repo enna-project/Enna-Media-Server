@@ -23,7 +23,9 @@ HEADERS += Database.h \
            WebSocketServer.h \          
            Application.h \
     Data.h \
-    DefaultSettings.h
+    DefaultSettings.h \
+    WebSocket.h \
+    JsonApi.h
 
 SOURCES += Database.cpp \
            DirectoryWorker.cpp \
@@ -33,4 +35,5 @@ SOURCES += Database.cpp \
            Scanner.cpp \
            sha1.cpp \
            WebSocketServer.cpp \
-           Application.cpp
+           Application.cpp \
+    JsonApi.cpp
