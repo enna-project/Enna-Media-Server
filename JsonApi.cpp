@@ -95,7 +95,6 @@ QJsonObject JsonApi::processMessageBrowse(const QJsonObject &message, bool &ok)
         obj = QJsonDocument::fromJson(JSON_OBJECT_MENU.toUtf8()).object();
         break;
     case SCHEME_LIBRARY:
-        url.remove("library://");
         obj = processMessageBrowseLibrary(message, ok);
         break;
     default:
@@ -108,22 +107,27 @@ QJsonObject JsonApi::processMessageBrowse(const QJsonObject &message, bool &ok)
 QJsonObject JsonApi::processMessageBrowseLibrary(const QJsonObject &message, bool &ok)
 {
     QJsonObject obj;
-    if (message["url"].toString().isEmpty())
+
+    QString url = message["url"].toString();
+
+    if (url.isEmpty())
     {
         ok = false;
         return obj;
     }
-
-    if (message["url"].toString() == "music")
+    url.remove("library://");
+    if (url == "music")
     {
-        //return artist/albums/tracks ...
+        ok = false;
+        return obj; //return artist/albums/tracks ...
     }
 
-    QStringList list = message["url"].toString().split("/");
+    url.remove("music/");
+    QStringList list =url.split("/");
 
     if (list[0] == "artists")
     {
-        processMessageBrowseLibraryArtists(list, ok);
+        obj = processMessageBrowseLibraryArtists(list, ok);
     }
     else if (list[0] == "albums")
     {
@@ -149,18 +153,36 @@ QJsonObject JsonApi::processMessageBrowseLibraryArtists(QStringList &list, bool 
     int albumId;
     switch (list.size())
     {
-    case 0:
-        //get list of all artists
-        break;
     case 1:
+    {
+        //get list of all artists
+        QVector<EMSArtist> artistsList;
+        Database::instance()->getArtistsList(&artistsList);
+        const int listSize = artistsList.size();
+        QJsonArray jsonArray;
+        for (int i = 0; i < listSize; ++i)
+            jsonArray << EMSArtistToJson(artistsList[i]);
+        obj["artists"] = jsonArray;
+        ok = true;
+        break;
+    }
+    case 2:
         // get list of albums of artistId
          artistId = list[0].toInt();
         break;
-    case 2:
+    case 3:
+    {
         // get list of tracks of albumId of ArtistId
-        artistId = list[0].toInt();
         albumId = list[1].toInt();
+        QVector<EMSTrack> tracksList;
+        Database::instance()->getTracksByAlbum(&tracksList, albumId);
+        const int listSize = tracksList.size();
+        QJsonArray jsonArray;
+        for (int i = 0; i < listSize; ++i)
+            jsonArray << EMSTrackToJson(tracksList[i]);
+        obj["tracks"] = jsonArray;
         break;
+    }
     default:
         ok = false;
         break;
@@ -212,4 +234,51 @@ JsonApi::UrlSchemeType JsonApi::urlSchemeGet(const QString &url) const
         return SCHEME_SETTINGS;
     else
         return SCHEME_UNKNOWN;
+}
+
+QJsonObject JsonApi::EMSArtistToJson(const EMSArtist &artist) const
+{
+    QJsonObject obj;
+
+    obj["id"] = (qint64)artist.id;
+    obj["name"] = artist.name;
+    obj["picture"] = artist.picture;
+
+    return obj;
+}
+
+QJsonObject JsonApi::EMSAlbumToJson(const EMSAlbum &album) const
+{
+    QJsonObject obj;
+
+    obj["id"] = (qint64)album.id;
+    obj["name"] = album.name;
+    obj["picture"] = album.cover;
+    return obj;
+}
+
+QJsonObject JsonApi::EMSGenreToJson(const EMSAlbum &genre) const
+{
+    QJsonObject obj;
+
+    obj["id"] = (qint64)genre.id;
+    obj["name"] = genre.name;
+    obj["picture"] = genre.cover;
+    return obj;
+}
+
+QJsonObject JsonApi::EMSTrackToJson(const EMSTrack &track) const
+{
+    QJsonObject obj;
+
+    obj["id"] = (qint64)track.id;
+    obj["position"] = (int)track.position;
+    obj["name"] = track.name;
+    obj["filename"] = track.filename;
+    obj["sha1"] = track.sha1;
+    obj["format"] = track.format;
+    obj["sample_rate"] = (int)track.sample_rate;
+    obj["duration"] = (int)track.duration;
+    obj["format_parameters"] = track.format_parameters;
+    return obj;
 }

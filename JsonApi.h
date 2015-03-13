@@ -4,8 +4,12 @@
 #include <QObject>
 #include <QWebSocket>
 #include <QJsonObject>
+#include <QJsonArray>
 #include <QJsonParseError>
 #include <QString>
+
+#include "Database.h"
+#include "Data.h"
 
 class JsonApi : public QObject
 {
@@ -35,6 +39,10 @@ private:
     QJsonObject processMessageBrowseLibraryGenre(QStringList &list, bool &ok);
     JsonApi::UrlSchemeType urlSchemeGet(const QString &url) const;
 
+    QJsonObject EMSArtistToJson(const EMSArtist &artist) const;
+    QJsonObject EMSTrackToJson(const EMSTrack &track) const;
+    QJsonObject EMSGenreToJson(const EMSAlbum &genre) const;
+    QJsonObject EMSAlbumToJson(const EMSAlbum &album) const;
     // To be implemented when if menu become dynamic
     //QJsonObject buildJsonMenu();
 
