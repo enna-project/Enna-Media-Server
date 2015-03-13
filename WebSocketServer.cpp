@@ -27,46 +27,28 @@ WebSocketServer::~WebSocketServer()
 
 void WebSocketServer::onNewConnection()
 {
-    QWebSocket *pSocket = m_pWebSocketServer->nextPendingConnection();
+    QWebSocket *socket = m_pWebSocketServer->nextPendingConnection();
 
-    connect(pSocket, &QWebSocket::textMessageReceived, this, &WebSocketServer::processMessage);
-    connect(pSocket, &QWebSocket::disconnected, this, &WebSocketServer::socketDisconnected);
+    connect(socket, &QWebSocket::disconnected, this, &WebSocketServer::socketDisconnected);
 
-    m_clients << pSocket;
+    JsonApi *api = new JsonApi(socket);
+    connect(socket, &QWebSocket::textMessageReceived, api, &JsonApi::processMessage);
+
+    m_clients[socket] = api;
 }
 
 void WebSocketServer::processMessage(QString message)
 {
-
-    /* TODO: implement Protocol here */
-    /* Implement protocol in EmsProtocol.cpp ? */
-
-    /* Protocol is JSON based */
-    /* Example of json objects sent from EMS to clients : */
-    /* {
-     *     message: EMS_PLAYING_STATE
-     *     player_state: "playing",
-     *     artist: "David Bowie",
-     *     album: "Space Odity",
-     *     track: "Life on Mars",
-     *     length: 205
-     * }
-     */
-
-
-    QWebSocket *pSender = qobject_cast<QWebSocket *>(sender());
-    Q_FOREACH (QWebSocket *pClient, m_clients)
-    {
-        pClient->sendTextMessage(message);
-    }
+   QWebSocket *client = qobject_cast<QWebSocket *>(sender());
+   m_clients[client]->processMessage(message);
 }
 
 void WebSocketServer::socketDisconnected()
 {
-    QWebSocket *pClient = qobject_cast<QWebSocket *>(sender());
-    if (pClient)
+    QWebSocket *client = qobject_cast<QWebSocket *>(sender());
+    if (client)
     {
-        m_clients.removeAll(pClient);
-        pClient->deleteLater();
+        delete m_clients[client];
+        m_clients.remove(client);
     }
 }

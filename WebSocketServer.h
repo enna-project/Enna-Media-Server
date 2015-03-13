@@ -5,6 +5,8 @@
 #include <QList>
 #include <QByteArray>
 
+#include <JsonApi.h>
+
 QT_FORWARD_DECLARE_CLASS(QWebSocketServer)
 QT_FORWARD_DECLARE_CLASS(QWebSocket)
 
@@ -22,7 +24,7 @@ private Q_SLOTS:
 
 private:
     QWebSocketServer *m_pWebSocketServer;
-    QList<QWebSocket *> m_clients;
+    QMap<QWebSocket*, JsonApi *> m_clients;
 };
 
 #endif // WEBSOCKETSERVER_H
