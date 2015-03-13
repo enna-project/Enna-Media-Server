@@ -10,7 +10,7 @@
 Install npm and grunt.
 
   1. npm install
-  2. grunt build
+  2. bower install
   3. grunt serve
 
 Before committing: grunt clean && grunt build
