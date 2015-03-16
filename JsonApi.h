@@ -41,7 +41,7 @@ private:
 
     QJsonObject EMSArtistToJson(const EMSArtist &artist) const;
     QJsonObject EMSTrackToJson(const EMSTrack &track) const;
-    QJsonObject EMSGenreToJson(const EMSAlbum &genre) const;
+    QJsonObject EMSGenreToJson(const EMSGenre &genre) const;
     QJsonObject EMSAlbumToJson(const EMSAlbum &album) const;
     // To be implemented when if menu become dynamic
     //QJsonObject buildJsonMenu();
