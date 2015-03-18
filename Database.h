@@ -34,6 +34,8 @@ public:
     bool getTrackById(EMSTrack *track, unsigned long long trackId);
     bool getTrackIdBySha1(unsigned long long *trackID, QString sha1);
     void getAlbumsList(QVector<EMSAlbum> *albumsList);
+    void getAlbumsByGenreId(QVector<EMSAlbum> *albumsList, unsigned long long genreId);
+    void getAlbumsByArtistId(QVector<EMSAlbum> *albumsList, unsigned long long artistId);
     bool getAlbumById(EMSAlbum *album, unsigned long long albumId);
     void getArtistsList(QVector<EMSArtist> *artistsList);
     bool getArtistById(EMSArtist *artist, unsigned long long artistId);

@@ -321,6 +321,20 @@ const QString select_album_data1 = \
 "SELECT id, name, cover "
 "FROM albums ";
 
+const QString select_album_genre_data1 = \
+"SELECT albums.id, albums.name, albums.cover "
+"FROM albums, tracks, tracks_genres, genres "
+"WHERE  tracks.album_id = albums.id AND "
+"       tracks.id = tracks_genres.track_id AND "
+"       genres.id = tracks_genres.genre_id ";
+
+const QString select_album_artist_data1 = \
+"SELECT albums.id, albums.name, albums.cover "
+"FROM albums, tracks, tracks_artists, artists "
+"WHERE  tracks.album_id = albums.id AND "
+"       tracks.id = tracks_artists.track_id AND "
+"       artists.id = tracks_artists.artist_id ";
+
 
 /*****************************************************************************
  *    BROWSING TRACKS
@@ -402,7 +416,7 @@ bool Database::storeTrack(QSqlQuery *q, EMSTrack *track)
         /* Follow the same order as in the SQL query */
         track->id = q->value(colId++).toULongLong();
         track->position = q->value(colId++).toUInt();
-        track->name = q->value(colId++).toUInt();
+        track->name = q->value(colId++).toString();
         track->sha1 = q->value(colId++).toString();
         track->format = q->value(colId++).toString();
         track->sample_rate = q->value(colId++).toULongLong();
@@ -431,6 +445,7 @@ void Database::storeTrackList(QSqlQuery *q, QVector<EMSTrack> *tracksList)
     if(!q->exec())
     {
         qCritical() << "Querying tracks list failed : " << q->lastError().text();
+        qCritical() << "Query was : " << q->lastQuery();
         return;
     }
     tracksList->clear();
@@ -441,7 +456,7 @@ void Database::storeTrackList(QSqlQuery *q, QVector<EMSTrack> *tracksList)
         unsigned int colId = 0;
         track.id = q->value(colId++).toULongLong();
         track.position = q->value(colId++).toUInt();
-        track.name = q->value(colId++).toUInt();
+        track.name = q->value(colId++).toString();
         track.sha1 = q->value(colId++).toString();
         track.format = q->value(colId++).toString();
         track.sample_rate = q->value(colId++).toULongLong();
@@ -463,6 +478,7 @@ void Database::storeArtistsInTrackList(QSqlQuery *q, QVector<EMSTrack> *tracksLi
     if(!q->exec())
     {
         qCritical() << "Querying tracks list (artists) failed : " << q->lastError().text();
+        qCritical() << "Query was : " << q->lastQuery();
         return;
     }
     int currentListId = 0;
@@ -492,6 +508,7 @@ void Database::storeGenresInTrackList(QSqlQuery *q, QVector<EMSTrack> *tracksLis
     if(!q->exec())
     {
         qCritical() << "Querying tracks list (genres) failed : " << q->lastError().text();
+        qCritical() << "Query was : " << q->lastQuery();
         return;
     }
     int currentListId = 0;
@@ -534,10 +551,11 @@ void Database::getTracks(QVector<EMSTrack> *tracksList)
      *                     two filenames for one tracks.id ? => TOCHECK
      */
     QSqlQuery q(db);
-    q.prepare(select_track_data1 + " ORDER BY tracks.id GROUP BY tracks.id;");
+    q.prepare(select_track_data1 + " GROUP BY tracks.id ORDER BY tracks.id;");
     if(!q.exec())
     {
         qCritical() << "Querying tracks list failed : " << q.lastError().text();
+        qCritical() << "Query was : " << q.lastQuery();
         return;
     }
     storeTrackList(&q, tracksList);
@@ -573,11 +591,12 @@ void Database::getTracksByAlbum(QVector<EMSTrack> *tracksList, unsigned long lon
 
     /* Get all the tracks data */
     QSqlQuery q(db);
-    q.prepare(select_track_data1 + " WHERE tracks.album_id = ? ORDER BY tracks.id GROUP BY tracks.id;");
+    q.prepare(select_track_data1 + " AND tracks.album_id = ? GROUP BY tracks.id ORDER BY tracks.id;");
     q.bindValue(0, albumId);
     if(!q.exec())
     {
         qCritical() << "Querying tracks list failed : " << q.lastError().text();
+        qDebug() << "Last query was : " << q.lastQuery();
         return;
     }
     storeTrackList(&q, tracksList);
@@ -589,13 +608,12 @@ void Database::getTracksByAlbum(QVector<EMSTrack> *tracksList, unsigned long lon
     }
 
     /* Get all artists data */
-    q.prepare(select_artist_from_track_data1 + " WHERE tracks.album_id = ? ORDER BY tracks.id;");
+    q.prepare(select_artist_from_track_data1 + " AND tracks.album_id = ? ORDER BY tracks.id;");
     q.bindValue(0, albumId);
     storeArtistsInTrackList(&q, tracksList);
 
     /* Get all genres data */
-    q.prepare(
-                + " WHERE tracks.album_id = ? ORDER BY tracks.id;");
+    q.prepare(select_genre_from_track_data1 + " AND tracks.album_id = ? ORDER BY tracks.id;");
     q.bindValue(0, albumId);
     storeGenresInTrackList(&q, tracksList);
 }
@@ -614,6 +632,7 @@ void Database::getArtistsList(QVector<EMSArtist> *artistsList)
     if(!q.exec())
     {
         qCritical() << "Querying artists list failed : " << q.lastError().text();
+        qDebug() << "Last query was : " << q.lastQuery();
         return;
     }
     artistsList->clear();
@@ -635,7 +654,7 @@ bool Database::getArtistById(EMSArtist *artist, unsigned long long artistId)
         return false;
     }
     QSqlQuery q(db);
-    q.prepare(select_artist_data1 + " WHERE id=?;");
+    q.prepare(select_artist_data1 + " WHERE id = ?;");
     q.bindValue(0, artistId);
     q.exec();
     if (q.next())
@@ -684,6 +703,7 @@ void Database::getArtistsByAlbumId(QVector<EMSArtist> *artistsList, unsigned lon
     if(!q.exec())
     {
         qCritical() << "Querying artist data failed : " << q.lastError().text();
+        qDebug() << "Last query was : " << q.lastQuery();
         return;
     }
     artistsList->clear();
@@ -710,6 +730,7 @@ void Database::getArtistsByTrackId(QVector<EMSArtist> *artistsList, unsigned lon
     if(!q.exec())
     {
         qCritical() << "Querying artist data failed : " << q.lastError().text();
+        qDebug() << "Last query was : " << q.lastQuery();
         return;
     }
     artistsList->clear();
@@ -734,12 +755,69 @@ void Database::getAlbumsList(QVector<EMSAlbum> *albumsList)
         return;
     }
     QSqlQuery q(db);
-    q.prepare(select_album_data1 + ";");
+    q.prepare(select_album_data1 + " ;");
     if(!q.exec())
     {
         qCritical() << "Querying album data failed : " << q.lastError().text();
+        qDebug() << "Last query was : " << q.lastQuery();
         return;
     }
+    albumsList->clear();
+    while (q.next())
+    {
+        // albums.id, albums.name, albums.cover
+        EMSAlbum album;
+        album.id = q.value(0).toULongLong();
+        album.name = q.value(1).toString();
+        album.cover = q.value(2).toString();
+        albumsList->append(album);
+    }
+}
+
+void Database::getAlbumsByGenreId(QVector<EMSAlbum> *albumsList, unsigned long long genreId)
+{
+    if (!opened)
+    {
+        return;
+    }
+    QSqlQuery q(db);
+    q.prepare(select_album_genre_data1 + " AND genres.id = ? GROUP BY albums.id;");
+    q.bindValue(0, genreId);
+    if(!q.exec())
+    {
+        qCritical() << "Querying album data failed : " << q.lastError().text();
+        qDebug() << "Last query was : " << q.lastQuery();
+        return;
+    }
+    albumsList->clear();
+    while (q.next())
+    {
+        // albums.id, albums.name, albums.cover
+        EMSAlbum album;
+        album.id = q.value(0).toULongLong();
+        album.name = q.value(1).toString();
+        album.cover = q.value(2).toString();
+        albumsList->append(album);
+    }
+}
+
+void Database::getAlbumsByArtistId(QVector<EMSAlbum> *albumsList, unsigned long long artistId)
+{
+    if (!opened)
+    {
+        return;
+    }
+
+    QSqlQuery q(db);
+    q.prepare(select_album_artist_data1 + " AND artists.id = ? GROUP BY albums.id;");
+    q.bindValue(0, artistId);
+    if(!q.exec())
+    {
+        qCritical() << "Querying album data failed : " << q.lastError().text();
+        qDebug() << "Last query was : " << q.lastQuery();
+        return;
+    }
+
     albumsList->clear();
     while (q.next())
     {
@@ -764,6 +842,7 @@ bool Database::getAlbumById(EMSAlbum *album, unsigned long long albumId)
     if(!q.exec())
     {
         qCritical() << "Querying album data failed : " << q.lastError().text();
+        qDebug() << "Last query was : " << q.lastQuery();
         return false;
     }
     if (q.next())
