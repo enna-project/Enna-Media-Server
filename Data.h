@@ -64,7 +64,7 @@ public:
     QVector<EMSGenre> genres;
 };
 
-/* Playlist management
+/* Playlist
  * -------------------
  * A playlist just have a name. The picture of a playlist is
  * computed using its content (cover of the tracks).
@@ -73,9 +73,18 @@ public:
  */
 class EMSPlaylist
 {
+public:
     unsigned long long id; /* Unique identifier (primary key in db) */
     QString name;
     QString subdir;
+
+    QVector<EMSTrack> tracks;
 };
+
+/* Player data
+ * -------------------
+ */
+enum EMSPlayerState { UNKNOWN, STOP, PLAY, PAUSE } ;
+
 
 #endif // DATA_H

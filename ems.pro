@@ -7,7 +7,7 @@ QT += core network websockets sql
 QT -= gui
 CONFIG += c++11
 
-
+LIBS += -lmpdclient
 
 TEMPLATE = app
 TARGET = enna-media-server
@@ -22,10 +22,11 @@ HEADERS += Database.h \
            sha1.h \
            WebSocketServer.h \          
            Application.h \
-    Data.h \
-    DefaultSettings.h \
-    WebSocket.h \
-    JsonApi.h
+           Data.h \
+           DefaultSettings.h \
+           WebSocket.h \
+           JsonApi.h \
+           Player.h
 
 SOURCES += Database.cpp \
            DirectoryWorker.cpp \
@@ -36,4 +37,5 @@ SOURCES += Database.cpp \
            sha1.cpp \
            WebSocketServer.cpp \
            Application.cpp \
-    JsonApi.cpp
+           JsonApi.cpp \
+           Player.cpp
