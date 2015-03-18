@@ -10,7 +10,16 @@ var apiList = [
     '{ "msg": "EMS_BROWSE", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "url": "library://music/tracks"}',
     '{ "msg": "EMS_BROWSE", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "url": "library://music/genres"}',
     '{ "msg": "EMS_BROWSE", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "url": "library://music/genres/1"}',
-    '{ "msg": "get_playlist", "msg_id": "1234", "data": { "player_id": "0" } }',
+    '{ "msg": "EMS_PLAYER", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "action": "next"}',
+    '{ "msg": "EMS_PLAYER", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "action": "prev"}',
+    '{ "msg": "EMS_PLAYER", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "action": "play"}',
+    '{ "msg": "EMS_PLAYER", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "action": "pause"}',
+    '{ "msg": "EMS_PLAYER", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "action": "toggle"}',
+    '{ "msg": "EMS_PLAYER", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "action": "stop"}',
+    '{ "msg": "EMS_PLAYER", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "action": "shuffle_on"}',
+    '{ "msg": "EMS_PLAYER", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "action": "shuffle_off"}',
+    '{ "msg": "EMS_PLAYER", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "action": "repeat_on"}',
+    '{ "msg": "EMS_PLAYER", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "action": "repeat_off"}',
 ];
 
 function popuplateApiList() {
@@ -18,8 +27,11 @@ function popuplateApiList() {
     for (var c = 0;c < apiList.length;c++) {
         var s = JSON.parse(apiList[c]).msg
         var url = JSON.parse(apiList[c]).url
+        var action = JSON.parse(apiList[c]).action
         if (url)
             s += ' | ' + url
+        if (action)
+            s += ' | ' + action
         $('#api_list').append($('<option />').val(i++).html(s));
     }
 
