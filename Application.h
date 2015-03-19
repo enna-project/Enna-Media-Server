@@ -23,7 +23,7 @@ private:
     Scanner m_scanner;
     WebSocketServer *m_webSocketServer;
     DiscoveryServer *m_discoveryServer;
-    smartmontoolsNotifier *m_smartmontools;
+    SmartmontoolsNotifier *m_smartmontools;
 };
 
 #endif // APPLICATION_H

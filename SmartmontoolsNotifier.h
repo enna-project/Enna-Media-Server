@@ -4,14 +4,14 @@
 #include <QObject>
 #include <QtDBus/QtDBus>
 
-class smartmontoolsNotifier : public QObject
+class SmartmontoolsNotifier : public QObject
 {
     Q_OBJECT
 
     QDBusInterface *m_interface;
 public:
-    explicit smartmontoolsNotifier(QObject *parent = 0);
-    ~smartmontoolsNotifier();
+    explicit SmartmontoolsNotifier(QObject *parent = 0);
+    ~SmartmontoolsNotifier();
 
 signals:
     void warnUser();
