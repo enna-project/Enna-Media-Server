@@ -14,6 +14,13 @@ TARGET = enna-media-server
 INCLUDEPATH +=
 
 
+QT_CONFIG -= no-pkg-config
+
+CONFIG += link_pkgconfig
+PKGCONFIG += libmpdclient
+
+
+
 # Input
 HEADERS += Database.h \
            DirectoryWorker.h \
@@ -41,7 +48,7 @@ SOURCES += Database.cpp \
            WebSocketServer.cpp \
            Application.cpp \
            JsonApi.cpp \
-           Player.cpp
+           Player.cpp \
            Player.cpp \
            SmartmontoolsNotifier.cpp \
            CdromManager.cpp
