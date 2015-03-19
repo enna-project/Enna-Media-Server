@@ -8,6 +8,7 @@
 #include "WebSocketServer.h"
 #include "DiscoveryServer.h"
 #include "Scanner.h"
+#include "SmartmontoolsNotifier.h"
 
 class Application : public QCoreApplication
 {
@@ -22,6 +23,7 @@ private:
     Scanner m_scanner;
     WebSocketServer *m_webSocketServer;
     DiscoveryServer *m_discoveryServer;
+    smartmontoolsNotifier *m_smartmontools;
 };
 
 #endif // APPLICATION_H

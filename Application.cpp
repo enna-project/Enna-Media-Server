@@ -1,6 +1,6 @@
 #include "Application.h"
 #include "DefaultSettings.h"
-
+#include "SmartmontoolsNotifier.h"
 /*
  * Derived form QCoreApplication
  * Set Organization name, domain and application name
@@ -38,7 +38,7 @@ Application::Application(int & argc, char ** argv) :
     m_webSocketServer = new WebSocketServer(m_websocketPort, this);
     /* Create Discovery Server */
     m_discoveryServer = new DiscoveryServer(BCAST_UDP_PORT, this);
-
+    m_smartmontools = new smartmontoolsNotifier(this);
 }
 
 Application::~Application()

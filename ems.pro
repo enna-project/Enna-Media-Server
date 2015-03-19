@@ -3,7 +3,7 @@
 ######################################################################
 
 QT += testlib
-QT += core network websockets sql
+QT += core network websockets sql dbus
 QT -= gui
 CONFIG += c++11
 
@@ -12,6 +12,7 @@ LIBS += -lmpdclient
 TEMPLATE = app
 TARGET = enna-media-server
 INCLUDEPATH +=
+
 
 # Input
 HEADERS += Database.h \
@@ -26,7 +27,8 @@ HEADERS += Database.h \
            DefaultSettings.h \
            WebSocket.h \
            JsonApi.h \
-           Player.h
+           Player.h \
+           SmartmontoolsNotifier.h
 
 SOURCES += Database.cpp \
            DirectoryWorker.cpp \
@@ -39,3 +41,8 @@ SOURCES += Database.cpp \
            Application.cpp \
            JsonApi.cpp \
            Player.cpp
+           Application.cpp \
+           SmartmontoolsNotifier.cpp
+
+DISTFILES +=
+
