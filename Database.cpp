@@ -414,6 +414,7 @@ bool Database::storeTrack(QSqlQuery *q, EMSTrack *track)
     if (q->next())
     {
         /* Follow the same order as in the SQL query */
+        track->type = TRACK_TYPE_DB;
         track->id = q->value(colId++).toULongLong();
         track->position = q->value(colId++).toUInt();
         track->name = q->value(colId++).toString();
@@ -454,6 +455,7 @@ void Database::storeTrackList(QSqlQuery *q, QVector<EMSTrack> *tracksList)
         /* Follow the same order as in the SQL query */
         EMSTrack track;
         unsigned int colId = 0;
+        track.type = TRACK_TYPE_DB;
         track.id = q->value(colId++).toULongLong();
         track.position = q->value(colId++).toUInt();
         track.name = q->value(colId++).toString();
@@ -1129,6 +1131,7 @@ void Database::autotestFillDb()
         {
             /* Track */
             EMSTrack track;
+            track.type = TRACK_TYPE_DB;
             track.album = album;
             track.position = j+1;
             track.name = QString("Track number %1 of album %2").arg(j).arg(i);

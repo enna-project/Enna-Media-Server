@@ -1,6 +1,9 @@
 #include "Application.h"
 #include "DefaultSettings.h"
 #include "SmartmontoolsNotifier.h"
+#include "Database.h"
+#include "Player.h"
+
 /*
  * Derived form QCoreApplication
  * Set Organization name, domain and application name
@@ -34,6 +37,9 @@ Application::Application(int & argc, char ** argv) :
     /* Open Database */
     Database::instance()->open();
 
+    /* Start the player */
+    Player::instance()->start();
+
     /* Create Websocket server */
     m_webSocketServer = new WebSocketServer(m_websocketPort, this);
     /* Create Discovery Server */
@@ -43,7 +49,12 @@ Application::Application(int & argc, char ** argv) :
 
 Application::~Application()
 {
+    /* Stop the player thread */
+    Player::instance()->kill();
+    Player::instance()->wait(1000);
+
     /* Close properly the database */
     Database::instance()->close();
+
 }
 

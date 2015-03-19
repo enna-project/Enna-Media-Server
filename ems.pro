@@ -5,9 +5,9 @@
 QT += testlib
 QT += core network websockets sql dbus
 QT -= gui
-CONFIG += c++11
+CONFIG += c++11 link_pkgconfig
 
-LIBS += -lmpdclient
+PKGCONFIG += libmpdclient
 
 TEMPLATE = app
 TARGET = enna-media-server

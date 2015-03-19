@@ -1,12 +1,14 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
-#include <QObject>
+#include <QThread>
+#include <QQueue>
 #include <QMutex>
+#include <QSemaphore>
 
 #include "Data.h"
 
-class Player : public QObject
+class Player : public QThread
 {
     Q_OBJECT
 
@@ -18,19 +20,23 @@ public:
      * Control current playlist contents
      */
     EMSPlaylist getCurentPlaylist();
-    bool getCurrentTrack(EMSTrack *track);
-    bool addTrack(EMSTrack track);
-    bool removeTrack(EMSTrack track);
-    bool removeAllTracks();
+    int getCurrentPos();            /* If a track is active (played/paused),
+                                     * return its index in the playlist,
+                                     * otherwise return -1 */
+    void addTrack(EMSTrack track);
+    void removeTrack(EMSTrack track);
+    void removeAllTracks();
+    int searchTrackInPlaylist(EMSTrack);
 
     /*
      * Control playback
      */
-    EMSPlayerState getStatus();
-    bool next();
-    bool prev();
-    bool play(unsigned int pos=0);
-    bool stop();
+    EMSPlayerStatus getStatus();
+    void next();
+    void prev();
+    void play(EMSTrack track);
+    void play();
+    void stop();
 
     /*
      * Playlist settings
@@ -45,31 +51,53 @@ public:
      */
     static Player* instance()
     {
-        static QMutex mutex;
+        static QMutex mutexinst;
         if (!_instance)
         {
-            mutex.lock();
+            mutexinst.lock();
 
             if (!_instance)
                 _instance = new Player;
 
-            mutex.unlock();
+            mutexinst.unlock();
         }
         return _instance;
     }
 
     static void drop()
     {
-        static QMutex mutex;
-        mutex.lock();
+        static QMutex mutexinst;
+        mutexinst.lock();
         delete _instance;
         _instance = 0;
-        mutex.unlock();
+        mutexinst.unlock();
     }
 
+    void kill();
+
+protected:
+    void run() Q_DECL_OVERRIDE;
+
 private:
-    EMSPlayerState status;
+    EMSPlayerStatus status;
     EMSPlaylist playlist;
+
+    /* Mutex protecting shared data
+     * Be careful when using this mutex, it must be used
+     * to protect unblocking section
+     */
+    QMutex mutex;
+
+    /* For communication thread (see run function) */
+    struct mpd_connection *conn; /* Not shared */
+    QQueue<EMSPlayerCmd> queue; /* Shared */
+    QSemaphore cmdAvailable; /* Thread safe */
+
+    /* Internal functions */
+    void connectToMpd();
+    void disconnectToMpd();
+    void executeCmd(EMSPlayerCmd cmd);
+    QString getMPDFilename(EMSTrack track);
 
     /* Singleton pattern */
     static Player* _instance;
@@ -79,7 +107,7 @@ private:
     ~Player();
 
 signals:
-    void statusChanged(EMSPlayerState newStatus);
+    void statusChanged(EMSPlayerStatus newStatus);
     void playlistChanged(EMSPlaylist newPlaylist);
 
 public slots:

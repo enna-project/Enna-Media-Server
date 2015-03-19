@@ -45,9 +45,17 @@ public:
     QString picture;
 };
 
+/* Track structure can be used for :
+ * TRACK_TYPE_DB : Database entry (all field filled)
+ * TRACK_TYPE_EXTERNAL : File located outside the directory managed by EMS (eg. USB stick)
+ * TRACK_TYPE_CDROM : CDROM track
+ */
+enum EMSTrackType { TRACK_TYPE_DB, TRACK_TYPE_EXTERNAL, TRACK_TYPE_CDROM } ;
+
 class EMSTrack
 {
 public:
+    EMSTrackType type;
     unsigned long long id; /* Unique identifier (primary key in db) */
     unsigned int position; /* Position in the album */
     QString name; /* Name of the track, could be empty */
@@ -84,7 +92,37 @@ public:
 /* Player data
  * -------------------
  */
-enum EMSPlayerState { UNKNOWN, STOP, PLAY, PAUSE } ;
+enum EMSPlayerState { STATUS_UNKNOWN, STATUS_STOP, STATUS_PLAY, STATUS_PAUSE } ;
+enum EMSPlayerAction { ACTION_ADD, ACTION_DEL, ACTION_DEL_ALL, ACTION_LIST,
+                       ACTION_STOP, ACTION_PLAY, ACTION_PLAY_POS, ACTION_PAUSE,
+                       ACTION_NEXT, ACTION_PREV, ACTION_REPEAT } ;
+
+class EMSPlayerStatus
+{
+public:
+    EMSPlayerState state;
+    int posInPlaylist; /* Position in playlist of the current track */
+    unsigned int pogress; /* Progression in second */
+
+    /* Default value */
+    EMSPlayerStatus()
+    {
+        state = STATUS_UNKNOWN;
+        posInPlaylist = -1;
+        pogress = 0;
+    }
+};
+
+class EMSPlayerCmd
+{
+public:
+    EMSPlayerAction action;
+
+    /* Track data for action related to one track (eg. ACTION_ADD)
+     * If not used, let it uninitialized.
+     */
+    EMSTrack track;
+};
 
 
 #endif // DATA_H
