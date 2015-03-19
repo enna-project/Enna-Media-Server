@@ -5,6 +5,8 @@
 #include "SmartmontoolsNotifier.h"
 #include "CdromManager.h"
 #include "OnlineDBPluginManager.h"
+#include "Database.h"
+#include "Player.h"
 
 /*
  * Derived form QCoreApplication
@@ -17,7 +19,7 @@
 
 Application::Application(int & argc, char ** argv) :
     QCoreApplication(argc, argv)
-{  
+{
     QCoreApplication::setOrganizationName("Enna");
     QCoreApplication::setOrganizationDomain("enna.me");
     QCoreApplication::setApplicationName("EnnaMediaServer");
@@ -42,15 +44,14 @@ Application::Application(int & argc, char ** argv) :
     /* Open Database */
     Database::instance()->open();
 
-    /* Start the player */
-    Player::instance()->start();
 
     /* Start the CDROM manager */
     CdromManager::instance()->moveToThread(&m_cdromManagerWorker);
     connect(&m_cdromManagerWorker, &QThread::started, CdromManager::instance(), &CdromManager::startMonitor);
     connect(&m_cdromManagerWorker, &QThread::finished, CdromManager::instance(), &CdromManager::stopMonitor);
     m_cdromManagerWorker.start();
-
+    /* Start the player */
+    Player::instance()->start();
     /* Create Websocket server */
     m_webSocketServer = new WebSocketServer(m_websocketPort, this);
     /* Create Discovery Server */
