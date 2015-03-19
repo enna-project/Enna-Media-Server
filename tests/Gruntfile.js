@@ -240,11 +240,8 @@ module.exports = function (grunt) {
     uglify: {
       dist: {
         files: {
-          '<%= config.dist %>/scripts/main_v2.js': [
-            '<%= config.app %>/scripts/main_v2.js'
-          ],
-          '<%= config.dist %>/scripts/main_v3.js': [
-            '<%= config.app %>/scripts/main_v3.js'
+          '<%= config.dist %>/scripts/main.js': [
+            '<%= config.app %>/scripts/main.js'
           ]
         }
       }
