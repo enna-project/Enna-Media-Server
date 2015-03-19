@@ -13,13 +13,10 @@ TEMPLATE = app
 TARGET = enna-media-server
 INCLUDEPATH +=
 
-
 QT_CONFIG -= no-pkg-config
 
 CONFIG += link_pkgconfig
 PKGCONFIG += libmpdclient
-
-
 
 # Input
 HEADERS += Database.h \
