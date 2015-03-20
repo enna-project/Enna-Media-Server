@@ -113,6 +113,26 @@ void Player::play()
     cmdAvailable.release(1);
 }
 
+void Player::pause()
+{
+    EMSPlayerCmd cmd;
+    cmd.action = ACTION_PAUSE;
+    mutex.lock();
+    queue.enqueue(cmd);
+    mutex.unlock();
+    cmdAvailable.release(1);
+}
+
+void Player::toggle()
+{
+    EMSPlayerCmd cmd;
+    cmd.action = ACTION_TOGGLE;
+    mutex.lock();
+    queue.enqueue(cmd);
+    mutex.unlock();
+    cmdAvailable.release(1);
+}
+
 void Player::stop()
 {
     EMSPlayerCmd cmd;
@@ -121,6 +141,56 @@ void Player::stop()
     queue.enqueue(cmd);
     mutex.unlock();
     cmdAvailable.release(1);
+}
+
+void Player::setRandom(bool randomIn)
+{
+    mutex.lock();
+    if (random == randomIn)
+    {
+        mutex.unlock();
+        return;
+    }
+    EMSPlayerCmd cmd;
+    cmd.action = ACTION_RANDOM;
+    random = randomIn;
+    queue.enqueue(cmd);
+    mutex.unlock();
+    cmdAvailable.release(1);
+}
+
+bool Player::getRandom()
+{
+    bool out;
+    mutex.lock();
+    out = random;
+    mutex.unlock();
+    return out;
+}
+
+void Player::setRepeat(bool repeatIn)
+{
+    mutex.lock();
+    if (repeat == repeatIn)
+    {
+        mutex.unlock();
+        return;
+    }
+    EMSPlayerCmd cmd;
+    cmd.action = ACTION_REPEAT;
+    repeat = repeatIn;
+    queue.enqueue(cmd);
+    mutex.unlock();
+    cmdAvailable.release(1);
+}
+
+bool Player::getRepeat()
+{
+    bool out;
+    mutex.lock();
+    out = repeat;
+    mutex.unlock();
+    return out;
 }
 
 /* ---------------------------------------------------------
@@ -183,9 +253,9 @@ QString Player::getMPDFilename(EMSTrack track)
     {
         /* For type CDROM :
          * track.filename is the CDROM device (eg. /dev/cdrom)
-         * position is the track number in the CDROM
+         * position is the track number in the CDROM (starting from 0)
          */
-        filename = "cdda://" + QString("%1/%2").arg(track.filename).arg(track.position);
+        filename = "cdda://" + QString("%1/%2").arg(track.filename).arg(track.position+1);
     }
     return filename;
 }
@@ -200,29 +270,46 @@ QString Player::getMPDFilename(EMSTrack track)
 void Player::connectToMpd()
 {
     QSettings settings;
-
-    if (conn != NULL)
-    {
-        return;
-    }
-
+    unsigned int retryPeriod = settings.value("player/retry_period", EMS_MPD_CONNECTION_RETRY_PERIOD).toUInt();
     QString host = settings.value("player/host", EMS_MPD_IP).toString();
     unsigned int port = settings.value("player/port", EMS_MPD_PORT).toUInt();
     unsigned int timeout = settings.value("player/timeout", EMS_MPD_TIMEOUT).toUInt();
 
-    qDebug() << "Connecting to " << QString("%1:%2... (timeout %3ms)").arg(host).arg(port).arg(timeout);
-    conn = mpd_connection_new(host.toStdString().c_str(), port, timeout);
-    if (conn == NULL) {
-        qCritical() << "MPD Connection failed.";
+    if (conn != NULL)
+    {
+        disconnectToMpd();
     }
 
-    if (mpd_connection_get_error(conn) != MPD_ERROR_SUCCESS)
+    /* Try to connect until it success */
+    while (!conn && !this->isInterruptionRequested())
     {
-        QString errorMessage = QString::fromUtf8(mpd_connection_get_error_message(conn));
-        qCritical() << "MPD Connection failed : " << errorMessage;
-        mpd_connection_free(conn);
-        conn = NULL;
+        qDebug() << "Connecting to " << QString("%1:%2... (timeout %3ms)").arg(host).arg(port).arg(timeout);
+        conn = mpd_connection_new(host.toStdString().c_str(), port, timeout);
+
+        if (conn == NULL)
+        {
+            qCritical() << "MPD Connection failed.";
+        }
+        else if (mpd_connection_get_error(conn) != MPD_ERROR_SUCCESS)
+        {
+            QString errorMessage = QString::fromUtf8(mpd_connection_get_error_message(conn));
+            qCritical() << "MPD Connection failed : " << errorMessage;
+            mpd_connection_free(conn);
+            conn = NULL;
+        }
+
+        if (!conn)
+        {
+            for (int i=0; i<retryPeriod; i++)
+            {
+                if (!this->isInterruptionRequested())
+                    this->usleep(1000);
+                else
+                    break;
+            }
+        }
     }
+
     qDebug() << "Connected to " << host;
 }
 
@@ -237,6 +324,17 @@ void Player::disconnectToMpd()
 
     mpd_connection_free(conn);
     conn = NULL;
+}
+
+/* This function configure the initial state of the player
+ * MPD keep its own internal state, so we have to reset it
+ */
+void Player::configureInitial()
+{
+    stop();
+    setRepeat(false);
+    setRandom(false);
+    removeAllTracks();
 }
 
 /* Execute the given command. In fact, it just will ask MPD to do it.
@@ -265,7 +363,8 @@ void Player::executeCmd(EMSPlayerCmd cmd)
         case ACTION_DEL:
         {
             int pos = searchTrackInPlaylist(cmd.track);
-            if (pos != -1)
+            if (pos >= -1)
+                pos++; /* Mpd start numbering at 1 */
                 mpd_send_delete(conn, pos);
             break;
         }
@@ -293,6 +392,16 @@ void Player::executeCmd(EMSPlayerCmd cmd)
             mpd_send_pause(conn, true);
             break;
         }
+        case ACTION_TOGGLE:
+        {
+            mpd_send_toggle_pause(conn);
+            break;
+        }
+        case ACTION_STOP:
+        {
+            mpd_send_stop(conn);
+            break;
+        }
         case ACTION_NEXT:
         {
             mpd_send_next(conn);
@@ -301,6 +410,22 @@ void Player::executeCmd(EMSPlayerCmd cmd)
         case ACTION_PREV:
         {
             mpd_send_previous(conn);
+            break;
+        }
+        case ACTION_REPEAT:
+        {
+            mutex.lock();
+            bool repeatTmp = repeat;
+            mutex.unlock();
+            mpd_send_repeat(conn, repeatTmp);
+            break;
+        }
+        case ACTION_RANDOM:
+        {
+            mutex.lock();
+            bool randomTmp = random;
+            mutex.unlock();
+            mpd_send_random(conn, randomTmp);
             break;
         }
         default:
@@ -316,8 +441,35 @@ void Player::executeCmd(EMSPlayerCmd cmd)
         if (!mpd_response_finish(conn))
         {
             error = true;
-            QString errorMessage = QString::fromUtf8(mpd_connection_get_error_message(conn));
-            qCritical() << "MPD Command error : " << errorMessage;
+            qCritical() << "MPD could not execute the current command.";
+            enum mpd_error errorMpd = mpd_connection_get_error(conn);
+            if (errorMpd == MPD_ERROR_SERVER) /* Problem with the command */
+            {
+                QString errorMessage = QString::fromUtf8(mpd_connection_get_error_message(conn));
+                qCritical() << "Command error : " << errorMessage;
+
+            }
+            if (errorMpd == MPD_ERROR_ARGUMENT) /* Problem with the command */
+            {
+                qCritical() << "Command error : unrecognized or invalid argument ";
+
+            }
+            else if (errorMpd == MPD_ERROR_TIMEOUT ||
+                     errorMpd == MPD_ERROR_RESOLVER ||
+                     errorMpd == MPD_ERROR_MALFORMED ||
+                     errorMpd == MPD_ERROR_CLOSED ) /* Assume there is a connection problem, try to reconnect... */
+            {
+                QString errorMessage = QString::fromUtf8(mpd_connection_get_error_message(conn));
+                qCritical() << "Connexion error : " << errorMessage;
+                qCritical() << "Reconnecting...";
+                connectToMpd();
+                qCritical() << "Execute again the failed command...";
+                mutex.lock();
+                queue.push_front(cmd);
+                mutex.unlock();
+                cmdAvailable.release(1);
+                return;
+            }
         }
     }
 
@@ -368,16 +520,13 @@ void Player::executeCmd(EMSPlayerCmd cmd)
 void Player::run()
 {
     QSettings settings;
-    unsigned int retryPeriod = settings.value("player/retry_period", EMS_MPD_CONNECTION_RETRY_PERIOD).toUInt();
     unsigned int statusPeriod = settings.value("player/status_period", EMS_MPD_STATUS_PERIOD).toUInt();
 
     /* Blocking connection. */
-    while (!conn && !this->isInterruptionRequested())
-    {
-        qDebug() << "Trying to connect to the MPD server...";
-        connectToMpd();
-        this->usleep(1000*retryPeriod);
-    }
+    connectToMpd();
+
+    /* Set initial state of the player */
+    configureInitial();
 
     /* Execute each command, or timeout each X ms
      * In all cases, the status is retrieved at the end.
@@ -405,7 +554,7 @@ void Player::run()
             cmd = queue.dequeue();
             mutex.unlock();
 
-            //executeCmd(cmd);
+            executeCmd(cmd);
         }
 
         //getStatus();
@@ -433,9 +582,13 @@ void Player::kill()
 
 Player::Player(QObject *parent) : QThread(parent)
 {
+    mutex.lock();
     conn = NULL;
     status.state = EMSPlayerState::STATUS_UNKNOWN;
     playlist.name = QString("current");
+    random = false;
+    repeat = false;
+    mutex.unlock();
 }
 
 Player::~Player()

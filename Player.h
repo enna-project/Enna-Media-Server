@@ -36,6 +36,8 @@ public:
     void prev();
     void play(EMSTrack track);
     void play();
+    void pause();
+    void toggle();
     void stop();
 
     /*
@@ -43,6 +45,8 @@ public:
      */
     void setRandom(bool random);
     bool getRandom();
+    void setRepeat(bool repeat);
+    bool getRepeat();
 
     /* ---------------------------------
      *    Signleton pattern
@@ -81,6 +85,8 @@ protected:
 private:
     EMSPlayerStatus status;
     EMSPlaylist playlist;
+    bool random;
+    bool repeat;
 
     /* Mutex protecting shared data
      * Be careful when using this mutex, it must be used
@@ -96,6 +102,7 @@ private:
     /* Internal functions */
     void connectToMpd();
     void disconnectToMpd();
+    void configureInitial();
     void executeCmd(EMSPlayerCmd cmd);
     QString getMPDFilename(EMSTrack track);
 

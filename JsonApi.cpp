@@ -29,21 +29,28 @@ bool JsonApi::processMessage(const QString &message)
     }
     else
     {
-        qDebug() << "REQ: " << j.object()["msg"].toString() << ":" << j.object()["url"].toString();
-
         QJsonObject answerData;
 
 
         switch (toMessageType(j.object()["msg"].toString()))
         {
         case EMS_BROWSE:
+            qDebug() << "QUERY BROWSE:" << j.object()["url"].toString();
             answerData = processMessageBrowse(j.object(), ret);
             break;
         case EMS_DISK:
             ret = processMessageDisk(j.object());
             break;
         case EMS_PLAYER:
+            qDebug() << "QUERY PLAYER:" << j.object()["action"].toString();
             ret = processMessagePlayer(j.object());
+            break;
+        case EMS_PLAYLIST:
+            qDebug() << "QUERY PLAYLIST:"
+                     << j.object()["url"].toString()
+                     << j.object()["action"].toString()
+                     << j.object()["filename"].toString();
+            ret = processMessagePlaylist(j.object());
             break;
         default:
             ret = false;
@@ -74,6 +81,8 @@ JsonApi::MessageType JsonApi::toMessageType(const QString &type) const
         return EMS_DISK;
     else if (type == "EMS_PLAYER")
         return EMS_PLAYER;
+    else if (type == "EMS_PLAYLIST")
+        return EMS_PLAYLIST;
     else
         return EMS_UNKNOWN;
 }
@@ -317,20 +326,85 @@ bool JsonApi::processMessageDisk(const QJsonObject &message)
 {
 
 }
-
+/* Handle player query
+ * The field action should be :
+ * - next : Next song
+ * - prev : Previous song
+ * - play : Play the current song
+ * - pause : Pause the current song
+ * - stop : Stop the playing
+ * - toggle : Toggle the state of the player (play/pause)
+ * - shuffle_on : Set the shuffle state on
+ * - shuffle_off : Set the shuffle state off
+ * - repeat_on : Set the repeat state on
+ * - repeat_off : Set the repeat state off
+ */
 bool JsonApi::processMessagePlayer(const QJsonObject &message)
 {
-    QString type = message["url"].toString().remove("library://");
+    QString action = message["action"].toString();
+    if (action == "next")
+    {
+        Player::instance()->next();
+    }
+    else if (action == "prev")
+    {
+        Player::instance()->prev();
+    }
+    else if (action == "play")
+    {
+        Player::instance()->play();
+    }
+    else if (action == "pause")
+    {
+        Player::instance()->pause();
+    }
+    else if (action == "stop")
+    {
+        Player::instance()->stop();
+    }
+    else if (action == "toggle")
+    {
+        Player::instance()->toggle();
+    }
+    else if (action == "shuffle_on")
+    {
+        Player::instance()->setRandom(true);
+    }
+    else if (action == "shuffle_off")
+    {
+        Player::instance()->setRandom(false);
+    }
+    else if (action == "repeat_on")
+    {
+        Player::instance()->setRepeat(true);
+    }
+    else if (action == "repeat_off")
+    {
+        Player::instance()->setRepeat(false);
+    }
+    else
+    {
+        qCritical() << "Error: unknow player action " << action;
+        return false;
+    }
+
+    return true;
+}
+
+/* Handle playlist query */
+bool JsonApi::processMessagePlaylist(const QJsonObject &message)
+{
+    QString type = message["url"].toString().remove("playlist://");
     QString action = message["action"].toString();
 
     /* Manage the player playlist */
     if (type == "current")
     {
-        if (action == "EMS_PLAYLIST_CLEAR")
+        if (action == "clear")
         {
             Player::instance()->removeAllTracks();
         }
-        else
+        else if (action == "add" || action == "del")
         {
             QVector<EMSTrack> trackList;
             getTracksFromFilename(&trackList, message["filename"].toString());
@@ -338,11 +412,11 @@ bool JsonApi::processMessagePlayer(const QJsonObject &message)
             {
                 for (int i=0; i<trackList.size(); i++)
                 {
-                    if (action == "EMS_PLAYLIST_ADD")
+                    if (action == "add")
                     {
                         Player::instance()->addTrack(trackList.at(i));
                     }
-                    else if (action == "EMS_PLAYLIST_DEL")
+                    else if (action == "del")
                     {
                         Player::instance()->removeTrack(trackList.at(i));
                     }
@@ -351,15 +425,21 @@ bool JsonApi::processMessagePlayer(const QJsonObject &message)
             else
             {
                 qCritical() << "Error: filename does not match any track.";
+                return false;
             }
 
+        }
+        else
+        {
+            qCritical() << "Error: unknown action " << action;
+            return false;
         }
     }
     else /* Manage the saved playlist */
     {
         ; //TODO!
     }
-
+    return true;
 }
 
 JsonApi::UrlSchemeType JsonApi::urlSchemeGet(const QString &url) const
@@ -450,6 +530,7 @@ void JsonApi::getTracksFromFilename(QVector<EMSTrack> *trackList, QString filena
             {
                 EMSTrack track;
                 track.type = TRACK_TYPE_CDROM;
+                track.filename = "/dev/sr0";
                 track.position = i;
                 track.name = QString("track%1").arg(track.position);
                 trackList->append(track);
@@ -460,6 +541,7 @@ void JsonApi::getTracksFromFilename(QVector<EMSTrack> *trackList, QString filena
             //TODO: ask CDROM module the track in the CDROM
             EMSTrack track;
             track.type = TRACK_TYPE_CDROM;
+            track.filename = "/dev/sr0";
             track.position = trackID.toUInt();
             track.name = QString("track%1").arg(track.position);
             trackList->append(track);

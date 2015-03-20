@@ -18,7 +18,7 @@ public:
     explicit JsonApi(QWebSocket *websScket);
     ~JsonApi();
 
-    enum MessageType {EMS_BROWSE, EMS_PLAYER, EMS_DISK, EMS_UNKNOWN};
+    enum MessageType {EMS_BROWSE, EMS_PLAYER, EMS_PLAYLIST, EMS_DISK, EMS_UNKNOWN};
     enum UrlSchemeType {SCHEME_MENU, SCHEME_LIBRARY, SCHEME_CDDA,
                         SCHEME_PLAYLIST, SCHEME_SETTINGS, SCHEME_UNKNOWN};
 
@@ -30,6 +30,7 @@ private:
     JsonApi::MessageType toMessageType(const QString &type) const;
 
     bool processMessagePlayer(const QJsonObject &message);
+    bool processMessagePlaylist(const QJsonObject &message);
     bool processMessageDisk(const QJsonObject &type);
     QJsonObject processMessageBrowse(const QJsonObject &type, bool &ok);
     QJsonObject processMessageBrowseLibrary(const QJsonObject &message, bool &ok);
