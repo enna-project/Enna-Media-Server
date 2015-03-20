@@ -369,7 +369,6 @@ bool JsonApi::processMessageDisk(const QJsonObject &message)
 {
 
 }
-
 /* Handle player query
  * The field action should be :
  * - next : Next song
@@ -579,7 +578,11 @@ void JsonApi::getTracksFromFilename(QVector<EMSTrack> *trackList, QString filena
         {
             for (int i=0; i<cdrom.tracks.size(); i++)
             {
-                EMSTrack track = cdrom.tracks.at(i);
+                EMSTrack track;
+                track.type = TRACK_TYPE_CDROM;
+                track.filename = "/dev/sr0";
+                track.position = i;
+                track.name = QString("track%1").arg(track.position);
                 trackList->append(track);
             }
         }
@@ -595,6 +598,12 @@ void JsonApi::getTracksFromFilename(QVector<EMSTrack> *trackList, QString filena
                     break;
                 }
             }
+            EMSTrack track;
+            track.type = TRACK_TYPE_CDROM;
+            track.filename = "/dev/sr0";
+            track.position = trackID.toUInt();
+            track.name = QString("track%1").arg(track.position);
+            trackList->append(track);
         }
     }
     else if (filename.startsWith("library://music/albums/"))
