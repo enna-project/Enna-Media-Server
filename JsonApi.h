@@ -43,6 +43,7 @@ private:
     QJsonObject EMSTrackToJson(const EMSTrack &track) const;
     QJsonObject EMSGenreToJson(const EMSGenre &genre) const;
     QJsonObject EMSAlbumToJson(const EMSAlbum &album) const;
+    void getTracksFromFilename(QVector<EMSTrack> *trackList, QString filename);
     // To be implemented when if menu become dynamic
     //QJsonObject buildJsonMenu();
 

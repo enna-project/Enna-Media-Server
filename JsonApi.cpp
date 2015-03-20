@@ -1,4 +1,6 @@
+#include <QDir>
 #include "JsonApi.h"
+#include "Player.h"
 
 const QString JSON_OBJECT_MENU = "{\"menus\":[{\"name\":\"Library\",\"url_scheme\":\"library://\",\"icon\":\"http://ip/imgs/library.png\",\"enabled\":true},{\"name\":\"Audio CD\",\"url_scheme\":\"cdda://\",\"icon\":\"http://ip/imgs/cdda.png\",\"enabled\":false},{\"name\":\"Playlists\",\"url_scheme\":\"playlist://\",\"icon\":\"http://ip/imgs/playlists.png\",\"enabled\":true},{\"name\":\"Settings\",\"url_scheme\":\"settings://\",\"icon\":\"http://ip/imgs/settings.png\",\"enabled\":true}]}";
 const QString JSON_OBJECT_LIBRARY_MUSIC = "{\"msg\": \"EMS_BROWSE\",\"msg_id\": \"id\",\"uuid\": \"110e8400-e29b-11d4-a716-446655440000\",\"data\" : {\"menus\": [{\"name\": \"Artists\",\"url\": \"library://music/artists\"},{\"name\": \"Albums\",\"url\": \"library://music/albums\"},{\"name\": \"Tracks\",\"url\": \"library://music/tracks\"},{\"name\": \"Genre\",\"url\": \"library://music/genres\"},{\"name\": \"Compositors\",\"url\": \"library://music/compositor\"}]}}";
@@ -318,6 +320,45 @@ bool JsonApi::processMessageDisk(const QJsonObject &message)
 
 bool JsonApi::processMessagePlayer(const QJsonObject &message)
 {
+    QString type = message["url"].toString().remove("library://");
+    QString action = message["action"].toString();
+
+    /* Manage the player playlist */
+    if (type == "current")
+    {
+        if (action == "EMS_PLAYLIST_CLEAR")
+        {
+            Player::instance()->removeAllTracks();
+        }
+        else
+        {
+            QVector<EMSTrack> trackList;
+            getTracksFromFilename(&trackList, message["filename"].toString());
+            if (trackList.size() > 0)
+            {
+                for (int i=0; i<trackList.size(); i++)
+                {
+                    if (action == "EMS_PLAYLIST_ADD")
+                    {
+                        Player::instance()->addTrack(trackList.at(i));
+                    }
+                    else if (action == "EMS_PLAYLIST_DEL")
+                    {
+                        Player::instance()->removeTrack(trackList.at(i));
+                    }
+                }
+            }
+            else
+            {
+                qCritical() << "Error: filename does not match any track.";
+            }
+
+        }
+    }
+    else /* Manage the saved playlist */
+    {
+        ; //TODO!
+    }
 
 }
 
@@ -387,4 +428,96 @@ QJsonObject JsonApi::EMSTrackToJson(const EMSTrack &track) const
     obj["duration"] = (int)track.duration;
     obj["format_parameters"] = track.format_parameters;
     return obj;
+}
+
+/* This function retrieve the list of track from a given filename.
+ * Filename could be :
+ * - cdda:// : all track in the CDROM
+ * - cdda://[id] : track [id] of the CDROM
+ * - library://music/tracks/[id] : track [id] from the DB
+ * - library://music/albums/[id] : add the album [id] from the DB
+ * - file://[absolute path] : local path defining either a file or a directory
+ */
+void JsonApi::getTracksFromFilename(QVector<EMSTrack> *trackList, QString filename)
+{
+    if (filename.startsWith("cdda://"))
+    {
+        QString trackID = filename.remove("cdda://");
+        if (trackID.isEmpty())
+        {
+            //TODO: ask CDROM module the list of track in the CDROM
+            for (int i=0; i<10; i++)
+            {
+                EMSTrack track;
+                track.type = TRACK_TYPE_CDROM;
+                track.position = i;
+                track.name = QString("track%1").arg(track.position);
+                trackList->append(track);
+            }
+        }
+        else
+        {
+            //TODO: ask CDROM module the track in the CDROM
+            EMSTrack track;
+            track.type = TRACK_TYPE_CDROM;
+            track.position = trackID.toUInt();
+            track.name = QString("track%1").arg(track.position);
+            trackList->append(track);
+        }
+    }
+    else if (filename.startsWith("library://music/albums/"))
+    {
+        QString albumID = filename.remove("library://music/albums/");
+        if (!albumID.isEmpty())
+        {
+            unsigned long long id = albumID.toULongLong();
+            Database::instance()->getTracksByAlbum(trackList, id);
+        }
+    }
+    else if (filename.startsWith("library://music/tracks/"))
+    {
+        QString trackID = filename.remove("library://music/tracks/");
+        if (!trackID.isEmpty())
+        {
+            unsigned long long id = trackID.toULongLong();
+            EMSTrack track;
+            bool success = Database::instance()->getTrackById(&track, id);
+            if (success)
+            {
+                trackList->append(track);
+            }
+
+        }
+    }
+    else if (filename.startsWith("file://"))
+    {
+        QString path = filename.remove("file://");
+        if (!path.isEmpty() && path.startsWith("/"))
+        {
+            //TODO: Use the filewatcher module instead
+            QFileInfo fileInfo(path); /* Directory */
+            if (fileInfo.isDir())
+            {
+                QDir directory(path);
+                directory.setFilter(QDir::Files);
+                QStringList files = directory.entryList();
+                for (int i=0; i<files.size(); i++)
+                {
+                    EMSTrack track;
+                    track.type = TRACK_TYPE_EXTERNAL;
+                    track.filename = path + "/" + files.at(i);
+                    track.name = files.at(i);
+                    trackList->append(track);
+                }
+            }
+            else if (fileInfo.exists()) /* Only one file */
+            {
+                EMSTrack track;
+                track.type = TRACK_TYPE_EXTERNAL;
+                track.filename = path;
+                track.name = QFile(path).fileName();
+                trackList->append(track);
+            }
+        }
+    }
 }

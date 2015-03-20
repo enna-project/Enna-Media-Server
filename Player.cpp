@@ -147,7 +147,15 @@ int Player::searchTrackInPlaylist(EMSTrack track)
                 return i;
             }
         }
-        else
+        else if (trackI.type == TRACK_TYPE_CDROM)
+        {
+            if (trackI.position == track.position)
+            {
+                mutex.unlock();
+                return i;
+            }
+        }
+        else if (trackI.type == TRACK_TYPE_EXTERNAL)
         {
             if (trackI.filename == track.filename)
             {
