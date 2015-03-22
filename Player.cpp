@@ -356,6 +356,11 @@ void Player::executeCmd(EMSPlayerCmd cmd)
     {
         case ACTION_ADD:
         {
+            if(searchTrackInPlaylist(cmd.track) >= 0)
+            {
+                QDebug() << "Do not add track in the playlist as it already exist";
+                return;
+            }
             QString filename = getMPDFilename(cmd.track);
             mpd_send_add(conn, filename.toStdString().c_str());
             break;
