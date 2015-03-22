@@ -358,7 +358,7 @@ void Player::executeCmd(EMSPlayerCmd cmd)
         {
             if(searchTrackInPlaylist(cmd.track) >= 0)
             {
-                QDebug() << "Do not add track in the playlist as it already exist";
+                qDebug() << "Do not add track in the playlist as it already exist";
                 return;
             }
             QString filename = getMPDFilename(cmd.track);
@@ -368,9 +368,11 @@ void Player::executeCmd(EMSPlayerCmd cmd)
         case ACTION_DEL:
         {
             int pos = searchTrackInPlaylist(cmd.track);
-            if (pos >= -1)
+            if (pos >= 0)
+            {
                 pos++; /* Mpd start numbering at 1 */
                 mpd_send_delete(conn, pos);
+            }
             break;
         }
         case ACTION_DEL_ALL:
@@ -489,29 +491,144 @@ void Player::executeCmd(EMSPlayerCmd cmd)
         {
             case ACTION_ADD:
             {
+                EMSPlaylist newPlaylist;
                 mutex.lock();
                 playlist.tracks.append(cmd.track);
+                newPlaylist = playlist;
                 mutex.unlock();
+                emit playlistChanged(newPlaylist);
                 break;
             }
             case ACTION_DEL:
             {
                 int pos = searchTrackInPlaylist(cmd.track);
-                mutex.lock();
-                playlist.tracks.removeAt(pos);
-                mutex.unlock();
+                if (pos >= 0)
+                {
+                    EMSPlaylist newPlaylist;
+                    mutex.lock();
+                    playlist.tracks.removeAt(pos);
+                    newPlaylist = playlist;
+                    mutex.unlock();
+                    emit playlistChanged(newPlaylist);
+                }
                 break;
             }
             case ACTION_DEL_ALL:
             {
+                EMSPlaylist newPlaylist;
                 mutex.lock();
                 playlist.tracks.clear();
+                newPlaylist = playlist;
                 mutex.unlock();
+                emit playlistChanged(newPlaylist);
                 break;
             }
             default:
                 break;
         }
+    }
+}
+
+/* This function update the internal status tracking
+ * the MPD status. At then end, if the status has changed, a signal is emmited.
+ */
+void Player::updateStatus()
+{
+    struct mpd_status *statusMpd;
+    bool changed = false;
+
+    /* Get the status structure from MPD */
+    mpd_send_status(conn);
+    statusMpd = mpd_recv_status(conn);
+    if (statusMpd == NULL)
+    {
+        qCritical() << "Error while trying to get MPD status";
+        qCritical() << "Reconnecting...";
+        connectToMpd(); /* Reconnect */
+        return;
+    }
+
+    if (mpd_status_get_error(statusMpd) != NULL)
+    {
+        qCritical() << "MPD error: " << QString::fromUtf8(mpd_status_get_error(statusMpd));
+    }
+
+    if (!mpd_response_finish(conn))
+    {
+        qCritical() << "Error while trying to get MPD status" ;
+        qCritical() << "Reconnecting...";
+        connectToMpd();
+        return;
+    }
+
+    /* Fill the internal state from the answer */
+    /* Use a global lock to make sure thet status is never imcomplete */
+    mutex.lock();
+    EMSPlayerState state;
+    switch (mpd_status_get_state(statusMpd))
+    {
+        case MPD_STATE_PAUSE:
+            state = STATUS_PAUSE;
+            break;
+        case MPD_STATE_PLAY:
+            state = STATUS_PLAY;
+            break;
+        case MPD_STATE_STOP:
+            state = STATUS_STOP;
+            break;
+        default:
+            state = STATUS_UNKNOWN;
+            break;
+    }
+    if (state != status.state)
+    {
+        changed = true;
+        status.state = state;
+    }
+
+    bool repeatNew = mpd_status_get_repeat(statusMpd);
+    if (repeatNew != repeat)
+    {
+        changed = true;
+        repeat = repeatNew;
+    }
+    bool randomNew = mpd_status_get_random(statusMpd);
+    if (randomNew != random)
+    {
+        changed = true;
+        random = randomNew;
+    }
+
+    if (status.state == STATUS_PLAY || status.state == STATUS_PAUSE)
+    {
+        if (mpd_status_get_queue_length(statusMpd) != playlist.tracks.size())
+        {
+            qCritical() << "Error: the playlist does not have the same size as the one used by MPD!";
+        }
+
+        int songPos = mpd_status_get_song_pos(statusMpd);
+        if (songPos != status.posInPlaylist)
+        {
+            changed = true;
+            status.posInPlaylist = songPos;
+        }
+        unsigned int elapsedTime = mpd_status_get_elapsed_time(statusMpd);
+        if (elapsedTime != status.pogress)
+        {
+            changed = true;
+            status.pogress = elapsedTime;
+        }
+    }
+
+    mutex.unlock();
+    mpd_status_free(statusMpd);
+
+    if (changed)
+    {
+        mutex.lock();
+        EMSPlayerStatus newStatus = status;
+        mutex.unlock();
+        emit statusChanged(newStatus);
     }
 }
 
@@ -562,7 +679,7 @@ void Player::run()
             executeCmd(cmd);
         }
 
-        //getStatus();
+        updateStatus();
     }
 
     /* Clean exit */

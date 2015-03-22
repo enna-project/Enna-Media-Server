@@ -103,6 +103,7 @@ private:
     void connectToMpd();
     void disconnectToMpd();
     void configureInitial();
+    void updateStatus();
     void executeCmd(EMSPlayerCmd cmd);
     QString getMPDFilename(EMSTrack track);
 
