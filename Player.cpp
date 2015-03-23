@@ -274,6 +274,7 @@ void Player::connectToMpd()
     QString host = settings.value("player/host", EMS_MPD_IP).toString();
     unsigned int port = settings.value("player/port", EMS_MPD_PORT).toUInt();
     unsigned int timeout = settings.value("player/timeout", EMS_MPD_TIMEOUT).toUInt();
+    QString password = settings.value("player/password", EMS_MPD_PASSWORD).toString();
 
     if (conn != NULL)
     {
@@ -298,9 +299,21 @@ void Player::connectToMpd()
             conn = NULL;
         }
 
+        if (!password.isEmpty())
+        {
+            /* /!\ You must use a password to use file:// protocol (or a patch) */
+            qDebug() << "Setting password...";
+            if (!mpd_run_password(conn, password.toStdString().c_str()))
+            {
+                qCritical() << "Setting MPD password failed.";
+                mpd_connection_free(conn);
+                conn = NULL;
+            }
+        }
         if (!conn)
         {
-            for (int i=0; i<retryPeriod; i++)
+            qCritical() << "Retrying within " << QString("%1 ms").arg(retryPeriod);
+            for (unsigned int i=0; i<retryPeriod; i++)
             {
                 if (!this->isInterruptionRequested())
                     this->usleep(1000);
@@ -443,40 +456,36 @@ void Player::executeCmd(EMSPlayerCmd cmd)
         }
     }
 
-    if (waitResponse)
+    if (waitResponse && !mpd_response_finish(conn))
     {
-        if (!mpd_response_finish(conn))
+        error = true;
+        qCritical() << "MPD could not execute the current command.";
+        enum mpd_error errorMpd = mpd_connection_get_error(conn);
+        if (errorMpd == MPD_ERROR_SERVER ||
+            errorMpd == MPD_ERROR_ARGUMENT) /* Problem with the command */
         {
-            error = true;
-            qCritical() << "MPD could not execute the current command.";
-            enum mpd_error errorMpd = mpd_connection_get_error(conn);
-            if (errorMpd == MPD_ERROR_SERVER) /* Problem with the command */
+            QString errorMessage = QString::fromUtf8(mpd_connection_get_error_message(conn));
+            qCritical() << "Command error : " << errorMessage;
+            if (!mpd_connection_clear_error(conn))
             {
-                QString errorMessage = QString::fromUtf8(mpd_connection_get_error_message(conn));
-                qCritical() << "Command error : " << errorMessage;
-
-            }
-            if (errorMpd == MPD_ERROR_ARGUMENT) /* Problem with the command */
-            {
-                qCritical() << "Command error : unrecognized or invalid argument ";
-
-            }
-            else if (errorMpd == MPD_ERROR_TIMEOUT ||
-                     errorMpd == MPD_ERROR_RESOLVER ||
-                     errorMpd == MPD_ERROR_MALFORMED ||
-                     errorMpd == MPD_ERROR_CLOSED ) /* Assume there is a connection problem, try to reconnect... */
-            {
-                QString errorMessage = QString::fromUtf8(mpd_connection_get_error_message(conn));
-                qCritical() << "Connexion error : " << errorMessage;
-                qCritical() << "Reconnecting...";
+                qCritical() << "This error cannot be cleared, reconnecting...";
                 connectToMpd();
-                qCritical() << "Execute again the failed command...";
-                mutex.lock();
-                queue.push_front(cmd);
-                mutex.unlock();
-                cmdAvailable.release(1);
-                return;
             }
+
+        }
+        else if (errorMpd == MPD_ERROR_TIMEOUT ||
+                 errorMpd == MPD_ERROR_RESOLVER ||
+                 errorMpd == MPD_ERROR_MALFORMED ||
+                 errorMpd == MPD_ERROR_CLOSED ) /* Assume there is a connection problem, try to reconnect... */
+        {
+            QString errorMessage = QString::fromUtf8(mpd_connection_get_error_message(conn));
+            qCritical() << "Connexion error : " << errorMessage;
+            qCritical() << "Reconnecting...";
+            connectToMpd();
+            mutex.lock();
+            queue.push_front(cmd);
+            mutex.unlock();
+            cmdAvailable.release(1);
         }
     }
 
@@ -601,7 +610,7 @@ void Player::updateStatus()
 
     if (status.state == STATUS_PLAY || status.state == STATUS_PAUSE)
     {
-        if (mpd_status_get_queue_length(statusMpd) != playlist.tracks.size())
+        if (mpd_status_get_queue_length(statusMpd) != (unsigned int)playlist.tracks.size())
         {
             qCritical() << "Error: the playlist does not have the same size as the one used by MPD!";
         }

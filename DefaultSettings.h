@@ -28,5 +28,7 @@
 #define EMS_MPD_STATUS_PERIOD 1000
 // player/retry_period
 #define EMS_MPD_CONNECTION_RETRY_PERIOD 10000
+// player/password (optional - if no password, let it empty)
+#define EMS_MPD_PASSWORD ""
 
 #endif // DEFAULTSETTINGS_H
