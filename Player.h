@@ -85,8 +85,6 @@ protected:
 private:
     EMSPlayerStatus status;
     EMSPlaylist playlist;
-    bool random;
-    bool repeat;
 
     /* Mutex protecting shared data
      * Be careful when using this mutex, it must be used

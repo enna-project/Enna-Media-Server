@@ -146,14 +146,9 @@ void Player::stop()
 void Player::setRandom(bool randomIn)
 {
     mutex.lock();
-    if (random == randomIn)
-    {
-        mutex.unlock();
-        return;
-    }
     EMSPlayerCmd cmd;
     cmd.action = ACTION_RANDOM;
-    random = randomIn;
+    cmd.boolValue = randomIn;
     queue.enqueue(cmd);
     mutex.unlock();
     cmdAvailable.release(1);
@@ -163,7 +158,7 @@ bool Player::getRandom()
 {
     bool out;
     mutex.lock();
-    out = random;
+    out = status.random;
     mutex.unlock();
     return out;
 }
@@ -171,14 +166,9 @@ bool Player::getRandom()
 void Player::setRepeat(bool repeatIn)
 {
     mutex.lock();
-    if (repeat == repeatIn)
-    {
-        mutex.unlock();
-        return;
-    }
     EMSPlayerCmd cmd;
     cmd.action = ACTION_REPEAT;
-    repeat = repeatIn;
+    cmd.boolValue = repeatIn;
     queue.enqueue(cmd);
     mutex.unlock();
     cmdAvailable.release(1);
@@ -188,7 +178,7 @@ bool Player::getRepeat()
 {
     bool out;
     mutex.lock();
-    out = repeat;
+    out = status.repeat;
     mutex.unlock();
     return out;
 }
@@ -435,17 +425,23 @@ void Player::executeCmd(EMSPlayerCmd cmd)
         case ACTION_REPEAT:
         {
             mutex.lock();
-            bool repeatTmp = repeat;
+            bool repeatTmp = status.repeat;
             mutex.unlock();
-            mpd_send_repeat(conn, repeatTmp);
+            if (cmd.boolValue != repeatTmp)
+            {
+                mpd_send_repeat(conn, cmd.boolValue);
+            }
             break;
         }
         case ACTION_RANDOM:
         {
             mutex.lock();
-            bool randomTmp = random;
+            bool randomTmp = status.random;
             mutex.unlock();
-            mpd_send_random(conn, randomTmp);
+            if (cmd.boolValue != randomTmp)
+            {
+                mpd_send_random(conn, cmd.boolValue);
+            }
             break;
         }
         default:
@@ -544,7 +540,7 @@ void Player::executeCmd(EMSPlayerCmd cmd)
 void Player::updateStatus()
 {
     struct mpd_status *statusMpd;
-    bool changed = false;
+    EMSPlayerStatus statusEMS;
 
     /* Get the status structure from MPD */
     mpd_send_status(conn);
@@ -571,73 +567,48 @@ void Player::updateStatus()
     }
 
     /* Fill the internal state from the answer */
-    /* Use a global lock to make sure thet status is never imcomplete */
-    mutex.lock();
-    EMSPlayerState state;
     switch (mpd_status_get_state(statusMpd))
     {
         case MPD_STATE_PAUSE:
-            state = STATUS_PAUSE;
+            statusEMS.state = STATUS_PAUSE;
             break;
         case MPD_STATE_PLAY:
-            state = STATUS_PLAY;
+            statusEMS.state = STATUS_PLAY;
             break;
         case MPD_STATE_STOP:
-            state = STATUS_STOP;
+            statusEMS.state = STATUS_STOP;
             break;
         default:
-            state = STATUS_UNKNOWN;
+            statusEMS.state = STATUS_UNKNOWN;
             break;
     }
-    if (state != status.state)
-    {
-        changed = true;
-        status.state = state;
-    }
 
-    bool repeatNew = mpd_status_get_repeat(statusMpd);
-    if (repeatNew != repeat)
-    {
-        changed = true;
-        repeat = repeatNew;
-    }
-    bool randomNew = mpd_status_get_random(statusMpd);
-    if (randomNew != random)
-    {
-        changed = true;
-        random = randomNew;
-    }
+    statusEMS.repeat = mpd_status_get_repeat(statusMpd);
+    statusEMS.random = mpd_status_get_random(statusMpd);
 
-    if (status.state == STATUS_PLAY || status.state == STATUS_PAUSE)
+    if (statusEMS.state == STATUS_PLAY || statusEMS.state == STATUS_PAUSE)
     {
         if (mpd_status_get_queue_length(statusMpd) != (unsigned int)playlist.tracks.size())
         {
             qCritical() << "Error: the playlist does not have the same size as the one used by MPD!";
         }
 
-        int songPos = mpd_status_get_song_pos(statusMpd);
-        if (songPos != status.posInPlaylist)
-        {
-            changed = true;
-            status.posInPlaylist = songPos;
-        }
-        unsigned int elapsedTime = mpd_status_get_elapsed_time(statusMpd);
-        if (elapsedTime != status.pogress)
-        {
-            changed = true;
-            status.pogress = elapsedTime;
-        }
+        statusEMS.posInPlaylist = mpd_status_get_song_pos(statusMpd);
+        statusEMS.progress = mpd_status_get_elapsed_time(statusMpd);
     }
 
-    mutex.unlock();
     mpd_status_free(statusMpd);
 
-    if (changed)
+    if (statusEMS.posInPlaylist != status.posInPlaylist ||
+        statusEMS.progress != status.progress ||
+        statusEMS.random != status.random ||
+        statusEMS.repeat != status.repeat ||
+        statusEMS.state != status.state )
     {
         mutex.lock();
-        EMSPlayerStatus newStatus = status;
+        status = statusEMS;
         mutex.unlock();
-        emit statusChanged(newStatus);
+        emit statusChanged(statusEMS);
     }
 }
 
@@ -716,9 +687,10 @@ Player::Player(QObject *parent) : QThread(parent)
     mutex.lock();
     conn = NULL;
     status.state = EMSPlayerState::STATUS_UNKNOWN;
+    status.random = false;
+    status.repeat = false;
     playlist.name = QString("current");
-    random = false;
-    repeat = false;
+    playlist.tracks.clear();
     mutex.unlock();
 }
 

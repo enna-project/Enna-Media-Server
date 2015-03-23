@@ -102,14 +102,18 @@ class EMSPlayerStatus
 public:
     EMSPlayerState state;
     int posInPlaylist; /* Position in playlist of the current track */
-    unsigned int pogress; /* Progression in second */
+    unsigned int progress; /* Progression in second */
+    bool repeat;
+    bool random;
 
     /* Default value */
     EMSPlayerStatus()
     {
         state = STATUS_UNKNOWN;
         posInPlaylist = -1;
-        pogress = 0;
+        progress = 0;
+        repeat = false;
+        random = false;
     }
 };
 
@@ -122,6 +126,11 @@ public:
      * If not used, let it uninitialized.
      */
     EMSTrack track;
+
+    /* For action related to a boolean, as for changing "repeat" or
+     * "random" option, we use the following variable instead.
+     */
+    bool boolValue;
 };
 
 

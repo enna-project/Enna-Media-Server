@@ -326,6 +326,7 @@ bool JsonApi::processMessageDisk(const QJsonObject &message)
 {
 
 }
+
 /* Handle player query
  * The field action should be :
  * - next : Next song
