@@ -288,10 +288,8 @@ void Player::connectToMpd()
             mpd_connection_free(conn);
             conn = NULL;
         }
-
-        if (!password.isEmpty())
+        else if (!password.isEmpty())
         {
-            /* /!\ You must use a password to use file:// protocol (or a patch) */
             qDebug() << "Setting password...";
             if (!mpd_run_password(conn, password.toStdString().c_str()))
             {
@@ -300,6 +298,7 @@ void Player::connectToMpd()
                 conn = NULL;
             }
         }
+
         if (!conn)
         {
             qCritical() << "Retrying within " << QString("%1 ms").arg(retryPeriod);
