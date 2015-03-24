@@ -2,6 +2,7 @@
 #include "QtWebSockets/QWebSocket"
 #include <QtCore/QDebug>
 #include "WebSocketServer.h"
+#include "Player.h"
 
 WebSocketServer::WebSocketServer(quint16 port, QObject *parent) :
         QObject(parent),
@@ -16,6 +17,10 @@ WebSocketServer::WebSocketServer(quint16 port, QObject *parent) :
       qDebug() << "WebSocket server listening on port " << port;
       connect(m_pWebSocketServer, &QWebSocketServer::newConnection,
               this, &WebSocketServer::onNewConnection);
+      connect(Player::instance(), &Player::statusChanged,
+              this, &WebSocketServer::broadcastStatus);
+      connect(Player::instance(), &Player::playlistChanged,
+              this, &WebSocketServer::broadcastPlaylist);
   }
 }
 
@@ -35,6 +40,28 @@ void WebSocketServer::onNewConnection()
     connect(socket, &QWebSocket::textMessageReceived, api, &JsonApi::processMessage);
 
     m_clients[socket] = api;
+}
+
+void WebSocketServer::broadcastStatus(EMSPlayerStatus newStatus)
+{
+    foreach( JsonApi *api, m_clients.values() )
+    {
+        if (api)
+        {
+            api->sendStatus(newStatus);
+        }
+    }
+}
+
+void WebSocketServer::broadcastPlaylist(EMSPlaylist newPlaylist)
+{
+    foreach( JsonApi *api, m_clients.values() )
+    {
+        if (api)
+        {
+            api->sendPlaylist(newPlaylist);
+        }
+    }
 }
 
 void WebSocketServer::processMessage(QString message)

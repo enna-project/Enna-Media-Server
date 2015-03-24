@@ -250,6 +250,21 @@ QString Player::getMPDFilename(EMSTrack track)
     return filename;
 }
 
+QString Player::stateToString(EMSPlayerState state)
+{
+    switch (state)
+    {
+        case STATUS_PAUSE:
+            return QString("paused");
+        case STATUS_PLAY:
+            return QString("playing");
+        case STATUS_STOP:
+            return QString("stopped");
+        default:
+            return QString("unknown");
+    }
+}
+
 /* ---------------------------------------------------------
  *              NETWORK COMMUNICATION (BLOCKING)
  * --------------------------------------------------------- */
@@ -691,6 +706,9 @@ Player::Player(QObject *parent) : QThread(parent)
     playlist.name = QString("current");
     playlist.tracks.clear();
     mutex.unlock();
+
+    qRegisterMetaType<EMSPlayerStatus>("EMSPlayerStatus");
+    qRegisterMetaType<EMSPlaylist>("EMSPlaylist");
 }
 
 Player::~Player()

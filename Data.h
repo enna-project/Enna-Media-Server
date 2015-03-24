@@ -70,6 +70,15 @@ public:
 
     QVector<EMSArtist> artists;
     QVector<EMSGenre> genres;
+
+    EMSTrack()
+    {
+        type = TRACK_TYPE_DB;
+        id = 0;
+        position = 0;
+        sample_rate = 0;
+        duration = 0;
+    }
 };
 
 /* Playlist
@@ -83,7 +92,7 @@ class EMSPlaylist
 {
 public:
     unsigned long long id; /* Unique identifier (primary key in db) */
-    QString name;
+    QString name; /* The name "current" is reserved for the Player playlist */
     QString subdir;
 
     QVector<EMSTrack> tracks;

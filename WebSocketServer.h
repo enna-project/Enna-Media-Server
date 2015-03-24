@@ -22,6 +22,9 @@ private Q_SLOTS:
     void processMessage(QString message);
     void socketDisconnected();
 
+    void broadcastPlaylist(EMSPlaylist newPlaylist);
+    void broadcastStatus(EMSPlayerStatus newStatus);
+
 private:
     QWebSocketServer *m_pWebSocketServer;
     QMap<QWebSocket*, JsonApi *> m_clients;

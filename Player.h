@@ -39,14 +39,15 @@ public:
     void pause();
     void toggle();
     void stop();
-
-    /*
-     * Playlist settings
-     */
     void setRandom(bool random);
     bool getRandom();
     void setRepeat(bool repeat);
     bool getRepeat();
+
+    /*
+     * Utils
+     */
+    QString stateToString(EMSPlayerState state);
 
     /* ---------------------------------
      *    Signleton pattern

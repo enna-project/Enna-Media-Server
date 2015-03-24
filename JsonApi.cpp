@@ -604,3 +604,36 @@ void JsonApi::getTracksFromFilename(QVector<EMSTrack> *trackList, QString filena
         }
     }
 }
+
+/* Asynchronous API */
+void JsonApi::sendStatus(EMSPlayerStatus status)
+{
+
+    QJsonObject statusJsonObj;
+    statusJsonObj["msg"] = "EMS_PLAYER";
+    statusJsonObj["player_state"] = Player::instance()->stateToString(status.state);
+
+    if (status.state == STATUS_PLAY || status.state == STATUS_PAUSE)
+    {
+        statusJsonObj["progress"] = (qint64)status.progress;
+        statusJsonObj["position"] = (qint64)status.posInPlaylist;
+        statusJsonObj["repeat"] = status.repeat;
+        statusJsonObj["random"] = status.random;
+
+        /* As we are kind, send track data in this message */
+        EMSPlaylist currentPlaylist = Player::instance()->getCurentPlaylist();
+        if (status.posInPlaylist >= 0 && status.posInPlaylist < currentPlaylist.tracks.size())
+        {
+            EMSTrack currentTrack = currentPlaylist.tracks.at(status.posInPlaylist);
+            statusJsonObj["track"] = EMSTrackToJson(currentTrack);
+        }
+    }
+
+    QJsonDocument doc(statusJsonObj);
+    m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
+}
+
+void JsonApi::sendPlaylist(EMSPlaylist newPlaylist)
+{
+    /* TODO */
+}

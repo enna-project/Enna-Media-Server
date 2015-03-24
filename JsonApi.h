@@ -22,11 +22,16 @@ public:
     enum UrlSchemeType {SCHEME_MENU, SCHEME_LIBRARY, SCHEME_CDDA,
                         SCHEME_PLAYLIST, SCHEME_SETTINGS, SCHEME_UNKNOWN};
 
+    /* Asynchronous messages */
+    void sendStatus(EMSPlayerStatus status);
+    void sendPlaylist(EMSPlaylist newPlaylist);
+
 signals:
 
 private:
     QWebSocket *m_webSocket;
 
+    /* Queries handlers */
     JsonApi::MessageType toMessageType(const QString &type) const;
 
     bool processMessagePlayer(const QJsonObject &message);
