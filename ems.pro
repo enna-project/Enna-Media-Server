@@ -28,7 +28,8 @@ HEADERS += Database.h \
            WebSocket.h \
            JsonApi.h \
            Player.h \
-           SmartmontoolsNotifier.h
+           SmartmontoolsNotifier.h \
+           CdromManager.h
 
 SOURCES += Database.cpp \
            DirectoryWorker.cpp \
@@ -41,7 +42,10 @@ SOURCES += Database.cpp \
            Application.cpp \
            JsonApi.cpp \
            Player.cpp
-           SmartmontoolsNotifier.cpp
+           Player.cpp \
+           SmartmontoolsNotifier.cpp \
+           CdromManager.cpp
+
 
 DISTFILES +=
 

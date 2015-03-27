@@ -527,7 +527,7 @@ void JsonApi::getTracksFromFilename(QVector<EMSTrack> *trackList, QString filena
         if (trackID.isEmpty())
         {
             //TODO: ask CDROM module the list of track in the CDROM
-            for (int i=0; i<10; i++)
+            for (int i=1; i<10; i++)
             {
                 EMSTrack track;
                 track.type = TRACK_TYPE_CDROM;

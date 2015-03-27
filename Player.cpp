@@ -209,7 +209,8 @@ int Player::searchTrackInPlaylist(EMSTrack track)
         }
         else if (trackI.type == TRACK_TYPE_CDROM)
         {
-            if (trackI.position == track.position)
+            if (trackI.position == track.position &&
+                trackI.filename == track.filename)
             {
                 mutex.unlock();
                 return i;
@@ -243,9 +244,9 @@ QString Player::getMPDFilename(EMSTrack track)
     {
         /* For type CDROM :
          * track.filename is the CDROM device (eg. /dev/cdrom)
-         * position is the track number in the CDROM (starting from 0)
+         * position is the track number in the CDROM (starting from 1)
          */
-        filename = "cdda://" + QString("%1/%2").arg(track.filename).arg(track.position+1);
+        filename = "cdda://" + QString("%1/%2").arg(track.filename).arg(track.position);
     }
     return filename;
 }

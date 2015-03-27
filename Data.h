@@ -142,5 +142,26 @@ public:
     bool boolValue;
 };
 
+/* CdromManager data
+ * -------------------
+ */
+class EMSCdrom
+{
+public:
+    /* Name of the device (eg. /dev/sr0). This data is also inserted in each track */
+    QString device;
+
+    /* Disc id */
+    QString disc_id;
+
+    /* A CDROM is a list of track. For each track, available data are :
+     * - filename = the name of the device (eg. /dev/sr0)
+     * - position = the track number starting from 1
+     * - name = the name to be displayed (eg. Track 01)
+     * - duration = the duration of the track
+     * Other data may be missing.
+     */
+    QVector<EMSTrack> tracks;
+};
 
 #endif // DATA_H
