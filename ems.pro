@@ -48,7 +48,8 @@ SOURCES += Database.cpp \
            Player.cpp \
            SmartmontoolsNotifier.cpp \
            CdromManager.cpp \
-           OnlineDBPluginManager.cpp
+           OnlineDBPluginManager.cpp \
+           Application.cpp
 
 DISTFILES +=
 
