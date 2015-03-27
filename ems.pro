@@ -34,7 +34,6 @@ HEADERS += Database.h \
            OnlineDBPlugin.h \
            OnlineDBPluginManager.h
 
-
 SOURCES += Database.cpp \
            DirectoryWorker.cpp \
            DiscoveryServer.cpp \
@@ -49,7 +48,8 @@ SOURCES += Database.cpp \
            SmartmontoolsNotifier.cpp \
            CdromManager.cpp \
            OnlineDBPluginManager.cpp \
-           Application.cpp
+           Application.cpp \
+           CdromManager.cpp
 
 DISTFILES +=
 
