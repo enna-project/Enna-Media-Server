@@ -41,7 +41,6 @@ SOURCES += Database.cpp \
            Application.cpp \
            JsonApi.cpp \
            Player.cpp
-           Application.cpp \
            SmartmontoolsNotifier.cpp
 
 DISTFILES +=
