@@ -49,7 +49,6 @@ SOURCES += Database.cpp \
            Application.cpp \
            JsonApi.cpp \
            Player.cpp \
-           Player.cpp \
            SmartmontoolsNotifier.cpp \
            CdromManager.cpp
 
