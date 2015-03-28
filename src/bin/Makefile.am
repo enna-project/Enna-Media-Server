@@ -1,3 +1,0 @@
-SUBDIRS = enna ems
-
-MAINTAINERCLEANFILES = Makefile.in
