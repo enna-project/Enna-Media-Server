@@ -1,7 +1,7 @@
 #include <QDebug>
 #include "SmartmontoolsNotifier.h"
 
-#define INTERFACE "com.metronome_technologie.Smart"
+#define INTERFACE "com.EnnaMediaServer.Smart"
 #define SIGNAL_NAME "warnUser"
 
 SmartmontoolsNotifier::SmartmontoolsNotifier(QObject *parent) : QObject(parent)
