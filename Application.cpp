@@ -1,8 +1,9 @@
 #include "Application.h"
 #include "DefaultSettings.h"
-#include "SmartmontoolsNotifier.h"
 #include "Database.h"
 #include "Player.h"
+#include "SmartmontoolsNotifier.h"
+#include "CdromManager.h"
 
 /*
  * Derived form QCoreApplication
@@ -40,6 +41,9 @@ Application::Application(int & argc, char ** argv) :
     /* Start the player */
     Player::instance()->start();
 
+    /* Start the CDROM manager */
+    CdromManager::instance()->startMonitor();
+
     /* Create Websocket server */
     m_webSocketServer = new WebSocketServer(m_websocketPort, this);
     /* Create Discovery Server */
@@ -49,6 +53,9 @@ Application::Application(int & argc, char ** argv) :
 
 Application::~Application()
 {
+    /* Stop the CDROM manager */
+    CdromManager::instance()->stopMonitor();
+
     /* Stop the player thread */
     Player::instance()->kill();
     Player::instance()->wait(1000);
