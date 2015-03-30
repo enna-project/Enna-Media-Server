@@ -89,14 +89,14 @@ void CdromManager::dbusMessageInsert(QString message)
 
     /* Get size of the disck */
     track_t trackNumber = cdio_get_num_tracks(cdrom);
-    if (trackNumber <= 0)
+    if (trackNumber <= 1)
     {
         qCritical() << "Unable to read CDROM TOC";
     }
-    qDebug() << "Found " << QString("%1").arg(trackNumber) << " tracks in " << newCD.device;
+    qDebug() << "Found " << QString("%1").arg(trackNumber-1) << " tracks in " << newCD.device;
 
     /* Retrieve each track data */
-    for (track_t i=1; i<=trackNumber; ++i)
+    for (track_t i=1; i<trackNumber; i++)
     {
         EMSTrack track;
         track.filename = newCD.device;
@@ -112,6 +112,9 @@ void CdromManager::dbusMessageInsert(QString message)
         sum += cddb_sum(lba / CDIO_CD_FRAMES_PER_SEC);
     }
 
+    /* Plus last track which is the lead out */
+    sum += cddb_sum(cdio_get_track_lba(cdrom, trackNumber) / CDIO_CD_FRAMES_PER_SEC);
+
     /* Compute the discid
      * Code copied from libcdio/example/discid.c
      */
@@ -121,12 +124,12 @@ void CdromManager::dbusMessageInsert(QString message)
     unsigned id = ((sum % 0xff) << 24 | total << 8 | trackNumber);
 
     newCD.disc_id = QString().sprintf("%08X %d", id, trackNumber);
-    for (track_t i=1; i <= trackNumber; ++i)
+    for (track_t i=1; i <=trackNumber; i++)
     {
         lba_t lba = cdio_get_track_lba(cdrom, i);
         newCD.disc_id += QString().sprintf(" %ld", (long) lba);
     }
-    newCD.disc_id += QString().sprintf(" %ld", (long) cdio_get_track_lba(cdrom, CDIO_CDROM_LEADOUT_TRACK) / CDIO_CD_FRAMES_PER_SEC);
+    newCD.disc_id += QString().sprintf(" %ld", leadout_sec);
     cdio_destroy(cdrom);
 
     qDebug() << "Computed DISCID is " << newCD.disc_id;
