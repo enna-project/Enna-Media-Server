@@ -1,6 +1,8 @@
 'use strict';
 
 var apiList = [
+    '{ "msg": "EMS_BROWSE", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "url": "menu://"}',
+    '{ "msg": "EMS_BROWSE", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "url": "cdda://"}',
     '{ "msg": "EMS_BROWSE", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "url": "library://music"}',
     '{ "msg": "EMS_BROWSE", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "url": "library://music/artists"}',
     '{ "msg": "EMS_BROWSE", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "url": "library://music/artists/1"}',

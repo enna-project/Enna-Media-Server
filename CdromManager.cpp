@@ -102,6 +102,7 @@ void CdromManager::dbusMessageInsert(QString message)
         track.filename = newCD.device;
         track.name = QString("Track %1").arg(i);
         track.type = TRACK_TYPE_CDROM;
+        track.position = i;
         lsn_t begin = cdio_get_track_lsn(cdrom, i);
         lsn_t end = cdio_get_track_last_lsn(cdrom, i);
         track.duration = (end - begin + 1) / CDIO_CD_FRAMES_PER_SEC; /* One sector = 1/75s */

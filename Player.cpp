@@ -388,7 +388,6 @@ void Player::executeCmd(EMSPlayerCmd cmd)
             int pos = searchTrackInPlaylist(cmd.track);
             if (pos >= 0)
             {
-                pos++; /* Mpd start numbering at 1 */
                 mpd_send_delete(conn, pos);
             }
             break;
@@ -606,6 +605,8 @@ void Player::updateStatus()
         if (mpd_status_get_queue_length(statusMpd) != (unsigned int)playlist.tracks.size())
         {
             qCritical() << "Error: the playlist does not have the same size as the one used by MPD!";
+            /* We should not do this... */
+            removeAllTracks();
         }
 
         statusEMS.posInPlaylist = mpd_status_get_song_pos(statusMpd);

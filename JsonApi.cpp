@@ -107,6 +107,9 @@ QJsonObject JsonApi::processMessageBrowse(const QJsonObject &message, bool &ok)
     case SCHEME_LIBRARY:
         obj = processMessageBrowseLibrary(message, ok);
         break;
+    case SCHEME_CDDA:
+        obj = processMessageBrowseCdrom(message, ok);
+        break;
     default:
         return obj;
     }
@@ -320,6 +323,45 @@ QJsonObject JsonApi::processMessageBrowseLibraryGenre(QStringList &list, bool &o
         ok = false;
         break;
     }
+    return obj;
+}
+
+
+QJsonObject JsonApi::processMessageBrowseCdrom(const QJsonObject &message, bool &ok)
+{
+    QJsonObject obj;
+
+    QString url = message["url"].toString();
+
+    if (url.isEmpty())
+    {
+        ok = false;
+        return obj;
+    }
+    url.remove("cdda://");
+
+    /* If no id, we get all the CDROM tracks */
+    int position = -1;
+    if (!url.isEmpty()) /* Otherwise, we return only one track */
+    {
+        position = url.toUInt();
+    }
+    QVector<EMSCdrom> cdroms;
+    CdromManager::instance()->getAvailableCdroms(&cdroms);
+    if (cdroms.size() <= 0)
+    {
+        ok = false;
+        return obj;
+    }
+    EMSCdrom cdrom = cdroms.at(0);
+    QJsonArray jsonArray;
+    for (unsigned int i=0; i<cdrom.tracks.size(); i++)
+    {
+        jsonArray << EMSTrackToJson(cdrom.tracks.at(i));
+    }
+    obj["tracks"] = jsonArray;
+
+    ok = true;
     return obj;
 }
 

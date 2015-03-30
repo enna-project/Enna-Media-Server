@@ -43,6 +43,7 @@ private:
     QJsonObject processMessageBrowseLibraryAlbums(QStringList &list, bool &ok);
     QJsonObject processMessageBrowseLibraryTracks(QStringList &list, bool &ok);
     QJsonObject processMessageBrowseLibraryGenre(QStringList &list, bool &ok);
+    QJsonObject processMessageBrowseCdrom(const QJsonObject &message, bool &ok);
     JsonApi::UrlSchemeType urlSchemeGet(const QString &url) const;
 
     QJsonObject EMSArtistToJson(const EMSArtist &artist) const;
