@@ -1,6 +1,7 @@
 #include <QDir>
 #include "JsonApi.h"
 #include "Player.h"
+#include "CdromManager.h"
 
 const QString JSON_OBJECT_MENU = "{\"menus\":[{\"name\":\"Library\",\"url_scheme\":\"library://\",\"icon\":\"http://ip/imgs/library.png\",\"enabled\":true},{\"name\":\"Audio CD\",\"url_scheme\":\"cdda://\",\"icon\":\"http://ip/imgs/cdda.png\",\"enabled\":false},{\"name\":\"Playlists\",\"url_scheme\":\"playlist://\",\"icon\":\"http://ip/imgs/playlists.png\",\"enabled\":true},{\"name\":\"Settings\",\"url_scheme\":\"settings://\",\"icon\":\"http://ip/imgs/settings.png\",\"enabled\":true}]}";
 const QString JSON_OBJECT_LIBRARY_MUSIC = "{\"msg\": \"EMS_BROWSE\",\"msg_id\": \"id\",\"uuid\": \"110e8400-e29b-11d4-a716-446655440000\",\"data\" : {\"menus\": [{\"name\": \"Artists\",\"url\": \"library://music/artists\"},{\"name\": \"Albums\",\"url\": \"library://music/albums\"},{\"name\": \"Tracks\",\"url\": \"library://music/tracks\"},{\"name\": \"Genre\",\"url\": \"library://music/genres\"},{\"name\": \"Compositors\",\"url\": \"library://music/compositor\"}]}}";
@@ -523,29 +524,34 @@ void JsonApi::getTracksFromFilename(QVector<EMSTrack> *trackList, QString filena
 {
     if (filename.startsWith("cdda://"))
     {
+        /* Get first available CDROM */
+        QVector<EMSCdrom> cdroms = CdromManager::instance()->getAvailableCdroms();
+        if (cdroms.size() <= 0)
+        {
+            return;
+        }
+        EMSCdrom cdrom = cdroms.at(0);
         QString trackID = filename.remove("cdda://");
         if (trackID.isEmpty())
         {
-            //TODO: ask CDROM module the list of track in the CDROM
-            for (int i=1; i<10; i++)
+            for (int i=0; i<cdrom.tracks.size(); i++)
             {
-                EMSTrack track;
-                track.type = TRACK_TYPE_CDROM;
-                track.filename = "/dev/sr0";
-                track.position = i;
-                track.name = QString("track%1").arg(track.position);
+                EMSTrack track = cdrom.tracks.at(i);
                 trackList->append(track);
             }
         }
         else
         {
-            //TODO: ask CDROM module the track in the CDROM
-            EMSTrack track;
-            track.type = TRACK_TYPE_CDROM;
-            track.filename = "/dev/sr0";
-            track.position = trackID.toUInt();
-            track.name = QString("track%1").arg(track.position);
-            trackList->append(track);
+            unsigned int position = trackID.toUInt();
+            for (int i=0; i<cdrom.tracks.size(); i++)
+            {
+                EMSTrack track = cdrom.tracks.at(i);
+                if (track.position == position)
+                {
+                    trackList->append(track);
+                    break;
+                }
+            }
         }
     }
     else if (filename.startsWith("library://music/albums/"))
