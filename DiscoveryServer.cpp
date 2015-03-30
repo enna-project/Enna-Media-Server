@@ -1,4 +1,8 @@
 #include <QNetworkInterface>
+#include <QJsonObject>
+#include <QJsonDocument>
+#include <QCoreApplication>
+#include <QSettings>
 
 #include "DiscoveryServer.h"
 
@@ -33,21 +37,25 @@ void DiscoveryServer::readyRead()
 {
     QByteArray buffer;
     buffer.resize(m_socket->pendingDatagramSize());
-
-    qDebug() << "Read Read";
-
     QHostAddress sender;
     quint16 senderPort;
+
+    // Read data received
     m_socket->readDatagram(buffer.data(), buffer.size(),
                          &sender, &senderPort);
-    /* TODO: Read the datagram, and check the UUID */
-    qDebug() << "Message from: " << sender.toString();
-    qDebug() << "Message port: " << senderPort;
-    qDebug() << "Message: " << buffer;
+    QJsonParseError err;
+    QJsonDocument j = QJsonDocument::fromJson(buffer, &err);
 
-    //QByteArray datagram = "EMS_DISCOVER";
-    //m_udpSocket->writeDatagram(datagram.data(),datagram.size(), QHostAddress::Broadcast , BCAST_UDP_PORT);
+    // Error reading Json
+    if (err.error!= QJsonParseError::NoError)
+    {
+        return;
+    }
+
+    // TODO : check if UUID is accepted
+    qDebug() << "UUID :" << j.object()["uuid"].toString();
     QHostAddress local_address;
+    // Get the local address
     foreach (const QHostAddress &address, QNetworkInterface::allAddresses())
     {
         if (address.protocol() == QAbstractSocket::IPv4Protocol && address != QHostAddress(QHostAddress::LocalHost))
@@ -55,11 +63,19 @@ void DiscoveryServer::readyRead()
              local_address = address;
         }
     }
-    QByteArray datagram;
-    datagram.append("EMS_IP ");
-    datagram.append(local_address.toString());
 
+    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+    // Create object containing the answer
+    QJsonObject jobj;
+    jobj["action"] = "EMS_DISCOVER";
+    jobj["status"] = "accepted";
+    jobj["ip"] = local_address.toString();
+    jobj["port"] = settings.value("main/websocket_port").toInt();
+    qDebug() << "Port : " <<  settings.value("main/websocket_port").toInt();
+    QJsonDocument jdoc(jobj);
+    // Convert json object into datagram
+    QByteArray datagram = jdoc.toJson(QJsonDocument::Compact);
+    // Send the data
     m_socket->writeDatagram(datagram.data(), datagram.size(), sender, senderPort);
-
 }
 
