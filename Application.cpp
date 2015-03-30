@@ -23,13 +23,17 @@ Application::Application(int & argc, char ** argv) :
     QCoreApplication::setOrganizationName("Enna");
     QCoreApplication::setOrganizationDomain("enna.me");
     QCoreApplication::setApplicationName("EnnaMediaServer");
-    QSettings settings;
+    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
 
     /* Read value for websocket port */
-    m_websocketPort = settings.value("main/websocket_port", EMS_WEBSOCKET_PORT).toInt();
+    if (settings.contains("main/websocket_port"))
+        m_websocketPort = settings.value("main/websocket_port").toInt();
     /* Save websocket back if it's not found in initial config file */
-    settings.setValue("main/websocket_port", m_websocketPort);
-
+    else
+    {
+        m_websocketPort = EMS_WEBSOCKET_PORT;
+        settings.setValue("main/websocket_port", m_websocketPort);
+    }
     /* Read locations path in config and add them to the scanner object */
     int size = settings.beginReadArray("locations");
     for (int i = 0; i < size; ++i) {
