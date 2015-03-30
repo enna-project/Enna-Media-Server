@@ -10,6 +10,7 @@ class CdromManager : public QObject
 {
     Q_OBJECT
 
+    QThread worker;
     QMutex mutex;
     QVector<EMSCdrom> cdroms;
     QDBusConnection bus;
@@ -20,10 +21,8 @@ public:
      *    Public API - Thread safe
      * ---------------------------------
      */
-    bool startMonitor();
-    void stopMonitor();
-    bool getAvailableCdroms(QVector<EMSCdrom> cdroms);
-    EMSCdrom getCdrom(QString device);
+    void getAvailableCdroms(QVector<EMSCdrom> *cdromsOut);
+    bool getCdrom(QString device, EMSCdrom *cdromOut);
 
     /* ---------------------------------
      *    Signleton pattern
@@ -56,13 +55,15 @@ public:
 
 signals:
     void cdromInserted(EMSCdrom cdrom);
-    void cdromRemoved(EMSCdrom cdrom);
+    void cdromEjected(EMSCdrom cdrom);
     /* CDrom already inserted but with additional data given by Gracenote */
     void cdromChanged(EMSCdrom cdrom);
 
 public slots:
     void dbusMessageInsert(QString message);
     void dbusMessageRemove(QString message);
+    bool startMonitor();
+    void stopMonitor();
 
 private:
     /* Singleton pattern */
@@ -73,5 +74,6 @@ private:
     ~CdromManager();
 
 };
+
 
 #endif // CDROMMANAGER_H

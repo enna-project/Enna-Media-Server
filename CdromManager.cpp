@@ -21,6 +21,36 @@ static inline int cddb_sum(int n)
     return result;
 }
 
+void CdromManager::getAvailableCdroms(QVector<EMSCdrom> *cdromsOut)
+{
+    cdromsOut->clear();
+    mutex.lock();
+    for (unsigned int i=0; i<cdroms.size(); i++)
+    {
+        cdromsOut->append(cdroms.at(i));
+    }
+    mutex.unlock();
+}
+
+bool CdromManager::getCdrom(QString device, EMSCdrom *cdrom)
+{
+    bool found = false;
+
+    mutex.lock();
+    for (unsigned int i=0; i<cdroms.size(); i++)
+    {
+        if (cdroms.at(i).device == device)
+        {
+            *cdrom = cdroms.at(i);
+            found = true;
+            break;
+        }
+    }
+    mutex.unlock();
+
+    return found;
+}
+
 /* ---------------------------------------------------------
  *                    INSERT/REMOVE HOOK
  * --------------------------------------------------------- */
@@ -29,18 +59,31 @@ void CdromManager::dbusMessageInsert(QString message)
     EMSCdrom newCD;
     unsigned int sum = 0;
 
+    /* Check the new CD is not already in the list */
+    if (getCdrom(message, &newCD))
+    {
+        qCritical() << "CD already in the list of current CDROM.";
+        return;
+    }
+
     /* The given message only contain the device name */
     newCD.device = message;
     qDebug() << "New CDROM inserted : " << newCD.device;
-
-    cdio_init();
 
     /* Open the CD and get track data (number, duration, ...) */
     CdIo_t *cdrom = cdio_open(newCD.device.toStdString().c_str(), DRIVER_UNKNOWN);
     if (!cdrom)
     {
-        /* Ignore not valid CDROM */
         qCritical() << "Unable to open device " << newCD.device;
+        return;
+    }
+
+    /* Check that the inserted cdrom is a CD-DA */
+    discmode_t mode = cdio_get_discmode(cdrom);
+    if (mode != CDIO_DISC_MODE_CD_DA)
+    {
+        /* Ignore not valid CDROM */
+        qDebug() << "Inserted disk is not an audio CD " << QString("(%1)").arg(mode);
         return;
     }
 
@@ -82,14 +125,14 @@ void CdromManager::dbusMessageInsert(QString message)
         lba_t lba = cdio_get_track_lba(cdrom, i);
         newCD.disc_id += QString().sprintf(" %ld", (long) lba);
     }
-    newCD.disc_id += QString().sprintf(" %ld\n", (long) cdio_get_track_lba(cdrom, CDIO_CDROM_LEADOUT_TRACK) / CDIO_CD_FRAMES_PER_SEC);
+    newCD.disc_id += QString().sprintf(" %ld", (long) cdio_get_track_lba(cdrom, CDIO_CDROM_LEADOUT_TRACK) / CDIO_CD_FRAMES_PER_SEC);
     cdio_destroy(cdrom);
 
     qDebug() << "Computed DISCID is " << newCD.disc_id;
 
     /* Add the new CDROM in the list and emit signal to warn listeners */
     mutex.lock();
-    cdroms.append(newCD); /* TODO: check the CD is not already present */
+    cdroms.append(newCD);
     mutex.unlock();
     emit cdromInserted(newCD);
 
@@ -102,15 +145,18 @@ void CdromManager::dbusMessageInsert(QString message)
 
 void CdromManager::dbusMessageRemove(QString message)
 {
-    qDebug() << message;
-    /* TODO: async.
-     * ------
-     * Cancel all active thread that concern this CDrom
-     * ------
-     * Remove CDrom tracks that are in the current playlist
-     * ------
-     * Emit signal
-     */
+    EMSCdrom cdrom;
+    if (!getCdrom(message, &cdrom))
+    {
+        return;
+    }
+
+    qDebug() << "CDrom ejected : " << message;
+    mutex.lock();
+    cdroms.remove(cdrom);
+    mutex.unlock();
+
+    emit cdromEjected(cdrom);
 }
 
 /* ---------------------------------------------------------
@@ -121,6 +167,7 @@ CdromManager* CdromManager::_instance = 0;
 
 CdromManager::CdromManager(QObject *parent) : QObject(parent), bus(QDBusConnection::systemBus())
 {
+    cdio_init();
 }
 
 CdromManager::~CdromManager()
@@ -140,6 +187,13 @@ bool CdromManager::startMonitor()
         bus.connect(QString(), QString(), INTERFACE , SIGNAL_NAME_INSERT, this, SLOT(dbusMessageInsert(QString)));
         bus.connect(QString(), QString(), INTERFACE , SIGNAL_NAME_REMOVE, this, SLOT(dbusMessageRemove(QString)));
     }
+
+    /* In case of CDROM already present, trigger actions using udevadm
+     * Note: EMS must be launched with root rights or be able to trigger action using udev.
+     */
+    QProcess cmd;
+    cmd.execute(QString("/bin/udevadm"), QString("trigger --action=change --sysname-match=sr[0-9]").split(' '));
+
     return true;
 }
 

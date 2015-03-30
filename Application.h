@@ -24,6 +24,7 @@ private:
     WebSocketServer *m_webSocketServer;
     DiscoveryServer *m_discoveryServer;
     SmartmontoolsNotifier *m_smartmontools;
+    QThread m_cdromManagerWorker;
 };
 
 #endif // APPLICATION_H

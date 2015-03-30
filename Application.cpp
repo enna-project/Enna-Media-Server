@@ -42,7 +42,10 @@ Application::Application(int & argc, char ** argv) :
     Player::instance()->start();
 
     /* Start the CDROM manager */
-    CdromManager::instance()->startMonitor();
+    CdromManager::instance()->moveToThread(&m_cdromManagerWorker);
+    connect(&m_cdromManagerWorker, &QThread::started, CdromManager::instance(), &CdromManager::startMonitor);
+    connect(&m_cdromManagerWorker, &QThread::finished, CdromManager::instance(), &CdromManager::stopMonitor);
+    m_cdromManagerWorker.start();
 
     /* Create Websocket server */
     m_webSocketServer = new WebSocketServer(m_websocketPort, this);
@@ -54,7 +57,8 @@ Application::Application(int & argc, char ** argv) :
 Application::~Application()
 {
     /* Stop the CDROM manager */
-    CdromManager::instance()->stopMonitor();
+    m_cdromManagerWorker.quit();
+    m_cdromManagerWorker.wait();
 
     /* Stop the player thread */
     Player::instance()->kill();
