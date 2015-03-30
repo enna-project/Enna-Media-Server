@@ -1,7 +1,7 @@
 #include <QDebug>
-#include "CdromManager.h"
-
 #include <cdio/cdio.h>
+#include "CdromManager.h"
+#include "Player.h"
 
 #define INTERFACE "com.EnnaMediaServer.Cdrom"
 #define SIGNAL_NAME_INSERT "inserted"
@@ -145,16 +145,39 @@ void CdromManager::dbusMessageInsert(QString message)
 
 void CdromManager::dbusMessageRemove(QString message)
 {
+    bool found = false;
     EMSCdrom cdrom;
-    if (!getCdrom(message, &cdrom))
+    mutex.lock();
+    for (unsigned int i=0; i<cdroms.size(); i++)
     {
+        if (cdroms.at(i).device == message)
+        {
+            cdrom = cdroms.at(i);
+            cdroms.removeAt(i);
+            found = true;
+            break;
+        }
+    }
+    mutex.unlock();
+
+    if (!found)
+    {
+        /* Ejected CDROM is not found */
         return;
     }
 
-    qDebug() << "CDrom ejected : " << message;
-    mutex.lock();
-    cdroms.remove(cdrom);
-    mutex.unlock();
+    qDebug() << "CDROM ejected : " << cdrom.device;
+
+    /* Remove played CDROM from the current playlist */
+    EMSPlaylist playlist = Player::instance()->getCurentPlaylist();
+    for (unsigned int i=0; i<playlist.tracks.size(); i++)
+    {
+        EMSTrack track = playlist.tracks.at(i);
+        if (track.type == TRACK_TYPE_CDROM && track.filename == cdrom.device)
+        {
+            Player::instance()->removeTrack(track);
+        }
+    }
 
     emit cdromEjected(cdrom);
 }

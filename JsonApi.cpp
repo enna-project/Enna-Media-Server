@@ -525,7 +525,8 @@ void JsonApi::getTracksFromFilename(QVector<EMSTrack> *trackList, QString filena
     if (filename.startsWith("cdda://"))
     {
         /* Get first available CDROM */
-        QVector<EMSCdrom> cdroms = CdromManager::instance()->getAvailableCdroms();
+        QVector<EMSCdrom> cdroms;
+        CdromManager::instance()->getAvailableCdroms(&cdroms);
         if (cdroms.size() <= 0)
         {
             return;
