@@ -22,6 +22,7 @@ var apiList = [
     '{ "msg": "EMS_PLAYER", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "action": "shuffle_off"}',
     '{ "msg": "EMS_PLAYER", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "action": "repeat_on"}',
     '{ "msg": "EMS_PLAYER", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "action": "repeat_off"}',
+    '{ "msg": "EMS_PLAYLIST", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "action": "add", "url": "playlist://current", "filename": "cdda://"}',
     '{ "msg": "EMS_PLAYLIST", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "action": "add", "url": "playlist://current", "filename": "file:///media/usb/music/beatles"}',
     '{ "msg": "EMS_PLAYLIST", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "action": "del", "url": "playlist://current", "filename": "file:///media/usb/music/beatles"}',
     '{ "msg": "EMS_PLAYLIST", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "action": "clear", "url": "playlist://current"}',
