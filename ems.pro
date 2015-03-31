@@ -40,6 +40,14 @@ HEADERS += Database.h \
            Player.h \
            SmartmontoolsNotifier.h \
            CdromManager.h \
+           HttpServer.h \
+           external/http-parser/http_parser.h \
+           HttpClient.h
+           CdromManager.h \
+           HttpServer.h \
+           external/http-parser/http_parser.h \
+           HttpClient.h \
+           CdromManager.h \
            OnlineDBPlugin.h \
            OnlineDBPluginManager.h
            HttpServer.h \

@@ -8,6 +8,8 @@
 #define EMS_HTTP_PORT 7336
 #define EMS_WEBSOCKET_PORT 7337
 
+#define EMS_HTTP_PORT 7336
+
 /* DATABASE
  * --------- */
 // database/path
