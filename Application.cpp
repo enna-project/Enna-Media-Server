@@ -7,6 +7,7 @@
 #include "OnlineDBPluginManager.h"
 #include "Database.h"
 #include "Player.h"
+#include "HttpServer.h"
 
 /*
  * Derived form QCoreApplication
@@ -34,6 +35,18 @@ Application::Application(int & argc, char ** argv) :
         m_websocketPort = EMS_WEBSOCKET_PORT;
         settings.setValue("main/websocket_port", m_websocketPort);
     }
+
+
+    /* Read value for websocket port */
+    if (settings.contains("main/http_port"))
+        m_httpPort = settings.value("main/http_port").toInt();
+    /* Save websocket back if it's not found in initial config file */
+    else
+    {
+        m_httpPort = EMS_HTTP_PORT;
+        settings.setValue("main/http_port", m_httpPort);
+    }
+
     /* Read locations path in config and add them to the scanner object */
     int size = settings.beginReadArray("locations");
     for (int i = 0; i < size; ++i) {
@@ -56,11 +69,15 @@ Application::Application(int & argc, char ** argv) :
     m_cdromManagerWorker.start();
     /* Start the player */
     Player::instance()->start();
+    /* Create Web Server */
+    m_httpServer = new HttpServer(this);
+    m_httpServer->start(m_httpPort);
     /* Create Websocket server */
     m_webSocketServer = new WebSocketServer(m_websocketPort, this);
     /* Create Discovery Server */
     m_discoveryServer = new DiscoveryServer(BCAST_UDP_PORT, this);
     m_smartmontools = new SmartmontoolsNotifier(this);
+
 }
 
 Application::~Application()

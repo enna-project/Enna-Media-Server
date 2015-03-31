@@ -8,7 +8,8 @@ QT -= gui
 CONFIG += c++11 link_pkgconfig
 
 PKGCONFIG += libmpdclient libcdio
-LIBS += -lmpdclient
+SUBDIRS +=
+
 
 TEMPLATE = app
 TARGET = enna-media-server
@@ -16,6 +17,7 @@ INCLUDEPATH +=
 
 
 QT_CONFIG -= no-pkg-config
+
 
 CONFIG += link_pkgconfig
 PKGCONFIG += libmpdclient
@@ -40,6 +42,9 @@ HEADERS += Database.h \
            CdromManager.h \
            OnlineDBPlugin.h \
            OnlineDBPluginManager.h
+           HttpServer.h \
+           external/http-parser/http_parser.h \
+           HttpClient.h
 
 SOURCES += Database.cpp \
            DirectoryWorker.cpp \
@@ -56,7 +61,10 @@ SOURCES += Database.cpp \
            CdromManager.cpp \
            OnlineDBPluginManager.cpp \
            Application.cpp \
-           CdromManager.cpp
+           CdromManager.cpp \
+           HttpServer.cpp \
+           external/http-parser/http_parser.c \
+           HttpClient.cpp
 
 DISTFILES +=
 

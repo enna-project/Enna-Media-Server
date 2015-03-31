@@ -5,6 +5,7 @@
  * in ~/.config/Enna/EnnaMediaServer.conf
  */
 
+#define EMS_HTTP_PORT 7336
 #define EMS_WEBSOCKET_PORT 7337
 
 /* DATABASE
@@ -15,6 +16,8 @@
 #define EMS_DATABASE_CREATE_SCRIPT "database.sql"
 // database/version
 #define EMS_DATABASE_VERSION 1
+
+#define EMS_CACHE_DIRECTORY "~/.cache/enna-media-server"
 
 /* PLAYER
  * --------- */
