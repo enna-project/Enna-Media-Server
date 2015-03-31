@@ -164,4 +164,15 @@ public:
     QVector<EMSTrack> tracks;
 };
 
+/* CdromManager data
+ * -------------------
+ */
+class EMSClient
+{
+public:
+    QString uuid;
+    QString hostname;
+    QString username;
+};
+
 #endif // DATA_H

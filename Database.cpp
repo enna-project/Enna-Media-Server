@@ -335,7 +335,6 @@ const QString select_album_artist_data1 = \
 "       tracks.id = tracks_artists.track_id AND "
 "       artists.id = tracks_artists.artist_id ";
 
-
 /*****************************************************************************
  *    BROWSING TRACKS
  ****************************************************************************/
@@ -950,6 +949,57 @@ void Database::getGenresByTrackId(QVector<EMSGenre> *genresList, unsigned long l
         genre.picture = q.value(3).toString();
         genresList->append(genre);
     }
+}
+
+/*****************************************************************************
+ *    AUTHORIZED CLIENT MANAGEMENT
+ ****************************************************************************/
+
+const QString select_authorized_client_data1 = \
+"SELECT uuid, hostname, username "
+"FROM authorized_clients ";
+
+bool Database::getAuthorizedClient(QString uuid, EMSClient *client)
+{
+    if (!opened)
+    {
+        return false;
+    }
+    QSqlQuery q(db);
+    q.prepare(select_authorized_client_data1 + " WHERE uuid = ?;");
+    q.bindValue(0, uuid);
+    q.exec();
+    if (q.next())
+    {
+        client->uuid = uuid;
+        client->hostname = q.value(1).toString();
+        client->username = q.value(2).toString();
+        return true;
+    }
+    return false;
+}
+
+bool Database::insertNewAuthorizedClient(EMSClient *client)
+{
+    if (!opened)
+    {
+        return false;
+    }
+
+    QSqlQuery q(db);
+    q.prepare("INSERT INTO authorized_clients "
+              "  (uuid, hostname, username) "
+              "VALUES "
+              "  (?,?,?);");
+    q.bindValue(0, client->uuid);
+    q.bindValue(1, client->hostname);
+    q.bindValue(2, client->username);
+    if(!q.exec())
+    {
+        qCritical() << "Error while inserting client authorization in database : " << q.lastError().text();
+        return false;
+    }
+    return true;
 }
 
 /*****************************************************************************
