@@ -4,6 +4,7 @@
 #include "Player.h"
 #include "SmartmontoolsNotifier.h"
 #include "CdromManager.h"
+#include "OnlineDBPluginManager.h"
 
 /*
  * Derived form QCoreApplication
@@ -34,6 +35,9 @@ Application::Application(int & argc, char ** argv) :
         m_scanner.locationAdd(settings.value("path").toString());
     }
     settings.endArray();
+
+    /* Add online database plugins */
+    OnlineDBPluginManager::instance()->registerAllPlugins();
 
     /* Open Database */
     Database::instance()->open();
