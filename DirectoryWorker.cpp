@@ -26,7 +26,7 @@ void DirectoryWorker::process()
     qDebug() << Q_FUNC_INFO << QThread::currentThreadId();
     QDir rootDir(m_path);
     scanDir(rootDir);
-    emit finished();
+    emit finished(this);
     QCoreApplication::processEvents();
 }
 

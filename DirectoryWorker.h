@@ -18,7 +18,7 @@ private:
     bool sha1Compute(QString filename, unsigned char *sha1);
 
 signals:
-    void finished();    
+    void finished(DirectoryWorker* me);
     void fileFound(QString, QByteArray);
 
 public slots:

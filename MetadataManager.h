@@ -1,17 +1,18 @@
-#ifndef ONLINEDBPLUGINMANAGER_H
-#define ONLINEDBPLUGINMANAGER_H
+#ifndef METADATAMANAGER_H
+#define METADATAMANAGER_H
 
 #include <QVector>
 #include <QMutex>
 #include <QObject>
+#include <QString>
 #include "Data.h"
-#include "OnlineDBPlugin.h"
+#include "MetadataPlugin.h"
 
 /* This class is a plugin manager allowing other modules to get a working
  * plugin if there is one available plugin.
  * Enabling a plugin is made with qmake options.
  */
-class OnlineDBPluginManager : public QObject
+class MetadataManager : public QObject
 {
     Q_OBJECT
 
@@ -21,15 +22,14 @@ public:
      * -----------------------------
      */
     void registerAllPlugins();
-    QVector<OnlineDBPlugin*> getAvailablesPlugins();
-    OnlineDBPlugin *getDefaultPlugin();
+    QVector<MetadataPlugin*> getAvailablePlugins(QStringList capabilities);
 
 
     /* -----------------------------
      *          SINGLETON
      * -----------------------------
      */
-    static OnlineDBPluginManager* instance()
+    static MetadataManager* instance()
     {
         static QMutex mutexinst;
         if (!_instance)
@@ -37,7 +37,7 @@ public:
             mutexinst.lock();
 
             if (!_instance)
-                _instance = new OnlineDBPluginManager;
+                _instance = new MetadataManager;
 
             mutexinst.unlock();
         }
@@ -54,15 +54,15 @@ public:
     }
 
 private:
+    QVector<MetadataPlugin*> plugins;
     QMutex mutex;
-    QVector<OnlineDBPlugin*> plugins;
 
     /* Singleton pattern */
-    static OnlineDBPluginManager* _instance;
-    OnlineDBPluginManager(QObject *parent = 0);
-    OnlineDBPluginManager(const OnlineDBPluginManager &);
-    OnlineDBPluginManager& operator=(const OnlineDBPluginManager &);
-    ~OnlineDBPluginManager();
+    static MetadataManager* _instance;
+    MetadataManager(QObject *parent = 0);
+    MetadataManager(const MetadataManager &);
+    MetadataManager& operator=(const MetadataManager &);
+    ~MetadataManager();
 };
 
-#endif // ONLINEDBPLUGINMANAGER_H
+#endif // METADATAMANAGER_H

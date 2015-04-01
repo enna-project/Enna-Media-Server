@@ -2,8 +2,10 @@
 #define SCANNER_H
 
 #include <QObject>
+#include <QThread>
 #include "Database.h"
 #include "Grabbers.h"
+#include "DirectoryWorker.h"
 
 class Scanner : public QObject
 {
@@ -11,20 +13,19 @@ class Scanner : public QObject
 public:
     explicit Scanner(QObject *parent = 0);
     ~Scanner();
+
     void locationAdd(const QString &location);
+    void startScan();
 
 private:
-    Database *db;
-    QThread *grabbersThread;
-    Grabbers *grabbers;
+    QVector<QString> locations;
+    QVector<DirectoryWorker*> workers;
 
-signals:
-    void grab(QString, QByteArray);
+    void scanEnd();
 
 public slots:
     void fileFound(QString filename, QByteArray sha1);
-    void filesProcessed();
-    void metadataFound(QByteArray sha1);
+    void workerFinished(DirectoryWorker* worker);
 };
 
 #endif // SCANNER_H

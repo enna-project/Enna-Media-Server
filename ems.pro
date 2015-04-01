@@ -48,12 +48,21 @@ HEADERS += Database.h \
            external/http-parser/http_parser.h \
            HttpClient.h \
            CdromManager.h \
+<<<<<<< HEAD
            OnlineDBPlugin.h \
            OnlineDBPluginManager.h
            HttpServer.h \
            external/http-parser/http_parser.h \
            HttpClient.h
+||||||| merged common ancestors
+           OnlineDBPlugin.h \
+           OnlineDBPluginManager.h
+=======
+           MetadataManager.h \
+           MetadataPlugin.h
+>>>>>>> ems: review architecture to use generic plugin class for seeking metadata
 
+>>>>>>> 8a271d4... ems: review architecture to use generic plugin class for seeking metadata
 SOURCES += Database.cpp \
            DirectoryWorker.cpp \
            DiscoveryServer.cpp \
@@ -67,12 +76,26 @@ SOURCES += Database.cpp \
            Player.cpp \
            SmartmontoolsNotifier.cpp \
            CdromManager.cpp \
+<<<<<<< HEAD
            OnlineDBPluginManager.cpp \
            Application.cpp \
            CdromManager.cpp \
            HttpServer.cpp \
            external/http-parser/http_parser.c \
            HttpClient.cpp
+||||||| merged common ancestors
+           OnlineDBPluginManager.cpp
+=======
+           OnlineDBPluginManager.cpp
+           HttpServer.cpp \
+           external/http-parser/http_parser.c \
+           HttpClient.cpp \
+           OnlineDBPluginManager.cpp \
+           HttpServer.cpp \
+           external/http-parser/http_parser.c \
+           HttpClient.cpp \
+           MetadataManager.cpp
+>>>>>>> ems: review architecture to use generic plugin class for seeking metadata
 
 DISTFILES +=
 

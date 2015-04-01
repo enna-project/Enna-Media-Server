@@ -8,6 +8,7 @@
 #include "Database.h"
 #include "Player.h"
 #include "HttpServer.h"
+#include "MetadataManager.h"
 
 /*
  * Derived form QCoreApplication
@@ -54,9 +55,17 @@ Application::Application(int & argc, char ** argv) :
         m_scanner.locationAdd(settings.value("path").toString());
     }
     settings.endArray();
+    if (size == 0) /* If there is no location in the settings, use the default */
+    {
+        QStringList locations = QStandardPaths::standardLocations(QStandardPaths::ConfigLocation);
+        for (int i=0; i<locations.size(); i++)
+        {
+            m_scanner.locationAdd(locations.at(i));
+        }
+    }
 
     /* Add online database plugins */
-    OnlineDBPluginManager::instance()->registerAllPlugins();
+    MetadataManager::instance()->registerAllPlugins();
 
     /* Open Database */
     Database::instance()->open();
@@ -74,10 +83,15 @@ Application::Application(int & argc, char ** argv) :
     m_httpServer->start(m_httpPort);
     /* Create Websocket server */
     m_webSocketServer = new WebSocketServer(m_websocketPort, this);
+
     /* Create Discovery Server */
     m_discoveryServer = new DiscoveryServer(BCAST_UDP_PORT, this);
     m_smartmontools = new SmartmontoolsNotifier(this);
 
+    m_smartmontools = new SmartmontoolsNotifier(this);
+
+    /* Re-scan locations to perform a database update */
+    m_scanner.startScan();
 }
 
 Application::~Application()

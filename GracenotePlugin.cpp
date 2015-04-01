@@ -3,6 +3,15 @@
 
 GracenotePlugin::GracenotePlugin()
 {
+    capabilities << "discid";
+    /* Not implemented :
+    capabilities << "fingerprint";
+    capabilities << "album_name";
+    capabilities << "track_name";
+    capabilities << "track_gnid";
+    capabilities << "album_name";
+    capabilities << "album_gnid";
+    */
 }
 
 GracenotePlugin::~GracenotePlugin()
@@ -10,7 +19,7 @@ GracenotePlugin::~GracenotePlugin()
 
 }
 
-bool GracenotePlugin::lookup(EMSTrack *track)
+bool GracenotePlugin::update(EMSTrack *track)
 {
     //TODO
     return true;
