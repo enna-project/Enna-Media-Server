@@ -856,6 +856,32 @@ bool Database::getAlbumById(EMSAlbum *album, unsigned long long albumId)
     return false;
 }
 
+/* Look for an album using its name AND with linked track filename inside the given directory */
+bool Database::getAlbumIdByNameAndTrackFilename(unsigned long long *albumID, QString albumName, QString trackDirectory)
+{
+    if (!opened)
+    {
+        return false;
+    }
+
+    QSqlQuery q(db);
+    q.prepare(select_track_data1 + " AND albums.name = ? AND files.filename LIKE ? LIMIT 1;");
+    q.bindValue(0, albumName);
+    q.bindValue(1, trackDirectory+"%");
+    if(!q.exec())
+    {
+        qCritical() << "Querying album data failed : " << q.lastError().text();
+        qDebug() << "Last query was : " << q.lastQuery();
+        return false;
+    }
+    if (q.next())
+    {
+        *albumID = q.value(8).toULongLong();
+        return true;
+    }
+    return false;
+}
+
 /*****************************************************************************
  *    BROWSING GENRES
  ****************************************************************************/

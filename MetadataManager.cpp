@@ -1,6 +1,7 @@
 #include <QStringList>
 
 #include "MetadataManager.h"
+#include "FlacPlugin.h"
 
 #ifdef EMS_PLUGIN_GRACENOTE
 #include "GracenotePlugin.h"
@@ -11,27 +12,30 @@ MetadataManager* MetadataManager::_instance = 0;
 void MetadataManager::registerAllPlugins()
 {
     mutex.lock();
+
+    /* File format plugins */
+    plugins.append(new FlacPlugin);
+
+    /* Optional plugins. Activate them with qmake options (see .pro) */
 #ifdef EMS_PLUGIN_GRACENOTE
     plugins.append(new GracenotePlugin);
 #endif
+
     mutex.unlock();
 }
 
-QVector<MetadataPlugin*> MetadataManager::getAvailablePlugins(QStringList capabilities)
+QVector<MetadataPlugin*> MetadataManager::getAvailablePlugins(QString capability)
 {
     QVector<MetadataPlugin*> out;
 
     mutex.lock();
-    foreach (QString cap, capabilities)
+    foreach (MetadataPlugin* plugin, plugins)
     {
-        foreach (MetadataPlugin* plugin, plugins)
+        foreach (QString capPlug, plugin->getCapabilities())
         {
-            foreach (QString capPlug, plugin->getCapabilities())
+            if (capability == capPlug)
             {
-                if (cap == capPlug)
-                {
-                    out.append(plugin);
-                }
+                out.append(plugin);
             }
         }
     }

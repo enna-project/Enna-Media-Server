@@ -22,13 +22,12 @@ public:
     virtual bool update(EMSTrack *track) = 0;
 
     QStringList getCapabilities() { QStringList out; mutex.lock(); out = capabilities; mutex.unlock(); return out; }
+    void lock() { mutex.lock(); }
+    void unlock() { mutex.unlock(); }
 
 protected:
     QMutex mutex;
     QStringList capabilities;
-
-signals:
-    void updated(EMSTrack track);
 };
 
 #endif // METADATAPLUGIN_H

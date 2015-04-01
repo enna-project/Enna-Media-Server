@@ -63,12 +63,20 @@ Application::Application(int & argc, char ** argv) :
             m_scanner.locationAdd(locations.at(i));
         }
     }
+    /* Re-scan locations to perform a database update */
+    m_scanner.moveToThread(&m_localFileScannerWorker);
+    connect(&m_localFileScannerWorker, &QThread::started, &m_scanner, &LocalFileScanner::startScan);
+    connect(&m_localFileScannerWorker, &QThread::finished, &m_scanner, &LocalFileScanner::stopScan);
+    m_localFileScannerWorker.start();
 
     /* Add online database plugins */
     MetadataManager::instance()->registerAllPlugins();
 
     /* Open Database */
-    Database::instance()->open();
+    Database *db = Database::instance();
+    db->lock();
+    db->open();
+    db->unlock();
 
 
     /* Start the CDROM manager */
@@ -89,16 +97,17 @@ Application::Application(int & argc, char ** argv) :
     m_smartmontools = new SmartmontoolsNotifier(this);
 
     m_smartmontools = new SmartmontoolsNotifier(this);
-
-    /* Re-scan locations to perform a database update */
-    m_scanner.startScan();
 }
 
 Application::~Application()
 {
     /* Stop the CDROM manager */
     m_cdromManagerWorker.quit();
-    m_cdromManagerWorker.wait();
+    m_cdromManagerWorker.wait(100);
+
+    /* Stop the scanner */
+    m_localFileScannerWorker.quit();
+    m_localFileScannerWorker.wait(100);
 
     /* Stop the player thread */
     Player::instance()->kill();

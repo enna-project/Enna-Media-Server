@@ -47,7 +47,7 @@ void DirectoryWorker::scanDir(QDir dir)
         sha1Compute(fullPath, (unsigned char*)sha1);
         QByteArray byteArray(sha1);
         //qDebug() << Q_FUNC_INFO << QThread::currentThreadId();
-        emit fileFound(fullPath, byteArray);
+        emit fileFound(fullPath, byteArray.toHex());
         //qDebug() << "Found file: " << fullPath;
     }
 

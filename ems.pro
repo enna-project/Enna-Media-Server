@@ -5,11 +5,12 @@
 QT += testlib
 QT += core network websockets sql dbus
 QT -= gui
+QT_CONFIG -= no-pkg-config
 CONFIG += c++11 link_pkgconfig
 
-PKGCONFIG += libmpdclient libcdio
 SUBDIRS +=
 
+PKGCONFIG += libmpdclient libcdio flac
 
 TEMPLATE = app
 TARGET = enna-media-server
@@ -28,8 +29,6 @@ PKGCONFIG += libmpdclient
 HEADERS += Database.h \
            DirectoryWorker.h \
            DiscoveryServer.h \
-           Grabbers.h \
-           Scanner.h \
            sha1.h \
            WebSocketServer.h \          
            Application.h \
@@ -48,27 +47,22 @@ HEADERS += Database.h \
            external/http-parser/http_parser.h \
            HttpClient.h \
            CdromManager.h \
-<<<<<<< HEAD
            OnlineDBPlugin.h \
            OnlineDBPluginManager.h
            HttpServer.h \
            external/http-parser/http_parser.h \
            HttpClient.h
-||||||| merged common ancestors
            OnlineDBPlugin.h \
            OnlineDBPluginManager.h
-=======
            MetadataManager.h \
-           MetadataPlugin.h
->>>>>>> ems: review architecture to use generic plugin class for seeking metadata
+           MetadataPlugin.h \
+           FlacPlugin.h \
+    LocalFileScanner.h
 
->>>>>>> 8a271d4... ems: review architecture to use generic plugin class for seeking metadata
 SOURCES += Database.cpp \
            DirectoryWorker.cpp \
            DiscoveryServer.cpp \
-           Grabbers.cpp \
            main.cpp \
-           Scanner.cpp \
            sha1.cpp \
            WebSocketServer.cpp \
            Application.cpp \
@@ -76,17 +70,12 @@ SOURCES += Database.cpp \
            Player.cpp \
            SmartmontoolsNotifier.cpp \
            CdromManager.cpp \
-<<<<<<< HEAD
            OnlineDBPluginManager.cpp \
            Application.cpp \
            CdromManager.cpp \
            HttpServer.cpp \
            external/http-parser/http_parser.c \
            HttpClient.cpp
-||||||| merged common ancestors
-           OnlineDBPluginManager.cpp
-=======
-           OnlineDBPluginManager.cpp
            HttpServer.cpp \
            external/http-parser/http_parser.c \
            HttpClient.cpp \
@@ -94,8 +83,9 @@ SOURCES += Database.cpp \
            HttpServer.cpp \
            external/http-parser/http_parser.c \
            HttpClient.cpp \
-           MetadataManager.cpp
->>>>>>> ems: review architecture to use generic plugin class for seeking metadata
+           MetadataManager.cpp \
+           FlacPlugin.cpp \
+    LocalFileScanner.cpp
 
 DISTFILES +=
 

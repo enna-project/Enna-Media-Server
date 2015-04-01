@@ -37,6 +37,7 @@ public:
     void getAlbumsByGenreId(QVector<EMSAlbum> *albumsList, unsigned long long genreId);
     void getAlbumsByArtistId(QVector<EMSAlbum> *albumsList, unsigned long long artistId);
     bool getAlbumById(EMSAlbum *album, unsigned long long albumId);
+    bool getAlbumIdByNameAndTrackFilename(unsigned long long *albumID, QString albumName, QString trackDirectory);
     void getArtistsList(QVector<EMSArtist> *artistsList);
     bool getArtistById(EMSArtist *artist, unsigned long long artistId);
     bool getArtistByName(EMSArtist *artist, QString name);
@@ -50,6 +51,9 @@ public:
     /* Interface for discovery server */
     bool getAuthorizedClient(QString uuid, EMSClient *client);
     bool insertNewAuthorizedClient(EMSClient *client);
+
+    void lock() { mutex.lock(); }
+    void unlock() { mutex.unlock(); }
 
     /* Signleton pattern
      * See: http://www.qtcentre.org/wiki/index.php?title=Singleton_pattern
@@ -100,6 +104,8 @@ private:
     void storeTrackList(QSqlQuery *q, QVector<EMSTrack> *tracksList);
     void storeArtistsInTrackList(QSqlQuery *q, QVector<EMSTrack> *tracksList);
     void storeGenresInTrackList(QSqlQuery *q, QVector<EMSTrack> *tracksList);
+
+    QMutex mutex;
 
     /* Hide all other access to this class */
     static Database* _instance;

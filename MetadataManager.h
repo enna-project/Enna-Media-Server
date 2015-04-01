@@ -22,7 +22,7 @@ public:
      * -----------------------------
      */
     void registerAllPlugins();
-    QVector<MetadataPlugin*> getAvailablePlugins(QStringList capabilities);
+    QVector<MetadataPlugin*> getAvailablePlugins(QString capability);
 
 
     /* -----------------------------
