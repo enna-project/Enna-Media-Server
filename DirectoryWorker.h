@@ -19,7 +19,7 @@ private:
 
 signals:
     void finished(DirectoryWorker* me);
-    void fileFound(QString, QByteArray);
+    void fileFound(QString, QString);
 
 public slots:
     void process();

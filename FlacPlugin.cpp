@@ -11,6 +11,46 @@ FlacPlugin::~FlacPlugin()
 
 }
 
+void FlacPlugin::addArtist(EMSTrack *track, const char *str)
+{
+    EMSArtist artist;
+    artist.name = str;
+    bool found = false;
+    foreach(EMSArtist existingArtist, track->artists)
+    {
+        if (existingArtist.name == artist.name)
+        {
+            found = true;
+            break;
+        }
+
+    }
+    if (!found)
+    {
+        track->artists.append(artist);
+    }
+}
+
+void FlacPlugin::addGenre(EMSTrack *track, const char *str)
+{
+    EMSGenre genre;
+    genre.name = str;
+    bool found = false;
+    foreach(EMSGenre existingGenre, track->genres)
+    {
+        if (existingGenre.name == genre.name)
+        {
+            found = true;
+            break;
+        }
+
+    }
+    if (!found)
+    {
+        track->genres.append(genre);
+    }
+}
+
 bool FlacPlugin::update(EMSTrack *track)
 {
     FLAC__StreamMetadata *tags = 0;
@@ -43,22 +83,16 @@ bool FlacPlugin::update(EMSTrack *track)
         }
         else if (!strncmp(tmp_s, "ARTIST=", 7))
         {
-            EMSArtist artist;
-            artist.name = str + 7;
-            bool found = false;
-            foreach(EMSArtist existingArtist, track->artists)
-            {
-                if (existingArtist.name == artist.name)
-                {
-                    found = true;
-                    break;
-                }
-
-            }
-            if (!found)
-            {
-                track->artists.append(artist);
-            }
+            addArtist(track, str+7);
+        }
+        else if (!strncmp(tmp_s, "COMPOSER=", 9))
+        {
+            //addArtist(track, str+9);
+            //Not stored for now. We will add compositor name in the database later
+        }
+        else if (!strncmp(tmp_s, "ORCHESTRA=", 10))
+        {
+            addArtist(track, str+10);
         }
         else if (!strncmp(tmp_s, "ALBUM=", 6))
         {
@@ -71,22 +105,7 @@ bool FlacPlugin::update(EMSTrack *track)
         }
         else if (!strncmp(tmp_s, "GENRE=", 6))
         {
-            EMSGenre genre;
-            genre.name = str + 6;
-            bool found = false;
-            foreach(EMSGenre existingGenre, track->genres)
-            {
-                if (existingGenre.name == genre.name)
-                {
-                    found = true;
-                    break;
-                }
-
-            }
-            if (!found)
-            {
-                track->genres.append(genre);
-            }
+            addGenre(track, str+6);
         }
         else if (!strncmp(tmp_s, "TRACKNUMBER=", 12))
         {

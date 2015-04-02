@@ -57,7 +57,7 @@ Application::Application(int & argc, char ** argv) :
     settings.endArray();
     if (size == 0) /* If there is no location in the settings, use the default */
     {
-        QStringList locations = QStandardPaths::standardLocations(QStandardPaths::ConfigLocation);
+        QStringList locations = QStandardPaths::standardLocations(QStandardPaths::MusicLocation);
         for (int i=0; i<locations.size(); i++)
         {
             m_scanner.locationAdd(locations.at(i));

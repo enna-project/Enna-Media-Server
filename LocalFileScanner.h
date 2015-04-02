@@ -18,12 +18,14 @@ public:
 private:
     QVector<QString> locations;
     QVector<DirectoryWorker*> workers;
+    QString supportedFormat;
     bool scanActive;
+    unsigned long long startTime;
 
     void scanEnd();
 
 public slots:
-    void fileFound(QString filename, QByteArray sha1);
+    void fileFound(QString filename, QString sha1);
     void workerFinished(DirectoryWorker* worker);
     void startScan();
     void stopScan();

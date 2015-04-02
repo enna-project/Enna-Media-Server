@@ -43,7 +43,7 @@ bool Database::insertNewTrack(EMSTrack *newTrack)
     {
         qDebug() << "Track SHA1 is already present in database...";
 
-        if(!insertNewFilename(newTrack->filename, trackID))
+        if(!insertNewFilename(newTrack->filename, trackID, newTrack->lastscan))
         {
             qCritical() << "Error while inserting new track : " << q.lastError().text();
             q.exec("ROLLBACK;");
@@ -85,7 +85,7 @@ bool Database::insertNewTrack(EMSTrack *newTrack)
 
         /* Insert new filename */
         qDebug() << "Adding filename " << newTrack->filename << " in the table files...";
-        if(!insertNewFilename(newTrack->filename, newTrack->id))
+        if(!insertNewFilename(newTrack->filename, newTrack->id, newTrack->lastscan))
         {
             qCritical() << "Error while inserting new filename for track ID : " << QString("%1").arg(newTrack->id);
             q.exec("ROLLBACK;");
@@ -218,7 +218,7 @@ bool Database::insertNewAlbum(EMSAlbum *album)
  * The track ID must match an existing row in table tracks
  * If the filename already exist, the track_id is replaced.
  */
-bool Database::insertNewFilename(QString filename, unsigned long long trackId)
+bool Database::insertNewFilename(QString filename, unsigned long long trackId, unsigned long long timestamp)
 {
     if (!opened)
     {
@@ -227,15 +227,70 @@ bool Database::insertNewFilename(QString filename, unsigned long long trackId)
 
     /* Get all possible data in one row */
     QSqlQuery q(db);
-    q.prepare("INSERT OR REPLACE INTO files(filename, track_id) VALUES (?,?);");
+    q.prepare("INSERT OR REPLACE INTO files(filename, track_id, timestamp) VALUES (?,?,?);");
     q.bindValue(0, filename);
     q.bindValue(1, trackId);
+    q.bindValue(2, timestamp);
     if(!q.exec())
     {
         qCritical() << "Inserting filename failed for track ID " << QString("%1").arg(trackId) << " : " << q.lastError().text();
         return false;
     }
     return true;
+}
+
+/*****************************************************************************
+ *    KEEP THE DATABASE CLEAN !
+ ****************************************************************************/
+/* Remove all files inside the given directory (not necessary the direct parent)
+ * and with timestamp different than the given one.
+ * IMPORTANT: the exact comparison is made using the timestamp. If the given timestamp
+ *            is less than the one in database, the record is also deleted as it is not
+ *            a regular case.
+ * IMPORTANT: a trigger will ensure the corresponding track is deleted is no files references it
+ */
+void Database::removeOldFiles(QString directory, unsigned long long timestamp)
+{
+    if (!opened)
+    {
+        return;
+    }
+
+    QSqlQuery q(db);
+    q.prepare("DELETE FROM files WHERE filename LIKE ? AND timestamp <> ?;");
+    q.bindValue(0, directory+"/%");
+    q.bindValue(1, timestamp);
+    if(!q.exec())
+    {
+        qCritical() << "Error when removing old files in " << directory << " : " << q.lastError().text();
+        qCritical() << "Query was : " << q.lastQuery();
+    }
+}
+
+const QString clean_orphanTrack = \
+"DELETE FROM track WHERE id IN ( "
+"   SELECT tracks.id "
+"   FROM tracks LEFT JOIN files ON (files.track_id = tracks.id) "
+"   WHERE files.track_id IS NULL "
+");";
+
+const QString clean_emptyAlbum = \
+"DELETE FROM albums WHERE id IN ( "
+"   SELECT albums.id "
+"   FROM albums LEFT JOIN tracks ON (tracks.album_id = albums.id) "
+"   WHERE tracks.album_id IS NULL "
+");";
+
+void Database::cleanOrphans()
+{
+    if (!opened)
+    {
+        return;
+    }
+
+    QSqlQuery q(db);
+    q.exec(clean_orphanTrack);
+    q.exec(clean_emptyAlbum);
 }
 
 
@@ -867,7 +922,7 @@ bool Database::getAlbumIdByNameAndTrackFilename(unsigned long long *albumID, QSt
     QSqlQuery q(db);
     q.prepare(select_track_data1 + " AND albums.name = ? AND files.filename LIKE ? LIMIT 1;");
     q.bindValue(0, albumName);
-    q.bindValue(1, trackDirectory+"%");
+    q.bindValue(1, trackDirectory+"/%");
     if(!q.exec())
     {
         qCritical() << "Querying album data failed : " << q.lastError().text();

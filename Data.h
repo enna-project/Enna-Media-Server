@@ -66,6 +66,9 @@ public:
     unsigned int duration; /* Duration of the track in seconds */
     QString format_parameters; /* Format specific data */
 
+    /* Used for removing old files which are not in the disk anymore */
+    unsigned long long lastscan;
+
     EMSAlbum album;
 
     QVector<EMSArtist> artists;
@@ -78,6 +81,8 @@ public:
         position = 0;
         sample_rate = 0;
         duration = 0;
+        lastscan = 0;
+
     }
 };
 

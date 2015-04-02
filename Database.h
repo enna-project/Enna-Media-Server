@@ -26,7 +26,13 @@ public:
     /* Interface for track management (server-side actions) */
     bool insertNewAlbum(EMSAlbum *album);
     bool insertNewTrack(EMSTrack *newTrack);
-    bool insertNewFilename(QString filename, unsigned long long trackId);
+    bool insertNewFilename(QString filename, unsigned long long trackId, unsigned long long timestamp);
+
+    /* Be careful when removing, you have to clean orphans tracks/albums after
+     * Don't release the lock when adding/removing tracks/album
+     */
+    void removeOldFiles(QString directory, unsigned long long timestamp);
+    void cleanOrphans();
 
     /* Interface for browsing */
     void getTracks(QVector<EMSTrack> *tracksList);

@@ -23,7 +23,6 @@ DirectoryWorker::~DirectoryWorker()
 
 void DirectoryWorker::process()
 {
-    qDebug() << Q_FUNC_INFO << QThread::currentThreadId();
     QDir rootDir(m_path);
     scanDir(rootDir);
     emit finished(this);
@@ -36,8 +35,6 @@ void DirectoryWorker::scanDir(QDir dir)
     dir.setNameFilters(m_extensions);
     dir.setFilter(QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks);
 
-    //qDebug() << "Scanning: " << dir.path();
-
     QStringList fileList = dir.entryList();
     for (int i=0; i<fileList.count(); i++)
     {
@@ -45,10 +42,9 @@ void DirectoryWorker::scanDir(QDir dir)
 
         QString fullPath = dir.absolutePath() + "/" + fileList[i];
         sha1Compute(fullPath, (unsigned char*)sha1);
-        QByteArray byteArray(sha1);
-        //qDebug() << Q_FUNC_INFO << QThread::currentThreadId();
-        emit fileFound(fullPath, byteArray.toHex());
-        //qDebug() << "Found file: " << fullPath;
+        QByteArray byteArray = QByteArray::fromRawData(sha1, 20);
+        QString sha1StrHex(byteArray.toHex());
+        emit fileFound(fullPath, sha1StrHex);
     }
 
     dir.setFilter(QDir::AllDirs | QDir::NoDotAndDotDot | QDir::NoSymLinks);

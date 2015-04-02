@@ -13,6 +13,10 @@ public:
     ~FlacPlugin();
 
     bool update(EMSTrack *track);
+
+private:
+    void addArtist(EMSTrack *track, const char *str);
+    void addGenre(EMSTrack *track, const char *str);
 };
 
 #endif // FLACPLUGIN_H
