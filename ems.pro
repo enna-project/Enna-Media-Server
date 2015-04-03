@@ -16,15 +16,6 @@ TEMPLATE = app
 TARGET = enna-media-server
 INCLUDEPATH +=
 
-
-QT_CONFIG -= no-pkg-config
-
-
-CONFIG += link_pkgconfig
-PKGCONFIG += libmpdclient
-
-
-
 # Input
 HEADERS += Database.h \
            DirectoryWorker.h \
@@ -41,19 +32,8 @@ HEADERS += Database.h \
            CdromManager.h \
            HttpServer.h \
            external/http-parser/http_parser.h \
-           HttpClient.h
-           CdromManager.h \
-           HttpServer.h \
-           external/http-parser/http_parser.h \
            HttpClient.h \
            CdromManager.h \
-           OnlineDBPlugin.h \
-           OnlineDBPluginManager.h
-           HttpServer.h \
-           external/http-parser/http_parser.h \
-           HttpClient.h
-           OnlineDBPlugin.h \
-           OnlineDBPluginManager.h
            MetadataManager.h \
            MetadataPlugin.h \
            FlacPlugin.h \
@@ -70,16 +50,6 @@ SOURCES += Database.cpp \
            Player.cpp \
            SmartmontoolsNotifier.cpp \
            CdromManager.cpp \
-           OnlineDBPluginManager.cpp \
-           Application.cpp \
-           CdromManager.cpp \
-           HttpServer.cpp \
-           external/http-parser/http_parser.c \
-           HttpClient.cpp
-           HttpServer.cpp \
-           external/http-parser/http_parser.c \
-           HttpClient.cpp \
-           OnlineDBPluginManager.cpp \
            HttpServer.cpp \
            external/http-parser/http_parser.c \
            HttpClient.cpp \
@@ -96,3 +66,4 @@ equals(EMS_PLUGIN_GRACENOTE, "yes") {
     HEADERS += GracenotePlugin.h
     SOURCES += GracenotePlugin.cpp
 }
+

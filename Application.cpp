@@ -1,13 +1,10 @@
 #include "Application.h"
 #include "DefaultSettings.h"
+#include "HttpServer.h"
 #include "Database.h"
 #include "Player.h"
 #include "SmartmontoolsNotifier.h"
 #include "CdromManager.h"
-#include "OnlineDBPluginManager.h"
-#include "Database.h"
-#include "Player.h"
-#include "HttpServer.h"
 #include "MetadataManager.h"
 
 /*
@@ -21,7 +18,7 @@
 
 Application::Application(int & argc, char ** argv) :
     QCoreApplication(argc, argv)
-{
+{  
     QCoreApplication::setOrganizationName("Enna");
     QCoreApplication::setOrganizationDomain("enna.me");
     QCoreApplication::setApplicationName("EnnaMediaServer");
@@ -78,23 +75,24 @@ Application::Application(int & argc, char ** argv) :
     db->open();
     db->unlock();
 
+    /* Start the player */
+    Player::instance()->start();
+
+    /* Create Web Server */
+    m_httpServer = new HttpServer(this);
+    m_httpServer->start(m_httpPort);
 
     /* Start the CDROM manager */
     CdromManager::instance()->moveToThread(&m_cdromManagerWorker);
     connect(&m_cdromManagerWorker, &QThread::started, CdromManager::instance(), &CdromManager::startMonitor);
     connect(&m_cdromManagerWorker, &QThread::finished, CdromManager::instance(), &CdromManager::stopMonitor);
     m_cdromManagerWorker.start();
-    /* Start the player */
-    Player::instance()->start();
-    /* Create Web Server */
-    m_httpServer = new HttpServer(this);
-    m_httpServer->start(m_httpPort);
+
     /* Create Websocket server */
     m_webSocketServer = new WebSocketServer(m_websocketPort, this);
 
     /* Create Discovery Server */
     m_discoveryServer = new DiscoveryServer(BCAST_UDP_PORT, this);
-    m_smartmontools = new SmartmontoolsNotifier(this);
 
     m_smartmontools = new SmartmontoolsNotifier(this);
 }
@@ -117,4 +115,3 @@ Application::~Application()
     Database::instance()->close();
 
 }
-

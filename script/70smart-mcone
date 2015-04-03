@@ -1,4 +1,0 @@
-#!/bin/sh
-# Script for S.M.A.R.T error signal through DBUS working with smartmontools
-# Put the file in /etc/smartmontools/run.d so that the script will be executed by smartmontools
-dbus-send --system --type=signal /com/EnnaMediaServer/Smart com.EnnaMediaServer.Smart.warnUser string:"$1"

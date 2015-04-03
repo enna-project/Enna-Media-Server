@@ -165,13 +165,17 @@ QJsonObject JsonApi::processMessageBrowseLibraryArtists(QStringList &list, bool 
     QJsonObject obj;
     int artistId;
     int albumId;
+    Database *db = Database::instance();
+
     switch (list.size())
     {
     case 1:
     {
         //get list of all artists
         QVector<EMSArtist> artistsList;
-        Database::instance()->getArtistsList(&artistsList);
+        db->lock();
+        db->getArtistsList(&artistsList);
+        db->unlock();
         const int listSize = artistsList.size();
         QJsonArray jsonArray;
         for (int i = 0; i < listSize; ++i)
@@ -185,7 +189,9 @@ QJsonObject JsonApi::processMessageBrowseLibraryArtists(QStringList &list, bool 
         // get list of albums of artistId
          artistId = list[1].toInt();
          QVector<EMSAlbum> albumsList;
-         Database::instance()->getAlbumsByArtistId(&albumsList, artistId);
+         db->lock();
+         db->getAlbumsByArtistId(&albumsList, artistId);
+         db->unlock();
          const int listSize = albumsList.size();
          QJsonArray jsonArray;
          for (int i = 0; i < listSize; ++i)
@@ -198,7 +204,9 @@ QJsonObject JsonApi::processMessageBrowseLibraryArtists(QStringList &list, bool 
         // get list of tracks of albumId of ArtistId
         albumId = list[2].toInt();
         QVector<EMSTrack> tracksList;
-        Database::instance()->getTracksByAlbum(&tracksList, albumId);
+        db->lock();
+        db->getTracksByAlbum(&tracksList, albumId);
+        db->unlock();
         const int listSize = tracksList.size();
         QJsonArray jsonArray;
         for (int i = 0; i < listSize; ++i)
@@ -217,17 +225,21 @@ QJsonObject JsonApi::processMessageBrowseLibraryAlbums(QStringList &list, bool &
 {
     QJsonObject obj;
     int albumId;
+    Database *db = Database::instance();
+
     switch (list.size())
     {
     case 1:
     {
         //get list of all albums
         QVector<EMSAlbum> albumsList;
-        Database::instance()->getAlbumsList(&albumsList);
+        db->lock();
+        db->getAlbumsList(&albumsList);
+        db->unlock();
         const int listSize = albumsList.size();
         QJsonArray jsonArray;
         for (int i = 0; i < listSize; ++i)
-            jsonArray << EMSAlbumToJson(albumsList[i]);
+            jsonArray << EMSAlbumToJsonWithArtists(albumsList[i]);
         obj["albums"] = jsonArray;
         ok = true;
         break;
@@ -237,7 +249,9 @@ QJsonObject JsonApi::processMessageBrowseLibraryAlbums(QStringList &list, bool &
         // get list of tracks of albumId
         albumId = list[1].toInt();
         QVector<EMSTrack> tracksList;
-        Database::instance()->getTracksByAlbum(&tracksList, albumId);
+        db->lock();
+        db->getTracksByAlbum(&tracksList, albumId);
+        db->unlock();
         const int listSize = tracksList.size();
         QJsonArray jsonArray;
         for (int i = 0; i < listSize; ++i)
@@ -255,12 +269,16 @@ QJsonObject JsonApi::processMessageBrowseLibraryAlbums(QStringList &list, bool &
 QJsonObject JsonApi::processMessageBrowseLibraryTracks(QStringList &list, bool &ok)
 {
     QJsonObject obj;
+    Database *db = Database::instance();
+
     switch (list.size())
     {
     case 1:
     {
         QVector<EMSTrack> tracksList;
-        Database::instance()->getTracks(&tracksList);
+        db->lock();
+        db->getTracks(&tracksList);
+        db->unlock();
         const int listSize = tracksList.size();
         QJsonArray jsonArray;
         for (int i = 0; i < listSize; ++i)
@@ -280,12 +298,16 @@ QJsonObject JsonApi::processMessageBrowseLibraryGenre(QStringList &list, bool &o
 {
     QJsonObject obj;
     int genreId, albumId;
+    Database *db = Database::instance();
+
     switch (list.size())
     {
     case 1:
     {
         QVector<EMSGenre> genresList;
-        Database::instance()->getGenresList(&genresList);
+        db->lock();
+        db->getGenresList(&genresList);
+        db->unlock();
         const int listSize = genresList.size();
         QJsonArray jsonArray;
         for (int i = 0; i < listSize; ++i)
@@ -298,7 +320,9 @@ QJsonObject JsonApi::processMessageBrowseLibraryGenre(QStringList &list, bool &o
         // get list of albums by GenreID
         genreId = list[1].toInt();
         QVector<EMSAlbum> albumsList;
-        Database::instance()->getAlbumsByGenreId(&albumsList, genreId);
+        db->lock();
+        db->getAlbumsByGenreId(&albumsList, genreId);
+        db->unlock();
         const int listSize = albumsList.size();
         QJsonArray jsonArray;
         for (int i = 0; i < listSize; ++i)
@@ -311,7 +335,9 @@ QJsonObject JsonApi::processMessageBrowseLibraryGenre(QStringList &list, bool &o
         // get list of tracks of albumId of GenreID
         albumId = list[2].toInt();
         QVector<EMSTrack> tracksList;
-        Database::instance()->getTracksByAlbum(&tracksList, albumId);
+        db->lock();
+        db->getTracksByAlbum(&tracksList, albumId);
+        db->unlock();
         const int listSize = tracksList.size();
         QJsonArray jsonArray;
         for (int i = 0; i < listSize; ++i)
@@ -369,6 +395,7 @@ bool JsonApi::processMessageDisk(const QJsonObject &message)
 {
 
 }
+
 /* Handle player query
  * The field action should be :
  * - next : Next song
@@ -527,6 +554,26 @@ QJsonObject JsonApi::EMSAlbumToJson(const EMSAlbum &album) const
     return obj;
 }
 
+QJsonObject JsonApi::EMSAlbumToJsonWithArtists(const EMSAlbum &album) const
+{
+    Database *db = Database::instance();
+    QVector<EMSArtist> artists;
+    QJsonObject obj = EMSAlbumToJson(album);
+
+    db->lock();
+    db->getArtistsByAlbumId(&artists, album.id);
+    db->unlock();
+
+    QJsonArray artistsJson;
+    foreach(EMSArtist artist, artists)
+    {
+        artistsJson << EMSArtistToJson(artist);
+    }
+    obj["artists"] = artistsJson;
+
+    return obj;
+}
+
 QJsonObject JsonApi::EMSGenreToJson(const EMSGenre &genre) const
 {
     QJsonObject obj;
@@ -550,6 +597,22 @@ QJsonObject JsonApi::EMSTrackToJson(const EMSTrack &track) const
     obj["sample_rate"] = (int)track.sample_rate;
     obj["duration"] = (int)track.duration;
     obj["format_parameters"] = track.format_parameters;
+    obj["album"] = EMSAlbumToJson(track.album);
+
+    QJsonArray artists;
+    foreach(EMSArtist artist, track.artists)
+    {
+        artists << EMSArtistToJson(artist);
+    }
+    obj["artists"] = artists;
+
+    QJsonArray genres;
+    foreach(EMSGenre genre, track.genres)
+    {
+        genres << EMSGenreToJson(genre);
+    }
+    obj["genres"] = genres;
+
     return obj;
 }
 
@@ -563,6 +626,8 @@ QJsonObject JsonApi::EMSTrackToJson(const EMSTrack &track) const
  */
 void JsonApi::getTracksFromFilename(QVector<EMSTrack> *trackList, QString filename)
 {
+    Database *db = Database::instance();
+
     if (filename.startsWith("cdda://"))
     {
         /* Get first available CDROM */
@@ -578,11 +643,7 @@ void JsonApi::getTracksFromFilename(QVector<EMSTrack> *trackList, QString filena
         {
             for (int i=0; i<cdrom.tracks.size(); i++)
             {
-                EMSTrack track;
-                track.type = TRACK_TYPE_CDROM;
-                track.filename = "/dev/sr0";
-                track.position = i;
-                track.name = QString("track%1").arg(track.position);
+                EMSTrack track = cdrom.tracks.at(i);
                 trackList->append(track);
             }
         }
@@ -598,12 +659,6 @@ void JsonApi::getTracksFromFilename(QVector<EMSTrack> *trackList, QString filena
                     break;
                 }
             }
-            EMSTrack track;
-            track.type = TRACK_TYPE_CDROM;
-            track.filename = "/dev/sr0";
-            track.position = trackID.toUInt();
-            track.name = QString("track%1").arg(track.position);
-            trackList->append(track);
         }
     }
     else if (filename.startsWith("library://music/albums/"))
@@ -612,7 +667,9 @@ void JsonApi::getTracksFromFilename(QVector<EMSTrack> *trackList, QString filena
         if (!albumID.isEmpty())
         {
             unsigned long long id = albumID.toULongLong();
-            Database::instance()->getTracksByAlbum(trackList, id);
+            db->lock();
+            db->getTracksByAlbum(trackList, id);
+            db->unlock();
         }
     }
     else if (filename.startsWith("library://music/tracks/"))
@@ -622,7 +679,9 @@ void JsonApi::getTracksFromFilename(QVector<EMSTrack> *trackList, QString filena
         {
             unsigned long long id = trackID.toULongLong();
             EMSTrack track;
-            bool success = Database::instance()->getTrackById(&track, id);
+            db->lock();
+            bool success = db->getTrackById(&track, id);
+            db->unlock();
             if (success)
             {
                 trackList->append(track);

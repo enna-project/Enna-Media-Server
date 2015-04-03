@@ -5,7 +5,6 @@
  * in ~/.config/Enna/EnnaMediaServer.conf
  */
 
-#define EMS_HTTP_PORT 7336
 #define EMS_WEBSOCKET_PORT 7337
 
 #define EMS_HTTP_PORT 7336
@@ -19,8 +18,6 @@
 // database/version
 #define EMS_DATABASE_VERSION 1
 
-#define EMS_CACHE_DIRECTORY "~/.cache/enna-media-server"
-
 /* PLAYER
  * --------- */
 // player/host
@@ -28,12 +25,9 @@
 // IMPORTANT: you must use either a socket or a patched MPD to use file:// protocol
 #define EMS_MPD_IP "/run/mpd/socket"
 // player/port
-#define EMS_MPD_IP "127.0.0.1"
-// player/port
 #define EMS_MPD_PORT 6600
 // player/timeout
 #define EMS_MPD_TIMEOUT 5000
-
 // player/status_period
 #define EMS_MPD_STATUS_PERIOD 1000
 // player/retry_period

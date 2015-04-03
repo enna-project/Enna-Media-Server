@@ -48,9 +48,6 @@ public:
      * Utils
      */
     QString stateToString(EMSPlayerState state);
-    void setRandom(bool random);
-    void setRepeat(bool repeat);
-    bool getRepeat();
 
     /* ---------------------------------
      *    Signleton pattern
@@ -89,8 +86,6 @@ protected:
 private:
     EMSPlayerStatus status;
     EMSPlaylist playlist;
-    bool random;
-    bool repeat;
 
     /* Mutex protecting shared data
      * Be careful when using this mutex, it must be used
