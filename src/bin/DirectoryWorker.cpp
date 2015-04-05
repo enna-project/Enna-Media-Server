@@ -14,6 +14,8 @@ DirectoryWorker::DirectoryWorker(QString path, QString extensions, QObject *pare
 
 {
     m_extensions = extensions.split(",");
+    for (int i = 0;i < m_extensions.size();i++)
+        m_extensions.replace(i, m_extensions.at(i).trimmed());
 }
 
 DirectoryWorker::~DirectoryWorker()
