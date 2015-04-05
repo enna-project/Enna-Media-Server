@@ -14,6 +14,8 @@ DirectoryWorker::DirectoryWorker(QString path, QString extensions, QObject *pare
 
 {
     m_extensions = extensions.split(",");
+    for (int i = 0;i < m_extensions.size();i++)
+        m_extensions.replace(i, m_extensions.at(i).trimmed());
 }
 
 DirectoryWorker::~DirectoryWorker()
@@ -31,28 +33,26 @@ void DirectoryWorker::process()
 
 void DirectoryWorker::scanDir(QDir dir)
 {
-
     dir.setNameFilters(m_extensions);
-    dir.setFilter(QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks);
+    dir.setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks);
 
-    QStringList fileList = dir.entryList();
-    for (int i=0; i<fileList.count(); i++)
+    QFileInfoList fileList = dir.entryInfoList();
+
+    foreach (const QFileInfo &fi, fileList)
     {
+        if (fi.isDir())
+        {
+            scanDir(QDir(fi.absoluteFilePath()));
+            continue;
+        }
+
         char sha1[20];
 
-        QString fullPath = dir.absolutePath() + "/" + fileList[i];
+        QString fullPath = fi.absoluteFilePath();
         sha1Compute(fullPath, (unsigned char*)sha1);
         QByteArray byteArray = QByteArray::fromRawData(sha1, 20);
         QString sha1StrHex(byteArray.toHex());
         emit fileFound(fullPath, sha1StrHex);
-    }
-
-    dir.setFilter(QDir::AllDirs | QDir::NoDotAndDotDot | QDir::NoSymLinks);
-    QStringList dirList = dir.entryList();
-    for (int i=0; i<dirList.size(); ++i)
-    {
-        QString newPath = QString("%1/%2").arg(dir.absolutePath()).arg(dirList.at(i));
-        scanDir(QDir(newPath));
     }
 }
 

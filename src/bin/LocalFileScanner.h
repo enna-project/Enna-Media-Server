@@ -21,6 +21,7 @@ private:
     QString supportedFormat;
     bool scanActive;
     unsigned long long startTime;
+    QTime measureTime;
 
     void scanEnd();
 

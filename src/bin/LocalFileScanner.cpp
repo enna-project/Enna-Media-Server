@@ -28,6 +28,7 @@ void LocalFileScanner::startScan()
     }
     scanActive = true;
     startTime = QDateTime::currentDateTime().toTime_t();
+    measureTime.start();
 
     qDebug() << "Starting local file scanner...";
 
@@ -92,7 +93,9 @@ void LocalFileScanner::scanEnd()
 {
     Database *db = Database::instance();
     scanActive = false;
-    qDebug() << "Scan finished.";
+    QTime t(0, 0);
+    t = t.addMSecs(measureTime.elapsed());
+    qDebug() << "Scan finished. (duration: " << t.toString("HH:mm:ss.zzz") << ")";
 
     qDebug() << "Clean database... (remove non-existent files, ...)";
     db->lock();
@@ -132,7 +135,7 @@ void LocalFileScanner::locationAdd(const QString &location)
 }
 
 void LocalFileScanner::fileFound(QString filename, QString sha1)
-{    
+{
     EMSTrack track;
     Database *db = Database::instance();
 
