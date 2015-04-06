@@ -6,7 +6,6 @@
  */
 
 #define EMS_WEBSOCKET_PORT 7337
-
 #define EMS_HTTP_PORT 7336
 
 /* DATABASE
@@ -34,5 +33,18 @@
 #define EMS_MPD_CONNECTION_RETRY_PERIOD 10000
 // player/password (optional - if no password, let it empty)
 #define EMS_MPD_PASSWORD ""
+
+#define EMS_LOAD_SETTINGS(var, confValue, defaultValue, type) \
+do {\
+if (settings.contains(confValue))\
+{\
+    var = settings.value(confValue).to##type();\
+}\
+else\
+{\
+    settings.setValue(confValue, defaultValue);\
+    var = defaultValue;\
+}\
+}while (0); \
 
 #endif // DEFAULTSETTINGS_H

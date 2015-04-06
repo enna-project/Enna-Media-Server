@@ -2,23 +2,17 @@
 #include <QCoreApplication>
 #include <QStandardPaths>
 #include "HttpServer.h"
+#include "DefaultSettings.h"
 
 HttpServer::HttpServer(QObject *parent) :
     QObject(parent),
     m_tcpServer(0)
 {
-    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+    QSettings settings(QCoreApplication::organizationName(),
+                       QCoreApplication::applicationName());
 
-    if (settings.contains("main/cache_directory"))
-    {
-        m_cacheDirectory = settings.value("main/cache_directory").toString();
-    }
-    else
-    {
-        m_cacheDirectory = QStandardPaths::standardLocations(QStandardPaths::CacheLocation)[0];
-        settings.setValue("main/cache_directory", m_cacheDirectory);
-    }
-
+    EMS_LOAD_SETTINGS(m_cacheDirectory, "main/cache_directory",
+                      QStandardPaths::standardLocations(QStandardPaths::CacheLocation)[0], String);
 
 }
 

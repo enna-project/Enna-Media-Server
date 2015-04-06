@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QFile>
 #include <QSettings>
+#include <QCoreApplication>
 #include <mpd/client.h>
 
 Player* Player::_instance = 0;
@@ -275,12 +276,18 @@ QString Player::stateToString(EMSPlayerState state)
  */
 void Player::connectToMpd()
 {
-    QSettings settings;
-    unsigned int retryPeriod = settings.value("player/retry_period", EMS_MPD_CONNECTION_RETRY_PERIOD).toUInt();
-    QString host = settings.value("player/host", EMS_MPD_IP).toString();
-    unsigned int port = settings.value("player/port", EMS_MPD_PORT).toUInt();
-    unsigned int timeout = settings.value("player/timeout", EMS_MPD_TIMEOUT).toUInt();
-    QString password = settings.value("player/password", EMS_MPD_PASSWORD).toString();
+    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+    unsigned int retryPeriod;
+    QString host;
+    unsigned int port;
+    unsigned int timeout;
+    QString password;
+
+    EMS_LOAD_SETTINGS(retryPeriod, "player/retry_period", EMS_MPD_CONNECTION_RETRY_PERIOD, UInt);
+    EMS_LOAD_SETTINGS(host, "player/host", EMS_MPD_IP, String);
+    EMS_LOAD_SETTINGS(timeout, "player/timeout", EMS_MPD_TIMEOUT, UInt);
+    EMS_LOAD_SETTINGS(port, "player/port", EMS_MPD_PORT, UInt);
+    EMS_LOAD_SETTINGS(password, "player/password", EMS_MPD_PASSWORD, String);
 
     if (conn != NULL)
     {
@@ -637,7 +644,7 @@ void Player::updateStatus()
  */
 void Player::run()
 {
-    QSettings settings;
+    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
     unsigned int statusPeriod = settings.value("player/status_period", EMS_MPD_STATUS_PERIOD).toUInt();
 
     /* Blocking connection. */

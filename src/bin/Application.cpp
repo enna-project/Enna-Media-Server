@@ -24,26 +24,10 @@ Application::Application(int & argc, char ** argv) :
     QCoreApplication::setApplicationName("EnnaMediaServer");
     QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
 
-    /* Read value for websocket port */
-    if (settings.contains("main/websocket_port"))
-        m_websocketPort = settings.value("main/websocket_port").toInt();
-    /* Save websocket back if it's not found in initial config file */
-    else
-    {
-        m_websocketPort = EMS_WEBSOCKET_PORT;
-        settings.setValue("main/websocket_port", m_websocketPort);
-    }
-
-
-    /* Read value for websocket port */
-    if (settings.contains("main/http_port"))
-        m_httpPort = settings.value("main/http_port").toInt();
-    /* Save websocket back if it's not found in initial config file */
-    else
-    {
-        m_httpPort = EMS_HTTP_PORT;
-        settings.setValue("main/http_port", m_httpPort);
-    }
+    /* Read and save value for websocket port */
+    EMS_LOAD_SETTINGS(m_websocketPort, "main/websocket_port", EMS_WEBSOCKET_PORT, Int);
+    /* Read and save value for http port */
+    EMS_LOAD_SETTINGS(m_httpPort, "main/http_port", EMS_HTTP_PORT, Int);
 
     /* Read locations path in config and add them to the scanner object */
     int size = settings.beginReadArray("locations");

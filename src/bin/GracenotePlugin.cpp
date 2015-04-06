@@ -8,7 +8,7 @@
 
 GracenotePlugin::GracenotePlugin()
 {
-    QSettings settings;
+    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
 
     capabilities << "discid";
     /* Not implemented :
@@ -23,10 +23,10 @@ GracenotePlugin::GracenotePlugin()
     userHandle = GNSDK_NULL;
     configured = false;
 
-    clientID = settings.value("gracenote/client_id", "").toString();
-    clientIDTags = settings.value("gracenote/client_id_tags", "").toString();
-    licensePath = settings.value("gracenote/license_path", "").toString();
-    userHandlePath = settings.value("gracenote/user_handle_file", EMS_GRACENOTE_USER_HANDLE_FILE).toString();
+    EMS_LOAD_SETTINGS(clientID, "gracenote/client_id", "", String);
+    EMS_LOAD_SETTINGS(clientIDTags, "gracenote/client_id_tags", "", String);
+    EMS_LOAD_SETTINGS(licensePath, "gracenote/license_path", "", String);
+    EMS_LOAD_SETTINGS(userHandlePath, "gracenote/user_handle_file", EMS_GRACENOTE_USER_HANDLE_FILE, String);
 }
 
 GracenotePlugin::~GracenotePlugin()

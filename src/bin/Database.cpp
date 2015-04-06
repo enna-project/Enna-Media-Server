@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QFile>
 #include <QSettings>
+#include <QCoreApplication>
 
 Database* Database::_instance = 0;
 
@@ -1089,7 +1090,7 @@ bool Database::insertNewAuthorizedClient(EMSClient *client)
  ****************************************************************************/
 bool Database::open()
 {
-    QSettings settings;
+    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
 
     /* If database is already opened, do nothing... */
     if (opened)
@@ -1106,9 +1107,9 @@ bool Database::open()
     }
 
     /* Look for the path of the database */
-    dbSettingPath = settings.value("database/path", EMS_DATABASE_PATH).toString();
-    dbSettingCreateScript = settings.value("database/create_script", EMS_DATABASE_CREATE_SCRIPT).toString();
-    dbSettingVersion = settings.value("database/version", EMS_DATABASE_VERSION).toUInt();
+    EMS_LOAD_SETTINGS(dbSettingPath, "database/path", EMS_DATABASE_PATH, String);
+    EMS_LOAD_SETTINGS(dbSettingCreateScript, "database/create_script", EMS_DATABASE_CREATE_SCRIPT, String);
+    EMS_LOAD_SETTINGS(dbSettingVersion, "database/version", EMS_DATABASE_VERSION, UInt);
 
     /* Try to open the database
      * If the file does not exist, an empty database is created
