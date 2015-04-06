@@ -1,4 +1,4 @@
 TEMPLATE = subdirs
-SUBDIRS = src/bin
+SUBDIRS = src/ems
 
 OTHER_FILES = AUTHORS COPYING README.md
