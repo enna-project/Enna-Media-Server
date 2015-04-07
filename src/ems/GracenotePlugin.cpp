@@ -8,7 +8,7 @@
 
 GracenotePlugin::GracenotePlugin()
 {
-    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+    QSettings settings;
 
     capabilities << "discid";
     /* Not implemented :

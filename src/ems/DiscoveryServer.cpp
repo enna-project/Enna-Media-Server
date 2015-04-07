@@ -64,7 +64,7 @@ void DiscoveryServer::readyRead()
         }
     }
 
-    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+    QSettings settings;
     // Create object containing the answer
     QJsonObject jobj;
     jobj["action"] = "EMS_DISCOVER";

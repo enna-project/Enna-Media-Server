@@ -22,7 +22,7 @@ Application::Application(int & argc, char ** argv) :
     QCoreApplication::setOrganizationName("Enna");
     QCoreApplication::setOrganizationDomain("enna.me");
     QCoreApplication::setApplicationName("EnnaMediaServer");
-    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+    QSettings settings;
 
     /* Read and save value for websocket port */
     EMS_LOAD_SETTINGS(m_websocketPort, "main/websocket_port", EMS_WEBSOCKET_PORT, Int);

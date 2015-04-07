@@ -1090,7 +1090,7 @@ bool Database::insertNewAuthorizedClient(EMSClient *client)
  ****************************************************************************/
 bool Database::open()
 {
-    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+    QSettings settings;
 
     /* If database is already opened, do nothing... */
     if (opened)

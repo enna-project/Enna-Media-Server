@@ -276,7 +276,7 @@ QString Player::stateToString(EMSPlayerState state)
  */
 void Player::connectToMpd()
 {
-    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+    QSettings settings;
     unsigned int retryPeriod;
     QString host;
     unsigned int port;
@@ -644,7 +644,7 @@ void Player::updateStatus()
  */
 void Player::run()
 {
-    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+    QSettings settings;
     unsigned int statusPeriod = settings.value("player/status_period", EMS_MPD_STATUS_PERIOD).toUInt();
 
     /* Blocking connection. */

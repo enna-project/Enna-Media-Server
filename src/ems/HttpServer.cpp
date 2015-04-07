@@ -8,8 +8,7 @@ HttpServer::HttpServer(QObject *parent) :
     QObject(parent),
     m_tcpServer(0)
 {
-    QSettings settings(QCoreApplication::organizationName(),
-                       QCoreApplication::applicationName());
+    QSettings settings;
 
     EMS_LOAD_SETTINGS(m_cacheDirectory, "main/cache_directory",
                       QStandardPaths::standardLocations(QStandardPaths::CacheLocation)[0], String);
