@@ -28,6 +28,20 @@ GracenotePlugin::GracenotePlugin()
     EMS_LOAD_SETTINGS(clientIDTags, "gracenote/client_id_tags", "", String);
     EMS_LOAD_SETTINGS(licensePath, "gracenote/license_path", "", String);
     EMS_LOAD_SETTINGS(userHandlePath, "gracenote/user_handle_file", EMS_GRACENOTE_USER_HANDLE_FILE, String);
+
+    /* Download directory */
+    QString cacheDirPath;
+    EMS_LOAD_SETTINGS(cacheDirPath, "main/cache_directory",
+                      QStandardPaths::standardLocations(QStandardPaths::CacheLocation)[0], String);
+    QDir cacheDir(cacheDirPath);
+    cacheDir.mkpath("gracenote");
+    QDir gracenoteCacheDir(cacheDirPath + QDir::separator() + "gracenote");
+    gracenoteCacheDir.mkdir("albums");
+    gracenoteCacheDir.mkdir("genres");
+    gracenoteCacheDir.mkdir("artists");
+    albumsCacheDir = cacheDirPath + QDir::separator() + "gracenote" + QDir::separator() + "albums";
+    genresCacheDir = cacheDirPath + QDir::separator() + "gracenote" + QDir::separator() + "genres";
+    artistsCacheDir = cacheDirPath + QDir::separator() + "gracenote" + QDir::separator() + "artists";
 }
 
 GracenotePlugin::~GracenotePlugin()
@@ -46,8 +60,8 @@ bool GracenotePlugin::update(EMSTrack *track)
             qDebug() << "Have you set a valid licence in the configuration file ?";
             return false;
         }
+        qDebug() << "Connected to Gracenote server";
     }
-    qDebug() << "Configured.";
 
     if (track->type == TRACK_TYPE_CDROM)
     {
@@ -96,7 +110,6 @@ bool GracenotePlugin::lookupByDiscID(EMSTrack *track, EMSCdrom cdrom)
         }
         toc += parts.at(i);
     }
-    qDebug() << "Computed TOC : " << toc;
 
     /* Set TOC */
     error = gnsdk_musicid_query_set_toc_string(queryHandle, toc.toStdString().c_str());
@@ -192,12 +205,100 @@ bool GracenotePlugin::lookupByDiscID(EMSTrack *track, EMSCdrom cdrom)
         }
     }
 
-    //TODO
-    //display_albumGdo(albumGdo);
+    /* We have found the album, update the given track object */
+    albumGdoToEMSTrack(albumGdo, track);
+
     gnsdk_manager_gdo_release(albumGdo);
     gnsdk_manager_gdo_release(findResult);
     gnsdk_musicid_query_release(queryHandle);
     return true;
+}
+
+bool GracenotePlugin::albumGdoToEMSTrack(gnsdk_gdo_handle_t albumGdo, EMSTrack *track)
+{
+    gnsdk_error_t error = GNSDK_SUCCESS;
+    gnsdk_cstr_t value = GNSDK_NULL;
+    gnsdk_link_query_handle_t queryHandle = GNSDK_NULL;
+
+    /* Album GNID */
+    QString gnid;
+    error = gnsdk_manager_gdo_value_get(albumGdo, GNSDK_GDO_VALUE_GNID, 1, &value);
+    if (error != GNSDK_SUCCESS)
+    {
+        qCritical() << "No GNID for this album.";
+        return false;
+    }
+    gnid = value;
+
+    /* Album Title */
+    gnsdk_gdo_handle_t titleGdo = GNSDK_NULL;
+    error = gnsdk_manager_gdo_child_get(albumGdo, GNSDK_GDO_CHILD_TITLE_OFFICIAL, 1, &titleGdo);
+    if (error == GNSDK_SUCCESS)
+    {
+        error = gnsdk_manager_gdo_value_get(titleGdo, GNSDK_GDO_VALUE_DISPLAY, 1, &value);
+        if (error == GNSDK_SUCCESS)
+        {
+            track->album.name = value;
+        }
+        gnsdk_manager_gdo_release(titleGdo);
+    }
+
+    /* Album cover */
+    gnsdk_link_data_type_t dataType = gnsdk_link_data_unknown;
+    gnsdk_byte_t* buffer = GNSDK_NULL;
+    gnsdk_size_t bufferSize = 0;
+
+    /* Look for an already downloaded cover */
+    if (QFile(albumsCacheDir + QDir::separator() + gnid + ".unknown").exists())
+    {
+        track->album.cover = albumsCacheDir + QDir::separator() + gnid + ".unknown";
+    }
+    else if (QFile(albumsCacheDir + QDir::separator() + gnid + ".jpeg").exists())
+    {
+        track->album.cover = albumsCacheDir + QDir::separator() + gnid + ".jpeg";
+    }
+    else if (QFile(albumsCacheDir + QDir::separator() + gnid + ".png").exists())
+    {
+        track->album.cover = albumsCacheDir + QDir::separator() + gnid + ".png";
+    }
+    /* Otherwise get the largest available pictures*/
+    else
+    {
+        error = gnsdk_link_query_create(userHandle, GNSDK_NULL, GNSDK_NULL, &queryHandle);
+        if (error != GNSDK_SUCCESS)
+        {
+            displayLastError();
+            return false; /* Should not happen */
+        }
+        gnsdk_link_query_set_gdo(queryHandle, albumGdo);
+        gnsdk_link_query_option_set(queryHandle, GNSDK_LINK_OPTION_KEY_IMAGE_SIZE, GNSDK_LINK_OPTION_VALUE_IMAGE_SIZE_1080);
+        error = gnsdk_link_query_content_retrieve(queryHandle, gnsdk_link_content_cover_art, 1, &dataType, &buffer, &bufferSize);
+        /* A cover has been found, save it in the cache */
+        if (error == GNSDK_SUCCESS)
+        {
+            QString extension = ".unknown";
+            if (dataType == gnsdk_link_data_image_jpeg)
+            {
+                extension = ".jpeg";
+            }
+            else if (dataType == gnsdk_link_data_image_png)
+            {
+                extension = ".png";
+            }
+            QFile cover(albumsCacheDir + QDir::separator() + gnid + extension);
+            if (!cover.exists() && cover.open(QIODevice::WriteOnly))
+            {
+                cover.write((const char*)buffer, bufferSize);
+                cover.close();
+                track->album.cover = cover.fileName();
+            }
+            error = gnsdk_link_query_content_free(buffer);
+        }
+        gnsdk_link_query_release(queryHandle);
+    }
+
+    /* Retrieve the track inside the AlbumGdo */
+    //TODO
 }
 
 bool GracenotePlugin::configure()
@@ -227,6 +328,13 @@ bool GracenotePlugin::configure()
 
     /* Initialize the MusicID Library */
     error = gnsdk_musicid_initialize(sdkmgrHandle);
+    if (error != GNSDK_SUCCESS)
+    {
+        return false;
+    }
+
+    /* Initialize the Link Library */
+    error = gnsdk_link_initialize(sdkmgrHandle);
     if (error != GNSDK_SUCCESS)
     {
         return false;

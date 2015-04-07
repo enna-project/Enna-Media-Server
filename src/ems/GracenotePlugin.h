@@ -23,9 +23,14 @@ private:
     QString userHandlePath;
     gnsdk_user_handle_t userHandle;
 
+    QString albumsCacheDir;
+    QString genresCacheDir;
+    QString artistsCacheDir;
+
     bool getUserHandle();
     bool configure();
     bool lookupByDiscID(EMSTrack *track, EMSCdrom cdrom);
+    bool albumGdoToEMSTrack(gnsdk_gdo_handle_t albumGdo, EMSTrack *track);
     void displayLastError();
 };
 
