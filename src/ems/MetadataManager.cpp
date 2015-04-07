@@ -9,7 +9,7 @@
 
 MetadataManager* MetadataManager::_instance = 0;
 
-void MetadataManager::update(EMSTrack *track, QStringList capabilities)
+void MetadataManager::update(EMSTrack track, QStringList capabilities)
 {
     /* The order of this list is respected. The plugin are used consecutively. */
     for (int i=0; i<capabilities.size(); i++)
@@ -26,7 +26,7 @@ void MetadataManager::update(EMSTrack *track, QStringList capabilities)
 
             /* Synchronous update, this slot lives in the MetadataManager's thread */
             plugin->lock();
-            plugin->update(track);
+            plugin->update(&track);
             plugin->unlock();
             emit updated(track, lastSignal);
         }
@@ -89,7 +89,7 @@ QStringList MetadataManager::getAvailableCapabilities()
 
 MetadataManager::MetadataManager(QObject *parent) : QObject(parent)
 {
-
+    qRegisterMetaType<EMSTrack>("EMSTrack");
 }
 
 MetadataManager::~MetadataManager()

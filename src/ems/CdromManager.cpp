@@ -145,23 +145,21 @@ void CdromManager::dbusMessageInsert(QString message)
      */
     for(int i=0; i<newCD.tracks.size(); i++)
     {
-        EMSTrack *track = new EMSTrack;
-        *track = newCD.tracks.at(i);
-        emit cdromTrackNeedUpdate(track, QStringList("discid"));
+        emit cdromTrackNeedUpdate(newCD.tracks.at(i), QStringList("discid"));
     }
 }
 
-void CdromManager::cdromTrackUpdated(EMSTrack *track, bool complete)
+void CdromManager::cdromTrackUpdated(EMSTrack track, bool complete)
 {
     bool found = false;
     EMSCdrom cdrom;
 
-    if (!complete)
+    if (track.type != TRACK_TYPE_CDROM)
     {
         return;
     }
 
-    if (track->type != TRACK_TYPE_CDROM)
+    if (!complete)
     {
         return;
     }
@@ -170,7 +168,7 @@ void CdromManager::cdromTrackUpdated(EMSTrack *track, bool complete)
     mutex.lock();
     for (int i=0; i<cdroms.size(); i++)
     {
-        if (cdroms.at(i).device == track->filename)
+        if (cdroms.at(i).device == track.filename)
         {
             cdrom = cdroms.at(i);
             found = true;
@@ -182,9 +180,9 @@ void CdromManager::cdromTrackUpdated(EMSTrack *track, bool complete)
     {
         for(int i=0; i<cdrom.tracks.size(); i++)
         {
-            if(cdrom.tracks.at(i).position == track->position)
+            if(cdrom.tracks.at(i).position == track.position)
             {
-                cdrom.tracks[i] = *track;
+                cdrom.tracks[i] = track;
             }
         }
     }
@@ -195,9 +193,6 @@ void CdromManager::cdromTrackUpdated(EMSTrack *track, bool complete)
     {
         emit cdromChanged(cdrom);
     }
-
-    /* Delete this track */
-    delete track;
 }
 
 void CdromManager::dbusMessageRemove(QString message)
@@ -249,14 +244,14 @@ CdromManager::CdromManager(QObject *parent) : QObject(parent), bus(QDBusConnecti
 {
     cdio_init();
 
-    connect(this, SIGNAL(cdromTrackNeedUpdate(EMSTrack*,QStringList)), MetadataManager::instance(), SLOT(update(EMSTrack*,QStringList)));
-    connect(MetadataManager::instance(), SIGNAL(updated(EMSTrack*,bool)), this, SLOT(cdromTrackUpdated(EMSTrack*,bool)));
+    connect(this, SIGNAL(cdromTrackNeedUpdate(EMSTrack,QStringList)), MetadataManager::instance(), SLOT(update(EMSTrack,QStringList)));
+    connect(MetadataManager::instance(), SIGNAL(updated(EMSTrack,bool)), this, SLOT(cdromTrackUpdated(EMSTrack,bool)));
 }
 
 CdromManager::~CdromManager()
 {
-    disconnect(this, SIGNAL(cdromTrackNeedUpdate(EMSTrack*,QStringList)), MetadataManager::instance(), SLOT(update(EMSTrack*,QStringList)));
-    disconnect(MetadataManager::instance(), SIGNAL(updated(EMSTrack*,bool)), this, SLOT(cdromTrackUpdated(EMSTrack*,bool)));
+    disconnect(this, SIGNAL(cdromTrackNeedUpdate(EMSTrack,QStringList)), MetadataManager::instance(), SLOT(update(EMSTrack,QStringList)));
+    disconnect(MetadataManager::instance(), SIGNAL(updated(EMSTrack,bool)), this, SLOT(cdromTrackUpdated(EMSTrack,bool)));
 }
 
 bool CdromManager::startMonitor()

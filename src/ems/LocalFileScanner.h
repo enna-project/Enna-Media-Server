@@ -18,7 +18,6 @@ public:
 private:
     QVector<QString> locations;
     QVector<DirectoryWorker*> workers;
-    QVector<EMSTrack*> tracks;
     QString supportedFormat;
     bool scanActive;
     unsigned long long startTime;
@@ -27,11 +26,11 @@ private:
     void scanEnd();
 
 signals:
-    void trackNeedUpdate(EMSTrack *track, QStringList capabilities);
+    void trackNeedUpdate(EMSTrack track, QStringList capabilities);
 
 public slots:
     void fileFound(QString filename, QString sha1);
-    void trackUpdated(EMSTrack *track, bool complete);
+    void trackUpdated(EMSTrack track, bool complete);
     void workerFinished(DirectoryWorker* worker);
     void startScan();
     void stopScan();

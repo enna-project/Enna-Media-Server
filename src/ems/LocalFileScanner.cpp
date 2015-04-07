@@ -15,19 +15,14 @@ LocalFileScanner::LocalFileScanner(QObject *parent) : QObject(parent)
     supportedFormat = "*.flac, *.mp3, *.wav";
     scanActive = false;
 
-    connect(this, SIGNAL(trackNeedUpdate(EMSTrack*,QStringList)), MetadataManager::instance(), SLOT(update(EMSTrack*,QStringList)));
-    connect(MetadataManager::instance(), SIGNAL(updated(EMSTrack*,bool)), this, SLOT(trackUpdated(EMSTrack*,bool)));
+    connect(this, SIGNAL(trackNeedUpdate(EMSTrack, QStringList)), MetadataManager::instance(), SLOT(update(EMSTrack,QStringList)));
+    connect(MetadataManager::instance(), SIGNAL(updated(EMSTrack,bool)), this, SLOT(trackUpdated(EMSTrack,bool)));
 }
 
 LocalFileScanner::~LocalFileScanner()
 {
-    disconnect(this, SIGNAL(trackNeedUpdate(EMSTrack*,QStringList)), MetadataManager::instance(), SLOT(update(EMSTrack*,QStringList)));
-    disconnect(MetadataManager::instance(), SIGNAL(updated(EMSTrack*)), this, SLOT(trackUpdated(EMSTrack*)));
-
-    foreach(EMSTrack *track, tracks)
-    {
-        delete track;
-    }
+    disconnect(this, SIGNAL(trackNeedUpdate(EMSTrack,QStringList)), MetadataManager::instance(), SLOT(update(EMSTrack,QStringList)));
+    connect(MetadataManager::instance(), SIGNAL(updated(EMSTrack,bool)), this, SLOT(trackUpdated(EMSTrack,bool)));
 }
 
 void LocalFileScanner::startScan()
@@ -146,23 +141,24 @@ void LocalFileScanner::locationAdd(const QString &location)
 
 void LocalFileScanner::fileFound(QString filename, QString sha1)
 {
-    EMSTrack *track = new EMSTrack;
+    EMSTrack track;
     Database *db = Database::instance();
 
-    track->filename = filename;
-    track->sha1 = sha1;
-    track->lastscan = startTime;
+    track.type = TRACK_TYPE_DB;
+    track.filename = filename;
+    track.sha1 = sha1;
+    track.lastscan = startTime;
     QString extension = QFileInfo(filename).suffix().toLower();
-    track->format = extension;
-    track->id = 0;
+    track.format = extension;
+    track.id = 0;
 
     /* 1) Search existing sha1 in the database */
     unsigned long long trackID;
     db->lock();
-    if(db->getTrackIdBySha1(&trackID, track->sha1))
+    if(db->getTrackIdBySha1(&trackID, track.sha1))
     {
         /* Do nothing as we assume the metadata have correctly been seeked */
-        db->insertNewFilename(track->filename, trackID, startTime);
+        db->insertNewFilename(track.filename, trackID, startTime);
         db->unlock();
         return;
     }
@@ -171,22 +167,21 @@ void LocalFileScanner::fileFound(QString filename, QString sha1)
     /* Compute which plugins can be used to retrieve metadata */
     QStringList capabilities;
     /* 1) Use extension name to find all plugins which can handle this format */
-    capabilities << track->format;
+    capabilities << track.format;
     /* 2) When first plugins add data to this track, try to use online database to get more data
      *    and covers using ... */
     //TODO.
 
-    tracks.append(track);
     emit trackNeedUpdate(track, capabilities);
 }
 
 /* This slot is called when new data are available for this track. */
-void LocalFileScanner::trackUpdated(EMSTrack *track, bool complete)
+void LocalFileScanner::trackUpdated(EMSTrack track, bool complete)
 {
     Database *db = Database::instance();
 
     /* First of all, check that the signal concern a track handled in this class */
-    if (!tracks.contains(track))
+    if (track.type != TRACK_TYPE_DB)
     {
         return;
     }
@@ -199,28 +194,27 @@ void LocalFileScanner::trackUpdated(EMSTrack *track, bool complete)
 
     /* Insert new track in database */
     unsigned long long albumId;
-    QString directory = QFileInfo(track->filename).dir().path();
+    QString directory = QFileInfo(track.filename).dir().path();
     bool newAlbum = true;
     db->lock(); /* Do not allow to execute other queries before inserting both album and track */
-    if (track->album.name.isEmpty())
+    if (track.album.name.isEmpty())
     {
         newAlbum = false;
-        track->album.id = 0; /* Unknown album */
+        track.album.id = 0; /* Unknown album */
     }
-    else if(db->getAlbumIdByNameAndTrackFilename(&albumId, track->album.name, directory))
+    else if(db->getAlbumIdByNameAndTrackFilename(&albumId, track.album.name, directory))
     {
-        track->album.id = albumId;
+        track.album.id = albumId;
         newAlbum = false;
     }
 
     if (newAlbum)
     {
-        db->insertNewAlbum(&(track->album));
+        db->insertNewAlbum(&(track.album));
     }
 
-    db->insertNewTrack(track);
+    db->insertNewTrack(&track);
     db->unlock();
-    tracks.remove(tracks.indexOf(track));
 }
 
 

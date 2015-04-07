@@ -21,10 +21,10 @@ class MetadataManager : public QObject
      * -----------------------------
      */
 public slots:
-    void update(EMSTrack *track, QStringList capabilities);
+    void update(EMSTrack track, QStringList capabilities);
 
 signals:
-    void updated(EMSTrack *track, bool complete);
+    void updated(EMSTrack track, bool complete);
 
 public:
     /* -----------------------------

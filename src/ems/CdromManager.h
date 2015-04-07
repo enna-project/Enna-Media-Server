@@ -59,11 +59,11 @@ signals:
     /* CDrom already inserted but with additional data given by Gracenote */
     void cdromChanged(EMSCdrom cdrom);
     /* Signal binded to MetadataManager */
-    void cdromTrackNeedUpdate(EMSTrack *track, QStringList capabilities);
+    void cdromTrackNeedUpdate(EMSTrack track, QStringList capabilities);
 
 
 public slots:
-    void cdromTrackUpdated(EMSTrack *track, bool complete);
+    void cdromTrackUpdated(EMSTrack track, bool complete);
     void dbusMessageInsert(QString message);
     void dbusMessageRemove(QString message);
     bool startMonitor();
