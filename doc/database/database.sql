@@ -12,7 +12,7 @@ CREATE TABLE "tracks" (
 	`sample_rate`	INTEGER,
 	`duration`	INTEGER NOT NULL,
 	`format_parameters`	TEXT,
-	FOREIGN KEY(album_id) REFERENCES albums(id)
+	FOREIGN KEY(album_id) REFERENCES albums(id) ON DELETE CASCADE
 );
 
 CREATE INDEX tracks_sha1_index ON tracks(sha1);
@@ -22,6 +22,7 @@ CREATE INDEX tracks_sha1_index ON tracks(sha1);
 CREATE TABLE "files" (
 	`filename`	TEXT NOT NULL PRIMARY KEY,
 	`track_id`	INTEGER NOT NULL,
+	`timestamp`	INTEGER NOT NULL,
 	FOREIGN KEY(track_id) REFERENCES tracks(id) ON DELETE CASCADE
 );
 
