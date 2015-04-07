@@ -143,9 +143,11 @@ void CdromManager::dbusMessageInsert(QString message)
 
     /* Ask metadata to all plugins which can handle "discid" lookup
      */
+    QStringList capabilities;
+    capabilities << "discid";
     for(int i=0; i<newCD.tracks.size(); i++)
     {
-        emit cdromTrackNeedUpdate(newCD.tracks.at(i), QStringList("discid"));
+        emit cdromTrackNeedUpdate(newCD.tracks.at(i), capabilities);
     }
 }
 

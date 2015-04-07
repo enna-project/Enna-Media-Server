@@ -28,9 +28,14 @@ void MetadataManager::update(EMSTrack track, QStringList capabilities)
             plugin->lock();
             plugin->update(&track);
             plugin->unlock();
-            emit updated(track, lastSignal);
+
+            if (!lastSignal)
+            {
+                emit updated(track, false);
+            }
         }
     }
+    emit updated(track, true);
 }
 
 void MetadataManager::registerAllPlugins()

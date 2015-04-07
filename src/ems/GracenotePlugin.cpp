@@ -1,5 +1,6 @@
 #include <QSettings>
 
+#include "DefaultSettings.h"
 #include "GracenotePlugin.h"
 #include "CdromManager.h"
 
@@ -39,12 +40,14 @@ bool GracenotePlugin::update(EMSTrack *track)
     if(!configured)
     {
         configured = configure();
+        if (!configured)
+        {
+            qDebug() << "Failed to configure connection to Gracenote server";
+            qDebug() << "Have you set a valid licence in the configuration file ?";
+            return false;
+        }
     }
-    if (!configured)
-    {
-        emit updated(track);
-        return false;
-    }
+    qDebug() << "Configured.";
 
     if (track->type == TRACK_TYPE_CDROM)
     {
@@ -54,7 +57,6 @@ bool GracenotePlugin::update(EMSTrack *track)
             lookupByDiscID(track, cdrom);
         }
     }
-    emit updated(track);
     return true;
 }
 
