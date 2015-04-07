@@ -24,7 +24,7 @@ public slots:
     void update(EMSTrack *track, QStringList capabilities);
 
 signals:
-    void updated(EMSTrack *track);
+    void updated(EMSTrack *track, bool complete);
 
 public:
     /* -----------------------------

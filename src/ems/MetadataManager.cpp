@@ -12,16 +12,23 @@ MetadataManager* MetadataManager::_instance = 0;
 void MetadataManager::update(EMSTrack *track, QStringList capabilities)
 {
     /* The order of this list is respected. The plugin are used consecutively. */
-    foreach(QString capability, capabilities)
+    for (int i=0; i<capabilities.size(); i++)
     {
-        QVector<MetadataPlugin*> availablePlugin = getAvailablePlugins(capability);
-        foreach(MetadataPlugin* plugin, availablePlugin)
+        QVector<MetadataPlugin*> availablePlugin = getAvailablePlugins(capabilities.at(i));
+        for (int j=0; j<availablePlugin.size(); j++)
         {
+            MetadataPlugin* plugin = availablePlugin.at(j);
+            bool lastSignal = false;
+            if (j == (availablePlugin.size()-1) && i == (capabilities.size()-1))
+            {
+                lastSignal = true;
+            }
+
             /* Synchronous update, this slot lives in the MetadataManager's thread */
             plugin->lock();
             plugin->update(track);
             plugin->unlock();
-            emit updated(track);
+            emit updated(track, lastSignal);
         }
     }
 }

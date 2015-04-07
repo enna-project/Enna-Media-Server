@@ -16,7 +16,7 @@ LocalFileScanner::LocalFileScanner(QObject *parent) : QObject(parent)
     scanActive = false;
 
     connect(this, SIGNAL(trackNeedUpdate(EMSTrack*,QStringList)), MetadataManager::instance(), SLOT(update(EMSTrack*,QStringList)));
-    connect(MetadataManager::instance(), SIGNAL(updated(EMSTrack*)), this, SLOT(trackUpdated(EMSTrack*)));
+    connect(MetadataManager::instance(), SIGNAL(updated(EMSTrack*,bool)), this, SLOT(trackUpdated(EMSTrack*,bool)));
 }
 
 LocalFileScanner::~LocalFileScanner()
@@ -181,7 +181,7 @@ void LocalFileScanner::fileFound(QString filename, QString sha1)
 }
 
 /* This slot is called when new data are available for this track. */
-void LocalFileScanner::trackUpdated(EMSTrack *track)
+void LocalFileScanner::trackUpdated(EMSTrack *track, bool complete)
 {
     Database *db = Database::instance();
 
@@ -191,34 +191,36 @@ void LocalFileScanner::trackUpdated(EMSTrack *track)
         return;
     }
 
+    /* Wait the last plugin before adding the track in the database */
+    if (!complete)
+    {
+        return;
+    }
+
     /* Insert new track in database */
-    if (track->id == 0)
+    unsigned long long albumId;
+    QString directory = QFileInfo(track->filename).dir().path();
+    bool newAlbum = true;
+    db->lock(); /* Do not allow to execute other queries before inserting both album and track */
+    if (track->album.name.isEmpty())
     {
-        unsigned long long albumId;
-        QString directory = QFileInfo(track->filename).dir().path();
-        bool newAlbum = true;
-        db->lock(); /* Do not allow to execute other queries before inserting both album and track */
-        if (!track->album.name.isEmpty())
-        {
-            if(db->getAlbumIdByNameAndTrackFilename(&albumId, track->album.name, directory))
-            {
-                track->album.id = albumId;
-                newAlbum = false;
-            }
-        }
-        if (newAlbum)
-        {
-            db->insertNewAlbum(&(track->album));
-        }
-        db->insertNewTrack(track);
-        db->unlock();
-        tracks.remove(tracks.indexOf(track));
+        newAlbum = false;
+        track->album.id = 0; /* Unknown album */
     }
-    else
+    else if(db->getAlbumIdByNameAndTrackFilename(&albumId, track->album.name, directory))
     {
-        /* Update existing track */
-        /* TODO */
+        track->album.id = albumId;
+        newAlbum = false;
     }
+
+    if (newAlbum)
+    {
+        db->insertNewAlbum(&(track->album));
+    }
+
+    db->insertNewTrack(track);
+    db->unlock();
+    tracks.remove(tracks.indexOf(track));
 }
 
 
