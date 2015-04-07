@@ -16,14 +16,23 @@ class MetadataManager : public QObject
 {
     Q_OBJECT
 
+    /* -----------------------------
+     *          ASYNCHRONOUS API
+     * -----------------------------
+     */
+public slots:
+    void update(EMSTrack *track, QStringList capabilities);
+
+signals:
+    void updated(EMSTrack *track);
+
 public:
     /* -----------------------------
      *          PUBLIC API
      * -----------------------------
      */
     void registerAllPlugins();
-    QVector<MetadataPlugin*> getAvailablePlugins(QString capability);
-
+    QStringList getAvailableCapabilities();
 
     /* -----------------------------
      *          SINGLETON
@@ -56,6 +65,9 @@ public:
 private:
     QVector<MetadataPlugin*> plugins;
     QMutex mutex;
+
+    /* Internal methods */
+    QVector<MetadataPlugin*> getAvailablePlugins(QString capability);
 
     /* Singleton pattern */
     static MetadataManager* _instance;

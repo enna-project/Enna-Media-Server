@@ -28,12 +28,6 @@ public:
 protected:
     QMutex mutex;
     QStringList capabilities;
-
-public slots:
-    virtual void startUpdate(EMSTrack *track) { Q_UNUSED(track) }
-
-signals:
-    void updated(EMSTrack *track);
 };
 
 #endif // METADATAPLUGIN_H

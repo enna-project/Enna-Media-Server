@@ -9,6 +9,23 @@
 
 MetadataManager* MetadataManager::_instance = 0;
 
+void MetadataManager::update(EMSTrack *track, QStringList capabilities)
+{
+    /* The order of this list is respected. The plugin are used consecutively. */
+    foreach(QString capability, capabilities)
+    {
+        QVector<MetadataPlugin*> availablePlugin = getAvailablePlugins(capability);
+        foreach(MetadataPlugin* plugin, availablePlugin)
+        {
+            /* Synchronous update, this slot lives in the MetadataManager's thread */
+            plugin->lock();
+            plugin->update(track);
+            plugin->unlock();
+            emit updated(track);
+        }
+    }
+}
+
 void MetadataManager::registerAllPlugins()
 {
     mutex.lock();
@@ -41,6 +58,25 @@ QVector<MetadataPlugin*> MetadataManager::getAvailablePlugins(QString capability
     }
     mutex.unlock();
 
+    return out;
+}
+
+QStringList MetadataManager::getAvailableCapabilities()
+{
+    QStringList out;
+
+    mutex.lock();
+    foreach (MetadataPlugin* plugin, plugins)
+    {
+        foreach (QString capPlug, plugin->getCapabilities())
+        {
+            out.append(capPlug);
+        }
+    }
+    mutex.unlock();
+
+    out.sort();
+    out.removeDuplicates();
     return out;
 }
 
