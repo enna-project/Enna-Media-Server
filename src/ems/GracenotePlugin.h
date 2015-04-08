@@ -46,6 +46,7 @@ private:
     /* Internal utils */
     bool albumGdoToEMSTrack(gnsdk_gdo_handle_t albumGdo, EMSTrack *track);
     bool trackGdoToEMSTrack(gnsdk_gdo_handle_t trackGdo, EMSTrack *track);
+    void gdoToEMSArtists(gnsdk_gdo_handle_t gdo, QVector<EMSArtist> *artists);
     void gdoToEMSGenres(gnsdk_gdo_handle_t gdo, QVector<EMSGenre> *genres);
     QStringList getGdoValue(gnsdk_gdo_handle_t gdo, gnsdk_cstr_t key);
 

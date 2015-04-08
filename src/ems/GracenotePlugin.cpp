@@ -23,8 +23,8 @@ GracenotePlugin::GracenotePlugin()
     */
 
     imageFormats.clear();
-    imageFormats << "jpeg";
-    imageFormats << "png";
+    imageFormats << ".jpeg";
+    imageFormats << ".png";
 
     genreListHandle = GNSDK_NULL;
     userHandle = GNSDK_NULL;
@@ -305,6 +305,7 @@ bool GracenotePlugin::albumGdoToEMSTrack(gnsdk_gdo_handle_t albumGdo, EMSTrack *
      * Gracenote metadata most often have genre for the whole album instead of for each track
      */
     gdoToEMSGenres(albumGdo, &(track->genres));
+    gdoToEMSArtists(albumGdo, &(track->artists));
 
     return true;
 }
@@ -330,7 +331,103 @@ bool GracenotePlugin::trackGdoToEMSTrack(gnsdk_gdo_handle_t trackGdo, EMSTrack *
     /* Track genres */
     gdoToEMSGenres(trackGdo, &(track->genres));
 
+    /* Track artists */
+    gdoToEMSArtists(trackGdo, &(track->artists));
+
     return true;
+}
+
+void GracenotePlugin::gdoToEMSArtists(gnsdk_gdo_handle_t gdo, QVector<EMSArtist> *artists)
+{
+    gnsdk_error_t error = GNSDK_SUCCESS;
+    gnsdk_link_query_handle_t queryHandle = GNSDK_NULL;
+
+    /* Get artist GDO */
+    gnsdk_gdo_handle_t artistGdo = GNSDK_NULL;
+    error = gnsdk_manager_gdo_child_get(gdo, GNSDK_GDO_CHILD_ARTIST, 1, &artistGdo);
+    if (error != GNSDK_SUCCESS)
+    {
+        return;
+    }
+
+    /* Get all contributors */
+    gnsdk_uint32_t count = 0;
+    error = gnsdk_manager_gdo_value_count(artistGdo, GNSDK_GDO_CHILD_CONTRIBUTOR, &count);
+    if ((error != GNSDK_SUCCESS) || (count == 0))
+    {
+        return;
+    }
+    unsigned int end = 0;
+    if (count > 1)
+    {
+        end = count;
+    }
+    else if (count == 1)
+    {
+        end = 1;
+    }
+
+    for (unsigned int i = 1; i <= end; i++)
+    {
+        gnsdk_gdo_handle_t contributorGdo = GNSDK_NULL;
+        error = gnsdk_manager_gdo_child_get(artistGdo, GNSDK_GDO_CHILD_CONTRIBUTOR, i, &contributorGdo);
+        if (error == GNSDK_SUCCESS)
+        {
+            gnsdk_gdo_handle_t contributorNameGdo = GNSDK_NULL;
+            error = gnsdk_manager_gdo_child_get(contributorGdo, GNSDK_GDO_CHILD_NAME_OFFICIAL, 1, &contributorNameGdo);
+            if (error == GNSDK_SUCCESS)
+            {
+                QStringList artistNames = getGdoValue(contributorNameGdo, GNSDK_GDO_VALUE_DISPLAY);
+                if (artistNames.size() > 0)
+                {
+                    EMSArtist artist;
+                    artist.name = artistNames.first();
+
+                    /* Get artist image */
+                    QString imagePath;
+                    QString basename(QByteArray().append(artist.name).toHex());
+                    if (lookForDownloadedImage(artistsCacheDir, basename, &imagePath))
+                    {
+                        artist.picture = imagePath;
+                    }
+                    else /* Otherwise get the largest available image*/
+                    {
+                        error = gnsdk_link_query_create(userHandle, GNSDK_NULL, GNSDK_NULL, &queryHandle);
+                        if (error != GNSDK_SUCCESS)
+                        {
+                            displayLastError();
+                            return; /* Should not happen */
+                        }
+
+                        /* Try to get image from the contributor GDO,
+                         * if it fails, use the album/track GDO to get artist picture */
+                        gnsdk_link_query_set_gdo(queryHandle, contributorGdo);
+                        if(downloadImage(queryHandle, gnsdk_link_content_image_artist, artistsCacheDir, basename ,&imagePath))
+                        {
+                            artist.picture = imagePath;
+                        }
+                        else
+                        {
+                            gnsdk_link_query_release(queryHandle);
+                            gnsdk_link_query_create(userHandle, GNSDK_NULL, GNSDK_NULL, &queryHandle);
+                            gnsdk_link_query_set_gdo(queryHandle, gdo);
+                            if(downloadImage(queryHandle, gnsdk_link_content_image_artist, artistsCacheDir, basename ,&imagePath))
+                            {
+                                artist.picture = imagePath;
+                            }
+                        }
+                        gnsdk_link_query_release(queryHandle);
+                    }
+
+                    /* Add the new artist in the list */
+                    artists->append(artist);
+                }
+                gnsdk_manager_gdo_release(contributorNameGdo);
+            }
+            gnsdk_manager_gdo_release(contributorGdo);
+        }
+    }
+    gnsdk_manager_gdo_release(artistGdo);
 }
 
 void GracenotePlugin::gdoToEMSGenres(gnsdk_gdo_handle_t gdo, QVector<EMSGenre> *genres)
@@ -446,11 +543,11 @@ QStringList GracenotePlugin::getGdoValue(gnsdk_gdo_handle_t gdo, gnsdk_cstr_t ke
 bool GracenotePlugin::lookForDownloadedImage(QString dir, QString basename, QString *fullpath)
 {
     /* Look for an already downloaded picture */
-    foreach(QString extenstion, imageFormats)
+    foreach(QString extension, imageFormats)
     {
-        if (QFile(dir + QDir::separator() + basename + extenstion).exists())
+        if (QFile(dir + QDir::separator() + basename + extension).exists())
         {
-            *fullpath = dir + QDir::separator() + basename + extenstion;
+            *fullpath = dir + QDir::separator() + basename + extension;
             return true;
         }
     }
