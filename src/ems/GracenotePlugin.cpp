@@ -3,6 +3,7 @@
 #include "DefaultSettings.h"
 #include "GracenotePlugin.h"
 #include "CdromManager.h"
+#include "Database.h"
 
 #define CLIENT_APP_VERSION "1.0.0.0"
 #define EMS_GRACENOTE_USER_HANDLE_FILE "user.txt"
@@ -21,6 +22,11 @@ GracenotePlugin::GracenotePlugin()
     capabilities << "album_gnid";
     */
 
+    imageFormats.clear();
+    imageFormats << "jpeg";
+    imageFormats << "png";
+
+    genreListHandle = GNSDK_NULL;
     userHandle = GNSDK_NULL;
     configured = false;
 
@@ -46,8 +52,23 @@ GracenotePlugin::GracenotePlugin()
 
 GracenotePlugin::~GracenotePlugin()
 {
+    if (userHandle != GNSDK_NULL)
+    {
+        gnsdk_manager_user_release(userHandle);
+        userHandle = GNSDK_NULL;
+    }
 
+    if (genreListHandle != GNSDK_NULL)
+    {
+        gnsdk_manager_list_release(genreListHandle);
+        genreListHandle = GNSDK_NULL;
+    }
+    gnsdk_manager_shutdown();
 }
+
+/* ---------------------------------------------------------
+ *                      PUBLIC API
+ * --------------------------------------------------------- */
 
 bool GracenotePlugin::update(EMSTrack *track)
 {
@@ -74,12 +95,9 @@ bool GracenotePlugin::update(EMSTrack *track)
     return true;
 }
 
-void GracenotePlugin::displayLastError()
-{
-    const gnsdk_error_info_t* error_info = gnsdk_manager_error_info();
-    qCritical() << "Gracenote error : "
-                << QString().sprintf("(%s) : %08x %s", error_info->error_api, error_info->error_code, error_info->error_description);
-}
+/* ---------------------------------------------------------
+ *                    LOOKUP FUNCTIONS
+ * --------------------------------------------------------- */
 
 bool GracenotePlugin::lookupByDiscID(EMSTrack *track, EMSCdrom cdrom)
 {
@@ -214,6 +232,10 @@ bool GracenotePlugin::lookupByDiscID(EMSTrack *track, EMSCdrom cdrom)
     return true;
 }
 
+/* ---------------------------------------------------------
+ *            UTILITIES FOR PARSING GRACENOTE DATA
+ * --------------------------------------------------------- */
+
 bool GracenotePlugin::albumGdoToEMSTrack(gnsdk_gdo_handle_t albumGdo, EMSTrack *track)
 {
     gnsdk_error_t error = GNSDK_SUCCESS;
@@ -235,34 +257,28 @@ bool GracenotePlugin::albumGdoToEMSTrack(gnsdk_gdo_handle_t albumGdo, EMSTrack *
     error = gnsdk_manager_gdo_child_get(albumGdo, GNSDK_GDO_CHILD_TITLE_OFFICIAL, 1, &titleGdo);
     if (error == GNSDK_SUCCESS)
     {
-        error = gnsdk_manager_gdo_value_get(titleGdo, GNSDK_GDO_VALUE_DISPLAY, 1, &value);
-        if (error == GNSDK_SUCCESS)
+        QStringList albumNames;
+        albumNames = getGdoValue(titleGdo, GNSDK_GDO_VALUE_DISPLAY);
+        if (albumNames.size() > 0)
         {
-            track->album.name = value;
+            track->album.name = albumNames.first();
+        }
+        else
+        {
+            /* Use the default album */
+            Database::instance()->getAlbumById(&(track->album), 0);
         }
         gnsdk_manager_gdo_release(titleGdo);
     }
 
     /* Album cover */
-    gnsdk_link_data_type_t dataType = gnsdk_link_data_unknown;
-    gnsdk_byte_t* buffer = GNSDK_NULL;
-    gnsdk_size_t bufferSize = 0;
-
     /* Look for an already downloaded cover */
-    if (QFile(albumsCacheDir + QDir::separator() + gnid + ".unknown").exists())
+    QString coverPath;
+    if (lookForDownloadedImage(albumsCacheDir, gnid, &coverPath))
     {
-        track->album.cover = albumsCacheDir + QDir::separator() + gnid + ".unknown";
+        track->album.cover = coverPath;
     }
-    else if (QFile(albumsCacheDir + QDir::separator() + gnid + ".jpeg").exists())
-    {
-        track->album.cover = albumsCacheDir + QDir::separator() + gnid + ".jpeg";
-    }
-    else if (QFile(albumsCacheDir + QDir::separator() + gnid + ".png").exists())
-    {
-        track->album.cover = albumsCacheDir + QDir::separator() + gnid + ".png";
-    }
-    /* Otherwise get the largest available pictures*/
-    else
+    else /* Otherwise get the largest available pictures*/
     {
         error = gnsdk_link_query_create(userHandle, GNSDK_NULL, GNSDK_NULL, &queryHandle);
         if (error != GNSDK_SUCCESS)
@@ -271,35 +287,226 @@ bool GracenotePlugin::albumGdoToEMSTrack(gnsdk_gdo_handle_t albumGdo, EMSTrack *
             return false; /* Should not happen */
         }
         gnsdk_link_query_set_gdo(queryHandle, albumGdo);
-        gnsdk_link_query_option_set(queryHandle, GNSDK_LINK_OPTION_KEY_IMAGE_SIZE, GNSDK_LINK_OPTION_VALUE_IMAGE_SIZE_1080);
-        error = gnsdk_link_query_content_retrieve(queryHandle, gnsdk_link_content_cover_art, 1, &dataType, &buffer, &bufferSize);
-        /* A cover has been found, save it in the cache */
-        if (error == GNSDK_SUCCESS)
-        {
-            QString extension = ".unknown";
-            if (dataType == gnsdk_link_data_image_jpeg)
-            {
-                extension = ".jpeg";
-            }
-            else if (dataType == gnsdk_link_data_image_png)
-            {
-                extension = ".png";
-            }
-            QFile cover(albumsCacheDir + QDir::separator() + gnid + extension);
-            if (!cover.exists() && cover.open(QIODevice::WriteOnly))
-            {
-                cover.write((const char*)buffer, bufferSize);
-                cover.close();
-                track->album.cover = cover.fileName();
-            }
-            error = gnsdk_link_query_content_free(buffer);
-        }
+        downloadImage(queryHandle, gnsdk_link_content_cover_art, albumsCacheDir, gnid,&coverPath);
+        track->album.cover = coverPath;
         gnsdk_link_query_release(queryHandle);
     }
 
     /* Retrieve the track inside the AlbumGdo */
-    //TODO
+    gnsdk_gdo_handle_t trackGdo = GNSDK_NULL;
+    error = gnsdk_manager_gdo_child_get(albumGdo, GNSDK_GDO_CHILD_TRACK_BY_NUMBER, track->position, &trackGdo);
+    if (error == GNSDK_SUCCESS)
+    {
+        trackGdoToEMSTrack(trackGdo, track);
+        gnsdk_manager_gdo_release(trackGdo);
+    }
+
+    /* If genre or artist are missing in the track GDO, use the ones linked to the album
+     * Gracenote metadata most often have genre for the whole album instead of for each track
+     */
+    gdoToEMSGenres(albumGdo, &(track->genres));
+
+    return true;
 }
+
+bool GracenotePlugin::trackGdoToEMSTrack(gnsdk_gdo_handle_t trackGdo, EMSTrack *track)
+{
+    gnsdk_error_t error = GNSDK_SUCCESS;
+
+    /* Track title */
+    gnsdk_gdo_handle_t titleGdo = GNSDK_NULL;
+    error = gnsdk_manager_gdo_child_get(trackGdo, GNSDK_GDO_CHILD_TITLE_OFFICIAL, 1, &titleGdo);
+    if (error == GNSDK_SUCCESS)
+    {
+        QStringList trackNames;
+        trackNames = getGdoValue(titleGdo, GNSDK_GDO_VALUE_DISPLAY);
+        if (trackNames.size() > 0)
+        {
+            track->name = trackNames.first();
+        }
+        gnsdk_manager_gdo_release(titleGdo);
+    }
+
+    /* Track genres */
+    gdoToEMSGenres(trackGdo, &(track->genres));
+
+    return true;
+}
+
+void GracenotePlugin::gdoToEMSGenres(gnsdk_gdo_handle_t gdo, QVector<EMSGenre> *genres)
+{
+    gnsdk_error_t error = GNSDK_SUCCESS;
+
+    /* First get the names of all genres related to the GDO */
+    QStringList genresStr;
+    genresStr << getGdoValue(gdo, GNSDK_GDO_VALUE_GENRE_LEVEL1);
+    genresStr << getGdoValue(gdo, GNSDK_GDO_VALUE_GENRE_LEVEL2);
+    genresStr << getGdoValue(gdo, GNSDK_GDO_VALUE_GENRE_LEVEL3);
+    foreach (QString genreStr, genresStr)
+    {
+        /* Check the genre is not present yet */
+        bool found = false;
+        foreach(EMSGenre existingGenre, *genres)
+        {
+            if (existingGenre.name == genreStr)
+            {
+                found = true;
+            }
+        }
+        if (found)
+        {
+            continue;
+        }
+
+        /* Create a new genre */
+        EMSGenre genre;
+        genre.name = genreStr;
+
+        /* Retrieve the genre art */
+        QString imagePath;
+        QString basename(QByteArray().append(genreStr).toHex());
+        if (lookForDownloadedImage(genresCacheDir, basename, &imagePath))
+        {
+            genre.picture = imagePath;
+        }
+        else
+        {
+            gnsdk_link_query_handle_t queryHandle = GNSDK_NULL;
+            gnsdk_list_element_handle_t elementHandle = GNSDK_NULL;
+
+            error = gnsdk_link_query_create(userHandle, GNSDK_NULL, GNSDK_NULL, &queryHandle);
+            if (error != GNSDK_SUCCESS)
+            {
+                displayLastError();
+                continue;
+            }
+            error = gnsdk_manager_list_get_element_by_string(genreListHandle, genreStr.toStdString().c_str(), &elementHandle);
+            if (error != GNSDK_SUCCESS)
+            {
+                displayLastError();
+                continue;
+            }
+            gnsdk_link_query_set_list_element(queryHandle, elementHandle);
+            if (downloadImage(queryHandle, gnsdk_link_content_genre_art, genresCacheDir, basename, &imagePath))
+            {
+                genre.picture = imagePath;
+            }
+
+            gnsdk_manager_list_element_release(elementHandle);
+            gnsdk_link_query_release(queryHandle);
+        }
+
+        /* Add the new genre in the list */
+        genres->append(genre);
+    }
+}
+
+QStringList GracenotePlugin::getGdoValue(gnsdk_gdo_handle_t gdo, gnsdk_cstr_t key)
+{
+    gnsdk_error_t error = GNSDK_SUCCESS;
+    gnsdk_cstr_t value = GNSDK_NULL;
+    gnsdk_uint32_t count = 0;
+    QStringList out;
+
+    /* Get the number of element for this key */
+    error = gnsdk_manager_gdo_value_count(gdo, key, &count);
+
+    if (error != GNSDK_SUCCESS)
+    {
+        displayLastError();
+        return out;
+    }
+    else if (count > 1)
+    {
+        for (unsigned int i = 1; i <= count; i++)
+        {
+            error = gnsdk_manager_gdo_value_get(gdo, key, i, &value);
+            if (error == GNSDK_SUCCESS)
+            {
+                out << value;
+            }
+        }
+    }
+    else if (count > 0)
+    {
+        error = gnsdk_manager_gdo_value_get(gdo, key, 1, &value);
+        if (error == GNSDK_SUCCESS)
+        {
+            out << value;
+        }
+    }
+
+    return out;
+}
+
+/* ---------------------------------------------------------
+ *             IMAGES MANAGEMENT (DOWNLOAD/CACHE)
+ * --------------------------------------------------------- */
+
+bool GracenotePlugin::lookForDownloadedImage(QString dir, QString basename, QString *fullpath)
+{
+    /* Look for an already downloaded picture */
+    foreach(QString extenstion, imageFormats)
+    {
+        if (QFile(dir + QDir::separator() + basename + extenstion).exists())
+        {
+            *fullpath = dir + QDir::separator() + basename + extenstion;
+            return true;
+        }
+    }
+    return false;
+}
+
+bool GracenotePlugin::downloadImage(gnsdk_link_query_handle_t queryHandle,
+                                    gnsdk_link_content_type_t type,
+                                    QString dir,
+                                    QString basename,
+                                    QString *computedPath)
+{
+    gnsdk_error_t error = GNSDK_SUCCESS;
+    gnsdk_link_data_type_t dataType = gnsdk_link_data_unknown;
+    gnsdk_byte_t* buffer = GNSDK_NULL;
+    gnsdk_size_t bufferSize = 0;
+
+    /* Get biggest pictures */
+    gnsdk_link_query_option_set(queryHandle, GNSDK_LINK_OPTION_KEY_IMAGE_SIZE, GNSDK_LINK_OPTION_VALUE_IMAGE_SIZE_1080);
+
+    error = gnsdk_link_query_content_retrieve(queryHandle, type, 1, &dataType, &buffer, &bufferSize);
+    /* An image has been found, save it in the cache */
+    if (error == GNSDK_SUCCESS)
+    {
+        QString extension;
+        if (dataType == gnsdk_link_data_image_jpeg)
+        {
+            extension = ".jpeg";
+        }
+        else if (dataType == gnsdk_link_data_image_png)
+        {
+            extension = ".png";
+        }
+        if (!extension.isEmpty())
+        {
+            QFile image(dir + QDir::separator() + basename + extension);
+            if (!image.exists() && image.open(QIODevice::WriteOnly))
+            {
+                image.write((const char*)buffer, bufferSize);
+                image.close();
+                *computedPath = image.fileName();
+                qDebug() << "Downloaded image : " << image.fileName();
+
+                gnsdk_link_query_content_free(buffer);
+                return true;
+            }
+        }
+        gnsdk_link_query_content_free(buffer);
+    }
+
+    return false;
+}
+
+/* ---------------------------------------------------------
+ *                 CONNECTION MANAGEMENT
+ * --------------------------------------------------------- */
 
 bool GracenotePlugin::configure()
 {
@@ -341,17 +548,38 @@ bool GracenotePlugin::configure()
     }
 
     /* Get a user handle for our client ID.  This will be passed in for all queries */
-    if (getUserHandle())
-    {
-        return true;
-    }
-    else
+    if (!getUserHandle())
     {
         gnsdk_manager_user_release(userHandle);
         userHandle = GNSDK_NULL;
         gnsdk_manager_shutdown();
         return false;
     }
+
+    /* Set locale (english by default) */
+    gnsdk_locale_handle_t localeHandle = GNSDK_NULL;
+    error = gnsdk_manager_locale_load(GNSDK_LOCALE_GROUP_MUSIC, GNSDK_LANG_ENGLISH, GNSDK_REGION_DEFAULT,
+                                      GNSDK_DESCRIPTOR_SIMPLIFIED, userHandle, GNSDK_NULL, 0, &localeHandle);
+    if (error != GNSDK_SUCCESS)
+    {
+        return false;
+    }
+    error = gnsdk_manager_locale_set_group_default(localeHandle);
+    if (error != GNSDK_SUCCESS)
+    {
+        return false;
+    }
+    gnsdk_manager_locale_release(localeHandle);
+
+    /* Get genre list handle */
+    error = gnsdk_manager_list_retrieve(GNSDK_LIST_TYPE_GENRES, GNSDK_LANG_ENGLISH, GNSDK_REGION_DEFAULT,
+                                        GNSDK_DESCRIPTOR_SIMPLIFIED, userHandle, GNSDK_NULL, GNSDK_NULL, &genreListHandle);
+    if (error != GNSDK_SUCCESS)
+    {
+        return false;
+    }
+
+    return true;
 }
 
 bool GracenotePlugin::getUserHandle()
@@ -402,4 +630,11 @@ bool GracenotePlugin::getUserHandle()
     }
     gnsdk_manager_string_free(serializedUser);
     return true;
+}
+
+void GracenotePlugin::displayLastError()
+{
+    const gnsdk_error_info_t* error_info = gnsdk_manager_error_info();
+    qCritical() << "Gracenote error : "
+                << QString().sprintf("(%s) : %08x %s", error_info->error_api, error_info->error_code, error_info->error_description);
 }
