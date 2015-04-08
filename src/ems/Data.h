@@ -27,6 +27,10 @@ public:
     unsigned long long id; /* Unique identifier (primary key in db) */
     QString name; /* Full name or pseudonyme of the artist */
     QString picture;
+    EMSArtist()
+    {
+        id = 0;
+    }
 };
 
 class EMSAlbum
@@ -35,6 +39,10 @@ public:
     unsigned long long id; /* Unique identifier (primary key in db) */
     QString name; /* Album title */
     QString cover;
+    EMSAlbum()
+    {
+        id = 0;
+    }
 };
 
 class EMSGenre
@@ -43,6 +51,11 @@ public:
     unsigned long long id; /* Unique identifier (primary key in db) */
     QString name; /* Genre label */
     QString picture;
+
+    EMSGenre()
+    {
+        id = 0;
+    }
 };
 
 /* Track structure can be used for :

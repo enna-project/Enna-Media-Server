@@ -107,6 +107,8 @@ void CdromManager::dbusMessageInsert(QString message)
         lsn_t begin = cdio_get_track_lsn(cdrom, i);
         lsn_t end = cdio_get_track_last_lsn(cdrom, i);
         track.duration = (end - begin + 1) / CDIO_CD_FRAMES_PER_SEC; /* One sector = 1/75s */
+        track.format = QString("cdda");
+        track.sample_rate = 44100;
         newCD.tracks.append(track);
         /* For disc id computation */
         lba_t lba = cdio_lsn_to_lba (begin);
@@ -154,7 +156,7 @@ void CdromManager::dbusMessageInsert(QString message)
 void CdromManager::cdromTrackUpdated(EMSTrack track, bool complete)
 {
     bool found = false;
-    EMSCdrom cdrom;
+    unsigned cdromID = 0;
 
     if (track.type != TRACK_TYPE_CDROM)
     {
@@ -172,7 +174,7 @@ void CdromManager::cdromTrackUpdated(EMSTrack track, bool complete)
     {
         if (cdroms.at(i).device == track.filename)
         {
-            cdrom = cdroms.at(i);
+            cdromID = i;
             found = true;
             break;
         }
@@ -180,21 +182,23 @@ void CdromManager::cdromTrackUpdated(EMSTrack track, bool complete)
 
     if (found)
     {
+        EMSCdrom cdrom = cdroms.at(cdromID);
+
         for(int i=0; i<cdrom.tracks.size(); i++)
         {
             if(cdrom.tracks.at(i).position == track.position)
             {
-                cdrom.tracks[i] = track;
+                cdrom.tracks.replace(i, track);
             }
         }
+        cdroms[cdromID] = cdrom;
     }
-
-    mutex.unlock();
 
     if (found)
     {
-        emit cdromChanged(cdrom);
+        emit cdromChanged(cdroms.at(cdromID));
     }
+    mutex.unlock();
 }
 
 void CdromManager::dbusMessageRemove(QString message)
