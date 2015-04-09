@@ -27,13 +27,16 @@ public slots:
     void readyRead();
 
 private:
-    void sendAcceptAnswer(const EMSClient * const client,
-                          const ClientConnectionParam &client_param);
+    void sendDiscoveryAnswer(const ClientConnectionParam &client_param,
+                             const QString &status);
 
-    void sendAuthenticationRequest(const EMSClient * const client,
+    void sendAcceptAnswer(const ClientConnectionParam &client_param);
+
+    void sendAuthenticationRequest(const QString &uuid,
                                    const ClientConnectionParam &client_param);
 
     QUdpSocket *m_socket;
+    QMap<QString, ClientConnectionParam> m_pending_clients;
 
 };
 

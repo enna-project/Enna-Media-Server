@@ -89,30 +89,31 @@ void DiscoveryServer::readyRead()
     // Local client usecase: accept the client
     if (!isClientAlreadyAccepted && isLocalGUI) {
         db->insertNewAuthorizedClient(&client);
-        this->sendAcceptAnswer(&client, sender_param);
+        this->sendAcceptAnswer(sender_param);
     }
     // Already accepted clients usecase
     else if (isClientAlreadyAccepted) {
-        this->sendAcceptAnswer(&client, sender_param);
+        this->sendAcceptAnswer(sender_param);
     }
     // Other unknown clients usecase
     else{
-        this->sendAuthenticationRequest(&client, sender_param);
+        this->sendAuthenticationRequest(client.uuid, sender_param);
     }
 }
 
-void DiscoveryServer::sendAcceptAnswer(const EMSClient * const client,
-                                       const ClientConnectionParam &client_param)
+void DiscoveryServer::sendDiscoveryAnswer(const ClientConnectionParam &client_param,
+                                          const QString &status)
 {
     QSettings settings;
     // Create object containing the answer
     QJsonObject jobj;
     jobj["action"] = "EMS_DISCOVER";
-    jobj["status"] = "accepted";
-    jobj["ip"] = client->hostname;
+    jobj["status"] = status;
+    jobj["ip"] = client_param.ip.toString();
     jobj["port"] = settings.value("main/websocket_port").toInt();
-    qDebug() << "Client Address: " << client->hostname
-             << "Port:    " << settings.value("main/websocket_port").toInt();
+    qDebug() << "EMS_DISCOVER (status: " << status
+             << ") Client Addr: " << client_param.ip.toString()
+             << ", port: " << settings.value("main/websocket_port").toInt();
     QJsonDocument jdoc(jobj);
     // Convert json object into datagram
     QByteArray datagram = jdoc.toJson(QJsonDocument::Compact);
@@ -120,9 +121,18 @@ void DiscoveryServer::sendAcceptAnswer(const EMSClient * const client,
     m_socket->writeDatagram(datagram.data(), datagram.size(), client_param.ip, client_param.port);
 }
 
-void DiscoveryServer::sendAuthenticationRequest(const EMSClient * const client,
+void DiscoveryServer::sendAcceptAnswer(const ClientConnectionParam &client_param)
+{
+    this->sendDiscoveryAnswer(client_param, "accepted");
+}
+
+void DiscoveryServer::sendAuthenticationRequest(const QString &uuid,
                                                 const ClientConnectionParam &client_param)
 {
-    Q_UNUSED(client);
-    Q_UNUSED(client_param);
+    // First, send the EMS_DISCOVER 'pending' answer to the new client
+    this->sendDiscoveryAnswer(client_param, "pending");
+
+    // and save the pending client properties
+    m_pending_clients[uuid] = client_param;
+    qDebug() << "MBO: map size:" << m_pending_clients.size();
 }
