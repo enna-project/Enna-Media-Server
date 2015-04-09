@@ -1,5 +1,6 @@
 #include <QFile>
 #include "HttpClient.h"
+#include "CdromManager.h"
 #include "Data.h"
 #include "Database.h"
 #include "DefaultSettings.h"
@@ -125,27 +126,57 @@ HttpClient::HttpClient(QTcpSocket *socket, QString cacheDirectory, QObject *pare
     connect(socket, &QTcpSocket::readyRead, [=]{
         parseRequest();
 
-        qDebug() << "url : " << m_parseUrl;
-        qDebug() << "headers : " << m_requestHeaders;
         QString url(m_parseUrl);
         QStringList arg = url.split('/');
-        if (arg[1] == "cover" && arg[2] == "artist")
+        QString localFilePath;
+        if (arg.size() > 1)
         {
-            int id = arg[3].toInt();
-            EMSArtist artist;
-            Database::instance()->getArtistById(&artist, id);
-            QFile f(m_cacheDirectory + "/" + artist.picture);
-            QHash<QString, QString> headers;
-            headers["Connection"] = "Close";
-            headers["Content-Type"] = "image/png";
-            f.open(QIODevice::ReadOnly);
-
-            QByteArray body = f.readAll();
-            int written = m_socket->write(buildHttpResponse(HTTP_200, headers, body));
-            socket->flush();
-            CloseConnection();
-            qDebug() << "Writte " << written << " bytes";
+            for (unsigned int i=1; i<arg.size(); i++)
+            {
+                if (i != 1)
+                {
+                    localFilePath += QDir::separator();
+                }
+                localFilePath += arg[i];
+            }
         }
+        if (localFilePath.isEmpty())
+        {
+            qDebug() << "Bad url : " << url;
+        }
+        else
+        {
+            localFilePath = m_cacheDirectory + QDir::separator() + localFilePath;
+            QDir dir;
+            dir.cd(QFileInfo(localFilePath).dir().path());
+            QString pwd = dir.path();
+            if (!pwd.startsWith(m_cacheDirectory))
+            {
+                qCritical() << "Don't serve path " << pwd << " as it is not in the cache.";
+            }
+            else
+            {
+                QFile f(localFilePath);
+                if (f.exists())
+                {
+                    f.open(QIODevice::ReadOnly);
+
+                    QHash<QString, QString> headers;
+                    headers["Connection"] = "Close";
+                    headers["Content-Type"] = "image/" + QFileInfo(localFilePath).suffix().toLower();;
+
+                    QByteArray body = f.readAll();
+                    int written = m_socket->write(buildHttpResponse(HTTP_200, headers, body));
+
+                }
+                else
+                {
+                    qCritical() << "Image '" << localFilePath << "' does not exist.";
+                }
+            }
+        }
+        socket->flush();
+        CloseConnection();
 
     });
 }
@@ -157,7 +188,6 @@ HttpClient::~HttpClient()
 
 void HttpClient::CloseConnection()
 {
-    qDebug() << "Closing connection";
     deleteLater();
 }
 

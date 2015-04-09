@@ -30,6 +30,9 @@ signals:
 
 private:
     QWebSocket *m_webSocket;
+    QString httpPort;
+    QString httpSrvUrl;
+    QString cacheDirectory;
 
     /* Queries handlers */
     JsonApi::MessageType toMessageType(const QString &type) const;
@@ -52,11 +55,14 @@ private:
     QJsonObject EMSAlbumToJson(const EMSAlbum &album) const;
     QJsonObject EMSAlbumToJsonWithArtists(const EMSAlbum &album) const;
     void getTracksFromFilename(QVector<EMSTrack> *trackList, QString filename);
+    QString convertImageUrl(QString url) const;
     // To be implemented when if menu become dynamic
     //QJsonObject buildJsonMenu();
 
 public slots:
     bool processMessage(const QString &message);
+    void ipChanged(QString newIp);
+
 };
 
 #endif // JSONAPI_H

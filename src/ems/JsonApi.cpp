@@ -1,19 +1,106 @@
 #include <QDir>
+#include <QSettings>
+#include <QNetworkInterface>
+
+#include "CdromManager.h"
+#include "DefaultSettings.h"
 #include "JsonApi.h"
 #include "Player.h"
-#include "CdromManager.h"
 
 const QString JSON_OBJECT_MENU = "{\"menus\":[{\"name\":\"Library\",\"url_scheme\":\"library://\",\"icon\":\"http://ip/imgs/library.png\",\"enabled\":true},{\"name\":\"Audio CD\",\"url_scheme\":\"cdda://\",\"icon\":\"http://ip/imgs/cdda.png\",\"enabled\":false},{\"name\":\"Playlists\",\"url_scheme\":\"playlist://\",\"icon\":\"http://ip/imgs/playlists.png\",\"enabled\":true},{\"name\":\"Settings\",\"url_scheme\":\"settings://\",\"icon\":\"http://ip/imgs/settings.png\",\"enabled\":true}]}";
 const QString JSON_OBJECT_LIBRARY_MUSIC = "{\"menus\": [{\"name\": \"Artists\",\"url\": \"library://music/artists\"},{\"name\": \"Albums\",\"url\": \"library://music/albums\"},{\"name\": \"Tracks\",\"url\": \"library://music/tracks\"},{\"name\": \"Genre\",\"url\": \"library://music/genres\"},{\"name\": \"Compositors\",\"url\": \"library://music/compositor\"}]}}";
 JsonApi::JsonApi(QWebSocket *webSocket) :
     m_webSocket(webSocket)
 {
+    QSettings settings;
+
+    EMS_LOAD_SETTINGS(cacheDirectory, "main/cache_directory",
+                      QStandardPaths::standardLocations(QStandardPaths::CacheLocation)[0], String);
+
+    int port = 0;
+    EMS_LOAD_SETTINGS(port, "main/http_port", EMS_HTTP_PORT, Int);
+    if (port != 0)
+    {
+        httpPort = QString("%1").arg(port);
+    }
+
+    /* TODO: use the NetworkManager instead */
+    QString ipAddr;
+    QList<QHostAddress> ipAddrs = QNetworkInterface::allAddresses();
+    for(int addrId=0; addrId<ipAddrs.count(); addrId++)
+    {
+        if(!ipAddrs[addrId].isLoopback())
+        {
+            if (ipAddrs[addrId].protocol() == QAbstractSocket::IPv4Protocol )
+            {
+                ipAddr = ipAddrs[addrId].toString();
+                break;
+            }
+        }
+    }
+    if (!ipAddr.isEmpty())
+    {
+        httpSrvUrl = "http://" + ipAddr;
+        if (!httpPort.isEmpty())
+        {
+             httpSrvUrl += ":" + httpPort;
+        }
+    }
+    else
+    {
+        qCritical() << "Unable to get my own IP address";
+    }
 
 }
 
 JsonApi::~JsonApi()
 {
 
+}
+
+void JsonApi::ipChanged(QString newIp)
+{
+    if (!newIp.isEmpty())
+    {
+        httpSrvUrl = "http://" + newIp;
+        if (!httpPort.isEmpty())
+        {
+             httpSrvUrl += ":" + httpPort;
+        }
+    }
+}
+
+QString JsonApi::convertImageUrl(QString url) const
+{
+    QString out;
+    if (url.startsWith(cacheDirectory + QDir::separator()))
+    {
+        url.remove(0, cacheDirectory.size() + 1);
+
+        QString uniformUrl; /* For windows, transform backslash in slash */
+        QStringList dirs = url.split(QDir::separator());
+        for (unsigned int i=0; i<dirs.size(); i++)
+        {
+            QString dir = dirs.at(i);
+            if (i != 0)
+            {
+                uniformUrl += "/";
+            }
+            uniformUrl += dir;
+        }
+
+        if (!httpSrvUrl.isEmpty())
+        {
+            out = httpSrvUrl + "/" + url;
+        }
+    }
+    else
+    {
+        qCritical() << "Local image is not in the cache directory : ";
+        qCritical() << "Image path is " << url;
+        qCritical() << "Cache path is " << cacheDirectory;
+    }
+    return out;
 }
 
 bool JsonApi::processMessage(const QString &message)
@@ -539,7 +626,7 @@ QJsonObject JsonApi::EMSArtistToJson(const EMSArtist &artist) const
 
     obj["id"] = (qint64)artist.id;
     obj["name"] = artist.name;
-    obj["picture"] = artist.picture;
+    obj["picture"] = convertImageUrl(artist.picture);
 
     return obj;
 }
@@ -550,7 +637,8 @@ QJsonObject JsonApi::EMSAlbumToJson(const EMSAlbum &album) const
 
     obj["id"] = (qint64)album.id;
     obj["name"] = album.name;
-    obj["picture"] = album.cover;
+    obj["picture"] = convertImageUrl(album.cover);
+
     return obj;
 }
 
@@ -580,7 +668,8 @@ QJsonObject JsonApi::EMSGenreToJson(const EMSGenre &genre) const
 
     obj["id"] = (qint64)genre.id;
     obj["name"] = genre.name;
-    obj["picture"] = genre.picture;
+    obj["picture"] = convertImageUrl(genre.picture);
+
     return obj;
 }
 

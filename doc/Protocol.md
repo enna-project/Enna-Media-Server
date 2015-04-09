@@ -579,6 +579,14 @@ TBD
 }
 ```
 
+Cover and other images
+======================
+
+The client can request images using the URL in the field "cover" or "picture"
+in the data model. The client can use std HTTP protocol to get them. In the
+future, this download will be made using the Websocket API to authenticate
+requests.
+
 CD RIP
 ======
 
