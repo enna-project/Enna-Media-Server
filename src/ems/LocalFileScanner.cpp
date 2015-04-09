@@ -192,6 +192,12 @@ void LocalFileScanner::trackUpdated(EMSTrack track, bool complete)
         return;
     }
 
+    /* Make sure the track have a "name", otherwise choose a default one */
+    if (track.name.isEmpty())
+    {
+        track.name = QFileInfo(track.filename).baseName();
+    }
+
     /* Insert new track in database */
     unsigned long long albumId;
     QString directory = QFileInfo(track.filename).dir().path();
