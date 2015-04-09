@@ -51,10 +51,39 @@ void FlacPlugin::addGenre(EMSTrack *track, const char *str)
     }
 }
 
+bool FlacPlugin::getStreamInfo(EMSTrack *track)
+{
+    FLAC__StreamMetadata  metadataInfo;
+    if (FLAC__metadata_get_streaminfo(track->filename.toUtf8().data(), &metadataInfo))
+    {
+        if (metadataInfo.type != FLAC__METADATA_TYPE_STREAMINFO)
+        {
+            return false;
+        }
+
+        FLAC__StreamMetadata_StreamInfo streamInfo = metadataInfo.data.stream_info;
+
+        track->sample_rate = streamInfo.sample_rate;
+        track->duration = streamInfo.total_samples / streamInfo.sample_rate;
+        track->format_parameters.clear();
+        track->format_parameters.append(QString("channels:%1;").arg(streamInfo.channels));
+        track->format_parameters.append(QString("bits_per_sample:%1;").arg(streamInfo.bits_per_sample));
+        return true;
+    }
+
+    return false;
+}
+
 bool FlacPlugin::update(EMSTrack *track)
 {
     FLAC__StreamMetadata *tags = 0;
     char *str;
+
+    /* Retrieve length, rate and other format data. */
+    if(!getStreamInfo(track))
+    {
+        return false;
+    }
 
     if (!FLAC__metadata_get_tags(track->filename.toUtf8().data(), &tags) || !tags)
     {

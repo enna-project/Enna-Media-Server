@@ -17,6 +17,7 @@ public:
 private:
     void addArtist(EMSTrack *track, const char *str);
     void addGenre(EMSTrack *track, const char *str);
+    bool getStreamInfo(EMSTrack *track);
 };
 
 #endif // FLACPLUGIN_H
