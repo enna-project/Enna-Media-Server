@@ -47,6 +47,7 @@ bool Database::insertNewTrack(EMSTrack *newTrack)
         if(!insertNewFilename(newTrack->filename, trackID, newTrack->lastscan))
         {
             qCritical() << "Error while inserting new track : " << q.lastError().text();
+            qCritical() << "Last query was : " << q.lastQuery();
             q.exec("ROLLBACK;");
             return false;
         }
@@ -76,6 +77,7 @@ bool Database::insertNewTrack(EMSTrack *newTrack)
         if(!q.exec())
         {
             qCritical() << "Error while inserting new track : " << q.lastError().text();
+            qCritical() << "Last query was : " << q.lastQuery();
             q.exec("ROLLBACK;");
             return false;
         }
