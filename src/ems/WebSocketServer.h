@@ -17,6 +17,9 @@ public:
     explicit WebSocketServer(quint16 port, QObject *parent = 0);
     ~WebSocketServer();
 
+public slots:
+    void sendAuthRequestToLocalUI(const QString &client_uuid_to_authenticate);
+
 private Q_SLOTS:
     void onNewConnection();
     void processMessage(QString message);

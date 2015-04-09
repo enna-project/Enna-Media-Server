@@ -22,6 +22,7 @@ public:
     ~DiscoveryServer();
 
 signals:
+    void authenticationNeeded(const QString &client_uuid_to_authenticate);
 
 public slots:
     void readyRead();

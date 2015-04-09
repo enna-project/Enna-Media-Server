@@ -58,6 +58,8 @@ Application::Application(int & argc, char ** argv) :
 
     /* Create Discovery Server */
     m_discoveryServer = new DiscoveryServer(BCAST_UDP_PORT, this);
+    connect(m_discoveryServer, &DiscoveryServer::authenticationNeeded,
+            m_webSocketServer, &WebSocketServer::sendAuthRequestToLocalUI);
 
     m_smartmontools = new SmartmontoolsNotifier(this);
 

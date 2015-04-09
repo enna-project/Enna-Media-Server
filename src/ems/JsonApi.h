@@ -25,6 +25,7 @@ public:
     /* Asynchronous messages */
     void sendStatus(EMSPlayerStatus status);
     void sendPlaylist(EMSPlaylist newPlaylist);
+    void sendAuthRequest(const QString &client_uuid_to_authenticate);
 
 signals:
 

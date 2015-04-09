@@ -134,5 +134,7 @@ void DiscoveryServer::sendAuthenticationRequest(const QString &uuid,
 
     // and save the pending client properties
     m_pending_clients[uuid] = client_param;
-    qDebug() << "MBO: map size:" << m_pending_clients.size();
+
+    // Next, start the authentication with the local UI
+    emit authenticationNeeded(uuid);
 }

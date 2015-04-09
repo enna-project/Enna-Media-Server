@@ -64,6 +64,22 @@ void WebSocketServer::broadcastPlaylist(EMSPlaylist newPlaylist)
     }
 }
 
+void WebSocketServer::sendAuthRequestToLocalUI(const QString &client_uuid_to_authenticate)
+{
+    QMapIterator<QWebSocket*, JsonApi*> client_it(m_clients);
+    qDebug() << "WebSocketServer: nb clients = " << m_clients.size();
+
+    // Search the websocket for the local UI,
+    while (client_it.hasNext()) {
+        client_it.next();
+        if (client_it.key()->peerAddress() == QHostAddress::LocalHost) {
+            // and send the authentication request message
+            client_it.value()->sendAuthRequest(client_uuid_to_authenticate);
+            return;
+        }
+    }
+}
+
 void WebSocketServer::processMessage(QString message)
 {
    QWebSocket *client = qobject_cast<QWebSocket *>(sender());

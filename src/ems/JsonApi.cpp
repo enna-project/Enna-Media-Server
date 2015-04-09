@@ -904,3 +904,15 @@ void JsonApi::sendPlaylist(EMSPlaylist newPlaylist)
 {
     /* TODO */
 }
+
+void JsonApi::sendAuthRequest(const QString &client_uuid_to_authenticate)
+{
+    QJsonObject authRequestJsonObj;
+    authRequestJsonObj["msg"]    = "EMS_AUTH";
+    authRequestJsonObj["status"] = "request";
+    authRequestJsonObj["uuid"]   = client_uuid_to_authenticate;
+
+    QJsonDocument doc(authRequestJsonObj);
+    m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
+    qDebug() << "JsonApi: sent the 'authentication' request for " << client_uuid_to_authenticate;
+}
