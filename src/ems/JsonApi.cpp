@@ -73,6 +73,12 @@ void JsonApi::ipChanged(QString newIp)
 QString JsonApi::convertImageUrl(QString url) const
 {
     QString out;
+
+    if (url.isEmpty())
+    {
+        return out;
+    }
+
     if (url.startsWith(cacheDirectory + QDir::separator()))
     {
         url.remove(0, cacheDirectory.size() + 1);
