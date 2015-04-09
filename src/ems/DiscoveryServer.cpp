@@ -83,12 +83,16 @@ void DiscoveryServer::readyRead()
         client.hostname = sender_param.ip.toString();
     }
 
+    db->lock();
     isClientAlreadyAccepted = db->getAuthorizedClient(client.uuid, &client);
+    db->unlock();
     qDebug() << "Database: is client already accepted : " << isClientAlreadyAccepted;
 
     // Local client usecase: accept the client
     if (!isClientAlreadyAccepted && isLocalGUI) {
+        db->lock();
         db->insertNewAuthorizedClient(&client);
+        db->unlock();
         this->sendAcceptAnswer(sender_param);
     }
     // Already accepted clients usecase
