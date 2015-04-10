@@ -11,6 +11,7 @@ list of available message:
  * `EMS_PLAYList`
  * `EMS_DISK`
  * `EMS_MEDIA_INFO`
+ * `EMS_AUTH`
 
 There is 2 kinds of requests :
 
@@ -592,3 +593,44 @@ CD RIP
 
 rip command is send to EMS when a cd have to be ripped on the disk.
 TBD
+
+
+Authentication
+==============
+
+The authentication messages between EMS and the local client are written with
+Json. Two steps are required:
+ * EMS send the authentication request to the local client;
+ * the local client send the status of the authentication to EMS
+
+### Authentication request
+
+EMS send an 'asynchronous' message to the local client only. The message
+contains the UUID of the remote client to authenticate
+
+```json
+{
+    "msg": "EMS_AUTH",
+    "msg_id": "id",
+    "status": "request",
+    "uuid": "110e8400-e29b-11d4-a716-446655440000",
+    "hostname": "192.168.0.1",
+    "username": ""
+}
+```
+
+### Authentication answer
+
+The local client send to EMS a 'synchronous' message that contains the
+client's UUID and the status of the authentication ("accepted" or "rejected").
+
+```json
+{
+    "msg": "EMS_AUTH",
+    "msg_id": "id",
+    "status": "accepted",
+    "uuid": "110e8400-e29b-11d4-a716-446655440000",
+    "hostname": "192.168.0.1",
+    "username": ""
+}
+```
