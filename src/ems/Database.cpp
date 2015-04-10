@@ -467,7 +467,7 @@ bool Database::storeTrack(QSqlQuery *q, EMSTrack *track)
         qCritical() << "Querying track data failed : " << q->lastError().text();
         return false;
     }
-    unsigned int colId = 1;
+    unsigned int colId = 0;
     if (q->next())
     {
         /* Follow the same order as in the SQL query */
