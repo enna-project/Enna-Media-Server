@@ -10,7 +10,7 @@ CONFIG += c++11 link_pkgconfig
 
 SUBDIRS +=
 
-PKGCONFIG += libmpdclient libcdio flac
+PKGCONFIG += libmpdclient libcdio flac sndfile
 
 TEMPLATE = app
 TARGET = enna-media-server
@@ -37,7 +37,8 @@ HEADERS += Database.h \
            MetadataManager.h \
            MetadataPlugin.h \
            FlacPlugin.h \
-    LocalFileScanner.h
+    LocalFileScanner.h \
+    SndfilePlugin.h
 
 SOURCES += Database.cpp \
            DirectoryWorker.cpp \
@@ -55,7 +56,8 @@ SOURCES += Database.cpp \
            HttpClient.cpp \
            MetadataManager.cpp \
            FlacPlugin.cpp \
-    LocalFileScanner.cpp
+    LocalFileScanner.cpp \
+    SndfilePlugin.cpp
 
 DISTFILES +=
 

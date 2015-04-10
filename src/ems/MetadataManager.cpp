@@ -2,6 +2,7 @@
 
 #include "MetadataManager.h"
 #include "FlacPlugin.h"
+#include "SndfilePlugin.h"
 
 #ifdef EMS_PLUGIN_GRACENOTE
 #include "GracenotePlugin.h"
@@ -44,6 +45,7 @@ void MetadataManager::registerAllPlugins()
 
     /* File format plugins */
     plugins.append(new FlacPlugin);
+    plugins.append(new SndfilePlugin);
 
     /* Optional plugins. Activate them with qmake options (see .pro) */
 #ifdef EMS_PLUGIN_GRACENOTE
