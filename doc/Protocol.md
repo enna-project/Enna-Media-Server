@@ -189,7 +189,7 @@ menus: Array of type `menu`
 {
     "msg": "EMS_BROWSE",
     "msg_id": "id",
-    "uuid": "110e8400-e29b-11d4-a716-446655440000",
+    "uuid": "{110e8400-e29b-11d4-a716-446655440000}",
     "url": "menu://"
 }
 ```
@@ -200,7 +200,7 @@ menus: Array of type `menu`
 {
     "msg": "EMS_BROWSE",
     "msg_id": "id",
-    "uuid": "110e8400-e29b-11d4-a716-446655440000",
+    "uuid": "{110e8400-e29b-11d4-a716-446655440000}",
     "data": {
         "menus": [
             {
@@ -255,7 +255,7 @@ like video clip, or other kind of medias.
 {
     "msg": "EMS_BROWSE",
     "msg_id": "id",
-    "uuid": "110e8400-e29b-11d4-a716-446655440000",
+    "uuid": "{110e8400-e29b-11d4-a716-446655440000}",
     "url": "library://music"
 }
 ```
@@ -266,7 +266,7 @@ like video clip, or other kind of medias.
 {
     "msg": "EMS_BROWSE",
     "msg_id": "id",
-    "uuid": "110e8400-e29b-11d4-a716-446655440000",
+    "uuid": "{110e8400-e29b-11d4-a716-446655440000}",
     "data" : {
         "menus": [
             {
@@ -613,7 +613,7 @@ contains the UUID of the remote client to authenticate
     "msg": "EMS_AUTH",
     "msg_id": "id",
     "status": "request",
-    "uuid": "110e8400-e29b-11d4-a716-446655440000",
+    "uuid": "{110e8400-e29b-11d4-a716-446655440000}",
     "hostname": "192.168.0.1",
     "username": ""
 }
@@ -629,7 +629,7 @@ client's UUID and the status of the authentication ("accepted" or "rejected").
     "msg": "EMS_AUTH",
     "msg_id": "id",
     "status": "accepted",
-    "uuid": "110e8400-e29b-11d4-a716-446655440000",
+    "uuid": "{110e8400-e29b-11d4-a716-446655440000}",
     "hostname": "192.168.0.1",
     "username": ""
 }
