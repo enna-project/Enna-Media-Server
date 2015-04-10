@@ -12,7 +12,7 @@
 
 LocalFileScanner::LocalFileScanner(QObject *parent) : QObject(parent)
 {
-    supportedFormat = "*.flac, *.mp3, *.wav";
+    supportedFormat = "*.flac, *.wav, *.dsf, *.dff";
     scanActive = false;
 
     connect(this, SIGNAL(trackNeedUpdate(EMSTrack, QStringList)), MetadataManager::instance(), SLOT(update(EMSTrack,QStringList)));
