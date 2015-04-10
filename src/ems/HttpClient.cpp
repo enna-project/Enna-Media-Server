@@ -147,27 +147,30 @@ HttpClient::HttpClient(QTcpSocket *socket, QString cacheDirectory, QObject *pare
         else
         {
             localFilePath = m_cacheDirectory + QDir::separator() + localFilePath;
+
+            /* Check the file is inside the cache directory */
             QDir dir;
             dir.cd(QFileInfo(localFilePath).dir().path());
             QString pwd = dir.path();
             if (!pwd.startsWith(m_cacheDirectory))
             {
                 qCritical() << "Don't serve path " << pwd << " as it is not in the cache.";
+            } else if (QFileInfo(localFilePath).isDir() || !QFileInfo(localFilePath).exists())
+            {
+                qCritical() << "Don't serve file " << localFilePath << " as it is not an existing file.";
             }
             else
             {
                 QFile f(localFilePath);
-                if (f.exists())
+                if (f.open(QIODevice::ReadOnly))
                 {
-                    f.open(QIODevice::ReadOnly);
-
                     QHash<QString, QString> headers;
                     headers["Connection"] = "Close";
                     headers["Content-Type"] = "image/" + QFileInfo(localFilePath).suffix().toLower();;
 
                     QByteArray body = f.readAll();
                     int written = m_socket->write(buildHttpResponse(HTTP_200, headers, body));
-
+                    f.close();
                 }
                 else
                 {
