@@ -379,6 +379,16 @@ QJsonObject JsonApi::processMessageBrowseLibraryTracks(QStringList &list, bool &
         obj["tracks"] = jsonArray;
         break;
     }
+    case 2:
+    {
+        unsigned int trackId = list[1].toUInt();
+        EMSTrack track;
+        db->lock();
+        db->getTrackById(&track, trackId);
+        db->unlock();
+        obj["track"] = EMSTrackToJson(track);
+        break;
+    }
 
     default:
         ok = false;

@@ -10,6 +10,7 @@ var apiList = [
     '{ "msg": "EMS_BROWSE", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "url": "library://music/albums"}',
     '{ "msg": "EMS_BROWSE", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "url": "library://music/albums/1"}',
     '{ "msg": "EMS_BROWSE", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "url": "library://music/tracks"}',
+    '{ "msg": "EMS_BROWSE", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "url": "library://music/tracks/1"}',
     '{ "msg": "EMS_BROWSE", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "url": "library://music/genres"}',
     '{ "msg": "EMS_BROWSE", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "url": "library://music/genres/1"}',
     '{ "msg": "EMS_PLAYER", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "action": "next"}',
