@@ -27,6 +27,16 @@ DiscoveryServer::DiscoveryServer(quint16 port, QObject *parent) : QObject(parent
     m_socket->bind(QHostAddress::AnyIPv4, port);
     qDebug() << "Udp Discovery server listening on port " << port;
     connect(m_socket, SIGNAL(readyRead()), this, SLOT(readyRead()));
+
+    // Get the local address
+    foreach (const QHostAddress &address, QNetworkInterface::allAddresses())
+    {
+        if (address.protocol() == QAbstractSocket::IPv4Protocol &&
+                address != QHostAddress(QHostAddress::LocalHost))
+        {
+            m_server_address = address;
+        }
+    }
 }
 
 DiscoveryServer::~DiscoveryServer()
@@ -79,17 +89,7 @@ void DiscoveryServer::readyRead()
     } else {
         // Unknown clients usecase:
 
-        // Get the local address
-        QHostAddress local_address;
-        foreach (const QHostAddress &address, QNetworkInterface::allAddresses())
-        {
-            if (address.protocol() == QAbstractSocket::IPv4Protocol &&
-                    address != QHostAddress(QHostAddress::LocalHost))
-            {
-                local_address = address;
-            }
-        }
-        if ((sender_param.ip == local_address) ||
+        if ((sender_param.ip == m_server_address) ||
                 (sender_param.ip == QHostAddress::LocalHost)) {
             isLocalGUI = true;
         }
@@ -126,7 +126,7 @@ void DiscoveryServer::sendDiscoveryAnswer(const ClientConnectionParam &client_pa
     QJsonObject jobj;
     jobj["action"] = "EMS_DISCOVER";
     jobj["status"] = status;
-    jobj["ip"] = client_param.ip.toString();
+    jobj["ip"] = m_server_address.toString();
     jobj["port"] = settings.value("main/websocket_port").toInt();
     qDebug() << "EMS_DISCOVER (status: " << status
              << ") Client Addr: " << client_param.ip.toString()

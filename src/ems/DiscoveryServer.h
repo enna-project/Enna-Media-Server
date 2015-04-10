@@ -37,6 +37,7 @@ private:
 
     QUdpSocket *m_socket;
     QMap<QString, EMSClient> m_pending_or_rejected_clients;
+    QHostAddress m_server_address;
 };
 
 #endif // DISCOVERYSERVER_H
