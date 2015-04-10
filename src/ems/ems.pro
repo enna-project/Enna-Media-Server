@@ -38,7 +38,8 @@ HEADERS += Database.h \
            MetadataPlugin.h \
            FlacPlugin.h \
     LocalFileScanner.h \
-    SndfilePlugin.h
+    SndfilePlugin.h \
+    DsfPlugin.h
 
 SOURCES += Database.cpp \
            DirectoryWorker.cpp \
@@ -57,7 +58,8 @@ SOURCES += Database.cpp \
            MetadataManager.cpp \
            FlacPlugin.cpp \
     LocalFileScanner.cpp \
-    SndfilePlugin.cpp
+    SndfilePlugin.cpp \
+    DsfPlugin.cpp
 
 DISTFILES +=
 
