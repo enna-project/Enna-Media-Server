@@ -18,14 +18,15 @@ public:
     explicit JsonApi(QWebSocket *websScket);
     ~JsonApi();
 
-    enum MessageType {EMS_BROWSE, EMS_PLAYER, EMS_PLAYLIST, EMS_DISK, EMS_UNKNOWN};
+    enum MessageType {EMS_BROWSE, EMS_PLAYER, EMS_PLAYLIST, EMS_DISK,
+                      EMS_AUTH, EMS_UNKNOWN};
     enum UrlSchemeType {SCHEME_MENU, SCHEME_LIBRARY, SCHEME_CDDA,
                         SCHEME_PLAYLIST, SCHEME_SETTINGS, SCHEME_UNKNOWN};
 
     /* Asynchronous messages */
     void sendStatus(EMSPlayerStatus status);
     void sendPlaylist(EMSPlaylist newPlaylist);
-    void sendAuthRequest(const QString &client_uuid_to_authenticate);
+    void sendAuthRequest(EMSClient client);
 
 signals:
 
@@ -41,6 +42,7 @@ private:
     bool processMessagePlayer(const QJsonObject &message);
     bool processMessagePlaylist(const QJsonObject &message);
     bool processMessageDisk(const QJsonObject &type);
+    bool processMessageAuthentication(const QJsonObject &message);
     QJsonObject processMessageBrowse(const QJsonObject &type, bool &ok);
     QJsonObject processMessageBrowseMenu(const QJsonObject &message, bool &ok);
     QJsonObject processMessageBrowseLibrary(const QJsonObject &message, bool &ok);

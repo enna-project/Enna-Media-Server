@@ -3,16 +3,16 @@
 
 #include <QObject>
 #include <QUdpSocket>
+#include "Data.h"
 
 #define BCAST_UDP_PORT 3131
 
-typedef struct client_connection_param {
+class ClientConnectionParam
+{
+public:
     QHostAddress ip;
     quint16      port;
-} ClientConnectionParam;
-
-
-class EMSClient;
+};
 
 class DiscoveryServer : public QObject
 {
@@ -22,7 +22,7 @@ public:
     ~DiscoveryServer();
 
 signals:
-    void authenticationNeeded(const QString &client_uuid_to_authenticate);
+    void authenticationNeeded(const EMSClient client);
 
 public slots:
     void readyRead();
@@ -33,12 +33,10 @@ private:
 
     void sendAcceptAnswer(const ClientConnectionParam &client_param);
 
-    void sendAuthenticationRequest(const QString &uuid,
-                                   const ClientConnectionParam &client_param);
+    void sendAuthenticationRequest(const EMSClient client);
 
     QUdpSocket *m_socket;
-    QMap<QString, ClientConnectionParam> m_pending_clients;
-
+    QMap<QString, EMSClient> m_pending_or_rejected_clients;
 };
 
 #endif // DISCOVERYSERVER_H

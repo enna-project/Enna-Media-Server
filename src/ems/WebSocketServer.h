@@ -18,7 +18,7 @@ public:
     ~WebSocketServer();
 
 public slots:
-    void sendAuthRequestToLocalUI(const QString &client_uuid_to_authenticate);
+    void sendAuthRequestToLocalUI(const EMSClient client);
 
 private Q_SLOTS:
     void onNewConnection();

@@ -145,6 +145,9 @@ bool JsonApi::processMessage(const QString &message)
                      << j.object()["filename"].toString();
             ret = processMessagePlaylist(j.object());
             break;
+        case EMS_AUTH:
+            ret = processMessageAuthentication(j.object());
+            break;
         default:
             ret = false;
             break;
@@ -176,6 +179,8 @@ JsonApi::MessageType JsonApi::toMessageType(const QString &type) const
         return EMS_PLAYER;
     else if (type == "EMS_PLAYLIST")
         return EMS_PLAYLIST;
+    else if (type == "EMS_AUTH")
+        return EMS_AUTH;
     else
         return EMS_UNKNOWN;
 }
@@ -660,6 +665,44 @@ bool JsonApi::processMessagePlaylist(const QJsonObject &message)
     return true;
 }
 
+bool JsonApi::processMessageAuthentication(const QJsonObject &message)
+{
+    EMSClient accepted_client;
+    QString status = message["status"].toString();
+    bool isAccepted  = false;
+    Database *db = Database::instance();
+    bool return_value = false;     // 'false' if an error occurs
+
+    if (status == "accepted") {
+        isAccepted = true;
+    } else if (status == "rejected" ) {
+        isAccepted = false;
+    } else {
+        qWarning() << "JsonApi: invalid status for the message authentication";
+        return false;
+    }
+
+    if (isAccepted) {
+        // Accepted client usecase
+        db->lock();
+        if (false == db->getAuthorizedClient(message["uuid"].toString(), &accepted_client)){
+            accepted_client.uuid = message["uuid"].toString();
+            accepted_client.hostname = message["hostname"].toString();
+            accepted_client.username = message["user"].toString();
+            if (db->insertNewAuthorizedClient(&accepted_client)) {
+                return_value = true;
+            } else {
+                qWarning() << "Error JsonApi: can not insert client in db";
+            }
+        }
+        db->unlock();
+    } else {
+        // Rejected client usecase
+        return_value = true;
+    }
+    return return_value;
+}
+
 JsonApi::UrlSchemeType JsonApi::urlSchemeGet(const QString &url) const
 {
     QString scheme = url.split("://").at(0);
@@ -905,14 +948,16 @@ void JsonApi::sendPlaylist(EMSPlaylist newPlaylist)
     /* TODO */
 }
 
-void JsonApi::sendAuthRequest(const QString &client_uuid_to_authenticate)
+void JsonApi::sendAuthRequest(EMSClient client)
 {
     QJsonObject authRequestJsonObj;
     authRequestJsonObj["msg"]    = "EMS_AUTH";
     authRequestJsonObj["status"] = "request";
-    authRequestJsonObj["uuid"]   = client_uuid_to_authenticate;
+    authRequestJsonObj["uuid"]   = client.uuid;
+    authRequestJsonObj["hostname"]  = client.hostname;
+    authRequestJsonObj["username"]  = client.username;
 
     QJsonDocument doc(authRequestJsonObj);
     m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
-    qDebug() << "JsonApi: sent the 'authentication' request for " << client_uuid_to_authenticate;
+    qDebug() << "JsonApi: sent the 'authentication' request for " << client.uuid;
 }
