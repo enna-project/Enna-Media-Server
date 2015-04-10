@@ -67,7 +67,8 @@ void WebSocketServer::broadcastPlaylist(EMSPlaylist newPlaylist)
 void WebSocketServer::sendAuthRequestToLocalUI(const EMSClient client)
 {
     QMapIterator<QWebSocket*, JsonApi*> client_it(m_clients);
-    qDebug() << "WebSocketServer: nb clients = " << m_clients.size();
+    qDebug() << "WebSocketServer: sent the 'authentication' request for " << client.uuid;
+    qDebug() << "WebSocketServer: nb connected clients = " << m_clients.size();
 
     // Search the websocket for the local UI,
     while (client_it.hasNext()) {
