@@ -688,7 +688,7 @@ bool JsonApi::processMessageAuthentication(const QJsonObject &message)
         if (false == db->getAuthorizedClient(message["uuid"].toString(), &accepted_client)){
             accepted_client.uuid = message["uuid"].toString();
             accepted_client.hostname = message["hostname"].toString();
-            accepted_client.username = message["user"].toString();
+            accepted_client.username = message["username"].toString();
             if (db->insertNewAuthorizedClient(&accepted_client)) {
                 return_value = true;
             } else {
