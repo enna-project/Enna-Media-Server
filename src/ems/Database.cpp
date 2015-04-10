@@ -281,7 +281,7 @@ const QString clean_emptyAlbum = \
 "DELETE FROM albums WHERE id IN ( "
 "   SELECT albums.id "
 "   FROM albums LEFT JOIN tracks ON (tracks.album_id = albums.id) "
-"   WHERE tracks.album_id IS NULL "
+"   WHERE tracks.album_id IS NULL AND albums.id <> 0 "
 ");";
 
 void Database::cleanOrphans()
