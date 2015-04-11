@@ -34,6 +34,10 @@
 // player/password (optional - if no password, let it empty)
 #define EMS_MPD_PASSWORD ""
 
+/* Scanner */
+//File extensions used by the scanner to detect new files
+#define EMS_MUSIC_EXTENSIONS "*.flac, *.wav, *.dsf, *.dff"
+
 #define EMS_LOAD_SETTINGS(var, confValue, defaultValue, type) \
 do {\
 if (settings.contains(confValue))\

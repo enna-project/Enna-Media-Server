@@ -5,6 +5,7 @@
 #include <QSettings>
 #include <QThread>
 
+#include "DefaultSettings.h"
 #include "LocalFileScanner.h"
 #include "DirectoryWorker.h"
 #include "MetadataManager.h"
@@ -12,7 +13,10 @@
 
 LocalFileScanner::LocalFileScanner(QObject *parent) : QObject(parent)
 {
-    m_supportedFormat = "*.flac, *.wav, *.dsf, *.dff";
+    QSettings settings;
+    EMS_LOAD_SETTINGS(m_supportedFormat, "main/music_extensions",
+                      EMS_MUSIC_EXTENSIONS, String);
+
     m_scanActive = false;
 
     connect(this, SIGNAL(trackNeedUpdate(EMSTrack, QStringList)), MetadataManager::instance(), SLOT(update(EMSTrack,QStringList)));
