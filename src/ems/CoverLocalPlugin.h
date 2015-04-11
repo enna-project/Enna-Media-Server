@@ -19,7 +19,6 @@ public:
     bool update(EMSTrack *track);
 
 private:
-
     /* Cache directories */
     QString m_albumsCacheDir;
     QString m_cacheDirPath;

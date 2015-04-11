@@ -33,6 +33,20 @@ CoverLocalPlugin::~CoverLocalPlugin()
 
 bool CoverLocalPlugin::update(EMSTrack *track)
 {
+#if 1
+    QString albumDirectory =  QFileInfo(track->filename).absolutePath();
+    QString albumName = QFileInfo(albumDirectory).baseName();
+    QString artistName = QFileInfo(QFileInfo(albumDirectory).absolutePath()).baseName();
+
+    if (track->album.name.isEmpty())
+        track->album.name =  albumName;
+    if (!track->artists.count())
+    {
+        EMSArtist artist;
+        artist.name = artistName;
+        track->artists.append(artist);
+    }
+#endif
     QStringList lookup;
 
     // Search for specific file, preference for png
@@ -59,6 +73,7 @@ bool CoverLocalPlugin::update(EMSTrack *track)
         }
     }
 
-    return false;
+
+    return true;
 }
 
