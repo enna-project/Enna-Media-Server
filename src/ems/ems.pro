@@ -39,7 +39,8 @@ HEADERS += Database.h \
            FlacPlugin.h \
     LocalFileScanner.h \
     SndfilePlugin.h \
-    DsfPlugin.h
+    DsfPlugin.h \
+    CoverLocalPlugin.h
 
 SOURCES += Database.cpp \
            DirectoryWorker.cpp \
@@ -59,7 +60,8 @@ SOURCES += Database.cpp \
            FlacPlugin.cpp \
     LocalFileScanner.cpp \
     SndfilePlugin.cpp \
-    DsfPlugin.cpp
+    DsfPlugin.cpp \
+    CoverLocalPlugin.cpp
 
 DISTFILES +=
 

@@ -168,8 +168,10 @@ void LocalFileScanner::fileFound(QString filename, QString sha1)
     QStringList capabilities;
     /* 1) Use extension name to find all plugins which can handle this format */
     capabilities << track.format;
+    capabilities << "cover";
     /* 2) When first plugins add data to this track, try to use online database to get more data
      *    and covers using ... */
+
     //TODO.
 
     emit trackNeedUpdate(track, capabilities);

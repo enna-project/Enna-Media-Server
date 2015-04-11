@@ -22,17 +22,26 @@ Application::Application(int & argc, char ** argv) :
     QCoreApplication::setOrganizationName("Enna");
     QCoreApplication::setOrganizationDomain("enna.me");
     QCoreApplication::setApplicationName("EnnaMediaServer");
+
+    QSettings::setDefaultFormat(QSettings::IniFormat);
     QSettings settings;
 
     /* Read and save value for websocket port */
     EMS_LOAD_SETTINGS(m_websocketPort, "main/websocket_port", EMS_WEBSOCKET_PORT, Int);
     /* Read and save value for http port */
     EMS_LOAD_SETTINGS(m_httpPort, "main/http_port", EMS_HTTP_PORT, Int);
-
+    QString locations;
+    EMS_LOAD_SETTINGS(locations, "main/locations",
+                      QStandardPaths::standardLocations(QStandardPaths::MusicLocation)[0],
+            String);
+    m_scanner.locationAdd(locations);
+#if 0
     /* Read locations path in config and add them to the scanner object */
-    int size = settings.beginReadArray("locations");
+    int size = settings.beginReadArray("main/locations");
+    qDebug() << "size:" << size;
     for (int i = 0; i < size; ++i) {
         settings.setArrayIndex(i);
+        qDebug() << settings.value("").toString();
         m_scanner.locationAdd(settings.value("path").toString());
     }
     settings.endArray();
@@ -44,6 +53,7 @@ Application::Application(int & argc, char ** argv) :
             m_scanner.locationAdd(locations.at(i));
         }
     }
+#endif
     /* Re-scan locations to perform a database update */
     m_scanner.moveToThread(&m_localFileScannerWorker);
     connect(&m_localFileScannerWorker, &QThread::started, &m_scanner, &LocalFileScanner::startScan);

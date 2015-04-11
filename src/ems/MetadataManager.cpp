@@ -4,6 +4,7 @@
 #include "FlacPlugin.h"
 #include "SndfilePlugin.h"
 #include "DsfPlugin.h"
+#include "CoverLocalPlugin.h"
 
 #ifdef EMS_PLUGIN_GRACENOTE
 #include "GracenotePlugin.h"
@@ -48,6 +49,7 @@ void MetadataManager::registerAllPlugins()
     plugins.append(new FlacPlugin);
     plugins.append(new SndfilePlugin);
     plugins.append(new DsfPlugin);
+    plugins.append(new CoverLocalPlugin);
 
     /* Optional plugins. Activate them with qmake options (see .pro) */
 #ifdef EMS_PLUGIN_GRACENOTE
