@@ -22,7 +22,7 @@ public:
 private:
     short m_websocketPort;
     short m_httpPort;
-    LocalFileScanner m_scanner;
+    LocalFileScanner *m_scanner;
     HttpServer *m_httpServer;
     WebSocketServer *m_webSocketServer;
     DiscoveryServer *m_discoveryServer;

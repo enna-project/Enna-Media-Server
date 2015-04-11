@@ -30,30 +30,7 @@ Application::Application(int & argc, char ** argv) :
     EMS_LOAD_SETTINGS(m_websocketPort, "main/websocket_port", EMS_WEBSOCKET_PORT, Int);
     /* Read and save value for http port */
     EMS_LOAD_SETTINGS(m_httpPort, "main/http_port", EMS_HTTP_PORT, Int);
-    QString locations;
-    EMS_LOAD_SETTINGS(locations, "main/locations",
-                      QStandardPaths::standardLocations(QStandardPaths::MusicLocation)[0],
-            String);
-    m_scanner.locationAdd(locations);
-#if 0
-    /* Read locations path in config and add them to the scanner object */
-    int size = settings.beginReadArray("main/locations");
-    qDebug() << "size:" << size;
-    for (int i = 0; i < size; ++i) {
-        settings.setArrayIndex(i);
-        qDebug() << settings.value("").toString();
-        m_scanner.locationAdd(settings.value("path").toString());
-    }
-    settings.endArray();
-    if (size == 0) /* If there is no location in the settings, use the default */
-    {
-        QStringList locations = QStandardPaths::standardLocations(QStandardPaths::MusicLocation);
-        for (int i=0; i<locations.size(); i++)
-        {
-            m_scanner.locationAdd(locations.at(i));
-        }
-    }
-#endif
+
     /* Add online database plugins */
     MetadataManager::instance()->registerAllPlugins();
 
@@ -84,10 +61,19 @@ Application::Application(int & argc, char ** argv) :
 
     m_smartmontools = new SmartmontoolsNotifier(this);
 
+
     /* Re-scan locations to perform a database update */
-    m_scanner.moveToThread(&m_localFileScannerWorker);
-    connect(&m_localFileScannerWorker, &QThread::started, &m_scanner, &LocalFileScanner::startScan);
-    connect(&m_localFileScannerWorker, &QThread::finished, &m_scanner, &LocalFileScanner::stopScan);
+    m_scanner = new LocalFileScanner();
+
+    QString locations;
+    EMS_LOAD_SETTINGS(locations, "main/locations",
+                      QStandardPaths::standardLocations(QStandardPaths::MusicLocation)[0],
+            String);
+    m_scanner->locationAdd(locations);
+
+    m_scanner->moveToThread(&m_localFileScannerWorker);
+    connect(&m_localFileScannerWorker, &QThread::started, m_scanner, &LocalFileScanner::startScan);
+    connect(&m_localFileScannerWorker, &QThread::finished, m_scanner, &LocalFileScanner::stopScan);
     m_localFileScannerWorker.start();
 }
 
@@ -107,5 +93,5 @@ Application::~Application()
 
     /* Close properly the database */
     Database::instance()->close();
-
+    delete m_scanner;
 }
