@@ -54,12 +54,6 @@ Application::Application(int & argc, char ** argv) :
         }
     }
 #endif
-    /* Re-scan locations to perform a database update */
-    m_scanner.moveToThread(&m_localFileScannerWorker);
-    connect(&m_localFileScannerWorker, &QThread::started, &m_scanner, &LocalFileScanner::startScan);
-    connect(&m_localFileScannerWorker, &QThread::finished, &m_scanner, &LocalFileScanner::stopScan);
-    m_localFileScannerWorker.start();
-
     /* Add online database plugins */
     MetadataManager::instance()->registerAllPlugins();
 
@@ -89,6 +83,12 @@ Application::Application(int & argc, char ** argv) :
     m_discoveryServer = new DiscoveryServer(BCAST_UDP_PORT, this);
 
     m_smartmontools = new SmartmontoolsNotifier(this);
+
+    /* Re-scan locations to perform a database update */
+    m_scanner.moveToThread(&m_localFileScannerWorker);
+    connect(&m_localFileScannerWorker, &QThread::started, &m_scanner, &LocalFileScanner::startScan);
+    connect(&m_localFileScannerWorker, &QThread::finished, &m_scanner, &LocalFileScanner::stopScan);
+    m_localFileScannerWorker.start();
 }
 
 Application::~Application()
