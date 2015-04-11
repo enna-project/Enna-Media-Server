@@ -8,6 +8,7 @@ list of available message:
 
  * `EMS_BROWSE`
  * `EMS_PLAYER`
+ * `EMS_PLAYList`
  * `EMS_DISK`
  * `EMS_MEDIA_INFO`
 
@@ -52,6 +53,121 @@ Asynchronous message contains the following parameters :
 
   * `msg`: it's a unique string identifiing the message sent.
   * `data`: the Json object containing data attached to the message.
+
+
+Objects
+=======
+
+Datas returns by the protocol are composed of objects containing informations.
+
+`menu` Object
+-------------
+
+```json
+{
+    "enabled": Boolean,
+    "name": String,
+    "url_scheme": String
+}
+```
+
+* `enabled`: Bolean Value, true if the menu can be browsed, false otherwise
+* `name`: The label of the menu, be carefull this string is not translated.
+* `url_scheme`: string representing the url scheme used to browse this menu.
+
+Example :
+
+```json
+{
+   "enabled": true,
+   "icon": "http://ip/imgs/library.png",
+   "name": "Library",
+   "url_scheme": "library://"
+}
+```
+
+
+`track` Object
+--------------
+```json
+{
+    "album": Album Object,
+    "artists": [ Array of Artist Object ],
+    "duration": Integer,
+    "filename": String,
+    "format": String,
+    "format_parameters": String,
+    "genres": [ Array of Genre Oject ],
+    "id": Integer,
+    "name": String,
+    "position": Integer,
+    "sample_rate": Integer,
+    "sha1": String
+}
+```
+
+* `album`: Album Object related to this track
+* `artists`: Array of Artists related to this track,
+* `duration`: Duration of the tracks in seconds,
+* `filename`: Filename of the track on the player,
+* `format`: File format of the track (Wave, Flac, Ogg, ...),
+* `format_parameters`: String containing the audio parameters of the track.
+Example of string : channels:2;bits_per_sample:16;
+* `genres`: Array Object of genres related to this track
+* `id`: Id of the track in the Database
+* `name`: Title of the track,
+* `position`: Track number in the Album,
+* `sample_rate`: Sample rate of the audio format, In Hz,
+* `sha1`: String containing the sha1 computed on the contents of the file
+
+Example of Track :
+```json
+{
+    "album": {
+        "id": 1,
+        "name": "Tango 3.0",
+        "picture": ""
+    },
+    "artists": [
+        {
+            "id": 1,
+            "name": "Gotan Project",
+            "picture": ""
+        }
+    ],
+    "duration": 226,
+    "filename": "/Users/nicolasaguirre/ownCloud/Partage/Medias/Musique/Gotan Project/Tango 3.0/01 - Tango Square.flac",
+    "format": "flac",
+    "format_parameters": "channels:2;bits_per_sample:16;",
+    "genres": [
+        {
+            "id": 1,
+            "name": "Downtempo/Nu-Tango",
+            "picture": ""
+        }
+    ],
+    "id": 1,
+    "name": "Tango Square",
+    "position": 1,
+    "sample_rate": 44100,
+    "sha1": "0b790eb45aae55589c57b345423397ec009609af"
+}
+```
+
+`album` Object
+--------------
+
+
+
+
+`artist` Object
+----------------
+
+`genre` Object
+---------------
+
+`settings` Object
+------------------
 
 Browser
 =======
@@ -292,7 +408,8 @@ The url `playlist://current` can be used for this purpose.
 ```json
 {
     "id": "EMS_BROWSE",
-    "msg_id": "id",
+    "msg_id": id,
+    "uuid": "uuid",
     "url": "playlist://current"
 }
 ```
