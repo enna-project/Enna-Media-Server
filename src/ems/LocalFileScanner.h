@@ -16,12 +16,12 @@ public:
     void locationAdd(const QString &location);
 
 private:
-    QVector<QString> locations;
-    QVector<DirectoryWorker*> workers;
-    QString supportedFormat;
-    bool scanActive;
-    unsigned long long startTime;
-    QTime measureTime;
+    QVector<QString> m_locations;
+    QVector<DirectoryWorker*> m_workers;
+    QString m_supportedFormat;
+    bool m_scanActive;
+    unsigned long long m_startTime;
+    QTime m_measureTime;
 
     void scanEnd();
 

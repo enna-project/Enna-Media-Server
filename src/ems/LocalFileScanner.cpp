@@ -12,8 +12,8 @@
 
 LocalFileScanner::LocalFileScanner(QObject *parent) : QObject(parent)
 {
-    supportedFormat = "*.flac, *.wav, *.dsf, *.dff";
-    scanActive = false;
+    m_supportedFormat = "*.flac, *.wav, *.dsf, *.dff";
+    m_scanActive = false;
 
     connect(this, SIGNAL(trackNeedUpdate(EMSTrack, QStringList)), MetadataManager::instance(), SLOT(update(EMSTrack,QStringList)));
     connect(MetadataManager::instance(), SIGNAL(updated(EMSTrack,bool)), this, SLOT(trackUpdated(EMSTrack,bool)));
@@ -27,25 +27,25 @@ LocalFileScanner::~LocalFileScanner()
 
 void LocalFileScanner::startScan()
 {
-    if (scanActive)
+    if (m_scanActive)
     {
         return;
     }
-    scanActive = true;
-    startTime = QDateTime::currentDateTime().toTime_t();
-    measureTime.start();
+    m_scanActive = true;
+    m_startTime = QDateTime::currentDateTime().toTime_t();
+    m_measureTime.start();
 
     qDebug() << "Starting local file scanner...";
 
-    for (int i=0; i<locations.size(); i++)
+    for (int i=0; i<m_locations.size(); i++)
     {
-        QString location = locations.at(i);
+        QString location = m_locations.at(i);
         // Create a new qthread
         QThread *directoryThread = new QThread;
         // Create the DirectoryWorker object : it scan directory recusively in a thread
         // And send fileFound() signal when a new file is found
-        DirectoryWorker* dirWorker = new DirectoryWorker(location, supportedFormat);
-        workers.append(dirWorker);
+        DirectoryWorker* dirWorker = new DirectoryWorker(location, m_supportedFormat);
+        m_workers.append(dirWorker);
         // Move object to specific thread
         dirWorker->moveToThread(directoryThread);
         // Call fileFound slot when a new file is found
@@ -62,9 +62,9 @@ void LocalFileScanner::workerFinished(DirectoryWorker* worker)
     int workerId = -1;
 
     /* Find the thread in the list of workers */
-    for (int i=0; i<workers.size(); i++)
+    for (int i=0; i<m_workers.size(); i++)
     {
-        if (worker == workers.at(i))
+        if (worker == m_workers.at(i))
         {
             workerId = i;
             break;
@@ -82,12 +82,12 @@ void LocalFileScanner::workerFinished(DirectoryWorker* worker)
     {
         thread->quit();
         thread->wait(100);
-        workers.removeAt(workerId);
+        m_workers.removeAt(workerId);
         delete thread;
         delete worker;
     }
 
-    if (workers.empty())
+    if (m_workers.empty())
     {
         /* No more worker */
         scanEnd();
@@ -97,17 +97,17 @@ void LocalFileScanner::workerFinished(DirectoryWorker* worker)
 void LocalFileScanner::scanEnd()
 {
     Database *db = Database::instance();
-    scanActive = false;
+    m_scanActive = false;
     QTime t(0, 0);
-    t = t.addMSecs(measureTime.elapsed());
+    t = t.addMSecs(m_measureTime.elapsed());
     qDebug() << "Scan finished. (duration: " << t.toString("HH:mm:ss.zzz") << ")";
 
     qDebug() << "Clean database... (remove non-existent files, ...)";
     db->lock();
-    for (int i=0; i<locations.size(); i++)
+    for (int i=0; i<m_locations.size(); i++)
     {
-        QString location = locations.at(i);
-        db->removeOldFiles(location, startTime);
+        QString location = m_locations.at(i);
+        db->removeOldFiles(location, m_startTime);
     }
     db->cleanOrphans();
     db->unlock();
@@ -115,9 +115,9 @@ void LocalFileScanner::scanEnd()
 
 void LocalFileScanner::stopScan()
 {
-    if (scanActive)
+    if (m_scanActive)
     {
-        foreach(DirectoryWorker* worker, workers)
+        foreach(DirectoryWorker* worker, m_workers)
         {
             QThread *thread = worker->thread();
             if (thread != QCoreApplication::instance()->thread())
@@ -128,15 +128,15 @@ void LocalFileScanner::stopScan()
                 delete worker;
             }
         }
-        workers.clear();
-        scanActive = false;
+        m_workers.clear();
+        m_scanActive = false;
     }
 }
 
 void LocalFileScanner::locationAdd(const QString &location)
 {
     qDebug() << "Directory " << location << " is registered in the scanner.";
-    locations.append(location);
+    m_locations.append(location);
 }
 
 void LocalFileScanner::fileFound(QString filename, QString sha1)
@@ -147,7 +147,7 @@ void LocalFileScanner::fileFound(QString filename, QString sha1)
     track.type = TRACK_TYPE_DB;
     track.filename = filename;
     track.sha1 = sha1;
-    track.lastscan = startTime;
+    track.lastscan = m_startTime;
     QString extension = QFileInfo(filename).suffix().toLower();
     track.format = extension;
     track.id = 0;
@@ -158,7 +158,7 @@ void LocalFileScanner::fileFound(QString filename, QString sha1)
     if(db->getTrackIdBySha1(&trackID, track.sha1))
     {
         /* Do nothing as we assume the metadata have correctly been seeked */
-        db->insertNewFilename(track.filename, trackID, startTime);
+        db->insertNewFilename(track.filename, trackID, m_startTime);
         db->unlock();
         return;
     }
