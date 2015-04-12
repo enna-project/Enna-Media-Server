@@ -41,6 +41,7 @@ private:
     bool processMessagePlaylist(const QJsonObject &message);
     bool processMessageDisk(const QJsonObject &type);
     QJsonObject processMessageBrowse(const QJsonObject &type, bool &ok);
+    QJsonObject processMessageBrowseMenu(const QJsonObject &message, bool &ok);
     QJsonObject processMessageBrowseLibrary(const QJsonObject &message, bool &ok);
     QJsonObject processMessageBrowseLibraryArtists(QStringList &list, bool &ok);
     QJsonObject processMessageBrowseLibraryAlbums(QStringList &list, bool &ok);

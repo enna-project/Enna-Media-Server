@@ -7,7 +7,6 @@
 #include "JsonApi.h"
 #include "Player.h"
 
-const QString JSON_OBJECT_MENU = "{\"menus\":[{\"name\":\"Library\",\"url_scheme\":\"library://\",\"icon\":\"http://ip/imgs/library.png\",\"enabled\":true},{\"name\":\"Audio CD\",\"url_scheme\":\"cdda://\",\"icon\":\"http://ip/imgs/cdda.png\",\"enabled\":false},{\"name\":\"Playlists\",\"url_scheme\":\"playlist://\",\"icon\":\"http://ip/imgs/playlists.png\",\"enabled\":true},{\"name\":\"Settings\",\"url_scheme\":\"settings://\",\"icon\":\"http://ip/imgs/settings.png\",\"enabled\":true}]}";
 const QString JSON_OBJECT_LIBRARY_MUSIC = "{\"menus\": [{\"name\": \"Artists\",\"url\": \"library://music/artists\"},{\"name\": \"Albums\",\"url\": \"library://music/albums\"},{\"name\": \"Tracks\",\"url\": \"library://music/tracks\"},{\"name\": \"Genre\",\"url\": \"library://music/genres\"},{\"name\": \"Compositors\",\"url\": \"library://music/compositor\"}]}}";
 JsonApi::JsonApi(QWebSocket *webSocket) :
     m_webSocket(webSocket)
@@ -195,7 +194,7 @@ QJsonObject JsonApi::processMessageBrowse(const QJsonObject &message, bool &ok)
         url.remove("menu://");
         if (!url.isEmpty())
             return obj;
-        obj = QJsonDocument::fromJson(JSON_OBJECT_MENU.toUtf8()).object();
+        obj = processMessageBrowseMenu(message, ok);
         break;
     case SCHEME_LIBRARY:
         obj = processMessageBrowseLibrary(message, ok);
@@ -208,6 +207,52 @@ QJsonObject JsonApi::processMessageBrowse(const QJsonObject &message, bool &ok)
     }
     ok = true;
     return obj;
+}
+
+QJsonObject JsonApi::processMessageBrowseMenu(const QJsonObject &message, bool &ok)
+{
+    QJsonObject menus;
+    QJsonArray arr;
+    QJsonObject library
+    {
+        {"enabled", true},
+        {"name", "Library"},
+        {"url_scheme", "library://"}
+    };
+
+    QJsonObject cdda
+    {
+        {"enabled", true},
+        {"name", "Audio CD"},
+        {"url_scheme", "cdda://"}
+    };
+
+    QVector<EMSCdrom> cdroms;
+    CdromManager::instance()->getAvailableCdroms(&cdroms);
+    cdda["enabled"] = !!cdroms.count();
+
+    QJsonObject playlists
+    {
+        {"enabled", true},
+        {"name", "Playlists"},
+        {"url_scheme", "playlist://"}
+    };
+
+    QJsonObject settings
+    {
+        {"enabled", true},
+        {"name", "Settings"},
+        {"url_scheme", "settings://"}
+    };
+
+    arr.append(library);
+    arr.append(cdda);
+    arr.append(playlists);
+    arr.append(settings);
+
+    menus["menus"] = arr;
+    ok = true;
+    return menus;
 }
 
 QJsonObject JsonApi::processMessageBrowseLibrary(const QJsonObject &message, bool &ok)
