@@ -70,10 +70,7 @@ QVector<MetadataPlugin*> MetadataManager::getAvailablePlugins(QString capability
         {
             if (capability == capPlug)
             {
-                if (!out.contains(plugin))
-                {
-                    out.append(plugin);
-                }
+                out.append(plugin);
             }
         }
     }
