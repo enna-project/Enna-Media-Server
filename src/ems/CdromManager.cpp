@@ -3,6 +3,7 @@
 #include "CdromManager.h"
 #include "MetadataManager.h"
 #include "Player.h"
+#include "CdromRipper.h"
 
 #define INTERFACE "com.EnnaMediaServer.Cdrom"
 #define SIGNAL_NAME_INSERT "inserted"
@@ -50,6 +51,38 @@ bool CdromManager::getCdrom(QString device, EMSCdrom *cdrom)
     mutex.unlock();
 
     return found;
+}
+
+bool CdromManager::isRipInProgress()
+{
+    if (m_cdromRipper != NULL)
+        return true;
+    else
+        return false;
+}
+
+bool CdromManager::startRip(QString device)
+{
+    if (isRipInProgress())
+    {
+        qDebug() << "CdromManager: a rip process is already in progress";
+        return false;
+    }
+
+    EMSCdrom cdrom;
+    if (!this->getCdrom(device, &cdrom))
+    {
+        qCritical() << "CdromManager: device not found: " << device;
+        return false;
+    }
+
+    m_cdromRipper = new CdromRipper(&cdrom);
+    mutex.lock();
+    m_cdromRipper->start();
+    mutex.unlock();
+    delete m_cdromRipper;
+
+    return true;
 }
 
 /* ---------------------------------------------------------
@@ -246,7 +279,9 @@ void CdromManager::dbusMessageRemove(QString message)
 
 CdromManager* CdromManager::_instance = 0;
 
-CdromManager::CdromManager(QObject *parent) : QObject(parent), bus(QDBusConnection::systemBus())
+CdromManager::CdromManager(QObject *parent) : QObject(parent),
+                                              bus(QDBusConnection::systemBus()),
+                                              m_cdromRipper(NULL)
 {
     cdio_init();
 
@@ -258,6 +293,9 @@ CdromManager::~CdromManager()
 {
     disconnect(this, SIGNAL(cdromTrackNeedUpdate(EMSTrack,QStringList)), MetadataManager::instance(), SLOT(update(EMSTrack,QStringList)));
     disconnect(MetadataManager::instance(), SIGNAL(updated(EMSTrack,bool)), this, SLOT(cdromTrackUpdated(EMSTrack,bool)));
+
+    if (m_cdromRipper)
+        delete m_cdromRipper;
 }
 
 bool CdromManager::startMonitor()

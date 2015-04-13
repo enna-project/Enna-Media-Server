@@ -6,6 +6,8 @@
 
 #include "Data.h"
 
+class CdromRipper;
+
 class CdromManager : public QObject
 {
     Q_OBJECT
@@ -14,6 +16,7 @@ class CdromManager : public QObject
     QMutex mutex;
     QVector<EMSCdrom> cdroms;
     QDBusConnection bus;
+    CdromRipper *m_cdromRipper;
 
 public:
 
@@ -23,6 +26,8 @@ public:
      */
     void getAvailableCdroms(QVector<EMSCdrom> *cdromsOut);
     bool getCdrom(QString device, EMSCdrom *cdromOut);
+    bool startRip(QString device);
+    bool isRipInProgress();
 
     /* ---------------------------------
      *    Signleton pattern

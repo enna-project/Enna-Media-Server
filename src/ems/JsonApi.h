@@ -19,7 +19,7 @@ public:
     ~JsonApi();
 
     enum MessageType {EMS_BROWSE, EMS_PLAYER, EMS_PLAYLIST, EMS_DISK,
-                      EMS_AUTH, EMS_UNKNOWN};
+                      EMS_AUTH, EMS_CD_RIP, EMS_UNKNOWN};
     enum UrlSchemeType {SCHEME_MENU, SCHEME_LIBRARY, SCHEME_CDDA,
                         SCHEME_PLAYLIST, SCHEME_SETTINGS, SCHEME_UNKNOWN};
 
@@ -43,6 +43,7 @@ private:
     bool processMessagePlaylist(const QJsonObject &message);
     bool processMessageDisk(const QJsonObject &type);
     bool processMessageAuthentication(const QJsonObject &message);
+    bool processMessageCDRip(const QJsonObject &message);
     QJsonObject processMessageBrowse(const QJsonObject &type, bool &ok);
     QJsonObject processMessageBrowseMenu(const QJsonObject &message, bool &ok);
     QJsonObject processMessageBrowseLibrary(const QJsonObject &message, bool &ok);

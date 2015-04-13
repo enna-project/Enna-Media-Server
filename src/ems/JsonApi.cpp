@@ -148,6 +148,9 @@ bool JsonApi::processMessage(const QString &message)
         case EMS_AUTH:
             ret = processMessageAuthentication(j.object());
             break;
+        case EMS_CD_RIP:
+            ret = processMessageCDRip(j.object());
+            break;
         default:
             ret = false;
             break;
@@ -181,6 +184,8 @@ JsonApi::MessageType JsonApi::toMessageType(const QString &type) const
         return EMS_PLAYLIST;
     else if (type == "EMS_AUTH")
         return EMS_AUTH;
+    else if (type == "EMS_CD_RIP")
+        return EMS_CD_RIP;
     else
         return EMS_UNKNOWN;
 }
@@ -706,6 +711,17 @@ bool JsonApi::processMessageAuthentication(const QJsonObject &message)
         returnValue = true;
     }
     return returnValue;
+}
+
+bool JsonApi::processMessageCDRip(const QJsonObject &message)
+{
+    QString device = message["device"].toString();
+    CdromManager *cdromManager = CdromManager::instance();
+
+    if (!cdromManager->isRipInProgress())
+        return cdromManager->startRip(device);
+
+    return false;
 }
 
 JsonApi::UrlSchemeType JsonApi::urlSchemeGet(const QString &url) const
