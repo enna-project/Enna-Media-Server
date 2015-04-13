@@ -415,7 +415,8 @@ The url `playlist://current` can be used for this purpose.
 }
 ```
 
-The answer is an array of tracks :
+The answer is an array of tracks. Note that the track list is ordered to match
+the player playlist.
 
 > Answer :
 
@@ -423,26 +424,12 @@ The answer is an array of tracks :
 {
     "id": "EMS_BROWSE",
     "msg_id": "id",
-
-    "tracks": [
-        {
-            "album": "21",
-            "artist": "Adele",
-            "track": "1st Song",
-            "file": "sha1",
-            "length": 215,
-            "cover": "http://ip/imgs/21.png"
-        },
-        {
-            "album": "21",
-            "artist": "Adele",
-            "track": "2nd Song",
-            "file": "sha1",
-            "length": 342,
-            "cover": "http://ip/imgs/21.png"
-        }
-        ...
-    ]
+    "data": {
+        "playlist_id": 0,
+        "playlist_name": "current",
+        "playlist_subdir": "",
+        "tracks": [... (see Track Json Object)]
+    },
 }
 ```
 

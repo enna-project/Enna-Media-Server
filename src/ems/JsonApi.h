@@ -50,9 +50,11 @@ private:
     QJsonObject processMessageBrowseLibraryAlbums(QStringList &list, bool &ok);
     QJsonObject processMessageBrowseLibraryTracks(QStringList &list, bool &ok);
     QJsonObject processMessageBrowseLibraryGenre(QStringList &list, bool &ok);
+    QJsonObject processMessageBrowsePlaylist(const QJsonObject &message, bool &ok);
     QJsonObject processMessageBrowseCdrom(const QJsonObject &message, bool &ok);
     JsonApi::UrlSchemeType urlSchemeGet(const QString &url) const;
 
+    QJsonObject EMSPlaylistToJson(EMSPlaylist playlist);
     QJsonObject EMSArtistToJson(const EMSArtist &artist) const;
     QJsonObject EMSTrackToJson(const EMSTrack &track) const;
     QJsonObject EMSGenreToJson(const EMSGenre &genre) const;

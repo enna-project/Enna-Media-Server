@@ -207,6 +207,9 @@ QJsonObject JsonApi::processMessageBrowse(const QJsonObject &message, bool &ok)
     case SCHEME_CDDA:
         obj = processMessageBrowseCdrom(message, ok);
         break;
+    case SCHEME_PLAYLIST:
+        obj = processMessageBrowsePlaylist(message, ok);
+        break;
     default:
         return obj;
     }
@@ -497,6 +500,26 @@ QJsonObject JsonApi::processMessageBrowseLibraryGenre(QStringList &list, bool &o
     return obj;
 }
 
+QJsonObject JsonApi::processMessageBrowsePlaylist(const QJsonObject &message, bool &ok)
+{
+    QJsonObject obj;
+    QString url = message["url"].toString();
+
+    if (url.isEmpty())
+    {
+        ok = false;
+        return obj;
+    }
+    url.remove("playlist://");
+
+    if (url == "current")
+    {
+        EMSPlaylist playlist = Player::instance()->getCurentPlaylist();
+        obj = EMSPlaylistToJson(playlist);
+    }
+    ok = true;
+    return obj;
+}
 
 QJsonObject JsonApi::processMessageBrowseCdrom(const QJsonObject &message, bool &ok)
 {
@@ -806,6 +829,24 @@ QJsonObject JsonApi::EMSTrackToJson(const EMSTrack &track) const
     return obj;
 }
 
+QJsonObject JsonApi::EMSPlaylistToJson(EMSPlaylist playlist)
+{
+    QJsonObject obj;
+
+    obj["playlist_id"] = (qint64)playlist.id;
+    obj["playlist_subdir"] = playlist.subdir;
+    obj["playlist_name"] = playlist.name;
+
+    QJsonArray jsonArray;
+    foreach (EMSTrack track, playlist.tracks)
+    {
+        jsonArray << EMSTrackToJson(track);
+    }
+    obj["tracks"] = jsonArray;
+
+    return obj;
+}
+
 /* This function retrieve the list of track from a given filename.
  * Filename could be :
  * - cdda:// : all track in the CDROM
@@ -915,7 +956,6 @@ void JsonApi::getTracksFromFilename(QVector<EMSTrack> *trackList, QString filena
 /* Asynchronous API */
 void JsonApi::sendStatus(EMSPlayerStatus status)
 {
-
     QJsonObject statusJsonObj;
     statusJsonObj["msg"] = "EMS_PLAYER";
     statusJsonObj["player_state"] = Player::instance()->stateToString(status.state);
@@ -942,7 +982,11 @@ void JsonApi::sendStatus(EMSPlayerStatus status)
 
 void JsonApi::sendPlaylist(EMSPlaylist newPlaylist)
 {
-    /* TODO */
+    QJsonObject statusJsonObj;
+    statusJsonObj["msg"] = "EMS_PLAYLIST";
+    statusJsonObj["data"] = EMSPlaylistToJson(newPlaylist);
+    QJsonDocument doc(statusJsonObj);
+    m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
 }
 
 void JsonApi::sendAuthRequest(EMSClient client)

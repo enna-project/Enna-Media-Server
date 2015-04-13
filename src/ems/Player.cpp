@@ -713,6 +713,8 @@ Player::Player(QObject *parent) : QThread(parent)
     status.random = false;
     status.repeat = false;
     playlist.name = QString("current");
+    playlist.id = 0;
+    playlist.subdir = QString("");
     playlist.tracks.clear();
     mutex.unlock();
 
