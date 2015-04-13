@@ -21,7 +21,7 @@ HEADERS += Database.h \
            DirectoryWorker.h \
            DiscoveryServer.h \
            sha1.h \
-           WebSocketServer.h \          
+           WebSocketServer.h \
            Application.h \
            Data.h \
            DefaultSettings.h \
@@ -37,10 +37,10 @@ HEADERS += Database.h \
            MetadataManager.h \
            MetadataPlugin.h \
            FlacPlugin.h \
-    LocalFileScanner.h \
-    SndfilePlugin.h \
-    DsfPlugin.h \
-    CoverLocalPlugin.h
+           LocalFileScanner.h \
+           SndfilePlugin.h \
+           DsdPlugin.h \
+           CoverLocalPlugin.h
 
 SOURCES += Database.cpp \
            DirectoryWorker.cpp \
@@ -58,10 +58,10 @@ SOURCES += Database.cpp \
            HttpClient.cpp \
            MetadataManager.cpp \
            FlacPlugin.cpp \
-    LocalFileScanner.cpp \
-    SndfilePlugin.cpp \
-    DsfPlugin.cpp \
-    CoverLocalPlugin.cpp
+           LocalFileScanner.cpp \
+           SndfilePlugin.cpp \
+           DsdPlugin.cpp \
+           CoverLocalPlugin.cpp
 
 DISTFILES +=
 

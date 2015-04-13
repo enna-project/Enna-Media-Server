@@ -3,7 +3,7 @@
 #include "MetadataManager.h"
 #include "FlacPlugin.h"
 #include "SndfilePlugin.h"
-#include "DsfPlugin.h"
+#include "DsdPlugin.h"
 #include "CoverLocalPlugin.h"
 
 #ifdef EMS_PLUGIN_GRACENOTE
@@ -48,7 +48,7 @@ void MetadataManager::registerAllPlugins()
     /* File format plugins */
     plugins.append(new FlacPlugin);
     plugins.append(new SndfilePlugin);
-    plugins.append(new DsfPlugin);
+    plugins.append(new DsdPlugin);
     plugins.append(new CoverLocalPlugin);
 
     /* Optional plugins. Activate them with qmake options (see .pro) */

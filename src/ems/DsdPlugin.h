@@ -1,5 +1,5 @@
-#ifndef DSFPLUGIN_H
-#define DSFPLUGIN_H
+#ifndef DsdPlugin_H
+#define DsdPlugin_H
 
 #include "MetadataPlugin.h"
 #include "Data.h"
@@ -11,17 +11,19 @@
  * http://www.musicpd.org/
  */
 
-class DsfPlugin : public MetadataPlugin
+class DsdPlugin : public MetadataPlugin
 {
     Q_OBJECT
 
 public:
-    DsfPlugin();
-    ~DsfPlugin();
+    DsdPlugin();
+    ~DsdPlugin();
 
     bool update(EMSTrack *track);
 
 private:
+    bool getDsfMetadata(EMSTrack *track);
+    bool getDsdiffMetadata(EMSTrack *track);
 };
 
 /* Structures representing DSF header */
@@ -33,14 +35,10 @@ struct DsdId {
     }
 };
 
-class DsdUint64 {
+/* Use a struct of 2x32bits to avoid alignment */
+struct DsdUint64 {
     uint32_t lo;
     uint32_t hi;
-
-public:
-    constexpr uint64_t Read() const {
-        return (uint64_t(hi) << 32) | uint64_t(lo);
-    }
 };
 
 struct DsfHeader {
@@ -80,4 +78,15 @@ struct DsfFmtChunk {
     uint32_t reserved;
 };
 
-#endif // DSFPLUGIN_H
+struct DsdiffHeader {
+    DsdId id;
+    DsdUint64 size;
+    DsdId format;
+};
+
+struct DsdiffChunkHeader {
+    DsdId id;
+    DsdUint64 size;
+};
+
+#endif // DsdPlugin_H
