@@ -11,7 +11,7 @@ CONFIG += c++11 link_pkgconfig
 
 SUBDIRS +=
 
-PKGCONFIG += libmpdclient libcdio flac flac++ sndfile taglib
+PKGCONFIG += libmpdclient libcdio flac flac++ sndfile taglib qconnman
 
 TEMPLATE = app
 TARGET = enna-media-server
@@ -46,7 +46,9 @@ HEADERS += Database.h \
            WavEncoder.h \
            FlacEncoder.h \
            TagLibPlugin.h \
-           SoundCardManager.h
+           SoundCardManager.h \
+           CdromRipper.h \
+           NetworkCtl.h
 
 SOURCES += Database.cpp \
            DirectoryWorker.cpp \
@@ -72,7 +74,9 @@ SOURCES += Database.cpp \
            WavEncoder.cpp \
            FlacEncoder.cpp \
            TagLibPlugin.cpp \
-           SoundCardManager.cpp
+           SoundCardManager.cpp \
+           CdromRipper.cpp \
+           NetworkCtl.cpp
 
 DISTFILES +=
 

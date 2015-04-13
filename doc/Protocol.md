@@ -3,7 +3,7 @@ Protocol
 
 EMS Protocol is based on JSON.
 
-An id is used to determine which kind of actions is send or receive. This is the
+An id is used to determine which kind of actions is sent or received. This is the
 list of available message:
 
  * `EMS_BROWSE`
@@ -12,15 +12,16 @@ list of available message:
  * `EMS_DISK`
  * `EMS_MEDIA_INFO`
  * `EMS_AUTH`
+ * `EMS_NETWORK`
 
-There is 2 kinds of requests :
+There are 2 kinds of requests :
 
  * Asynchronous requests
  * Synchronous requests
 
 ###Asynchronous requests
 
-These request are used to indicates a change in EMS or in the UIs.
+These requests are used to indicate a change in EMS or in the UIs.
 
 ###Synchronous requests
 
@@ -28,26 +29,26 @@ These requests are used to ask a question and wait for a response. Synchronous
 requests contain a msg_id which is used in the question, and are given in return
 to the answer. msg_id must be increased by 1 each time a new question is sent.
 The receiver sends the answer back with the same msg_id.
-It's only useful in case  where multiple message are send the caller before
-getting a answer back.
+It's only useful in case multiple messages are sent by the caller before
+getting an answer back.
 
 Asynchronous requests are always sent by EMS, and received by clients.
 Synchronous requests are always sent by client to EMS. If the request is not
-formated correctly, or incorrect, EMS send a message error.
+formated correctly, or incorrect, EMS sends an error message .
 
-After a number of (3 TBD?) successives errors, the uuid of this client is
+After a number of (3 TBD?) successive errors, the uuid of this client is
 removed from the list of known clients, and pairing with the server has to be
 done again.
 
 Synchronous request contains the following parameters :
 
   * `msg`: it's a unique string identifing the message sent.
-  * `msg_id`: it's a unique integer value per request. It's use to inditfy the
- pair request/answer if the client send multiple request at the same time.
+  * `msg_id`: it's a unique integer value per request. It's use to identify the
+ pair request/answer if the client send multiple requests at the same time.
   * `uuid`: The UUID (as defined in RFC4122)
   * Specifics parameters depending of the message.
 
-Synchronous answer add the following paremeter :
+Synchronous answer adds the following paremeter :
   * `data`: the json object containing data attached to the message.
 
 Asynchronous message contains the following parameters :

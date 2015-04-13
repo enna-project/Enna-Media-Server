@@ -10,6 +10,7 @@
 
 #include "Database.h"
 #include "Data.h"
+#include "NetworkCtl.h"
 
 class JsonApi : public QObject
 {
@@ -19,7 +20,7 @@ public:
     ~JsonApi();
 
     enum MessageType {EMS_BROWSE, EMS_PLAYER, EMS_PLAYLIST, EMS_DISK,
-                      EMS_AUTH, EMS_CD_RIP, EMS_UNKNOWN};
+                      EMS_AUTH, EMS_CD_RIP, EMS_NETWORK, EMS_UNKNOWN};
     enum UrlSchemeType {SCHEME_MENU, SCHEME_LIBRARY, SCHEME_CDDA,
                         SCHEME_PLAYLIST, SCHEME_SETTINGS, SCHEME_FILE, SCHEME_UNKNOWN};
 
@@ -50,6 +51,7 @@ private:
     bool processMessageDisk(const QJsonObject &type);
     bool processMessageAuthentication(const QJsonObject &message);
     bool processMessageCDRip(const QJsonObject &message);
+    bool processMessageNetwork(const QJsonObject &message);
     QJsonObject processMessageBrowse(const QJsonObject &type, bool &ok);
     QJsonObject processMessageBrowseMenu(const QJsonObject &message, bool &ok);
     QJsonObject processMessageBrowseLibrary(const QJsonObject &message, bool &ok);
@@ -73,6 +75,7 @@ private:
     QJsonObject EMSPlaylistToJsonWithoutTrack(EMSPlaylist playlist);
     QJsonObject EMSPlaylistsListBySubdirToJson(EMSPlaylistsListBySubdir playlistsListBySubdir);
     QString EMSTrackTypeToString(EMSTrackType type) const;
+    QJsonObject EMSSsidToJson(const EMSSsid &ssid) const;
     void getTracksFromFilename(QVector<EMSTrack> *trackList, QString filename);
     QString convertImageUrl(QString url);
     // To be implemented when if menu become dynamic
@@ -81,6 +84,7 @@ private:
 public slots:
     bool processMessage(const QString &message);
     void ipChanged(QString newIp);
+    void connectWifi();
 };
 
 #endif // JSONAPI_H
