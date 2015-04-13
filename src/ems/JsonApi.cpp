@@ -218,37 +218,29 @@ QJsonObject JsonApi::processMessageBrowseMenu(const QJsonObject &message, bool &
 {
     QJsonObject menus;
     QJsonArray arr;
-    QJsonObject library
-    {
-        {"enabled", true},
-        {"name", "Library"},
-        {"url_scheme", "library://"}
-    };
+    QJsonObject library;
+    library["enabled"] = true;
+    library["name"] = "Library";
+    library["url_scheme"] = "library://";
 
-    QJsonObject cdda
-    {
-        {"enabled", true},
-        {"name", "Audio CD"},
-        {"url_scheme", "cdda://"}
-    };
+    QJsonObject cdda;
+    cdda["enabled"] = true;
+    cdda["name"] = "Audio CD";
+    cdda["url_scheme"] = "cdda://";
 
     QVector<EMSCdrom> cdroms;
     CdromManager::instance()->getAvailableCdroms(&cdroms);
     cdda["enabled"] = !!cdroms.count();
 
-    QJsonObject playlists
-    {
-        {"enabled", true},
-        {"name", "Playlists"},
-        {"url_scheme", "playlist://"}
-    };
+    QJsonObject playlists;
+    playlists["enabled"] = true;
+    playlists["name"] = "Playlists";
+    playlists["url_scheme"] = "playlist://";
 
-    QJsonObject settings
-    {
-        {"enabled", true},
-        {"name", "Settings"},
-        {"url_scheme", "settings://"}
-    };
+    QJsonObject settings;
+    settings["enabled"] = true;
+    settings["name"] = "Settings";
+    settings["url_scheme"] = "settings://";
 
     arr.append(library);
     arr.append(cdda);
