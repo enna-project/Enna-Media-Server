@@ -667,40 +667,45 @@ bool JsonApi::processMessagePlaylist(const QJsonObject &message)
 
 bool JsonApi::processMessageAuthentication(const QJsonObject &message)
 {
-    EMSClient accepted_client;
+    EMSClient acceptedClient;
     QString status = message["status"].toString();
     bool isAccepted  = false;
     Database *db = Database::instance();
-    bool return_value = false;     // 'false' if an error occurs
+    bool returnValue = false;     // 'false' if an error occurs
 
-    if (status == "accepted") {
+    if (status == "accepted")
         isAccepted = true;
-    } else if (status == "rejected" ) {
+    else if (status == "rejected" )
         isAccepted = false;
-    } else {
+    else
+    {
         qWarning() << "JsonApi: invalid status for the message authentication";
         return false;
     }
 
-    if (isAccepted) {
+    if (isAccepted)
+    {
         // Accepted client usecase
         db->lock();
-        if (false == db->getAuthorizedClient(message["uuid"].toString(), &accepted_client)){
-            accepted_client.uuid = message["uuid"].toString();
-            accepted_client.hostname = message["hostname"].toString();
-            accepted_client.username = message["username"].toString();
-            if (db->insertNewAuthorizedClient(&accepted_client)) {
-                return_value = true;
-            } else {
+        if (false == db->getAuthorizedClient(message["uuid"].toString(), &acceptedClient))
+        {
+            acceptedClient.uuid = message["uuid"].toString();
+            acceptedClient.hostname = message["hostname"].toString();
+            acceptedClient.username = message["username"].toString();
+
+            if (db->insertNewAuthorizedClient(&acceptedClient))
+                returnValue = true;
+            else
                 qWarning() << "Error JsonApi: can not insert client in db";
-            }
         }
         db->unlock();
-    } else {
-        // Rejected client usecase
-        return_value = true;
     }
-    return return_value;
+    else
+    {
+        // Rejected client usecase
+        returnValue = true;
+    }
+    return returnValue;
 }
 
 JsonApi::UrlSchemeType JsonApi::urlSchemeGet(const QString &url) const

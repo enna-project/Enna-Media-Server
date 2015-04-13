@@ -34,7 +34,7 @@ DiscoveryServer::DiscoveryServer(quint16 port, QObject *parent) : QObject(parent
         if (address.protocol() == QAbstractSocket::IPv4Protocol &&
                 address != QHostAddress(QHostAddress::LocalHost))
         {
-            m_server_address = address;
+            m_serverAddress = address;
         }
     }
 }
@@ -48,17 +48,17 @@ void DiscoveryServer::readyRead()
 {
     QByteArray buffer;
     buffer.resize(m_socket->pendingDatagramSize());
-    ClientConnectionParam sender_param;
-    QString client_uuid;
+    ClientConnectionParam senderParam;
+    QString clientUuid;
     bool isLocalGUI = false;
     bool isClientAlreadyAccepted = false;
     EMSClient client;
     Database *db = Database::instance();
-    QHostAddress loopback_addr = QHostAddress::LocalHost;
+    QHostAddress loopbackAddr = QHostAddress::LocalHost;
 
     // Read data received
     m_socket->readDatagram(buffer.data(), buffer.size(),
-                         &sender_param.ip, &sender_param.port);
+                           &senderParam.ip, &senderParam.port);
     QJsonParseError err;
     QJsonDocument j = QJsonDocument::fromJson(buffer, &err);
 
@@ -68,57 +68,65 @@ void DiscoveryServer::readyRead()
         return;
     }
 
-    client_uuid =  j.object()["uuid"].toString();
-    qDebug() << "UUID :" << client_uuid;
+    clientUuid =  j.object()["uuid"].toString();
+    qDebug() << "UUID :" << clientUuid;
 
     db->lock();
-    isClientAlreadyAccepted = db->getAuthorizedClient(client_uuid, &client);
+    isClientAlreadyAccepted = db->getAuthorizedClient(clientUuid, &client);
     db->unlock();
     qDebug() << "Discovery: is client already accepted : " << isClientAlreadyAccepted;
 
-    if (isClientAlreadyAccepted) {
+    if (isClientAlreadyAccepted)
+    {
         // Already accepted clients usecase:
-        this->sendAcceptAnswer(sender_param);
+        this->sendAcceptAnswer(senderParam);
         // Remove the client from the pending clients container
-        m_pending_or_rejected_clients.remove(client_uuid);
-    } else if (m_pending_or_rejected_clients.find(client_uuid) != m_pending_or_rejected_clients.end()) {
+        m_pendingOrRejectedClients.remove(clientUuid);
+    }
+    else if (m_pendingOrRejectedClients.find(clientUuid) != m_pendingOrRejectedClients.end())
+    {
         // Do not process the DISCOVERY request if client is 'pending' or
         // 'rejected'
         qDebug() << "Discovery: client auth is pending or client is rejected (uuid: "
-                 << client_uuid << ")";
-    } else {
+                 << clientUuid << ")";
+    }
+    else
+    {
         // Unknown clients usecase:
 
-        if ((sender_param.ip == m_server_address) ||
-                (sender_param.ip == QHostAddress::LocalHost)) {
+        if ((senderParam.ip == m_serverAddress) ||
+            (senderParam.ip == QHostAddress::LocalHost))
+        {
             isLocalGUI = true;
         }
 
         // Build the EMSClient data
-        client.uuid = client_uuid;
-        if (isLocalGUI) {
-            client.hostname = loopback_addr.toString();
-        } else {
-            client.hostname = sender_param.ip.toString();
-        }
+        client.uuid = clientUuid;
+        if (isLocalGUI)
+            client.hostname = loopbackAddr.toString();
+        else
+            client.hostname = senderParam.ip.toString();
 
         // Local client usecase: accept the client
-        if (isLocalGUI) {
+        if (isLocalGUI)
+        {
             db->lock();
-            if (!db->insertNewAuthorizedClient(&client)) {
+            if (!db->insertNewAuthorizedClient(&client))
+            {
                 qWarning() << "Error Discovery: can not insert local client in db";
             }
             db->unlock();
-            this->sendAcceptAnswer(sender_param);
+            this->sendAcceptAnswer(senderParam);
         }
-        // Remote unknown clients usecase
-        else {
+        else
+        {
+            // Remote unknown clients usecase
             this->sendAuthenticationRequest(client);
         }
     }
 }
 
-void DiscoveryServer::sendDiscoveryAnswer(const ClientConnectionParam &client_param,
+void DiscoveryServer::sendDiscoveryAnswer(const ClientConnectionParam &clientParam,
                                           const QString &status)
 {
     QSettings settings;
@@ -126,27 +134,27 @@ void DiscoveryServer::sendDiscoveryAnswer(const ClientConnectionParam &client_pa
     QJsonObject jobj;
     jobj["action"] = "EMS_DISCOVER";
     jobj["status"] = status;
-    jobj["ip"] = m_server_address.toString();
+    jobj["ip"] = m_serverAddress.toString();
     jobj["port"] = settings.value("main/websocket_port").toInt();
     qDebug() << "EMS_DISCOVER (status: " << status
-             << ") Client Addr: " << client_param.ip.toString()
+             << ") Client Addr: " << clientParam.ip.toString()
              << ", port: " << settings.value("main/websocket_port").toInt();
     QJsonDocument jdoc(jobj);
     // Convert json object into datagram
     QByteArray datagram = jdoc.toJson(QJsonDocument::Compact);
     // Send the data
-    m_socket->writeDatagram(datagram.data(), datagram.size(), client_param.ip, client_param.port);
+    m_socket->writeDatagram(datagram.data(), datagram.size(), clientParam.ip, clientParam.port);
 }
 
-void DiscoveryServer::sendAcceptAnswer(const ClientConnectionParam &client_param)
+void DiscoveryServer::sendAcceptAnswer(const ClientConnectionParam &clientParam)
 {
-    this->sendDiscoveryAnswer(client_param, "accepted");
+    this->sendDiscoveryAnswer(clientParam, "accepted");
 }
 
 void DiscoveryServer::sendAuthenticationRequest(const EMSClient client)
 {
     // Save the client in the 'pending' container
-    m_pending_or_rejected_clients[client.uuid] = client;
+    m_pendingOrRejectedClients[client.uuid] = client;
 
     // Start the authentication with the local UI
     emit authenticationNeeded(client);

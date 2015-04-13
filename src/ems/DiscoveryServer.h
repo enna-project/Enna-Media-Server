@@ -28,16 +28,16 @@ public slots:
     void readyRead();
 
 private:
-    void sendDiscoveryAnswer(const ClientConnectionParam &client_param,
+    void sendDiscoveryAnswer(const ClientConnectionParam &clientParam,
                              const QString &status);
 
-    void sendAcceptAnswer(const ClientConnectionParam &client_param);
+    void sendAcceptAnswer(const ClientConnectionParam &clientParam);
 
     void sendAuthenticationRequest(const EMSClient client);
 
     QUdpSocket *m_socket;
-    QMap<QString, EMSClient> m_pending_or_rejected_clients;
-    QHostAddress m_server_address;
+    QMap<QString, EMSClient> m_pendingOrRejectedClients;
+    QHostAddress m_serverAddress;
 };
 
 #endif // DISCOVERYSERVER_H
