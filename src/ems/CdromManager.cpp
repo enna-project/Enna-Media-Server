@@ -104,14 +104,14 @@ void CdromManager::dbusMessageInsert(QString message)
         track.name = QString("Track %1").arg(i);
         track.type = TRACK_TYPE_CDROM;
         track.position = i;
-        lsn_t begin = cdio_get_track_lsn(cdrom, i);
-        lsn_t end = cdio_get_track_last_lsn(cdrom, i);
-        track.duration = (end - begin + 1) / CDIO_CD_FRAMES_PER_SEC; /* One sector = 1/75s */
+        track.lsnBegin = cdio_get_track_lsn(cdrom, i);
+        track.lsnEnd = cdio_get_track_last_lsn(cdrom, i);
+        track.duration = (track.lsnEnd - track.lsnBegin + 1) / CDIO_CD_FRAMES_PER_SEC; /* One sector = 1/75s */
         track.format = QString("cdda");
         track.sample_rate = 44100;
         newCD.tracks.append(track);
         /* For disc id computation */
-        lba_t lba = cdio_lsn_to_lba (begin);
+        lba_t lba = cdio_lsn_to_lba (track.lsnBegin);
         sum += cddb_sum(lba / CDIO_CD_FRAMES_PER_SEC);
     }
 

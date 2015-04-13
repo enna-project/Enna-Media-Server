@@ -2,6 +2,7 @@
 #define DATA_H
 
 #include <QVector>
+#include <cdio/cdio.h>
 
 /* All these classes reprensent the data structures stored
  * in the persistent database (SQlite).
@@ -78,6 +79,9 @@ public:
     unsigned long long sample_rate; /* Sample rate in Hz, could be 0 for some format */
     unsigned int duration; /* Duration of the track in seconds */
     QString format_parameters; /* Format specific data */
+    lsn_t lsnBegin; /* index of the first sector of this track */
+    lsn_t lsnEnd; /* index of the last sector of this track */
+
 
     /* Used for removing old files which are not in the disk anymore */
     unsigned long long lastscan;
@@ -95,7 +99,8 @@ public:
         sample_rate = 0;
         duration = 0;
         lastscan = 0;
-
+        lsnBegin = 0;
+        lsnEnd = 0;
     }
 };
 
@@ -177,6 +182,8 @@ public:
      * - position = the track number starting from 1
      * - name = the name to be displayed (eg. Track 01)
      * - duration = the duration of the track
+     * - lsnBegin = the index of the first sector
+     * - lsnEnd = the index of the last sector
      * Other data may be missing.
      */
     QVector<EMSTrack> tracks;
