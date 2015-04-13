@@ -13,13 +13,10 @@ GracenotePlugin::GracenotePlugin()
     QSettings settings;
 
     capabilities << "discid";
+    capabilities << "text";
+
     /* Not implemented :
     capabilities << "fingerprint";
-    capabilities << "album_name";
-    capabilities << "track_name";
-    capabilities << "track_gnid";
-    capabilities << "album_name";
-    capabilities << "album_gnid";
     */
 
     imageFormats.clear();
@@ -72,6 +69,8 @@ GracenotePlugin::~GracenotePlugin()
 
 bool GracenotePlugin::update(EMSTrack *track)
 {
+    bool ret;
+
     if(!configured)
     {
         configured = configure();
@@ -84,20 +83,169 @@ bool GracenotePlugin::update(EMSTrack *track)
         qDebug() << "Connected to Gracenote server";
     }
 
-    if (track->type == TRACK_TYPE_CDROM)
+    if (track->type == TRACK_TYPE_CDROM) /* Lookup using the disc ID */
     {
         EMSCdrom cdrom;
         if (CdromManager::instance()->getCdrom(track->filename, &cdrom))
         {
-            lookupByDiscID(track, cdrom);
+            ret = lookupByDiscID(track, cdrom);
         }
     }
-    return true;
+    else /* Lookup using other methods like "text" search */
+    {
+        /* For album lookup, assume there at least two of these data :
+         * - album name
+         * - track name
+         * - artist name
+         * The track data will be filled if it can be positioned in the album
+         * To locate a track inside an album, we need one of these data :
+         * - track name
+         * - track postion
+         */
+        int dataFilled = 0;
+        if(!track->album.name.isEmpty())
+        {
+            dataFilled++;
+        }
+        if(!track->name.isEmpty())
+        {
+            dataFilled++;
+        }
+        foreach(EMSArtist artist, track->artists)
+        {
+            if(!artist.name.isEmpty())
+            {
+                dataFilled++;
+                break;
+            }
+        }
+        if (dataFilled > 2)
+        {
+            ret = lookupByText(track);
+        }
+    }
+    return ret;
 }
 
 /* ---------------------------------------------------------
  *                    LOOKUP FUNCTIONS
  * --------------------------------------------------------- */
+bool GracenotePlugin::lookupByText(EMSTrack *track)
+{
+    gnsdk_error_t error = GNSDK_SUCCESS;
+    gnsdk_musicid_query_handle_t queryHandle = GNSDK_NULL;
+    gnsdk_gdo_handle_t findResult = GNSDK_NULL;
+    gnsdk_gdo_handle_t albumGdo = GNSDK_NULL;
+    gnsdk_uint32_t count = 0;
+    gnsdk_uint32_t choice = 0;
+    gnsdk_cstr_t full = GNSDK_NULL;
+
+    /* Create the query handle */
+    error = gnsdk_musicid_query_create(userHandle, GNSDK_NULL, GNSDK_NULL, &queryHandle);
+    if (error != GNSDK_SUCCESS)
+    {
+        displayLastError();
+        return false;
+    }
+
+    /* Set all data we have about the track */
+    if(!track->album.name.isEmpty())
+    {
+        gnsdk_musicid_query_set_text(queryHandle, GNSDK_MUSICID_FIELD_ALBUM, track->album.name.toUtf8().data());
+    }
+    if(!track->name.isEmpty())
+    {
+        gnsdk_musicid_query_set_text(queryHandle, GNSDK_MUSICID_FIELD_TITLE, track->name.toUtf8().data());
+    }
+    foreach(EMSArtist artist, track->artists)
+    {
+        if(!artist.name.isEmpty())
+        {
+            gnsdk_musicid_query_set_text(queryHandle, GNSDK_MUSICID_FIELD_TRACK_ARTIST, artist.name.toUtf8().data());
+        }
+    }
+
+    /* Send the request */
+    error = gnsdk_musicid_query_find_matches(queryHandle, &findResult);
+    if (error != GNSDK_SUCCESS)
+    {
+        displayLastError();
+        gnsdk_musicid_query_release(queryHandle);
+        return false;
+    }
+
+    gnsdk_manager_gdo_child_count(findResult, GNSDK_GDO_CHILD_MATCH, &count);
+    if (count == 0)
+    {
+        /* No match found... :'( */
+        gnsdk_musicid_query_release(queryHandle);
+        return true;
+    }
+
+    /* Choose the first match */
+    choice = 1;
+    error = gnsdk_manager_gdo_child_get(findResult, GNSDK_GDO_CHILD_ALBUM, choice, &albumGdo);
+    if (error != GNSDK_SUCCESS)
+    {
+        displayLastError();
+        gnsdk_manager_gdo_release(findResult);
+        gnsdk_musicid_query_release(queryHandle);
+        return false;
+    }
+
+    error = gnsdk_manager_gdo_value_get(albumGdo, GNSDK_GDO_VALUE_FULL_RESULT, 1, &full);
+    if (error != GNSDK_SUCCESS)
+    {
+        displayLastError();
+        gnsdk_manager_gdo_release(findResult);
+        gnsdk_manager_gdo_release(albumGdo);
+        gnsdk_musicid_query_release(queryHandle);
+        return false;
+    }
+
+    /* If partial result, get full result */
+    if (!strcmp(full, GNSDK_VALUE_FALSE))
+    {
+        error = gnsdk_musicid_query_set_gdo(queryHandle, albumGdo);
+        if (error != GNSDK_SUCCESS)
+        {
+            displayLastError();
+            gnsdk_manager_gdo_release(findResult);
+            gnsdk_manager_gdo_release(albumGdo);
+            gnsdk_musicid_query_release(queryHandle);
+            return false;
+        }
+
+        /* New search */
+        gnsdk_manager_gdo_release(findResult);
+        error = gnsdk_musicid_query_find_albums(queryHandle, &findResult);
+        if (error != GNSDK_SUCCESS)
+        {
+            displayLastError();
+            gnsdk_musicid_query_release(queryHandle);
+            return false;
+        }
+
+        /* Get new album with more data */
+        gnsdk_manager_gdo_release(albumGdo);
+        error = gnsdk_manager_gdo_child_get(findResult, GNSDK_GDO_CHILD_ALBUM, 1, &albumGdo);
+        if (error != GNSDK_SUCCESS)
+        {
+            displayLastError();
+            gnsdk_manager_gdo_release(findResult);
+            gnsdk_musicid_query_release(queryHandle);
+            return false;
+        }
+    }
+
+    /* We have found the album, update the given track object */
+    albumGdoToEMSTrack(albumGdo, track);
+
+    gnsdk_manager_gdo_release(albumGdo);
+    gnsdk_manager_gdo_release(findResult);
+    gnsdk_musicid_query_release(queryHandle);
+    return true;
+}
 
 bool GracenotePlugin::lookupByDiscID(EMSTrack *track, EMSCdrom cdrom)
 {
@@ -173,7 +321,6 @@ bool GracenotePlugin::lookupByDiscID(EMSTrack *track, EMSCdrom cdrom)
     {
         displayLastError();
         gnsdk_manager_gdo_release(findResult);
-        gnsdk_manager_gdo_release(albumGdo);
         gnsdk_musicid_query_release(queryHandle);
         return false;
     }

@@ -170,13 +170,12 @@ void LocalFileScanner::fileFound(QString filename, QString sha1)
 
     /* Compute which plugins can be used to retrieve metadata */
     QStringList capabilities;
-    /* 1) Use extension name to find all plugins which can handle this format */
+    /* Use extension name to find all plugins which can handle this format */
     capabilities << track.format;
+    /* Use text retrieved from the metadata inside the file to perform online text lookup */
+    capabilities << "text";
+    /* Look for a user cover file inside the directory */
     capabilities << "cover";
-    /* 2) When first plugins add data to this track, try to use online database to get more data
-     *    and covers using ... */
-
-    //TODO.
 
     emit trackNeedUpdate(track, capabilities);
 }

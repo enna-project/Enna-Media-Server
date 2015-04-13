@@ -42,6 +42,7 @@ private:
 
     /* Entry points for look up */
     bool lookupByDiscID(EMSTrack *track, EMSCdrom cdrom);
+    bool lookupByText(EMSTrack *track);
 
     /* Internal utils */
     bool albumGdoToEMSTrack(gnsdk_gdo_handle_t albumGdo, EMSTrack *track);
