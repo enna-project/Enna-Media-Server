@@ -514,6 +514,12 @@ void GracenotePlugin::gdoToEMSArtists(gnsdk_gdo_handle_t gdo, QVector<EMSArtist>
         end = 1;
     }
 
+    /* Fixme: for now, if Gracenote give us some data, we re-create the complete list
+     * to avoid from duplicate entries. The string comparison can be somtimes wrong.
+     * For example, Gracenote can give artist "Julien doré" and the metadata "Julien dore".
+     */
+    artists->clear();
+
     for (unsigned int i = 1; i <= end; i++)
     {
         gnsdk_gdo_handle_t contributorGdo = GNSDK_NULL;
@@ -586,22 +592,17 @@ void GracenotePlugin::gdoToEMSGenres(gnsdk_gdo_handle_t gdo, QVector<EMSGenre> *
     genresStr << getGdoValue(gdo, GNSDK_GDO_VALUE_GENRE_LEVEL1);
     genresStr << getGdoValue(gdo, GNSDK_GDO_VALUE_GENRE_LEVEL2);
     genresStr << getGdoValue(gdo, GNSDK_GDO_VALUE_GENRE_LEVEL3);
+
+    /* Fixme: for now, if Gracenote give us some data, we re-create the complete list
+     * to avoid from duplicate entries. The string comparison can be somtimes wrong.
+     */
+    if (genresStr.size() > 0)
+    {
+        genres->clear();
+    }
+
     foreach (QString genreStr, genresStr)
     {
-        /* Check the genre is not present yet */
-        bool found = false;
-        foreach(EMSGenre existingGenre, *genres)
-        {
-            if (existingGenre.name == genreStr)
-            {
-                found = true;
-            }
-        }
-        if (found)
-        {
-            continue;
-        }
-
         /* Create a new genre */
         EMSGenre genre;
         genre.name = genreStr;
