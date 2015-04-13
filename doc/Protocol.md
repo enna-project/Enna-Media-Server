@@ -603,8 +603,7 @@ From a client to EMS:
 ```json
 {
     "msg": "EMS_CD_RIP",
-    "msg_id": "id",
-    "device": "/dev/sr0"
+    "msg_id": "id"
 }
 ```
 
@@ -616,7 +615,6 @@ The progress values are in percent.
 ```json
 {
     "msg": "EMS_CD_RIP",
-    "device": "/dev/sr0",
     "overall_progress": "12",
     "track_in_progress": "3",
     "track_progress": "96"
