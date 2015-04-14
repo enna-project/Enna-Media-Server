@@ -35,16 +35,21 @@ void CdromRipper::run()
         for (unsigned int i=trackBegins[currentTrack];
              i<=trackEnds[currentTrack]; ++i)
         {
-            currentSector++;
             // Build the rip progress message
             EMSRipProgress ripProgress;
             ripProgress.track_in_progress = currentTrack;
             ripProgress.overall_progress = 100 * currentSector / nbSectors;
-            ripProgress.track_progress = 100 * i / (trackEnds[currentTrack] - trackBegins[currentTrack] + 1);
+            ripProgress.track_progress = (100 * (i - trackBegins[currentTrack])) /
+                                         (trackEnds[currentTrack] - trackBegins[currentTrack] + 1);
             emit ripProgressChanged(ripProgress);
+
+            qDebug() << "Rip progress: overall(" << ripProgress.overall_progress
+                << "%), track (" << ripProgress.track_in_progress
+                << "), track progress (" << ripProgress.track_progress << ")";
 
             // Rip the current sector
             sleep(1);
+            currentSector++;
         }
         currentTrack++;
     }

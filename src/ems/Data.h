@@ -2,6 +2,7 @@
 #define DATA_H
 
 #include <QVector>
+#include <QMap>
 #include <cdio/cdio.h>
 
 /* All these classes reprensent the data structures stored
@@ -79,9 +80,6 @@ public:
     unsigned long long sample_rate; /* Sample rate in Hz, could be 0 for some format */
     unsigned int duration; /* Duration of the track in seconds */
     QString format_parameters; /* Format specific data */
-    lsn_t lsnBegin; /* index of the first sector of this track */
-    lsn_t lsnEnd; /* index of the last sector of this track */
-
 
     /* Used for removing old files which are not in the disk anymore */
     unsigned long long lastscan;
@@ -99,8 +97,6 @@ public:
         sample_rate = 0;
         duration = 0;
         lastscan = 0;
-        lsnBegin = 0;
-        lsnEnd = 0;
     }
 };
 
@@ -187,6 +183,9 @@ public:
      * Other data may be missing.
      */
     QVector<EMSTrack> tracks;
+
+    /* Indexes of the first and last sector for each track */
+    QMap<unsigned int, QPair<lsn_t, lsn_t> > trackSectors;
 };
 
 /* CdromManager data
