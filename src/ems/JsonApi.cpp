@@ -1111,12 +1111,23 @@ bool JsonApi::processMessageNetwork(const QJsonObject &message)
                 {
                     NetworkCtl::instance()->enableWifi(true);
                 }
-                if(!NetworkCtl::instance()->isWifiConnected())
+               /* QString connectedWifiName;
+                if(NetworkCtl::instance()->getConnectedWifi())
+                {
+                    connectedWifiName=NetworkCtl::instance()->getConnectedWifi()->getName();
+ ;
+                }*/
+                bool connected = NetworkCtl::instance()->isWifiConnected();
+                QString connSsid=NetworkCtl::instance()->getConnectedWifi()->getName();
+                if(!connected || connected && ssid != connSsid)
                 {
                     NetworkCtl::instance()->scanWifi();
                     //connexion to the desired wifi : ssid
                     auto connWifiList = std::make_shared<QMetaObject::Connection>();
-                    *connWifiList = connect(NetworkCtl::instance(), &NetworkCtl::wifiListUpdated, this,[=]
+                    auto connError = std::make_shared<QMetaObject::Connection>();
+                    auto connStatus = std::make_shared<QMetaObject::Connection>();
+                    auto connPassphrase = std::make_shared<QMetaObject::Connection>();
+                    *connWifiList = connect(NetworkCtl::instance(), &NetworkCtl::wifiListUpdated,[=]()
                     {
                         Service*  wifiService = NetworkCtl::instance()->getWifiByName(ssid);
                         if(wifiService)
@@ -1128,46 +1139,35 @@ bool JsonApi::processMessageNetwork(const QJsonObject &message)
                         else
                         {
                             //response= wrong wifi
+                            qDebug() << "Wrong SSID";
                         }
+                        //disconnect(*connPassphrase);
+                        //disconnect(*connError);
+                        //disconnect(*connStatus);
                         disconnect(*connWifiList);
                     });
+
                     // Authentication for secured connexion with password
-                    auto connPassphrase = std::make_shared<QMetaObject::Connection>();
-                    *connPassphrase = connect(NetworkCtl::instance()->getAgent(), &Agent::passphraseRequested,this , [=]
+                    //auto connPassphrase = std::make_shared<QMetaObject::Connection>();
+                    *connPassphrase = connect(NetworkCtl::instance()->getAgent(), &Agent::passphraseRequested, [=]()
                     {
                         qDebug() << "Authentication required";
                         Agent::InputRequest *request = NetworkCtl::instance()->getAgent()->currentInputRequest();
-
                         request->response.passphrase = password;
-
-
                         qDebug() << "Password sent";
-/*
-                        //Authentication error manager
-                        auto connError = std::make_shared<QMetaObject::Connection>();
-                        //*connError = connect(NetworkCtl::instance()->getAgent(), &Agent::errorRaised,NetworkCtl::instance() , [=]
-                        connError = connect(NetworkCtl::instance()->m_agent, &Agent::errorRaised,NetworkCtl::instance() , [=]
-                        {
-                            //Agent::ErrorRequest *requestErr = NetworkCtl::instance()->getAgent()->currentErrorRequest();
-                            Agent::ErrorRequest *requestErr = NetworkCtl::instance()->m_agent->currentErrorRequest();
-                            QJsonObject answer;
-                            answer["msg"] = message["msg"];
-                            answer["msg_id"] = message["msg_id"];
-                            answer["uuid"] = message["uuid"];
-                            answer["connexion_result"] = requestErr->error;
-                            QJsonDocument doc(answer);
-                            m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
-                            disconnect(*connError);
-                        });*/
 
+                        disconnect(*connWifiList);
+                        //disconnect(*connError);
+                        //disconnect(*connStatus);
                         disconnect(*connPassphrase);
-
                     });
+
                     //Authentication error manager
-                    auto connError = std::make_shared<QMetaObject::Connection>();
-                    *connError = connect(NetworkCtl::instance()->getAgent(), &Agent::errorRaised,this , [=]
+                    //auto connError = std::make_shared<QMetaObject::Connection>();
+                    //auto connStatus = std::make_shared<QMetaObject::Connection>();
+                    *connError = connect(NetworkCtl::instance()->getAgent(), &Agent::errorRaised,[=]()
                     {
-                        Agent::InputRequest *request = NetworkCtl::instance()->getAgent()->currentInputRequest();
+                        //Agent::InputRequest *request = NetworkCtl::instance()->getAgent()->currentInputRequest();
                         Agent::ErrorRequest *requestErr = NetworkCtl::instance()->getAgent()->currentErrorRequest();
                         QJsonObject answer;
                         answer["msg"] = message["msg"];
@@ -1177,15 +1177,16 @@ bool JsonApi::processMessageNetwork(const QJsonObject &message)
                         QJsonDocument doc(answer);
                         m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
 
-                        //requestErr->retry = false;
-                        //requestErr->cancel = true;
-                        request->cancel = true;
+
+                        disconnect(*connStatus);
+                        //disconnect(*connWifiList);
+                        //disconnect(*connPassphrase);
                         disconnect(*connError);
                     });
+
                     //Authentication success manager
-                    auto connStatus = std::make_shared<QMetaObject::Connection>();
-                    *connStatus = connect(NetworkCtl::instance()->getTechnology("wifi"), &Technology::connectedChanged, [=] {
-                        Agent::InputRequest *request = NetworkCtl::instance()->getAgent()->currentInputRequest();
+                    *connStatus = connect(NetworkCtl::instance()->getTechnology("wifi"), &Technology::connectedChanged, [=]()
+                    {
                         qDebug()<<"Connected to: "<<ssid;
                         QJsonObject answer;
                         answer["msg"] = message["msg"];
@@ -1194,7 +1195,11 @@ bool JsonApi::processMessageNetwork(const QJsonObject &message)
                         answer["connexion_result"] ="Connected";
                         QJsonDocument doc(answer);
                         m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
-                        request->cancel = true;
+
+
+                        disconnect(*connError);
+                        disconnect(*connWifiList);
+                        disconnect(*connPassphrase);
                         disconnect(*connStatus);
                     });
 

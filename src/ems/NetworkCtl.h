@@ -25,6 +25,7 @@ public:
     static QString getStateString(Service::ServiceState state);
     QList<EMSSsid> getWifiList();
     Service* getWifiByName(QString wifiName);
+    EMSSsid* getConnectedWifi();
     bool isWifiPresent();
     bool isEthernetPresent();
 
@@ -87,10 +88,7 @@ signals:
 public slots:
     //QVariantMap getProperties();
     void scanWifi();
-    void wifiEnabled(bool enable);
-    void ethernetEnabled(bool enable);
-    void ethernetConnected();
-    void wifiConnected();
+
 };
 
 

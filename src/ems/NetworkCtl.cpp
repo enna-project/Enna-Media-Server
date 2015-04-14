@@ -14,10 +14,6 @@ NetworkCtl::NetworkCtl(QObject *parent): QObject(parent)
 {
     m_manager = new Manager(this);
     connect(this->getTechnology("wifi"),SIGNAL(scanCompleted()),this, SIGNAL(wifiListUpdated()));
-    connect(this->getTechnology("wifi"),SIGNAL(poweredChanged(bool)),this,SLOT(wifiEnabled(bool)));
-    connect(this->getTechnology("ethernet"),SIGNAL(poweredChanged(bool)),this,SLOT(ethernetEnabled(bool)));
-    connect(this->getTechnology("wifi"),SIGNAL(connectedChanged()),this,SLOT(wifiConnected()));
-    //connect(this->getTechnology("ethernet"),SIGNAL(connectedChanged()),this,SLOT(ethernetConnected()));
 
     m_agent=new Agent("/com/EMS/Connman", m_manager);
 
@@ -98,8 +94,6 @@ void NetworkCtl::listServices()
     }
 }
 
-
-
 void NetworkCtl::scanWifi()
 {
     if(isWifiPresent())
@@ -108,25 +102,6 @@ void NetworkCtl::scanWifi()
         qDebug()<< "scanning wifi" <<endl;
     }
 
-}
-void NetworkCtl::wifiEnabled(bool enable)
-{
-    qDebug()<< "Wifi enabled :" << enable << endl;
-}
-
-void NetworkCtl::ethernetEnabled(bool enable)
-{
-    qDebug()<< "Ethernet enabled :" << enable << endl;
-}
-
-void NetworkCtl::ethernetConnected()
-{
-    qDebug()<< "Ethernet connected :" <<isEthernetConnected()<< endl;
-}
-
-void NetworkCtl::wifiConnected()
-{
-    qDebug()<< "Wifi connected :" <<isWifiConnected();
 }
 
 QList<EMSSsid> NetworkCtl::getWifiList()
@@ -190,6 +165,36 @@ Service* NetworkCtl::getWifiByName(QString wifiName)
         }
     }
     return serviceRequested;
+}
+
+EMSSsid* NetworkCtl::getConnectedWifi()
+{
+    EMSSsid* ssidWifi = new EMSSsid();
+    if(m_manager->services().isEmpty())
+    {
+        qDebug() << " No service listed ";
+    }
+    else
+    {
+        if(this->isWifiPresent())
+        {
+            QString state;
+            foreach (Service *service, m_manager->services())
+            {
+                state = getStateString(service->state());
+                if(service->type() == "wifi" && (state == "ready" || state=="online"))
+                {
+
+                    ssidWifi->setName(service->name());
+                    ssidWifi->setPath(service->objectPath().path());
+                    ssidWifi->setState(state);
+                    ssidWifi->setStrength(service->strength());
+                    ssidWifi->setType(service->type());
+                }
+            }
+        }
+    }
+    return ssidWifi;
 }
 
 bool NetworkCtl::isWifiPresent()
