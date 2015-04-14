@@ -27,6 +27,7 @@ private Q_SLOTS:
 
     void broadcastPlaylist(EMSPlaylist newPlaylist);
     void broadcastStatus(EMSPlayerStatus newStatus);
+    void broadcastRipProgress(EMSRipProgress ripProgress);
 
 private:
     QWebSocketServer *m_pWebSocketServer;

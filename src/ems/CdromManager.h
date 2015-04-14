@@ -64,6 +64,8 @@ signals:
     void cdromChanged(EMSCdrom cdrom);
     /* Signal binded to MetadataManager */
     void cdromTrackNeedUpdate(EMSTrack track, QStringList capabilities);
+    /* Signal binded to WebSocketServer */
+    void ripProgressChanged(EMSRipProgress ripProgress);
 
 
 public slots:
@@ -73,6 +75,7 @@ public slots:
     bool startMonitor();
     void stopMonitor();
     void startRip();
+    void ripProgress(EMSRipProgress ripProgress);
     void handleCdromRipperResults(const QString &message);
 
 private:

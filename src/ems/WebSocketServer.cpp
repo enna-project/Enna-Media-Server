@@ -3,6 +3,7 @@
 #include <QtCore/QDebug>
 #include "WebSocketServer.h"
 #include "Player.h"
+#include "CdromManager.h"
 
 WebSocketServer::WebSocketServer(quint16 port, QObject *parent) :
         QObject(parent),
@@ -21,6 +22,8 @@ WebSocketServer::WebSocketServer(quint16 port, QObject *parent) :
               this, &WebSocketServer::broadcastStatus);
       connect(Player::instance(), &Player::playlistChanged,
               this, &WebSocketServer::broadcastPlaylist);
+      connect(CdromManager::instance(), &CdromManager::ripProgressChanged,
+              this, &WebSocketServer::broadcastRipProgress, Qt::QueuedConnection);
   }
 }
 
@@ -60,6 +63,21 @@ void WebSocketServer::broadcastPlaylist(EMSPlaylist newPlaylist)
         if (api)
         {
             api->sendPlaylist(newPlaylist);
+        }
+    }
+}
+
+void WebSocketServer::broadcastRipProgress(EMSRipProgress ripProgress)
+{
+    qDebug() << "Rip progress: overall(" << ripProgress.overall_progress
+             << "%), track (" << ripProgress.track_in_progress
+             << "), track progress (" << ripProgress.track_progress << ")";
+
+    foreach( JsonApi *api, m_clients.values() )
+    {
+        if (api)
+        {
+            api->sendRipProgress(ripProgress);
         }
     }
 }

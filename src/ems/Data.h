@@ -200,4 +200,17 @@ public:
     QString username;
 };
 
+class EMSRipProgress
+{
+public:
+    unsigned int overall_progress; /* rip progress for the entire disk (in percent) */
+    unsigned int track_in_progress; /* index of the track currently ripped */
+    unsigned int track_progress; /* rip progress for the current track (in percent) */
+    EMSRipProgress()
+    {
+        overall_progress = 0;
+        track_in_progress = 0;
+        track_progress = 0;
+    }
+};
 #endif // DATA_H

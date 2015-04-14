@@ -996,3 +996,15 @@ void JsonApi::sendAuthRequest(EMSClient client)
     m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
     qDebug() << "JsonApi: sent the 'authentication' request for " << client.uuid;
 }
+
+void JsonApi::sendRipProgress(EMSRipProgress ripProgress)
+{
+    QJsonObject ripProgressJsonObj;
+    ripProgressJsonObj["msg"] = "EMS_CD_RIP";
+    ripProgressJsonObj["overall_progress"] = (qint64)ripProgress.overall_progress;
+    ripProgressJsonObj["track_in_progress"] = (qint64)ripProgress.track_in_progress;
+    ripProgressJsonObj["track_progress"] = (qint64)ripProgress.track_progress;
+
+    QJsonDocument doc(ripProgressJsonObj);
+    m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
+}

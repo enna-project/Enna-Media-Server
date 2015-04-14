@@ -316,11 +316,19 @@ void CdromManager::startRip()
     {
         EMSCdrom cdrom = cdroms.at(0);
         m_cdromRipper = new CdromRipper(this);
-        m_cdromRipper->setCdrom(cdrom);
+
         connect(m_cdromRipper, &CdromRipper::resultReady, this, &CdromManager::handleCdromRipperResults);
         connect(m_cdromRipper, &CdromRipper::finished, m_cdromRipper, &QObject::deleteLater);
+        connect(m_cdromRipper, &CdromRipper::ripProgressChanged, this, &CdromManager::ripProgress);
+
+        m_cdromRipper->setCdrom(cdrom);
         m_cdromRipper->start();
     }
+}
+
+void CdromManager::ripProgress(EMSRipProgress ripProgress)
+{
+    emit ripProgressChanged(ripProgress);
 }
 
 void CdromManager::handleCdromRipperResults(const QString &result)

@@ -21,6 +21,7 @@ private:
     EMSCdrom m_cdromProperties;
 
 signals:
+    void ripProgressChanged(EMSRipProgress ripProgress);
     void resultReady(const QString &result);
 };
 
