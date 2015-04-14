@@ -27,7 +27,7 @@ void CdromManager::getAvailableCdroms(QVector<EMSCdrom> *cdromsOut)
 {
     cdromsOut->clear();
     mutex.lock();
-    for (unsigned int i=0; i<cdroms.size(); i++)
+    for (unsigned int i=0; i<(unsigned int)cdroms.size(); i++)
     {
         cdromsOut->append(cdroms.at(i));
     }
@@ -39,7 +39,7 @@ bool CdromManager::getCdrom(QString device, EMSCdrom *cdrom)
     bool found = false;
 
     mutex.lock();
-    for (unsigned int i=0; i<cdroms.size(); i++)
+    for (unsigned int i=0; i<(unsigned int)cdroms.size(); i++)
     {
         if (cdroms.at(i).device == device)
         {
@@ -141,7 +141,7 @@ void CdromManager::dbusMessageInsert(QString message)
         lba_t lba = cdio_get_track_lba(cdrom, i);
         newCD.disc_id += QString().sprintf(" %ld", (long) lba);
     }
-    newCD.disc_id += QString().sprintf(" %ld", leadout_sec);
+    newCD.disc_id += QString().sprintf(" %u", leadout_sec);
     cdio_destroy(cdrom);
 
     qDebug() << "Computed DISCID is " << newCD.disc_id;
@@ -215,7 +215,7 @@ void CdromManager::dbusMessageRemove(QString message)
     bool found = false;
     EMSCdrom cdrom;
     mutex.lock();
-    for (unsigned int i=0; i<cdroms.size(); i++)
+    for (unsigned int i=0; i<(unsigned int)cdroms.size(); i++)
     {
         if (cdroms.at(i).device == message)
         {
@@ -237,7 +237,7 @@ void CdromManager::dbusMessageRemove(QString message)
 
     /* Remove played CDROM from the current playlist */
     EMSPlaylist playlist = Player::instance()->getCurentPlaylist();
-    for (unsigned int i=0; i<playlist.tracks.size(); i++)
+    for (unsigned int i=0; i<(unsigned int)playlist.tracks.size(); i++)
     {
         EMSTrack track = playlist.tracks.at(i);
         if (track.type == TRACK_TYPE_CDROM && track.filename == cdrom.device)

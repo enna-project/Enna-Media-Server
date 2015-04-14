@@ -84,7 +84,7 @@ QString JsonApi::convertImageUrl(QString url) const
 
         QString uniformUrl; /* For windows, transform backslash in slash */
         QStringList dirs = url.split(QDir::separator());
-        for (unsigned int i=0; i<dirs.size(); i++)
+        for (unsigned int i=0; i<(unsigned int)dirs.size(); i++)
         {
             QString dir = dirs.at(i);
             if (i != 0)
@@ -221,6 +221,8 @@ QJsonObject JsonApi::processMessageBrowse(const QJsonObject &message, bool &ok)
 
 QJsonObject JsonApi::processMessageBrowseMenu(const QJsonObject &message, bool &ok)
 {
+    Q_UNUSED(message);
+
     QJsonObject menus;
     QJsonArray arr;
     QJsonObject library
@@ -525,11 +527,12 @@ QJsonObject JsonApi::processMessageBrowseCdrom(const QJsonObject &message, bool 
     url.remove("cdda://");
 
     /* If no id, we get all the CDROM tracks */
-    int position = -1;
-    if (!url.isEmpty()) /* Otherwise, we return only one track */
-    {
-        position = url.toUInt();
-    }
+    // Unused variable for the moment
+    // int position = -1;
+    //if (!url.isEmpty()) /* Otherwise, we return only one track */
+    //{
+    //    position = url.toUInt();
+    //}
     QVector<EMSCdrom> cdroms;
     CdromManager::instance()->getAvailableCdroms(&cdroms);
     if (cdroms.size() <= 0)
@@ -539,7 +542,7 @@ QJsonObject JsonApi::processMessageBrowseCdrom(const QJsonObject &message, bool 
     }
     EMSCdrom cdrom = cdroms.at(0);
     QJsonArray jsonArray;
-    for (unsigned int i=0; i<cdrom.tracks.size(); i++)
+    for (unsigned int i=0; i<(unsigned int)cdrom.tracks.size(); i++)
     {
         jsonArray << EMSTrackToJson(cdrom.tracks.at(i));
     }
@@ -551,7 +554,8 @@ QJsonObject JsonApi::processMessageBrowseCdrom(const QJsonObject &message, bool 
 
 bool JsonApi::processMessageDisk(const QJsonObject &message)
 {
-
+    Q_UNUSED(message);
+    return true;
 }
 
 /* Handle player query
@@ -975,6 +979,7 @@ void JsonApi::sendStatus(EMSPlayerStatus status)
 
 void JsonApi::sendPlaylist(EMSPlaylist newPlaylist)
 {
+    Q_UNUSED(newPlaylist);
     /* TODO */
 }
 
