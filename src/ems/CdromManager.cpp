@@ -55,32 +55,8 @@ bool CdromManager::getCdrom(QString device, EMSCdrom *cdrom)
 
 bool CdromManager::isRipInProgress()
 {
-    if (m_cdromRipper != NULL)
-        return true;
-    else
+    if (Q_NULLPTR == m_cdromRipper)
         return false;
-}
-
-bool CdromManager::startRip(QString device)
-{
-    if (isRipInProgress())
-    {
-        qDebug() << "CdromManager: a rip process is already in progress";
-        return false;
-    }
-
-    EMSCdrom cdrom;
-    if (!this->getCdrom(device, &cdrom))
-    {
-        qCritical() << "CdromManager: device not found: " << device;
-        return false;
-    }
-
-    m_cdromRipper = new CdromRipper(&cdrom);
-    mutex.lock();
-    m_cdromRipper->start();
-    mutex.unlock();
-    delete m_cdromRipper;
 
     return true;
 }
@@ -281,7 +257,7 @@ CdromManager* CdromManager::_instance = 0;
 
 CdromManager::CdromManager(QObject *parent) : QObject(parent),
                                               bus(QDBusConnection::systemBus()),
-                                              m_cdromRipper(NULL)
+                                              m_cdromRipper(Q_NULLPTR)
 {
     cdio_init();
 
@@ -327,4 +303,29 @@ void CdromManager::stopMonitor()
         bus.disconnect(QString(), QString(), INTERFACE , SIGNAL_NAME_INSERT, this, SLOT(dbusMessageInsert(QString)));
         bus.disconnect(QString(), QString(), INTERFACE , SIGNAL_NAME_REMOVE, this, SLOT(dbusMessageRemove(QString)));
     }
+}
+
+void CdromManager::startRip()
+{
+    /* Get first available CDROM */
+    QVector<EMSCdrom> cdroms;
+    this->getAvailableCdroms(&cdroms);
+
+    /* Start the thread */
+    if ((cdroms.size() > 0) && (!this->isRipInProgress()))
+    {
+        EMSCdrom cdrom = cdroms.at(0);
+        m_cdromRipper = new CdromRipper(this);
+        m_cdromRipper->setCdrom(cdrom);
+        connect(m_cdromRipper, &CdromRipper::resultReady, this, &CdromManager::handleCdromRipperResults);
+        connect(m_cdromRipper, &CdromRipper::finished, m_cdromRipper, &QObject::deleteLater);
+        m_cdromRipper->start();
+    }
+}
+
+void CdromManager::handleCdromRipperResults(const QString &result)
+{
+    qDebug() << "CdromManager handle cdrom ripper results: " << result;
+    delete m_cdromRipper;
+    m_cdromRipper = Q_NULLPTR;
 }

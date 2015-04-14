@@ -26,7 +26,6 @@ public:
      */
     void getAvailableCdroms(QVector<EMSCdrom> *cdromsOut);
     bool getCdrom(QString device, EMSCdrom *cdromOut);
-    bool startRip(QString device);
     bool isRipInProgress();
 
     /* ---------------------------------
@@ -73,6 +72,8 @@ public slots:
     void dbusMessageRemove(QString message);
     bool startMonitor();
     void stopMonitor();
+    void startRip();
+    void handleCdromRipperResults(const QString &message);
 
 private:
     /* Singleton pattern */

@@ -715,13 +715,22 @@ bool JsonApi::processMessageAuthentication(const QJsonObject &message)
 
 bool JsonApi::processMessageCDRip(const QJsonObject &message)
 {
-    QString device = message["device"].toString();
+    Q_UNUSED(message);
+
     CdromManager *cdromManager = CdromManager::instance();
 
-    if (!cdromManager->isRipInProgress())
-        return cdromManager->startRip(device);
+    if (cdromManager->isRipInProgress())
+    {
+        qDebug() << "JsonApi: rip already in progress!";
+        return false;
+    }
+    else
+    {
+        connect(this, &JsonApi::startCdromRip, cdromManager, &CdromManager::startRip);
+        emit startCdromRip();
+    }
 
-    return false;
+    return true;
 }
 
 JsonApi::UrlSchemeType JsonApi::urlSchemeGet(const QString &url) const

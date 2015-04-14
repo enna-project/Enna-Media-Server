@@ -28,7 +28,9 @@ public:
     void sendPlaylist(EMSPlaylist newPlaylist);
     void sendAuthRequest(EMSClient client);
 
+
 signals:
+    void startCdromRip();
 
 private:
     QWebSocket *m_webSocket;
@@ -67,7 +69,6 @@ private:
 public slots:
     bool processMessage(const QString &message);
     void ipChanged(QString newIp);
-
 };
 
 #endif // JSONAPI_H
