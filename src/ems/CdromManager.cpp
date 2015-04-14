@@ -103,14 +103,13 @@ void CdromManager::dbusMessageInsert(QString message)
     {
         qCritical() << "Unable to read CDROM TOC";
     }
-    qDebug() << "Found " << QString("%1").arg(trackNumber-1) << " tracks in " << newCD.device;
+    qDebug() << "Found " << QString("%1").arg(trackNumber) << " tracks in " << newCD.device;
 
     /* Retrieve each track data */
-    for (track_t i=1; i<trackNumber; i++)
+    for (track_t i=1; i<=trackNumber; i++)
     {
         EMSTrack track;
         track.filename = newCD.device;
-        track.name = QString("Track %1").arg(i);
         track.type = TRACK_TYPE_CDROM;
         track.position = i;
         lsn_t lsnBegin = cdio_get_track_lsn(cdrom, i);
@@ -118,7 +117,14 @@ void CdromManager::dbusMessageInsert(QString message)
         track.duration = (lsnEnd - lsnBegin + 1) / CDIO_CD_FRAMES_PER_SEC; /* One sector = 1/75s */
         track.format = QString("cdda");
         track.sample_rate = 44100;
-        newCD.tracks.append(track);
+
+        /* Add the new track in the list only if it is an audio track */
+        track_format_t format = cdio_get_track_format(cdrom, i);
+        if (format == TRACK_FORMAT_AUDIO)
+        {
+            newCD.tracks.append(track);
+        }
+
         /* For disc id computation */
         lba_t lba = cdio_lsn_to_lba (lsnBegin);
         sum += cddb_sum(lba / CDIO_CD_FRAMES_PER_SEC);
@@ -126,9 +132,6 @@ void CdromManager::dbusMessageInsert(QString message)
         QPair<lsn_t, lsn_t> trackSectors(lsnBegin, lsnEnd);
         newCD.trackSectors[i] = trackSectors;
     }
-
-    /* Plus last track which is the lead out */
-    sum += cddb_sum(cdio_get_track_lba(cdrom, trackNumber) / CDIO_CD_FRAMES_PER_SEC);
 
     /* Compute the discid
      * Code copied from libcdio/example/discid.c
@@ -180,6 +183,11 @@ void CdromManager::cdromTrackUpdated(EMSTrack track, bool complete)
         return;
     }
 
+    if (track.name.isEmpty())
+    {
+        track.name = QString("Track %1").arg(track.position);
+    }
+
     /* Retrieve the corresponding cdrom in the list of cdroms */
     mutex.lock();
     for (int i=0; i<cdroms.size(); i++)
@@ -198,10 +206,32 @@ void CdromManager::cdromTrackUpdated(EMSTrack track, bool complete)
 
         for(int i=0; i<cdrom.tracks.size(); i++)
         {
+            /* If an album has been found, make sure it is the same as for
+             * the other track.
+             */
+            if (!track.album.name.isEmpty())
+            {
+                if (cdrom.tracks.at(i).album.name.isEmpty())
+                {
+                    EMSTrack other = cdrom.tracks.at(i);
+                    other.album = track.album;
+                    other.genres = track.genres;
+                    other.artists = track.artists;
+                    cdrom.tracks.replace(i, other);
+                }
+            } else if (!cdrom.tracks.at(i).album.name.isEmpty())
+            {
+                track.album = cdrom.tracks.at(i).album;
+                track.genres = cdrom.tracks.at(i).genres;
+                track.artists = cdrom.tracks.at(i).artists;
+            }
+
+            /* Replace the new Cdrom */
             if(cdrom.tracks.at(i).position == track.position)
             {
                 cdrom.tracks.replace(i, track);
             }
+
         }
         cdroms[cdromID] = cdrom;
     }
