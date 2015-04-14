@@ -47,11 +47,11 @@ QString NetworkCtl::getStateString(Service::ServiceState state)
     case Service::ServiceState::OnlineState :
         return  "online";
         break;
-
     default:
         return "unknown state";
     }
 }
+
 
 void NetworkCtl::listServices()
 {
@@ -122,10 +122,11 @@ QList<EMSSsid> NetworkCtl::getWifiList()
                 if(service->type() == "wifi")
                 {
                     EMSSsid ssidWifi(service->objectPath().path(),
-                                  service->name(),
-                                  service->type(),
-                                  getStateString(service->state()),
-                                  service->strength());
+                                     service->name(),
+                                     service->type(),
+                                     getStateString(service->state()),
+                                     service->strength(),
+                                     NetworkCtl::instance()->getSecurityTypeString(toSecurityTypeList(service->security())));
                     ssidList.append(ssidWifi);
                 }
             }
@@ -326,12 +327,13 @@ QList<Service*> Connman::getEthService(Connman* m_manager)
 }
 */
 
-EMSSsid::EMSSsid(QString path, QString name, QString type, QString state, int strength) :
+EMSSsid::EMSSsid(QString path, QString name, QString type, QString state, int strength, QStringList securityList) :
     m_path(path),
     m_name(name),
     m_type(type),
     m_state(state),
-    m_strength(strength)
+    m_strength(strength),
+    m_securityList(securityList)
 {
 
 }
@@ -339,6 +341,56 @@ EMSSsid::EMSSsid()
 {
 
 }
+
+QList<EMSSsid::SecurityType> NetworkCtl::toSecurityTypeList(const QStringList &listType)
+{
+    QList<EMSSsid::SecurityType> securityTypeList;
+    foreach(QString type,listType)
+    {
+        if (type == "none")
+            securityTypeList.append(EMSSsid::SecurityType::NONE);
+        else if (type == "wep")
+            securityTypeList.append(EMSSsid::SecurityType::WEP);
+        else if (type == "psk")
+            securityTypeList.append(EMSSsid::SecurityType::PSK);
+        else if (type == "ieee8021x")
+            securityTypeList.append(EMSSsid::SecurityType::IEEE8021X);
+        else if (type == "wps")
+            securityTypeList.append(EMSSsid::SecurityType::WPS);
+        else  securityTypeList.append(EMSSsid::SecurityType::UNKNOWN);
+    }
+    return securityTypeList;
+}
+
+
+QStringList NetworkCtl::getSecurityTypeString(QList<EMSSsid::SecurityType> securityTypeList)
+{
+    QStringList listType;
+    foreach(EMSSsid::SecurityType securityType,securityTypeList)
+    {
+        switch (securityType) {
+        case EMSSsid::SecurityType::NONE :
+            listType.append("none");
+            break;
+        case EMSSsid::SecurityType::WEP :
+            listType.append("wep");
+                    break;
+        case EMSSsid::SecurityType::PSK :
+            listType.append("wpa/wpa2 personal");
+                    break;
+        case EMSSsid::SecurityType::WPS :
+            listType.append("wps");
+                    break;
+        case EMSSsid::SecurityType::IEEE8021X :
+            listType.append("wpa/wpa2 enterprise");
+                    break;
+        default:
+            listType.append("unknown");
+        }
+    }
+    return listType;
+}
+
 // Get methods of EMSSsid class
 QString EMSSsid::getName() const
 {
@@ -362,6 +414,11 @@ int EMSSsid::getStrength() const
 QString EMSSsid::getPath() const
 {
     return m_path;
+}
+
+QStringList EMSSsid::getSecurity() const
+{
+    return m_securityList;
 }
 
 void EMSSsid::setName(QString name)
@@ -389,6 +446,11 @@ void EMSSsid::setPath(QString path)
     m_path = path;
 }
 
+void EMSSsid::setSecurity(QStringList securityList)
+{
+    m_securityList = securityList;
+}
+
 ConnexionRequest::ConnexionRequest(QString path, QString name, QString passphrase, QString state, int timeout) :
     m_path(path),
     m_name(name),
@@ -403,7 +465,6 @@ ConnexionRequest::ConnexionRequest()
 {
 
 }
-
 
 QString ConnexionRequest::getName() const
 {

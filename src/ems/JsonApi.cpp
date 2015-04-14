@@ -1119,7 +1119,7 @@ bool JsonApi::processMessageNetwork(const QJsonObject &message)
                 }*/
                 bool connected = NetworkCtl::instance()->isWifiConnected();
                 QString connSsid=NetworkCtl::instance()->getConnectedWifi()->getName();
-                if(!connected || connected && ssid != connSsid)
+                if(!connected || (connected && ssid != connSsid))
                 {
                     NetworkCtl::instance()->scanWifi();
                     //connexion to the desired wifi : ssid
@@ -1420,6 +1420,7 @@ QJsonObject JsonApi::EMSSsidToJson(const EMSSsid &ssid) const
     obj["name"] = ssid.getName();
     obj["type"] = ssid.getType();
     obj["state"] = ssid.getState();
+    obj["security"] = ssid.getSecurity().join(", ");
 
     return obj;
 }

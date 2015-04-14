@@ -85,6 +85,20 @@ Application::Application(int & argc, char ** argv) :
     /* Scan locations to perform a database update */
     m_directoriesWatcher.addLocation(locations);
     m_directoriesWatcher.start();
+
+    /* Re-scan locations to perform a database update */
+    m_scanner = new LocalFileScanner();
+
+    QString locations;
+    EMS_LOAD_SETTINGS(locations, "main/locations",
+                      QStandardPaths::standardLocations(QStandardPaths::MusicLocation)[0],
+            String);
+    m_scanner->locationAdd(locations);
+
+    m_scanner->moveToThread(&m_localFileScannerWorker);
+    connect(&m_localFileScannerWorker, &QThread::started, m_scanner, &LocalFileScanner::startScan);
+    connect(&m_localFileScannerWorker, &QThread::finished, m_scanner, &LocalFileScanner::stopScan);
+    m_localFileScannerWorker.start();
 }
 
 Application::~Application()
