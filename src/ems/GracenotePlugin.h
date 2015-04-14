@@ -44,7 +44,8 @@ private:
     bool lookupByDiscID(EMSTrack *track, EMSCdrom cdrom);
     bool lookupByText(EMSTrack *track);
     bool lookupByFingerprint(EMSTrack *track);
-    bool lookupByQueryHandle(EMSTrack *track, gnsdk_musicid_query_handle_t queryHandle);
+    bool lookupAlbumByQueryHandle(EMSTrack *track, gnsdk_musicid_query_handle_t queryHandle);
+    bool lookupTrackByQueryHandle(EMSTrack *track, gnsdk_musicid_query_handle_t queryHandle);
 
     /* Internal utils */
     bool albumGdoToEMSTrack(gnsdk_gdo_handle_t albumGdo, EMSTrack *track);

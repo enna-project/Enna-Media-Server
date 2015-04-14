@@ -144,7 +144,7 @@ bool GracenotePlugin::update(EMSTrack *track)
  *                    LOOKUP FUNCTIONS
  * --------------------------------------------------------- */
 
-bool GracenotePlugin::lookupByQueryHandle(EMSTrack *track, gnsdk_musicid_query_handle_t queryHandle)
+bool GracenotePlugin::lookupAlbumByQueryHandle(EMSTrack *track, gnsdk_musicid_query_handle_t queryHandle)
 {
     gnsdk_error_t error = GNSDK_SUCCESS;
     gnsdk_gdo_handle_t findResult = GNSDK_NULL;
@@ -233,6 +233,55 @@ bool GracenotePlugin::lookupByQueryHandle(EMSTrack *track, gnsdk_musicid_query_h
     albumGdoToEMSTrack(albumGdo, track);
 
     gnsdk_manager_gdo_release(albumGdo);
+    gnsdk_manager_gdo_release(findResult);
+    return true;
+}
+
+bool GracenotePlugin::lookupTrackByQueryHandle(EMSTrack *track, gnsdk_musicid_query_handle_t queryHandle)
+{
+    gnsdk_error_t error = GNSDK_SUCCESS;
+    gnsdk_gdo_handle_t findResult = GNSDK_NULL;
+    gnsdk_gdo_handle_t trackGdo = GNSDK_NULL;
+    gnsdk_uint32_t count = 0;
+    gnsdk_uint32_t choice = 0;
+
+    /* Perform the query */
+    error = gnsdk_musicid_query_find_tracks(queryHandle, &findResult);
+    if (error != GNSDK_SUCCESS)
+    {
+        displayLastError();
+        return false;
+    }
+
+    /* Get how many album match */
+    error = gnsdk_manager_gdo_child_count(findResult, GNSDK_GDO_CHILD_TRACK, &count);
+    if (error != GNSDK_SUCCESS)
+    {
+        displayLastError();
+        gnsdk_manager_gdo_release(findResult);
+        return false;
+    }
+
+    if (count == 0)
+    {
+        qDebug() << "No track found for track " << track->filename;
+        gnsdk_manager_gdo_release(findResult);
+        return true;
+    }
+
+    /* Choose the first track */
+    choice = 1;
+
+    error = gnsdk_manager_gdo_child_get(findResult, GNSDK_GDO_CHILD_TRACK, choice, &trackGdo);
+    if (error != GNSDK_SUCCESS)
+    {
+        displayLastError();
+        gnsdk_manager_gdo_release(findResult);
+        return false;
+    }
+
+    trackGdoToEMSTrack(trackGdo, track);
+    gnsdk_manager_gdo_release(trackGdo);
     gnsdk_manager_gdo_release(findResult);
     return true;
 }
@@ -388,7 +437,7 @@ bool GracenotePlugin::lookupByDiscID(EMSTrack *track, EMSCdrom cdrom)
         return false;
     }
 
-    bool ret = lookupByQueryHandle(track, queryHandle);
+    bool ret = lookupAlbumByQueryHandle(track, queryHandle);
     gnsdk_musicid_query_release(queryHandle);
     return ret;
 }
@@ -490,7 +539,16 @@ bool GracenotePlugin::lookupByFingerprint(EMSTrack *track)
     }
 
     /* Lookup using the query handle */
-    bool ret = lookupByQueryHandle(track, queryHandle);
+    bool ret;
+    ret = lookupTrackByQueryHandle(track, queryHandle);
+
+    if (!ret)
+    {
+        gnsdk_musicid_query_release(queryHandle);
+        return ret;
+    }
+
+    ret = lookupAlbumByQueryHandle(track, queryHandle);
     gnsdk_musicid_query_release(queryHandle);
 
     return ret;
