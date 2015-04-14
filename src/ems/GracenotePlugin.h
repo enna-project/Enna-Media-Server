@@ -41,7 +41,7 @@ private:
     void displayLastError();
 
     /* Entry points for look up */
-    bool lookupByDiscID(EMSTrack *track, EMSCdrom cdrom);
+    bool lookupByDiscID(EMSTrack *track, QString toc);
     bool lookupByText(EMSTrack *track);
     bool lookupByFingerprint(EMSTrack *track);
     bool lookupAlbumByQueryHandle(EMSTrack *track, gnsdk_musicid_query_handle_t queryHandle);

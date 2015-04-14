@@ -84,45 +84,110 @@ bool GracenotePlugin::update(EMSTrack *track)
         qDebug() << "Connected to Gracenote server";
     }
 
-    if (track->type == TRACK_TYPE_CDROM) /* Lookup using the disc ID */
+    QString discid;
+    if (track->type == TRACK_TYPE_CDROM)
     {
         EMSCdrom cdrom;
         if (CdromManager::instance()->getCdrom(track->filename, &cdrom))
         {
-            ret = lookupByDiscID(track, cdrom);
+            discid = cdrom.disc_id;
         }
     }
-    else /* Lookup using other methods like "text" search */
+    else /* Lookup for a file named "discid" near to the track file */
     {
-        /* For album lookup, assume there at least two of these data :
-         * - album name
-         * - track name
-         * - artist name
-         * The track data will be filled if it can be positioned in the album
-         * To locate a track inside an album, we need one of these data :
-         * - track name
-         * - track postion
-         */
-        int dataFilled = 0;
-        if(!track->album.name.isEmpty())
+        QString dirPath = QFileInfo(track->filename).dir().path();
+        QFile discidFile(dirPath + QDir::separator() + "discid");
+        if (discidFile.exists())
         {
-            dataFilled++;
-        }
-        if(!track->name.isEmpty())
-        {
-            dataFilled++;
-        }
-        foreach(EMSArtist artist, track->artists)
-        {
-            if(!artist.name.isEmpty())
+            if(discidFile.open(QIODevice::ReadOnly))
             {
-                dataFilled++;
-                break;
+                discid = discidFile.readLine();
+                discidFile.close();
             }
         }
-        if (dataFilled > 2)
+        if (!discid.isEmpty() && track->position == 0)
         {
-            ret = lookupByText(track);
+            /* Having the disc ID is not enough to retrieve track specific data
+             * like the track title, etc.
+             * So we need to know the position of this track in the CDROM
+             * When a CDROM is ripped, the track name is formated like "track[id].[extension]".
+             * Parse
+             */
+            QString name = QFileInfo(track->filename).baseName();
+            if (name.startsWith("track"))
+            {
+                name.remove("track");
+                bool isNumber;
+                unsigned int pos = name.toUInt(&isNumber);
+                if (isNumber)
+                {
+                    track->position = pos;
+                }
+            }
+        }
+    }
+
+    /* Lookup using the disc ID */
+    if (!discid.isEmpty())
+    {
+        /* The disc ID is formated like : ID TRACKNUM TOC DURATION */
+        QString toc;
+        QStringList parts = discid.split(' ');
+        for (int i=2; i<(parts.size()-1); i++)
+        {
+            if (!toc.isEmpty())
+            {
+                toc += " ";
+            }
+            toc += parts.at(i);
+        }
+
+        qDebug() << "Gracenote: lookup using disc TOC : " << toc;
+        ret = lookupByDiscID(track, toc);
+
+        /* If discID returned data, assume we have complete data */
+        if (ret && !track->album.name.isEmpty() && !track->name.isEmpty())
+        {
+            return true;
+        }
+    }
+
+    /* Lookup using other methods like "text" search
+     * For album lookup, assume there at least two of these data :
+     * - album name
+     * - track name
+     * - artist name
+     * The track data will be filled if it can be positioned in the album
+     * To locate a track inside an album, we need one of these data :
+     * - track name
+     * - track postion
+     */
+    int dataFilled = 0;
+    if(!track->album.name.isEmpty())
+    {
+        dataFilled++;
+    }
+    if(!track->name.isEmpty())
+    {
+        dataFilled++;
+    }
+    foreach(EMSArtist artist, track->artists)
+    {
+        if(!artist.name.isEmpty())
+        {
+            dataFilled++;
+            break;
+        }
+    }
+    if (dataFilled > 2)
+    {
+        qDebug() << "Gracenote: lookup using texts from other metadata plugins for file " << track->filename;
+        ret = lookupByText(track);
+
+        /* If lookup returned data, assume we have complete data */
+        if (ret && !track->album.name.isEmpty() && !track->name.isEmpty())
+        {
+            return true;
         }
     }
 
@@ -134,9 +199,11 @@ bool GracenotePlugin::update(EMSTrack *track)
          */
         if (track->type == TRACK_TYPE_CDROM || (track->format == "wav") || (track->format == "raw"))
         {
+            qDebug() << "Gracenote: lookup using fingerprint of file " << track->filename;
             lookupByFingerprint(track);
         }
     }
+
     return ret;
 }
 
@@ -403,7 +470,7 @@ bool GracenotePlugin::lookupByText(EMSTrack *track)
     return true;
 }
 
-bool GracenotePlugin::lookupByDiscID(EMSTrack *track, EMSCdrom cdrom)
+bool GracenotePlugin::lookupByDiscID(EMSTrack *track, QString toc)
 {
     gnsdk_error_t error = GNSDK_SUCCESS;
     gnsdk_musicid_query_handle_t queryHandle = GNSDK_NULL;
@@ -414,18 +481,6 @@ bool GracenotePlugin::lookupByDiscID(EMSTrack *track, EMSCdrom cdrom)
     {
         displayLastError();
         return false;
-    }
-
-    /* The disc ID is formated like : ID TRACKNUM TOC DURATION */
-    QString toc;
-    QStringList parts = cdrom.disc_id.split(' ');
-    for (int i=2; i<(parts.size()-1); i++)
-    {
-        if (!toc.isEmpty())
-        {
-            toc += " ";
-        }
-        toc += parts.at(i);
     }
 
     /* Set TOC */

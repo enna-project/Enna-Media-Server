@@ -172,6 +172,8 @@ void LocalFileScanner::fileFound(QString filename, QString sha1)
     QStringList capabilities;
     /* Use extension name to find all plugins which can handle this format */
     capabilities << track.format;
+    /* Check if there is a file "discid" in the same directory and use it to retrieve metadata */
+    capabilities << "discid";
     /* Use text retrieved from the metadata inside the file to perform online text lookup */
     capabilities << "text";
     /* If there is no data, try to use sound data (fingerprint) to retrieve metadata */
