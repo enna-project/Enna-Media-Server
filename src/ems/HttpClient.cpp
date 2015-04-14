@@ -29,7 +29,7 @@ int onUrlCb(http_parser *parser, const char *at, size_t length)
 
 int onStatusCompleteCb(http_parser *parser)
 {
-
+    Q_UNUSED(parser);
     return 0;
 }
 
@@ -131,7 +131,7 @@ HttpClient::HttpClient(QTcpSocket *socket, QString cacheDirectory, QObject *pare
         QString localFilePath;
         if (arg.size() > 1)
         {
-            for (unsigned int i=1; i<arg.size(); i++)
+            for (unsigned int i=1; i<(unsigned int)arg.size(); i++)
             {
                 if (i != 1)
                 {
@@ -170,6 +170,10 @@ HttpClient::HttpClient(QTcpSocket *socket, QString cacheDirectory, QObject *pare
 
                     QByteArray body = f.readAll();
                     int written = m_socket->write(buildHttpResponse(HTTP_200, headers, body));
+                    if (written == -1)
+                    {
+                        qCritical() << "HttpClient: writing error";
+                    }
                     f.close();
                 }
                 else

@@ -2,6 +2,8 @@
 #define DATA_H
 
 #include <QVector>
+#include <QMap>
+#include <cdio/cdio.h>
 
 /* All these classes reprensent the data structures stored
  * in the persistent database (SQlite).
@@ -95,7 +97,6 @@ public:
         sample_rate = 0;
         duration = 0;
         lastscan = 0;
-
     }
 };
 
@@ -177,9 +178,14 @@ public:
      * - position = the track number starting from 1
      * - name = the name to be displayed (eg. Track 01)
      * - duration = the duration of the track
+     * - lsnBegin = the index of the first sector
+     * - lsnEnd = the index of the last sector
      * Other data may be missing.
      */
     QVector<EMSTrack> tracks;
+
+    /* Indexes of the first and last sector for each track */
+    QMap<unsigned int, QPair<lsn_t, lsn_t> > trackSectors;
 };
 
 /* CdromManager data
@@ -193,4 +199,17 @@ public:
     QString username;
 };
 
+class EMSRipProgress
+{
+public:
+    unsigned int overall_progress; /* rip progress for the entire disk (in percent) */
+    unsigned int track_in_progress; /* index of the track currently ripped */
+    unsigned int track_progress; /* rip progress for the current track (in percent) */
+    EMSRipProgress()
+    {
+        overall_progress = 0;
+        track_in_progress = 0;
+        track_progress = 0;
+    }
+};
 #endif // DATA_H

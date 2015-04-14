@@ -578,8 +578,35 @@ requests.
 CD RIP
 ======
 
-rip command is send to EMS when a cd have to be ripped on the disk.
-TBD
+The 'rip' command is sent to EMS when a CD has to be ripped on the disk.
+Two kinds of messages are required:
+ * the 'rip' order (through a synchronous message to the EMS)
+ * the 'rip' progression (through an asynchronous message from the EMS)
+
+### Rip command
+
+From a client to EMS:
+
+```json
+{
+    "msg": "EMS_CD_RIP",
+    "msg_id": "id"
+}
+```
+
+### Rip progression
+
+From the EMS to the clients.
+The progress values are in percent.
+
+```json
+{
+    "msg": "EMS_CD_RIP",
+    "overall_progress": "12",
+    "track_in_progress": "3",
+    "track_progress": "96"
+}
+```
 
 
 Authentication

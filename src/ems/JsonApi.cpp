@@ -84,7 +84,7 @@ QString JsonApi::convertImageUrl(QString url) const
 
         QString uniformUrl; /* For windows, transform backslash in slash */
         QStringList dirs = url.split(QDir::separator());
-        for (unsigned int i=0; i<dirs.size(); i++)
+        for (unsigned int i=0; i<(unsigned int)dirs.size(); i++)
         {
             QString dir = dirs.at(i);
             if (i != 0)
@@ -148,6 +148,9 @@ bool JsonApi::processMessage(const QString &message)
         case EMS_AUTH:
             ret = processMessageAuthentication(j.object());
             break;
+        case EMS_CD_RIP:
+            ret = processMessageCDRip(j.object());
+            break;
         default:
             ret = false;
             break;
@@ -181,6 +184,8 @@ JsonApi::MessageType JsonApi::toMessageType(const QString &type) const
         return EMS_PLAYLIST;
     else if (type == "EMS_AUTH")
         return EMS_AUTH;
+    else if (type == "EMS_CD_RIP")
+        return EMS_CD_RIP;
     else
         return EMS_UNKNOWN;
 }
@@ -219,6 +224,8 @@ QJsonObject JsonApi::processMessageBrowse(const QJsonObject &message, bool &ok)
 
 QJsonObject JsonApi::processMessageBrowseMenu(const QJsonObject &message, bool &ok)
 {
+    Q_UNUSED(message);
+
     QJsonObject menus;
     QJsonArray arr;
     QJsonObject library;
@@ -535,11 +542,12 @@ QJsonObject JsonApi::processMessageBrowseCdrom(const QJsonObject &message, bool 
     url.remove("cdda://");
 
     /* If no id, we get all the CDROM tracks */
-    int position = -1;
-    if (!url.isEmpty()) /* Otherwise, we return only one track */
-    {
-        position = url.toUInt();
-    }
+    // Unused variable for the moment
+    // int position = -1;
+    //if (!url.isEmpty()) /* Otherwise, we return only one track */
+    //{
+    //    position = url.toUInt();
+    //}
     QVector<EMSCdrom> cdroms;
     CdromManager::instance()->getAvailableCdroms(&cdroms);
     if (cdroms.size() <= 0)
@@ -549,7 +557,7 @@ QJsonObject JsonApi::processMessageBrowseCdrom(const QJsonObject &message, bool 
     }
     EMSCdrom cdrom = cdroms.at(0);
     QJsonArray jsonArray;
-    for (unsigned int i=0; i<cdrom.tracks.size(); i++)
+    for (unsigned int i=0; i<(unsigned int)cdrom.tracks.size(); i++)
     {
         jsonArray << EMSTrackToJson(cdrom.tracks.at(i));
     }
@@ -561,7 +569,8 @@ QJsonObject JsonApi::processMessageBrowseCdrom(const QJsonObject &message, bool 
 
 bool JsonApi::processMessageDisk(const QJsonObject &message)
 {
-
+    Q_UNUSED(message);
+    return true;
 }
 
 /* Handle player query
@@ -721,6 +730,26 @@ bool JsonApi::processMessageAuthentication(const QJsonObject &message)
         returnValue = true;
     }
     return returnValue;
+}
+
+bool JsonApi::processMessageCDRip(const QJsonObject &message)
+{
+    Q_UNUSED(message);
+
+    CdromManager *cdromManager = CdromManager::instance();
+
+    if (cdromManager->isRipInProgress())
+    {
+        qDebug() << "JsonApi: rip already in progress!";
+        return false;
+    }
+    else
+    {
+        connect(this, &JsonApi::startCdromRip, cdromManager, &CdromManager::startRip);
+        emit startCdromRip();
+    }
+
+    return true;
 }
 
 JsonApi::UrlSchemeType JsonApi::urlSchemeGet(const QString &url) const
@@ -1001,4 +1030,16 @@ void JsonApi::sendAuthRequest(EMSClient client)
     QJsonDocument doc(authRequestJsonObj);
     m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
     qDebug() << "JsonApi: sent the 'authentication' request for " << client.uuid;
+}
+
+void JsonApi::sendRipProgress(EMSRipProgress ripProgress)
+{
+    QJsonObject ripProgressJsonObj;
+    ripProgressJsonObj["msg"] = "EMS_CD_RIP";
+    ripProgressJsonObj["overall_progress"] = (qint64)ripProgress.overall_progress;
+    ripProgressJsonObj["track_in_progress"] = (qint64)ripProgress.track_in_progress;
+    ripProgressJsonObj["track_progress"] = (qint64)ripProgress.track_progress;
+
+    QJsonDocument doc(ripProgressJsonObj);
+    m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
 }

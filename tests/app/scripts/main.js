@@ -30,6 +30,7 @@ var apiList = [
     '{ "msg": "EMS_PLAYLIST", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "action": "del", "url": "playlist://current", "filename": "file:///media/usb/music/beatles"}',
     '{ "msg": "EMS_PLAYLIST", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "action": "clear", "url": "playlist://current"}',
     '{ "msg": "EMS_AUTH", "msg_id": "42", "status": "accepted", "uuid": "110e8400-e29b-11d4-a716-446655440000", "hostname": "192.168.0.1", "username": "remoteClientName"}',
+    '{ "msg": "EMS_CD_RIP", "msg_id": "42"}',
 ];
 
 function popuplateApiList() {

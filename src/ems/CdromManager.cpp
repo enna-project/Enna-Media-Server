@@ -3,6 +3,7 @@
 #include "CdromManager.h"
 #include "MetadataManager.h"
 #include "Player.h"
+#include "CdromRipper.h"
 
 #define INTERFACE "com.EnnaMediaServer.Cdrom"
 #define SIGNAL_NAME_INSERT "inserted"
@@ -26,7 +27,7 @@ void CdromManager::getAvailableCdroms(QVector<EMSCdrom> *cdromsOut)
 {
     cdromsOut->clear();
     mutex.lock();
-    for (unsigned int i=0; i<cdroms.size(); i++)
+    for (unsigned int i=0; i<(unsigned int)cdroms.size(); i++)
     {
         cdromsOut->append(cdroms.at(i));
     }
@@ -38,7 +39,7 @@ bool CdromManager::getCdrom(QString device, EMSCdrom *cdrom)
     bool found = false;
 
     mutex.lock();
-    for (unsigned int i=0; i<cdroms.size(); i++)
+    for (unsigned int i=0; i<(unsigned int)cdroms.size(); i++)
     {
         if (cdroms.at(i).device == device)
         {
@@ -50,6 +51,14 @@ bool CdromManager::getCdrom(QString device, EMSCdrom *cdrom)
     mutex.unlock();
 
     return found;
+}
+
+bool CdromManager::isRipInProgress()
+{
+    if (Q_NULLPTR == m_cdromRipper)
+        return false;
+
+    return true;
 }
 
 /* ---------------------------------------------------------
@@ -104,15 +113,18 @@ void CdromManager::dbusMessageInsert(QString message)
         track.name = QString("Track %1").arg(i);
         track.type = TRACK_TYPE_CDROM;
         track.position = i;
-        lsn_t begin = cdio_get_track_lsn(cdrom, i);
-        lsn_t end = cdio_get_track_last_lsn(cdrom, i);
-        track.duration = (end - begin + 1) / CDIO_CD_FRAMES_PER_SEC; /* One sector = 1/75s */
+        lsn_t lsnBegin = cdio_get_track_lsn(cdrom, i);
+        lsn_t lsnEnd = cdio_get_track_last_lsn(cdrom, i);
+        track.duration = (lsnEnd - lsnBegin + 1) / CDIO_CD_FRAMES_PER_SEC; /* One sector = 1/75s */
         track.format = QString("cdda");
         track.sample_rate = 44100;
         newCD.tracks.append(track);
         /* For disc id computation */
-        lba_t lba = cdio_lsn_to_lba (begin);
+        lba_t lba = cdio_lsn_to_lba (lsnBegin);
         sum += cddb_sum(lba / CDIO_CD_FRAMES_PER_SEC);
+
+        QPair<lsn_t, lsn_t> trackSectors(lsnBegin, lsnEnd);
+        newCD.trackSectors[i] = trackSectors;
     }
 
     /* Plus last track which is the lead out */
@@ -132,7 +144,7 @@ void CdromManager::dbusMessageInsert(QString message)
         lba_t lba = cdio_get_track_lba(cdrom, i);
         newCD.disc_id += QString().sprintf(" %ld", (long) lba);
     }
-    newCD.disc_id += QString().sprintf(" %ld", leadout_sec);
+    newCD.disc_id += QString().sprintf(" %u", leadout_sec);
     cdio_destroy(cdrom);
 
     qDebug() << "Computed DISCID is " << newCD.disc_id;
@@ -206,7 +218,7 @@ void CdromManager::dbusMessageRemove(QString message)
     bool found = false;
     EMSCdrom cdrom;
     mutex.lock();
-    for (unsigned int i=0; i<cdroms.size(); i++)
+    for (unsigned int i=0; i<(unsigned int)cdroms.size(); i++)
     {
         if (cdroms.at(i).device == message)
         {
@@ -228,7 +240,7 @@ void CdromManager::dbusMessageRemove(QString message)
 
     /* Remove played CDROM from the current playlist */
     EMSPlaylist playlist = Player::instance()->getCurentPlaylist();
-    for (unsigned int i=0; i<playlist.tracks.size(); i++)
+    for (unsigned int i=0; i<(unsigned int)playlist.tracks.size(); i++)
     {
         EMSTrack track = playlist.tracks.at(i);
         if (track.type == TRACK_TYPE_CDROM && track.filename == cdrom.device)
@@ -246,7 +258,9 @@ void CdromManager::dbusMessageRemove(QString message)
 
 CdromManager* CdromManager::_instance = 0;
 
-CdromManager::CdromManager(QObject *parent) : QObject(parent), bus(QDBusConnection::systemBus())
+CdromManager::CdromManager(QObject *parent) : QObject(parent),
+                                              bus(QDBusConnection::systemBus()),
+                                              m_cdromRipper(Q_NULLPTR)
 {
     cdio_init();
 
@@ -258,6 +272,9 @@ CdromManager::~CdromManager()
 {
     disconnect(this, SIGNAL(cdromTrackNeedUpdate(EMSTrack,QStringList)), MetadataManager::instance(), SLOT(update(EMSTrack,QStringList)));
     disconnect(MetadataManager::instance(), SIGNAL(updated(EMSTrack,bool)), this, SLOT(cdromTrackUpdated(EMSTrack,bool)));
+
+    if (m_cdromRipper)
+        delete m_cdromRipper;
 }
 
 bool CdromManager::startMonitor()
@@ -289,4 +306,37 @@ void CdromManager::stopMonitor()
         bus.disconnect(QString(), QString(), INTERFACE , SIGNAL_NAME_INSERT, this, SLOT(dbusMessageInsert(QString)));
         bus.disconnect(QString(), QString(), INTERFACE , SIGNAL_NAME_REMOVE, this, SLOT(dbusMessageRemove(QString)));
     }
+}
+
+void CdromManager::startRip()
+{
+    /* Get first available CDROM */
+    QVector<EMSCdrom> cdroms;
+    this->getAvailableCdroms(&cdroms);
+
+    /* Start the thread */
+    if ((cdroms.size() > 0) && (!this->isRipInProgress()))
+    {
+        EMSCdrom cdrom = cdroms.at(0);
+        m_cdromRipper = new CdromRipper(this);
+
+        connect(m_cdromRipper, &CdromRipper::resultReady, this, &CdromManager::handleCdromRipperResults);
+        connect(m_cdromRipper, &CdromRipper::finished, m_cdromRipper, &QObject::deleteLater);
+        connect(m_cdromRipper, &CdromRipper::ripProgressChanged, this, &CdromManager::ripProgress);
+
+        m_cdromRipper->setCdrom(cdrom);
+        m_cdromRipper->start();
+    }
+}
+
+void CdromManager::ripProgress(EMSRipProgress ripProgress)
+{
+    emit ripProgressChanged(ripProgress);
+}
+
+void CdromManager::handleCdromRipperResults(const QString &result)
+{
+    qDebug() << "CdromManager handle cdrom ripper results: " << result;
+    delete m_cdromRipper;
+    m_cdromRipper = Q_NULLPTR;
 }

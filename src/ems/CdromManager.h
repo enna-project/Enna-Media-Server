@@ -6,6 +6,8 @@
 
 #include "Data.h"
 
+class CdromRipper;
+
 class CdromManager : public QObject
 {
     Q_OBJECT
@@ -14,6 +16,7 @@ class CdromManager : public QObject
     QMutex mutex;
     QVector<EMSCdrom> cdroms;
     QDBusConnection bus;
+    CdromRipper *m_cdromRipper;
 
 public:
 
@@ -23,6 +26,7 @@ public:
      */
     void getAvailableCdroms(QVector<EMSCdrom> *cdromsOut);
     bool getCdrom(QString device, EMSCdrom *cdromOut);
+    bool isRipInProgress();
 
     /* ---------------------------------
      *    Signleton pattern
@@ -60,6 +64,8 @@ signals:
     void cdromChanged(EMSCdrom cdrom);
     /* Signal binded to MetadataManager */
     void cdromTrackNeedUpdate(EMSTrack track, QStringList capabilities);
+    /* Signal binded to WebSocketServer */
+    void ripProgressChanged(EMSRipProgress ripProgress);
 
 
 public slots:
@@ -68,6 +74,9 @@ public slots:
     void dbusMessageRemove(QString message);
     bool startMonitor();
     void stopMonitor();
+    void startRip();
+    void ripProgress(EMSRipProgress ripProgress);
+    void handleCdromRipperResults(const QString &message);
 
 private:
     /* Singleton pattern */

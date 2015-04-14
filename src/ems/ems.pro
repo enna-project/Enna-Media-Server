@@ -40,7 +40,8 @@ HEADERS += Database.h \
            LocalFileScanner.h \
            SndfilePlugin.h \
            DsdPlugin.h \
-           CoverLocalPlugin.h
+           CoverLocalPlugin.h \
+           CdromRipper.h
 
 SOURCES += Database.cpp \
            DirectoryWorker.cpp \
@@ -61,7 +62,8 @@ SOURCES += Database.cpp \
            LocalFileScanner.cpp \
            SndfilePlugin.cpp \
            DsdPlugin.cpp \
-           CoverLocalPlugin.cpp
+           CoverLocalPlugin.cpp \
+           CdromRipper.cpp
 
 DISTFILES +=
 
