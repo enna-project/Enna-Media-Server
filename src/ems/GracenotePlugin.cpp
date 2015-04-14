@@ -616,7 +616,15 @@ bool GracenotePlugin::albumGdoToEMSTrack(gnsdk_gdo_handle_t albumGdo, EMSTrack *
 
     /* Retrieve the track inside the AlbumGdo */
     gnsdk_gdo_handle_t trackGdo = GNSDK_NULL;
-    error = gnsdk_manager_gdo_child_get(albumGdo, GNSDK_GDO_CHILD_TRACK_BY_NUMBER, track->position, &trackGdo);
+    if (track->position != 0)
+    {
+        error = gnsdk_manager_gdo_child_get(albumGdo, GNSDK_GDO_CHILD_TRACK_BY_NUMBER, track->position, &trackGdo);
+    }
+    else
+    {
+        error = gnsdk_manager_gdo_child_get(albumGdo, GNSDK_GDO_CHILD_TRACK_MATCHED, 1, &trackGdo);
+    }
+
     if (error == GNSDK_SUCCESS)
     {
         trackGdoToEMSTrack(trackGdo, track);
@@ -648,6 +656,16 @@ bool GracenotePlugin::trackGdoToEMSTrack(gnsdk_gdo_handle_t trackGdo, EMSTrack *
             track->name = trackNames.first();
         }
         gnsdk_manager_gdo_release(titleGdo);
+    }
+
+    /* Track position */
+    if (track->position == 0)
+    {
+        QStringList values = getGdoValue(trackGdo, GNSDK_GDO_VALUE_TRACK_NUMBER);
+        if (values.size() > 0)
+        {
+            track->position = values.first().toUInt();
+        }
     }
 
     /* Track genres */
