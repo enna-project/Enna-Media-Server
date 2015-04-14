@@ -16,10 +16,6 @@ GracenotePlugin::GracenotePlugin()
     capabilities << "text";
     capabilities << "fingerprint";
 
-    /* Not implemented :
-    capabilities << "fingerprint";
-    */
-
     imageFormats.clear();
     imageFormats << ".jpeg";
     imageFormats << ".png";
