@@ -174,6 +174,8 @@ void LocalFileScanner::fileFound(QString filename, QString sha1)
     capabilities << track.format;
     /* Use text retrieved from the metadata inside the file to perform online text lookup */
     capabilities << "text";
+    /* If there is no data, try to use sound data (fingerprint) to retrieve metadata */
+    capabilities << "fingerprint";
     /* Look for a user cover file inside the directory */
     capabilities << "cover";
 

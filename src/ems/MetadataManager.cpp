@@ -14,28 +14,38 @@ MetadataManager* MetadataManager::_instance = 0;
 
 void MetadataManager::update(EMSTrack track, QStringList capabilities)
 {
+    QVector<MetadataPlugin*> plugins;
+
     /* The order of this list is respected. The plugin are used consecutively. */
     for (int i=0; i<capabilities.size(); i++)
     {
         QVector<MetadataPlugin*> availablePlugin = getAvailablePlugins(capabilities.at(i));
         for (int j=0; j<availablePlugin.size(); j++)
         {
-            MetadataPlugin* plugin = availablePlugin.at(j);
-            bool lastSignal = false;
-            if (j == (availablePlugin.size()-1) && i == (capabilities.size()-1))
+            if (!plugins.contains(availablePlugin.at(j)))
             {
-                lastSignal = true;
+                plugins.append(availablePlugin.at(j));
             }
+        }
+    }
 
-            /* Synchronous update, this slot lives in the MetadataManager's thread */
-            plugin->lock();
-            plugin->update(&track);
-            plugin->unlock();
+    for (int i=0; i<plugins.size(); i++)
+    {
+        MetadataPlugin* plugin = plugins.at(i);
+        bool lastSignal = false;
+        if (i == (plugins.size()-1))
+        {
+            lastSignal = true;
+        }
 
-            if (!lastSignal)
-            {
-                emit updated(track, false);
-            }
+        /* Synchronous update, this slot lives in the MetadataManager's thread */
+        plugin->lock();
+        plugin->update(&track);
+        plugin->unlock();
+
+        if (!lastSignal)
+        {
+            emit updated(track, false);
         }
     }
     emit updated(track, true);

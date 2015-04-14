@@ -14,6 +14,7 @@ GracenotePlugin::GracenotePlugin()
 
     capabilities << "discid";
     capabilities << "text";
+    capabilities << "fingerprint";
 
     /* Not implemented :
     capabilities << "fingerprint";
@@ -124,12 +125,118 @@ bool GracenotePlugin::update(EMSTrack *track)
             ret = lookupByText(track);
         }
     }
+
+    /* If no data found, try to use "fingerprint" */
+    if(track->album.name.isEmpty())
+    {
+        /* Fingerprint lookup is for now only available for WAV files
+         * Or CDROM track.
+         */
+        if (track->type == TRACK_TYPE_CDROM || (track->format == "wav") || (track->format == "raw"))
+        {
+            lookupByFingerprint(track);
+        }
+    }
     return ret;
 }
 
 /* ---------------------------------------------------------
  *                    LOOKUP FUNCTIONS
  * --------------------------------------------------------- */
+
+bool GracenotePlugin::lookupByQueryHandle(EMSTrack *track, gnsdk_musicid_query_handle_t queryHandle)
+{
+    gnsdk_error_t error = GNSDK_SUCCESS;
+    gnsdk_gdo_handle_t findResult = GNSDK_NULL;
+    gnsdk_gdo_handle_t albumGdo = GNSDK_NULL;
+    gnsdk_uint32_t count = 0;
+    gnsdk_uint32_t choice = 0;
+    gnsdk_cstr_t full = GNSDK_NULL;
+
+    /* Perform the query */
+    error = gnsdk_musicid_query_find_albums(queryHandle, &findResult);
+    if (error != GNSDK_SUCCESS)
+    {
+        displayLastError();
+        return false;
+    }
+
+    /* Get how many album match */
+    error = gnsdk_manager_gdo_child_count(findResult, GNSDK_GDO_CHILD_ALBUM, &count);
+    if (error != GNSDK_SUCCESS)
+    {
+        displayLastError();
+        gnsdk_manager_gdo_release(findResult);
+        return false;
+    }
+
+    if (count == 0)
+    {
+        qDebug() << "No disc info for this album.";
+        gnsdk_manager_gdo_release(findResult);
+        return true;
+    }
+
+    /* Choose the first album */
+    choice = 1;
+
+    error = gnsdk_manager_gdo_child_get(findResult, GNSDK_GDO_CHILD_ALBUM, choice, &albumGdo);
+    if (error != GNSDK_SUCCESS)
+    {
+        displayLastError();
+        gnsdk_manager_gdo_release(findResult);
+        return false;
+    }
+
+    error = gnsdk_manager_gdo_value_get(albumGdo, GNSDK_GDO_VALUE_FULL_RESULT, 1, &full);
+    if (error != GNSDK_SUCCESS)
+    {
+        displayLastError();
+        gnsdk_manager_gdo_release(findResult);
+        gnsdk_manager_gdo_release(albumGdo);
+        return false;
+    }
+
+    /* If partial result, do again the lookup but using albumGdo instead of the TOC */
+    if (!strcmp(full, GNSDK_VALUE_FALSE))
+    {
+        error = gnsdk_musicid_query_set_gdo(queryHandle, albumGdo);
+        if (error != GNSDK_SUCCESS)
+        {
+            displayLastError();
+            gnsdk_manager_gdo_release(findResult);
+            gnsdk_manager_gdo_release(albumGdo);
+            return false;
+        }
+
+        /* New search */
+        gnsdk_manager_gdo_release(findResult);
+        error = gnsdk_musicid_query_find_albums(queryHandle, &findResult);
+        if (error != GNSDK_SUCCESS)
+        {
+            displayLastError();
+            return false;
+        }
+
+        /* Get new album with more data */
+        gnsdk_manager_gdo_release(albumGdo);
+        error = gnsdk_manager_gdo_child_get(findResult, GNSDK_GDO_CHILD_ALBUM, 1, &albumGdo);
+        if (error != GNSDK_SUCCESS)
+        {
+            displayLastError();
+            gnsdk_manager_gdo_release(findResult);
+            return false;
+        }
+    }
+
+    /* We have found the album, update the given track object */
+    albumGdoToEMSTrack(albumGdo, track);
+
+    gnsdk_manager_gdo_release(albumGdo);
+    gnsdk_manager_gdo_release(findResult);
+    return true;
+}
+
 bool GracenotePlugin::lookupByText(EMSTrack *track)
 {
     gnsdk_error_t error = GNSDK_SUCCESS;
@@ -251,11 +358,6 @@ bool GracenotePlugin::lookupByDiscID(EMSTrack *track, EMSCdrom cdrom)
 {
     gnsdk_error_t error = GNSDK_SUCCESS;
     gnsdk_musicid_query_handle_t queryHandle = GNSDK_NULL;
-    gnsdk_gdo_handle_t findResult = GNSDK_NULL;
-    gnsdk_gdo_handle_t albumGdo = GNSDK_NULL;
-    gnsdk_uint32_t count = 0;
-    gnsdk_uint32_t choice = 0;
-    gnsdk_cstr_t full = GNSDK_NULL;
 
     /* Create the query handle */
     error = gnsdk_musicid_query_create(userHandle, GNSDK_NULL, GNSDK_NULL, &queryHandle);
@@ -286,97 +388,112 @@ bool GracenotePlugin::lookupByDiscID(EMSTrack *track, EMSCdrom cdrom)
         return false;
     }
 
-    /* Perform the query */
-    error = gnsdk_musicid_query_find_albums(queryHandle, &findResult);
-    if (error != GNSDK_SUCCESS)
+    bool ret = lookupByQueryHandle(track, queryHandle);
+    gnsdk_musicid_query_release(queryHandle);
+    return ret;
+}
+
+bool GracenotePlugin::lookupByFingerprint(EMSTrack *track)
+{
+    gnsdk_musicid_query_handle_t queryHandle = GNSDK_NULL;
+    gnsdk_error_t error = GNSDK_SUCCESS;
+    unsigned int bps = 0, channels = 0, sampleRate = 0;
+
+    /* First get stream data :
+     * - Bits number per sample
+     * - Sample rate
+     * - Number of channels
+     */
+    if (track->type == TRACK_TYPE_CDROM)
     {
-        displayLastError();
-        gnsdk_musicid_query_release(queryHandle);
-        return false;
+        sampleRate = 44100;
+        bps = 16;
+        channels = 2;
+    }
+    else
+    {
+        QStringList params = track->format_parameters.split(";");
+        foreach (QString param, params)
+        {
+            if (param.startsWith("bits_per_sample:"))
+            {
+                param.remove("bits_per_sample:");
+                bps = param.toUInt();
+            }
+            if (param.startsWith("channels:"))
+            {
+                param.remove("channels:");
+                channels = param.toUInt();
+            }
+        }
+        sampleRate = track->sample_rate;
     }
 
-    /* Get how many album match */
-    error = gnsdk_manager_gdo_child_count(findResult, GNSDK_GDO_CHILD_ALBUM, &count);
-    if (error != GNSDK_SUCCESS)
+    if (bps == 0 || channels == 0 || sampleRate == 0)
     {
-        displayLastError();
-        gnsdk_manager_gdo_release(findResult);
-        gnsdk_musicid_query_release(queryHandle);
-        return false;
-    }
-
-    if (count == 0)
-    {
-        qDebug() << "No disc info for this album.";
-        gnsdk_manager_gdo_release(findResult);
-        gnsdk_musicid_query_release(queryHandle);
+        /* Not enough data to read, return normally */
+        qDebug() << "Can't find bps/channels/sample_rate for track " << track->filename;
+        qDebug() << QString("bps = %1, channels = %2, sample_rate = %3").arg(bps).arg(channels).arg(sampleRate);
         return true;
     }
 
-    /* Choose the first album */
-    choice = 1;
-
-    error = gnsdk_manager_gdo_child_get(findResult, GNSDK_GDO_CHILD_ALBUM, choice, &albumGdo);
+    /* Create query handle */
+    error = gnsdk_musicid_query_create(userHandle, GNSDK_NULL, GNSDK_NULL, &queryHandle);
     if (error != GNSDK_SUCCESS)
     {
         displayLastError();
-        gnsdk_manager_gdo_release(findResult);
-        gnsdk_musicid_query_release(queryHandle);
         return false;
     }
 
-    error = gnsdk_manager_gdo_value_get(albumGdo, GNSDK_GDO_VALUE_FULL_RESULT, 1, &full);
-    if (error != GNSDK_SUCCESS)
+    /* Then read 16s of music
+     * GNSDK_MUSICID_FP_DATA_TYPE_FILE == 16s
+     */
+    if (track->type == TRACK_TYPE_CDROM)
     {
-        displayLastError();
-        gnsdk_manager_gdo_release(findResult);
-        gnsdk_manager_gdo_release(albumGdo);
-        gnsdk_musicid_query_release(queryHandle);
-        return false;
+        //TODO
+    }
+    else
+    {
+        QFile file(track->filename);
+        if (!file.open(QIODevice::ReadOnly))
+        {
+            return false;
+        }
+
+        if (track->format == "wav") // Skip the header
+        {
+            file.seek(44);
+        }
+
+        /* Feed gracenote engine with samples */
+        bool cont = true;
+        char samples[2048];
+        int samplesSize = 0;
+        gnsdk_bool_t complete = GNSDK_FALSE;
+
+        gnsdk_musicid_query_fingerprint_begin(queryHandle, GNSDK_MUSICID_FP_DATA_TYPE_FILE, sampleRate, bps, channels);
+        while(cont)
+        {
+            samplesSize = file.read(samples, 2048);
+            if (samplesSize != 2048 || file.atEnd())
+            {
+                cont = false;
+            }
+            error = gnsdk_musicid_query_fingerprint_write(queryHandle, samples, samplesSize, &complete);
+            if (error != GNSDK_SUCCESS || complete == GNSDK_TRUE)
+            {
+                cont = false;
+            }
+        }
+        gnsdk_musicid_query_fingerprint_end(queryHandle);
+        file.close();
     }
 
-    /* If partial result, do again the lookup but using albumGdo instead of the TOC */
-    if (!strcmp(full, GNSDK_VALUE_FALSE))
-    {
-        error = gnsdk_musicid_query_set_gdo(queryHandle, albumGdo);
-        if (error != GNSDK_SUCCESS)
-        {
-            displayLastError();
-            gnsdk_manager_gdo_release(findResult);
-            gnsdk_manager_gdo_release(albumGdo);
-            gnsdk_musicid_query_release(queryHandle);
-            return false;
-        }
-
-        /* New search */
-        gnsdk_manager_gdo_release(findResult);
-        error = gnsdk_musicid_query_find_albums(queryHandle, &findResult);
-        if (error != GNSDK_SUCCESS)
-        {
-            displayLastError();
-            gnsdk_musicid_query_release(queryHandle);
-            return false;
-        }
-
-        /* Get new album with more data */
-        gnsdk_manager_gdo_release(albumGdo);
-        error = gnsdk_manager_gdo_child_get(findResult, GNSDK_GDO_CHILD_ALBUM, 1, &albumGdo);
-        if (error != GNSDK_SUCCESS)
-        {
-            displayLastError();
-            gnsdk_manager_gdo_release(findResult);
-            gnsdk_musicid_query_release(queryHandle);
-            return false;
-        }
-    }
-
-    /* We have found the album, update the given track object */
-    albumGdoToEMSTrack(albumGdo, track);
-
-    gnsdk_manager_gdo_release(albumGdo);
-    gnsdk_manager_gdo_release(findResult);
+    /* Lookup using the query handle */
+    bool ret = lookupByQueryHandle(track, queryHandle);
     gnsdk_musicid_query_release(queryHandle);
-    return true;
+
+    return ret;
 }
 
 /* ---------------------------------------------------------
@@ -787,6 +904,13 @@ bool GracenotePlugin::configure()
 
     /* Initialize the Link Library */
     error = gnsdk_link_initialize(sdkmgrHandle);
+    if (error != GNSDK_SUCCESS)
+    {
+        return false;
+    }
+
+    /* Initialize the DSP Library */
+    error = gnsdk_dsp_initialize(sdkmgrHandle);
     if (error != GNSDK_SUCCESS)
     {
         return false;

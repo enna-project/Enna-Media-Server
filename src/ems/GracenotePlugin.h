@@ -43,6 +43,8 @@ private:
     /* Entry points for look up */
     bool lookupByDiscID(EMSTrack *track, EMSCdrom cdrom);
     bool lookupByText(EMSTrack *track);
+    bool lookupByFingerprint(EMSTrack *track);
+    bool lookupByQueryHandle(EMSTrack *track, gnsdk_musicid_query_handle_t queryHandle);
 
     /* Internal utils */
     bool albumGdoToEMSTrack(gnsdk_gdo_handle_t albumGdo, EMSTrack *track);
