@@ -13,7 +13,7 @@
 // database/path
 #define EMS_DATABASE_PATH "database.sqlite"
 // database/create_script
-#define EMS_DATABASE_CREATE_SCRIPT "database.sql"
+#define EMS_DATABASE_CREATE_SCRIPT "/usr/share/ems/database.sql"
 // database/version
 #define EMS_DATABASE_VERSION 1
 
