@@ -933,8 +933,31 @@ void GracenotePlugin::gdoToEMSArtists(gnsdk_gdo_handle_t gdo, QVector<EMSArtist>
                         gnsdk_link_query_release(queryHandle);
                     }
 
-                    /* Add the new artist in the list */
-                    artists->append(artist);
+                    /* Add the new artist in the list
+                     * Or replace the existing one with the same name
+                     */
+                    bool found = false;
+                    for(int i=0; i<artists->size(); i++)
+                    {
+                        EMSArtist existingArtist = artists->at(i);
+                        if (existingArtist.name == artist.name)
+                        {
+                            if (existingArtist.picture.isEmpty())
+                            {
+                                artists->replace(i, artist);
+                            }
+                            found = true;
+                            break;
+                        }
+
+                    }
+                    if (!found)
+                    {
+                        artists->append(artist);
+                    }
+
+
+
                 }
                 gnsdk_manager_gdo_release(contributorNameGdo);
             }
@@ -1002,8 +1025,29 @@ void GracenotePlugin::gdoToEMSGenres(gnsdk_gdo_handle_t gdo, QVector<EMSGenre> *
             gnsdk_link_query_release(queryHandle);
         }
 
-        /* Add the new genre in the list */
-        genres->append(genre);
+        /* Add the new genre in the list
+         * Or replace the existing one with the same name
+         */
+        bool found = false;
+        for(int i=0; i<genres->size(); i++)
+        {
+            EMSGenre existingGenre = genres->at(i);
+            if (existingGenre.name == genre.name)
+            {
+                if (existingGenre.picture.isEmpty())
+                {
+                    genres->replace(i, genre);
+                }
+                found = true;
+                break;
+            }
+
+        }
+        if (!found)
+        {
+            genres->append(genre);
+        }
+
     }
 }
 
