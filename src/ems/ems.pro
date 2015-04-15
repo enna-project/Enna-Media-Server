@@ -10,7 +10,7 @@ CONFIG += c++11 link_pkgconfig
 
 SUBDIRS +=
 
-PKGCONFIG += libmpdclient libcdio flac sndfile
+PKGCONFIG += libmpdclient libcdio libcdio_cdda libcdio_paranoia flac sndfile
 
 TEMPLATE = app
 TARGET = enna-media-server
