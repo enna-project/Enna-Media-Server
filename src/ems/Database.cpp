@@ -134,8 +134,6 @@ bool Database::insertNewTrack(EMSTrack *newTrack)
         if(!q.exec())
         {
             qCritical() << "Error while inserting the relation track-artist : " << q.lastError().text();
-            q.exec("ROLLBACK;");
-            return false;
         }
     }
 
@@ -178,9 +176,6 @@ bool Database::insertNewTrack(EMSTrack *newTrack)
         if(!q.exec())
         {
             qCritical() << "Error while inserting the relation track-genre : " << q.lastError().text();
-            qCritical() << "Query was : " << q.lastQuery();
-            q.exec("ROLLBACK;");
-            return false;
         }
     }
 
