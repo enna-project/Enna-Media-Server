@@ -6,6 +6,7 @@
 #include <QThread>
 
 #include "Data.h"
+#include "WavEncoder.h"
 
 class CdromRipper : public QThread
 {
@@ -39,6 +40,8 @@ private:
     EMSCdrom m_cdromProperties;
     EMSRipProgress m_emsRipProgress;
     lsn_t m_diskSectorQuantity;
+
+    WavEncoder m_wavEncoder;
 
     // Type from the 'paranoia' library
     cdrom_drive_t *m_drive;

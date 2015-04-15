@@ -169,7 +169,7 @@ bool CdromRipper::ripOneTrack(unsigned int indexTrack)
     QString wavFilename = this->buildWavFilename(indexTrack);
     if (!wavFilename.isEmpty())
     {
-        if (!this->writeRawFile(audioTrackBuf, bufferSize, wavFilename))
+        if (!m_wavEncoder.write(wavFilename, audioTrackBuf, bufferSize))
         {
                 qCritical() << "CdromRipper: Track rip aborted (write file audio failed)";
                 free(audioTrackBuf);
