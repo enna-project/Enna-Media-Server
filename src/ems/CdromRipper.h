@@ -4,6 +4,8 @@
 #include <cdio/paranoia/cdda.h>
 #include <cdio/paranoia/paranoia.h>
 #include <QThread>
+#include <QTimer>
+#include <QMutex>
 
 #include "Data.h"
 #include "WavEncoder.h"
@@ -15,10 +17,9 @@ class CdromRipper : public QThread
 
 public:
     CdromRipper(QObject *parent);
+    ~CdromRipper();
 
     void setCdrom(const EMSCdrom &cdromProperties);
-
-protected:
 
 private:
     bool identifyDrive();
@@ -39,9 +40,11 @@ private:
 
     EMSCdrom m_cdromProperties;
     EMSRipProgress m_emsRipProgress;
+    QMutex m_emsRipProgressMutex;
     lsn_t m_diskSectorQuantity;
 
     WavEncoder m_wavEncoder;
+    QTimer *m_ripProgressObserverTimer;
 
     // Type from the 'paranoia' library
     cdrom_drive_t *m_drive;
@@ -50,6 +53,9 @@ private:
 signals:
     void ripProgressChanged(EMSRipProgress ripProgress);
     void resultReady(const QString &result);
+
+public slots:
+    void observeRipProgress();
 };
 
 

@@ -23,7 +23,7 @@ WebSocketServer::WebSocketServer(quint16 port, QObject *parent) :
       connect(Player::instance(), &Player::playlistChanged,
               this, &WebSocketServer::broadcastPlaylist);
       connect(CdromManager::instance(), &CdromManager::ripProgressChanged,
-              this, &WebSocketServer::broadcastRipProgress, Qt::QueuedConnection);
+              this, &WebSocketServer::broadcastRipProgress, Qt::DirectConnection);
   }
 }
 

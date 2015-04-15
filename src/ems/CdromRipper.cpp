@@ -11,7 +11,18 @@
 
 CdromRipper::CdromRipper(QObject *parent)
     : QThread(parent)
-{}
+{
+    m_ripProgressObserverTimer = new QTimer(this);
+    connect(m_ripProgressObserverTimer, &QTimer::timeout, this, &CdromRipper::observeRipProgress);
+    m_ripProgressObserverTimer->setInterval(1000); // in milliseconds
+    m_ripProgressObserverTimer->start();
+}
+
+CdromRipper::~CdromRipper()
+{
+    m_ripProgressObserverTimer->stop();
+    delete m_ripProgressObserverTimer;
+}
 
 void CdromRipper::setCdrom(const EMSCdrom &cdromProperties)
 {
@@ -52,6 +63,7 @@ void CdromRipper::run()
     this->initializeParanoia();
     this->computeDiskSectorQuantity();
 
+
     unsigned int nbTracks = m_cdromProperties.tracks.size();
     for (unsigned int indexTrack = 0; indexTrack < nbTracks; ++indexTrack)
     {
@@ -59,6 +71,7 @@ void CdromRipper::run()
     }
 
     this->closeDrive();
+
     qDebug() << "CdromRipper: end of the rip process";
     emit resultReady(result);
 }
@@ -296,10 +309,14 @@ void CdromRipper::buildRipProgressMessage(unsigned int indexTrack,
                                           lsn_t firstSector,
                                           lsn_t lastSector)
 {
+    m_emsRipProgressMutex.lock();
+
     m_emsRipProgress.track_in_progress = indexTrack + 1;
     m_emsRipProgress.overall_progress = 100 * currentSector / m_diskSectorQuantity;
     m_emsRipProgress.track_progress = (100 * (currentSector - firstSector)) /
                                       (lastSector - firstSector + 1);
+
+    m_emsRipProgressMutex.unlock();
 }
 
 void CdromRipper::computeDiskSectorQuantity()
@@ -337,4 +354,11 @@ bool CdromRipper::writeDiscId(const QString &dirPath)
                      m_cdromProperties.disc_id.size());
     discIdFile.close();
     return true;
+}
+
+void CdromRipper::observeRipProgress()
+{
+    m_emsRipProgressMutex.lock();
+    emit ripProgressChanged(m_emsRipProgress);
+    m_emsRipProgressMutex.unlock();
 }
