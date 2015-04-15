@@ -279,6 +279,20 @@ const QString clean_emptyAlbum = \
 "   WHERE tracks.album_id IS NULL AND albums.id <> 0 "
 ");";
 
+const QString clean_orphanArtist = \
+"DELETE FROM artists WHERE id IN ( "
+"   SELECT artists.id "
+"   FROM artists LEFT JOIN tracks_artists ON (artists.id = tracks_artists.artist_id) "
+"   WHERE tracks_artists.artist_id IS NULL "
+");";
+
+const QString clean_orphanGenre = \
+"DELETE FROM genres WHERE id IN ( "
+"   SELECT genres.id "
+"   FROM genres LEFT JOIN tracks_genres ON (genres.id = tracks_genres.genre_id) "
+"   WHERE tracks_genres.genre_id IS NULL "
+");";
+
 void Database::cleanOrphans()
 {
     if (!opened)
@@ -295,7 +309,19 @@ void Database::cleanOrphans()
 
     if (!q.exec(clean_emptyAlbum))
     {
-        qCritical() << "Error when cleaning empty album";
+        qCritical() << "Error when cleaning empty albums";
+        qCritical() << "Query was : " << q.lastQuery();
+    }
+
+    if (!q.exec(clean_orphanGenre))
+    {
+        qCritical() << "Error when cleaning orphan artists";
+        qCritical() << "Query was : " << q.lastQuery();
+    }
+
+    if (!q.exec(clean_orphanArtist))
+    {
+        qCritical() << "Error when cleaning orphan genres";
         qCritical() << "Query was : " << q.lastQuery();
     }
 }
