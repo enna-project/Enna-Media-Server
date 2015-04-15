@@ -3,6 +3,10 @@
 #include <cdio/cd_types.h>
 #include <QDebug>
 #include <QFile>
+#include <QDir>
+#include <QSettings>
+#include <QStandardPaths>
+#include "DefaultSettings.h"
 
 
 CdromRipper::CdromRipper(QObject *parent)
@@ -162,27 +166,104 @@ bool CdromRipper::ripOneTrack(unsigned int indexTrack)
         currentLsn++;
     }
 
-    QString wavFilename = this->buildWavFilename(trackPosition);
-
-    if (!this->writeRawFile(audioTrackBuf, bufferSize, wavFilename))
+    QString wavFilename = this->buildWavFilename(indexTrack);
+    if (!wavFilename.isEmpty())
     {
-            qCritical() << "CdromRipper: Track rip aborted.";
-            free(audioTrackBuf);
-            return false;
+        if (!this->writeRawFile(audioTrackBuf, bufferSize, wavFilename))
+        {
+                qCritical() << "CdromRipper: Track rip aborted (write file audio failed)";
+                free(audioTrackBuf);
+                return false;
+        }
+    }
+    else
+    {
+        qCritical() << "CdromRipper: file audio creation failed";
     }
 
     free(audioTrackBuf);
     return true;
 }
 
-QString CdromRipper::buildWavFilename(unsigned int trackPosition)
+QString CdromRipper::buildWavFilename(unsigned int indexTrack)
 {
-    QString wavName("/tmp/track_mbo_");
-    wavName += QString::number(trackPosition);
-    wavName += ".wav";
-    qDebug() << "CdromRipper: raw audio filename: " << wavName;
+    QString mainDirectoryPath("/tmp");
+    QString defaultArtistName("DefaultArtistName");
+    QString defaultAlbumName("DefaultAlbumName");
+    QString defaultTrackName("trackname");
 
-    return wavName;
+    QString artistName = defaultArtistName;
+    QString albumName = defaultAlbumName;
+    QString trackName = defaultTrackName;
+
+    unsigned int trackPosition = m_cdromProperties.tracks[indexTrack].position;
+
+    // Find the main directory path
+    QSettings::setDefaultFormat(QSettings::IniFormat);
+    QSettings settings;
+
+    QString locations;
+    EMS_LOAD_SETTINGS(locations, "main/locations",
+                      QStandardPaths::standardLocations(QStandardPaths::MusicLocation)[0],
+                      String);
+    QStringList locationList = locations.split( " " );
+    if (locationList.size() > 0)
+    {
+        mainDirectoryPath = locationList[0];
+    }
+
+    // Find the artist
+    if (m_cdromProperties.tracks[indexTrack].artists.size() > 0)
+    {
+        if (!m_cdromProperties.tracks[indexTrack].artists[0].name.isEmpty())
+        {
+            artistName = m_cdromProperties.tracks[indexTrack].artists[0].name;
+        }
+    }
+
+    // Find the album
+    if (!m_cdromProperties.tracks[indexTrack].album.name.isEmpty())
+    {
+        albumName = m_cdromProperties.tracks[indexTrack].album.name;
+    }
+
+    // Find the trackname
+    if (!m_cdromProperties.tracks[indexTrack].name.isEmpty())
+    {
+        trackName = m_cdromProperties.tracks[indexTrack].name;
+    }
+
+    QString directoryPath = mainDirectoryPath;
+    QString filename;
+    QString extension = ".wav";
+
+    directoryPath += "/";
+    directoryPath += artistName;
+    directoryPath += "/";
+    directoryPath += albumName;
+    directoryPath += "/";
+
+    if (trackPosition <= 9)
+    {
+        filename += "0";
+    }
+    filename += QString::number(trackPosition);
+    filename += "-";
+    filename += trackName;
+
+    QString filenameWithExtension = filename + extension;
+    QString absoluteName = directoryPath + filenameWithExtension;
+    qDebug() << "CdromRipper: raw audio filename: " << absoluteName;
+
+    // Create the directory if does not exist
+    QDir dirManager("/");
+    if (!dirManager.mkpath(directoryPath))
+    {
+        qCritical() << "CdromRipper: directory creation failed";
+        return ("");
+    }
+
+    return absoluteName;
 }
 
 bool CdromRipper::writeRawFile(uint8_t *audioTrackBuf,

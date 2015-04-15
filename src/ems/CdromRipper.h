@@ -26,7 +26,7 @@ private:
     void initializeParanoia();
     void computeDiskSectorQuantity();
     bool ripOneTrack(unsigned int indexTrack);
-    QString buildWavFilename(unsigned int trackPosition);
+    QString buildWavFilename(unsigned int indexTrack);
     bool writeRawFile(uint8_t *audioTrackBuf,
                       unsigned int bufferSize,
                       const QString &wavFilename);
