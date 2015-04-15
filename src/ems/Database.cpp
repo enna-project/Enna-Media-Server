@@ -271,7 +271,7 @@ void Database::removeOldFiles(QString directory, unsigned long long timestamp)
 }
 
 const QString clean_orphanTrack = \
-"DELETE FROM track WHERE id IN ( "
+"DELETE FROM tracks WHERE id IN ( "
 "   SELECT tracks.id "
 "   FROM tracks LEFT JOIN files ON (files.track_id = tracks.id) "
 "   WHERE files.track_id IS NULL "
@@ -292,8 +292,17 @@ void Database::cleanOrphans()
     }
 
     QSqlQuery q(db);
-    q.exec(clean_orphanTrack);
-    q.exec(clean_emptyAlbum);
+    if (!q.exec(clean_orphanTrack))
+    {
+        qCritical() << "Error when cleaning orphan tracks";
+        qCritical() << "Query was : " << q.lastQuery();
+    }
+
+    if (!q.exec(clean_emptyAlbum))
+    {
+        qCritical() << "Error when cleaning empty album";
+        qCritical() << "Query was : " << q.lastQuery();
+    }
 }
 
 
