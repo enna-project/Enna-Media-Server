@@ -5,6 +5,7 @@
 #include "SndfilePlugin.h"
 #include "DsdPlugin.h"
 #include "CoverLocalPlugin.h"
+#include "TagLibPlugin.h"
 
 #ifdef EMS_PLUGIN_GRACENOTE
 #include "GracenotePlugin.h"
@@ -60,6 +61,7 @@ void MetadataManager::registerAllPlugins()
     plugins.append(new SndfilePlugin);
     plugins.append(new DsdPlugin);
     plugins.append(new CoverLocalPlugin);
+    plugins.append(new TagLibPlugin);
 
     /* Optional plugins. Activate them with qmake options (see .pro) */
 #ifdef EMS_PLUGIN_GRACENOTE

@@ -36,7 +36,7 @@
 
 /* Scanner */
 //File extensions used by the scanner to detect new files
-#define EMS_MUSIC_EXTENSIONS "*.flac, *.wav, *.dsf, *.dff"
+#define EMS_MUSIC_EXTENSIONS "*.flac, *.wav, *.dsf, *.dff, *.mp3, *.ogg"
 
 #define EMS_LOAD_SETTINGS(var, confValue, defaultValue, type) \
 do {\
