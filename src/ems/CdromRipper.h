@@ -34,6 +34,7 @@ private:
                                  lsn_t currentSector,
                                  lsn_t firstSector,
                                  lsn_t lastSector);
+    bool writeDiscId(const QString &dirPath);
 
     EMSCdrom m_cdromProperties;
     EMSRipProgress m_emsRipProgress;

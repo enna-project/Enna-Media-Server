@@ -263,6 +263,12 @@ QString CdromRipper::buildWavFilename(unsigned int indexTrack)
         return ("");
     }
 
+    // Create the discid file associated to this track
+    if (!this->writeDiscId(directoryPath))
+    {
+        qCritical() << "CDromRipper: the 'disc_id' writing failed";
+    }
+
     return absoluteName;
 }
 
@@ -311,4 +317,24 @@ void CdromRipper::computeDiskSectorQuantity()
 
         m_diskSectorQuantity = lastSector - firstSector + 1;
     }
+}
+
+bool CdromRipper::writeDiscId(const QString &dirPath)
+{
+    QString filename = dirPath;
+    filename += "discid";
+
+    QFile discIdFile(filename);
+    if (!discIdFile.open(QIODevice::WriteOnly))
+    {
+        qCritical() << "CdromRipper: cannot open file for writing: "
+                    << qPrintable(discIdFile.errorString());
+        return false;
+    }
+    QDataStream out(&discIdFile);
+    out.setVersion(QDataStream::Qt_5_2);
+    out.writeRawData((const char*)qPrintable(m_cdromProperties.disc_id),
+                     m_cdromProperties.disc_id.size());
+    discIdFile.close();
+    return true;
 }
