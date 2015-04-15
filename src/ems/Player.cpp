@@ -184,6 +184,35 @@ bool Player::getRepeat()
     return out;
 }
 
+void Player::enableOutput(unsigned int id)
+{
+    mutex.lock();
+    EMSPlayerCmd cmd;
+    cmd.action = ACTION_ENABLE_OUTPUT;
+    cmd.uintValue = id;
+    queue.enqueue(cmd);
+    mutex.unlock();
+}
+
+void Player::disableOutput(unsigned int id)
+{
+    mutex.lock();
+    EMSPlayerCmd cmd;
+    cmd.action = ACTION_DISABLE_OUTPUT;
+    cmd.uintValue = id;
+    queue.enqueue(cmd);
+    mutex.unlock();
+}
+
+QVector<EMSSndCard> Player::getOutputs()
+{
+    QVector<EMSSndCard> out;
+    mutex.lock();
+    out = outputs;
+    mutex.unlock();
+    return out;
+}
+
 /* ---------------------------------------------------------
  *       PLAYLIST UTILS (NOT BLOCKING - THREAD SAFE)
  * --------------------------------------------------------- */
@@ -465,6 +494,16 @@ void Player::executeCmd(EMSPlayerCmd cmd)
             }
             break;
         }
+        case ACTION_ENABLE_OUTPUT:
+        {
+            mpd_send_enable_output(conn, cmd.uintValue);
+            break;
+        }
+        case ACTION_DISABLE_OUTPUT:
+        {
+            mpd_send_disable_output(conn, cmd.uintValue);
+            break;
+        }
         default:
         {
             qCritical() << "Unhandled action in the current command.";
@@ -635,6 +674,42 @@ void Player::updateStatus()
     }
 }
 
+/* This function get the sound card list from the MPD server
+ * This list never changed but the filed "enable" could change
+ */
+void Player::retrieveSndCardList()
+{
+    mpd_malloc struct mpd_output *output;
+
+    /* Request all outputs */
+    mpd_send_outputs(conn);
+
+    mutex.lock();
+    outputs.clear();
+    mutex.unlock();
+
+    while ((output = mpd_recv_output(conn)) != NULL)
+    {
+        EMSSndCard sndCard;
+        sndCard.id = mpd_output_get_id(output);
+        sndCard.name = mpd_output_get_name(output);
+        sndCard.enabled = mpd_output_get_enabled(output);
+        mpd_output_free(output);
+        qDebug() << "Sound card detected : " << sndCard.name;
+        mutex.lock();
+        outputs.append(sndCard);
+        mutex.unlock();
+    }
+
+    if (!mpd_response_finish(conn))
+    {
+        qCritical() << "Error while trying to get MPD outputs" ;
+        qCritical() << "Reconnecting...";
+        connectToMpd();
+        return;
+    }
+}
+
 /* ---------------------------------------------------------
  *                  THREAD MAIN FUNCTION
  * --------------------------------------------------------- */
@@ -652,6 +727,10 @@ void Player::run()
 
     /* Set initial state of the player */
     configureInitial();
+
+    /* Get the list of sound cards, this list does not change as the correspond
+     * to the list defined in the mpd configuration file */
+    retrieveSndCardList();
 
     /* Execute each command, or timeout each X ms
      * In all cases, the status is retrieved at the end.

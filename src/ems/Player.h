@@ -45,6 +45,13 @@ public:
     bool getRepeat();
 
     /*
+     * Select output audio device
+     */
+    void enableOutput(unsigned int id);
+    void disableOutput(unsigned int id);
+    QVector<EMSSndCard> getOutputs();
+
+    /*
      * Utils
      */
     QString stateToString(EMSPlayerState state);
@@ -86,6 +93,7 @@ protected:
 private:
     EMSPlayerStatus status;
     EMSPlaylist playlist;
+    QVector<EMSSndCard> outputs;
 
     /* Mutex protecting shared data
      * Be careful when using this mutex, it must be used
@@ -103,6 +111,7 @@ private:
     void disconnectToMpd();
     void configureInitial();
     void updateStatus();
+    void retrieveSndCardList();
     void executeCmd(EMSPlayerCmd cmd);
     QString getMPDFilename(EMSTrack track);
 

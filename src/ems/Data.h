@@ -123,7 +123,22 @@ public:
 enum EMSPlayerState { STATUS_UNKNOWN, STATUS_STOP, STATUS_PLAY, STATUS_PAUSE } ;
 enum EMSPlayerAction { ACTION_ADD, ACTION_DEL, ACTION_DEL_ALL, ACTION_LIST,
                        ACTION_STOP, ACTION_PLAY, ACTION_PLAY_POS, ACTION_PAUSE, ACTION_TOGGLE,
-                       ACTION_NEXT, ACTION_PREV, ACTION_REPEAT, ACTION_RANDOM } ;
+                       ACTION_NEXT, ACTION_PREV, ACTION_REPEAT, ACTION_RANDOM,
+                       ACTION_ENABLE_OUTPUT, ACTION_DISABLE_OUTPUT } ;
+
+class EMSSndCard
+{
+public:
+    unsigned int id;
+    QString name;
+    bool enabled;
+
+    EMSSndCard()
+    {
+        enabled = false;
+        id = 1;
+    }
+};
 
 class EMSPlayerStatus
 {
@@ -159,6 +174,9 @@ public:
      * "random" option, we use the following variable instead.
      */
     bool boolValue;
+
+    /* For activating/disabling a SndCard */
+    unsigned int uintValue;
 };
 
 /* CdromManager data

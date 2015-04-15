@@ -43,7 +43,8 @@ HEADERS += Database.h \
            CoverLocalPlugin.h \
            CdromRipper.h \
            WavEncoder.h \
-           TagLibPlugin.h
+           TagLibPlugin.h \
+           SoundCardManager.h
 
 SOURCES += Database.cpp \
            DirectoryWorker.cpp \
@@ -67,7 +68,8 @@ SOURCES += Database.cpp \
            CoverLocalPlugin.cpp \
            CdromRipper.cpp \
            WavEncoder.cpp \
-           TagLibPlugin.cpp
+           TagLibPlugin.cpp \
+           SoundCardManager.cpp
 
 DISTFILES +=
 
