@@ -18,7 +18,7 @@ void FlacEncoder::clearFilenames()
     m_inputFilename.clear();
 }
 
-bool FlacEncoder::encode()
+bool FlacEncoder::encode(const EMSTrack *emsTrack)
 {
     // preconditions
     if (m_inputFilename.isEmpty() || m_outputFilename.isEmpty())
@@ -42,7 +42,7 @@ bool FlacEncoder::encode()
         return false;
     }
 
-    if (!this->addMetadata())
+    if (!this->addMetadata(emsTrack))
     {
         qCritical() << "FlacEncoder: add metadata failed";
         this->closeEncoder();
@@ -132,25 +132,62 @@ bool FlacEncoder::configureInternalEncoder()
     return ok;
 }
 
-bool FlacEncoder::addMetadata()
+bool FlacEncoder::addMetadata(const EMSTrack *emsTrack)
 {
     bool ok = true;
 
     m_metadata[0] = FLAC__metadata_object_new(FLAC__METADATA_TYPE_VORBIS_COMMENT);
     m_metadata[1] = FLAC__metadata_object_new(FLAC__METADATA_TYPE_PADDING);
 
-    /* there are many tag (vorbiscomment) functions but these are convenient for this particular use: */
-    ok &= FLAC__metadata_object_vorbiscomment_entry_from_name_value_pair(&m_entry, "ARTIST", "Some Artist");
-
-    ok &= FLAC__metadata_object_vorbiscomment_append_comment(m_metadata[0], m_entry, /*copy=*/false);
-
-    ok &= FLAC__metadata_object_vorbiscomment_entry_from_name_value_pair(&m_entry, "YEAR", "1984");
-
-    ok &= FLAC__metadata_object_vorbiscomment_append_comment(m_metadata[0], m_entry, /*copy=*/false);
-
     if ((m_metadata[0] == NULL) ||
-        (m_metadata[1] == NULL) ||
-        !ok)
+        (m_metadata[1] == NULL))
+    {
+        qCritical() << "FlacEncoder: Metadata: metadata  object creation failed";
+        return false;
+    }
+
+    // Add the artists
+    foreach(EMSArtist artist, emsTrack->artists)
+    {
+        ok &= FLAC__metadata_object_vorbiscomment_entry_from_name_value_pair(&m_entry,
+                "ARTIST",
+                qPrintable(artist.name));
+        ok &= FLAC__metadata_object_vorbiscomment_append_comment(m_metadata[0],
+                m_entry, /*copy=*/false);
+    }
+
+    // Add the genres
+    foreach(EMSGenre genre, emsTrack->genres)
+    {
+        ok &= FLAC__metadata_object_vorbiscomment_entry_from_name_value_pair(&m_entry,
+                "GENRE",
+                qPrintable(genre.name));
+        ok &= FLAC__metadata_object_vorbiscomment_append_comment(m_metadata[0],
+                m_entry, /*copy=*/false);
+    }
+
+    // Add the album
+    ok &= FLAC__metadata_object_vorbiscomment_entry_from_name_value_pair(&m_entry,
+            "ALBUM",
+            qPrintable(emsTrack->album.name));
+    ok &= FLAC__metadata_object_vorbiscomment_append_comment(m_metadata[0],
+            m_entry, /*copy=*/false);
+
+    // Add the track title
+    ok &= FLAC__metadata_object_vorbiscomment_entry_from_name_value_pair(&m_entry,
+            "TITLE",
+            qPrintable(emsTrack->name));
+    ok &= FLAC__metadata_object_vorbiscomment_append_comment(m_metadata[0],
+            m_entry, /*copy=*/false);
+
+    // Add the track number
+    ok &= FLAC__metadata_object_vorbiscomment_entry_from_name_value_pair(&m_entry,
+            "TRACKNUMBER",
+            qPrintable(QString::number(emsTrack->position)));
+    ok &= FLAC__metadata_object_vorbiscomment_append_comment(m_metadata[0],
+            m_entry, /*copy=*/false);
+
+    if (!ok)
     {
         qCritical() << "FlacEncoder: Metadata ERROR: out of memory or tag error";
         return false;

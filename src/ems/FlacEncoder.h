@@ -4,6 +4,7 @@
 #include <QObject>
 #include <FLAC++/metadata.h>
 #include <FLAC++/encoder.h>
+#include "Data.h"
 
 #define READSIZE 1024
 
@@ -24,7 +25,7 @@ class FlacEncoder : public QObject
     Q_OBJECT
 
 public:
-    bool encode();
+    bool encode(const EMSTrack *emsTrack);
 
     void setInputFilename(const QString &inputFilename);
     void setOutputFilename(const QString &outputFilename);
@@ -35,7 +36,7 @@ private:
     bool openWavInputFile();
     bool readWavHeader();
     bool configureInternalEncoder();
-    bool addMetadata();
+    bool addMetadata(const EMSTrack *emsTrack);
     bool initializeInternalEncoder();
     bool processEncoding();
     void closeEncoder();

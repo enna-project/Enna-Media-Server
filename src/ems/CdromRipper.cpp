@@ -199,7 +199,7 @@ bool CdromRipper::ripOneTrack(unsigned int indexTrack)
             // FLAC encoding
             m_flacEncoder.setInputFilename(m_wavFilenameCurrentTrack);
             m_flacEncoder.setOutputFilename(m_flacFilenameCurrentTrack);
-            if (!m_flacEncoder.encode())
+            if (!m_flacEncoder.encode(&(m_cdromProperties.tracks[indexTrack])))
             {
                 qCritical() << "CdromRipper: FLAC audio encoding failed";
                 free(audioTrackBuf);
