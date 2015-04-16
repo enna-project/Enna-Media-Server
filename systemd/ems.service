@@ -1,0 +1,27 @@
+[Unit]
+Description=Enna Media Server daemon
+After=network.target sound.target mpd.service
+
+[Service]
+ExecStart=/usr/bin/enna-media-server
+
+# allow EMS to use real-time priority 50
+LimitRTPRIO=50
+LimitRTTIME=-1
+
+# For non-RT system, set the priority
+Nice=-20
+IOSchedulingClass=realtime
+IOSchedulingPriority=0
+
+# move EMS to a top-level cgroup, as real-time budget assignment fails
+# in cgroup /system/ems.service, because /system has a zero real-time
+# budget; see
+# http://www.freedesktop.org/wiki/Software/systemd/MyServiceCantGetRealtime/
+ControlGroup=cpu:/ems
+
+# assign a real-time budget
+ControlGroupAttribute=cpu.rt_runtime_us 500000
+
+[Install]
+WantedBy=multi-user.target
