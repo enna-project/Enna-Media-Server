@@ -29,3 +29,10 @@ INSTALLS += script
 database.path = $$[QT_INSTALL_PREFIX]/share/ems
 database.files = doc/database/database.sql
 INSTALLS += database
+
+# Systemd unit (default)
+!equals(WITH_SYSTEMD, "no") {
+    systemd.path = /lib/systemd/system
+    systemd.files = systemd/ems.service
+    INSTALLS += systemd
+}
