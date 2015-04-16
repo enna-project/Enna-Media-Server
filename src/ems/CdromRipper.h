@@ -9,6 +9,7 @@
 
 #include "Data.h"
 #include "WavEncoder.h"
+#include "FlacEncoder.h"
 
 class CdromRipper : public QThread
 {
@@ -28,7 +29,7 @@ private:
     void initializeParanoia();
     void computeDiskSectorQuantity();
     bool ripOneTrack(unsigned int indexTrack);
-    QString buildWavFilename(unsigned int indexTrack);
+    bool buildAudioFilenames(unsigned int indexTrack);
     bool writeRawFile(uint8_t *audioTrackBuf,
                       unsigned int bufferSize,
                       const QString &wavFilename);
@@ -44,7 +45,12 @@ private:
     lsn_t m_diskSectorQuantity;
 
     WavEncoder m_wavEncoder;
+    FlacEncoder m_flacEncoder;
+
     QTimer *m_ripProgressObserverTimer;
+
+    QString m_wavFilenameCurrentTrack;
+    QString m_flacFilenameCurrentTrack;
 
     // Type from the 'paranoia' library
     cdrom_drive_t *m_drive;

@@ -185,14 +185,27 @@ bool CdromRipper::ripOneTrack(unsigned int indexTrack)
         currentLsn++;
     }
 
-    QString wavFilename = this->buildWavFilename(indexTrack);
-    if (!wavFilename.isEmpty())
+    if(this->buildAudioFilenames(indexTrack))
     {
-        if (!m_wavEncoder.write(wavFilename, audioTrackBuf, bufferSize))
+        // WAV encoding
+        if (!m_wavEncoder.write(m_wavFilenameCurrentTrack, audioTrackBuf, bufferSize))
         {
-                qCritical() << "CdromRipper: Track rip aborted (write file audio failed)";
+                qCritical() << "CdromRipper: Track rip aborted (WAV audio encoding failed)";
                 free(audioTrackBuf);
                 return false;
+        }
+        else
+        {
+            // FLAC encoding
+            m_flacEncoder.setInputFilename(m_wavFilenameCurrentTrack);
+            m_flacEncoder.setOutputFilename(m_flacFilenameCurrentTrack);
+            if (!m_flacEncoder.encode())
+            {
+                qCritical() << "CdromRipper: FLAC audio encoding failed";
+                free(audioTrackBuf);
+                return false;
+            }
+            m_flacEncoder.clearFilenames();
         }
     }
     else
@@ -204,7 +217,7 @@ bool CdromRipper::ripOneTrack(unsigned int indexTrack)
     return true;
 }
 
-QString CdromRipper::buildWavFilename(unsigned int indexTrack)
+bool CdromRipper::buildAudioFilenames(unsigned int indexTrack)
 {
     QString mainDirectoryPath("/tmp");
     QString defaultArtistName("DefaultArtistName");
@@ -254,7 +267,8 @@ QString CdromRipper::buildWavFilename(unsigned int indexTrack)
 
     QString directoryPath = mainDirectoryPath;
     QString filename;
-    QString extension = ".wav";
+    QString wavExtension = ".wav";
+    QString flacExtension = ".flac";
 
     directoryPath += "/";
     directoryPath += artistName;
@@ -270,16 +284,19 @@ QString CdromRipper::buildWavFilename(unsigned int indexTrack)
     filename += "-";
     filename += trackName;
 
-    QString filenameWithExtension = filename + extension;
-    QString absoluteName = directoryPath + filenameWithExtension;
-    qDebug() << "CdromRipper: raw audio filename: " << absoluteName;
+    QString wavFilenameWithExtension = filename + wavExtension;
+    QString flacFilenameWithExtension = filename + flacExtension;
+    m_wavFilenameCurrentTrack = directoryPath + wavFilenameWithExtension;
+    m_flacFilenameCurrentTrack = directoryPath + flacFilenameWithExtension;
+    qDebug() << "CdromRipper: WAV audio filename: " << m_wavFilenameCurrentTrack;
+    qDebug() << "CdromRipper: FLAC audio filename: " << m_flacFilenameCurrentTrack;
 
     // Create the directory if does not exist
     QDir dirManager("/");
     if (!dirManager.mkpath(directoryPath))
     {
         qCritical() << "CdromRipper: directory creation failed";
-        return ("");
+        return false;
     }
 
     // Create the discid file associated to this track
@@ -288,7 +305,7 @@ QString CdromRipper::buildWavFilename(unsigned int indexTrack)
         qCritical() << "CDromRipper: the 'disc_id' writing failed";
     }
 
-    return absoluteName;
+    return true;
 }
 
 bool CdromRipper::writeRawFile(uint8_t *audioTrackBuf,
