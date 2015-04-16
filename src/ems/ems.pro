@@ -83,3 +83,14 @@ equals(EMS_PLUGIN_GRACENOTE, "yes") {
     SOURCES += GracenotePlugin.cpp
 }
 
+# INSTALL RULES
+#
+isEmpty(PREFIX) {
+    PREFIX = /usr/local
+}
+DEFINES += EMS_INSTALL_PREFIX="$$PREFIX"
+
+# install the binary
+binary.path = $$PREFIX/bin
+binary.files = $$TARGET
+INSTALLS += binary

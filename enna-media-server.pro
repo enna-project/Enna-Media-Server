@@ -5,6 +5,10 @@ OTHER_FILES = AUTHORS COPYING README.md
 
 # INSTALL RULES
 # -----------------------------
+isEmpty(PREFIX) {
+    PREFIX = /usr/local
+}
+
 # Udev rules
 # By default, assume Udev is installed on the target
 # If not, you have to set WITH_UDEV=no in the qmake cmd line
@@ -14,7 +18,7 @@ OTHER_FILES = AUTHORS COPYING README.md
     INSTALLS += udev
 }
 
-script.path = $$[QT_INSTALL_PREFIX]/bin
+script.path = $$PREFIX/bin
 script.files = script/ems_cdrom_changed.sh
 INSTALLS += script
 
@@ -26,7 +30,7 @@ INSTALLS += script
 }
 
 # Database SQL file
-database.path = $$[QT_INSTALL_PREFIX]/share/ems
+database.path = $$PREFIX/share/ems
 database.files = doc/database/database.sql
 INSTALLS += database
 
