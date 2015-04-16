@@ -84,7 +84,7 @@ QString JsonApi::convertImageUrl(QString url) const
 
         QString uniformUrl; /* For windows, transform backslash in slash */
         QStringList dirs = url.split(QDir::separator());
-        for (unsigned int i=0; i<(unsigned int)dirs.size(); i++)
+        for (int i=0; i<dirs.size(); i++)
         {
             QString dir = dirs.at(i);
             if (i != 0)
@@ -557,7 +557,7 @@ QJsonObject JsonApi::processMessageBrowseCdrom(const QJsonObject &message, bool 
     }
     EMSCdrom cdrom = cdroms.at(0);
     QJsonArray jsonArray;
-    for (unsigned int i=0; i<(unsigned int)cdrom.tracks.size(); i++)
+    for (int i=0; i<cdrom.tracks.size(); i++)
     {
         jsonArray << EMSTrackToJson(cdrom.tracks.at(i));
     }

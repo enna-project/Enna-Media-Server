@@ -131,7 +131,7 @@ HttpClient::HttpClient(QTcpSocket *socket, QString cacheDirectory, QObject *pare
         QString localFilePath;
         if (arg.size() > 1)
         {
-            for (unsigned int i=1; i<(unsigned int)arg.size(); i++)
+            for (int i=1; i<arg.size(); i++)
             {
                 if (i != 1)
                 {
