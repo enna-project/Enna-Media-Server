@@ -13,8 +13,9 @@ NetworkCtl* NetworkCtl::_instance = 0;
 NetworkCtl::NetworkCtl(QObject *parent): QObject(parent)
 {
     m_manager = new Manager(this);
-    connect(this->getTechnology("wifi"),SIGNAL(scanCompleted()),this, SIGNAL(wifiListUpdated()));
-
+    connect(m_manager,SIGNAL(servicesChanged()),this, SIGNAL(wifiListUpdated()));
+    connect(m_manager,SIGNAL(connectedServiceChanged()),this, SIGNAL(connectedChanged()));
+    //connect(this->getTechnology("wifi"),SIGNAL(scanCompleted()),this, SIGNAL(wifiListUpdated()));
     m_agent=new Agent("/com/EMS/Connman", m_manager);
 
 
@@ -126,7 +127,7 @@ QList<EMSSsid> NetworkCtl::getWifiList()
                                      service->type(),
                                      getStateString(service->state()),
                                      service->strength(),
-                                     NetworkCtl::instance()->getSecurityTypeString(toSecurityTypeList(service->security())));
+                                     getSecurityTypeString(toSecurityTypeList(service->security())));
                     ssidList.append(ssidWifi);
                 }
             }
@@ -179,20 +180,29 @@ EMSSsid* NetworkCtl::getConnectedWifi()
     {
         if(this->isWifiPresent())
         {
-            QString state;
-            foreach (Service *service, m_manager->services())
+            if(this->isWifiConnected())
             {
-                state = getStateString(service->state());
-                if(service->type() == "wifi" && (state == "ready" || state=="online"))
+                QString state;
+                foreach (Service *service, m_manager->services())
                 {
+                    state = getStateString(service->state());
+                    if(service->type() == "wifi" && (state == "ready" || state=="online"))
+                    {
 
-                    ssidWifi->setName(service->name());
-                    ssidWifi->setPath(service->objectPath().path());
-                    ssidWifi->setState(state);
-                    ssidWifi->setStrength(service->strength());
-                    ssidWifi->setType(service->type());
+                        ssidWifi->setName(service->name());
+                        ssidWifi->setPath(service->objectPath().path());
+                        ssidWifi->setState(state);
+                        ssidWifi->setStrength(service->strength());
+                        ssidWifi->setType(service->type());
+                        ssidWifi->setSecurity(NetworkCtl::instance()->getSecurityTypeString(toSecurityTypeList(service->security())));
+                    }
                 }
             }
+            else
+            {
+                qDebug() << " Wifi offline ";
+            }
+
         }
     }
     return ssidWifi;
@@ -339,7 +349,7 @@ EMSSsid::EMSSsid(QString path, QString name, QString type, QString state, int st
 }
 EMSSsid::EMSSsid()
 {
-
+    m_strength = 0;
 }
 
 QList<EMSSsid::SecurityType> NetworkCtl::toSecurityTypeList(const QStringList &listType)

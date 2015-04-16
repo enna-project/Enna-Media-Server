@@ -119,6 +119,7 @@ private:
 signals:
     void requestScan();
     void wifiListUpdated();
+    void connectedChanged();
 
 public slots:
     //QVariantMap getProperties();
