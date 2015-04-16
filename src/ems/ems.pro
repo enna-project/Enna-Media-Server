@@ -88,7 +88,7 @@ equals(EMS_PLUGIN_GRACENOTE, "yes") {
 isEmpty(PREFIX) {
     PREFIX = /usr/local
 }
-DEFINES += EMS_INSTALL_PREFIX="$$PREFIX"
+DEFINES += EMS_INSTALL_PREFIX=\\\"$$PREFIX\\\"
 
 # install the binary
 binary.path = $$PREFIX/bin
