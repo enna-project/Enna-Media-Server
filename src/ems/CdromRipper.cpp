@@ -160,8 +160,14 @@ bool CdromRipper::ripOneTrack(unsigned int indexTrack)
         if (psz_err)
             qCritical() << "CdromRipper: Paranoia err: " << psz_err;
 
-        cdio_cddap_free_messages(psz_err);
-        cdio_cddap_free_messages(psz_mes);
+        if (psz_err != NULL)
+        {
+            free(psz_err);
+        }
+        if (psz_mes != NULL)
+        {
+            free(psz_mes);
+        }
 
         if (!p_readbuf)
         {
