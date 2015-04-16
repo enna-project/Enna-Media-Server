@@ -319,7 +319,7 @@ void CdromRipper::buildRipProgressMessage(unsigned int indexTrack,
 
     m_emsRipProgress.track_in_progress = indexTrack + 1;
     m_emsRipProgress.overall_progress = 100 * currentSector / m_diskSectorQuantity;
-    m_emsRipProgress.track_progress = (100 * (currentSector - firstSector)) /
+    m_emsRipProgress.track_progress = (100 * (currentSector - firstSector + 1)) /
                                       (lastSector - firstSector + 1);
 
     m_emsRipProgressMutex.unlock();
