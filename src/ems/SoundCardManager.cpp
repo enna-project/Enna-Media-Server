@@ -77,7 +77,7 @@ void SoundCardManager::applyPolicy()
             continue;
         }
         /* Find the highest priority */
-        unsigned int elected = 0;
+        int elected = 0;
         for (int i=0; i<candidates.size(); i++)
         {
             if (candidates.at(i).priority > candidates.at(elected).priority)
@@ -85,19 +85,39 @@ void SoundCardManager::applyPolicy()
                 elected = i;
             }
         }
-        /* Send order to enable/disable each sound card */
+        /* MPD will stop the music if no output is enabled
+         * so send "enable" before disabling the other */
+        /* Send order to enable if needed */
         for (int i=0; i<candidates.size(); i++)
         {
             if (i == elected && !candidates.at(i).enabled)
             {
+                qDebug() << "Enabling output " << candidates.at(i).name;
                 Player::instance()->enableOutput(candidates.at(i).id_mpd);
             }
+        }
+        /* Send order to disable if needed */
+        for (int i=0; i<candidates.size(); i++)
+        {
             if (i != elected && candidates.at(i).enabled)
             {
+                qDebug() << "Disabling output " << candidates.at(i).name;
                 Player::instance()->disableOutput(candidates.at(i).id_mpd);
             }
         }
     }
+
+    /* Make sure all non-present card are disabled */
+    foreach (EMSSndCard card, sndCards)
+    {
+        if (!card.present && card.enabled)
+        {
+            qDebug() << "Disabling not present output " << card.name;
+            Player::instance()->disableOutput(card.id_mpd);
+        }
+    }
+
+    configured = true;
 }
 
 QStringList SoundCardManager::getTypeList()
@@ -140,12 +160,14 @@ void SoundCardManager::getInitialPresence()
         {
             EMSSndCard card = sndCards.at(i);
             card.present = true;
+            qDebug() << "Sound card " << sndCards.at(i).name << " is present";
             sndCards.replace(i, card);
         }
         else
         {
             EMSSndCard card = sndCards.at(i);
             card.present = false;
+            qDebug() << "Sound card " << sndCards.at(i).name << " is not present";
             sndCards.replace(i, card);
         }
 #else
@@ -223,6 +245,8 @@ SoundCardManager::SoundCardManager(QObject *parent) : QObject(parent), bus(QDBus
 {
     QSettings settings;
 
+    qRegisterMetaType<EMSPlayerStatus>("QVector<EMSSndCard>");
+
     unsigned int i= 0 ;
     bool cont = true;
     while (cont)
@@ -243,6 +267,8 @@ SoundCardManager::SoundCardManager(QObject *parent) : QObject(parent), bus(QDBus
         {
             break;
         }
+        settings.endGroup();
+        i++;
     }
 
     if (bus.isConnected())

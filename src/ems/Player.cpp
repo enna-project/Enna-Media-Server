@@ -192,6 +192,7 @@ void Player::enableOutput(unsigned int id)
     cmd.uintValue = id;
     queue.enqueue(cmd);
     mutex.unlock();
+    cmdAvailable.release(1);
 }
 
 void Player::disableOutput(unsigned int id)
@@ -202,6 +203,7 @@ void Player::disableOutput(unsigned int id)
     cmd.uintValue = id;
     queue.enqueue(cmd);
     mutex.unlock();
+    cmdAvailable.release(1);
 }
 
 QVector<EMSSndCard> Player::getOutputs()
@@ -496,12 +498,18 @@ void Player::executeCmd(EMSPlayerCmd cmd)
         }
         case ACTION_ENABLE_OUTPUT:
         {
-            mpd_send_enable_output(conn, cmd.uintValue);
+            if (cmd.uintValue >= 1)
+            {
+                mpd_send_enable_output(conn, cmd.uintValue-1);
+            }
             break;
         }
         case ACTION_DISABLE_OUTPUT:
         {
-            mpd_send_disable_output(conn, cmd.uintValue);
+            if (cmd.uintValue >= 1)
+            {
+                mpd_send_disable_output(conn, cmd.uintValue-1);
+            }
             break;
         }
         default:
@@ -721,11 +729,11 @@ void Player::retrieveSndCardList()
     while ((output = mpd_recv_output(conn)) != NULL)
     {
         EMSSndCard sndCard;
-        sndCard.id_mpd = mpd_output_get_id(output);
+        sndCard.id_mpd = mpd_output_get_id(output)+1;
         sndCard.name = mpd_output_get_name(output);
         sndCard.enabled = mpd_output_get_enabled(output);
         mpd_output_free(output);
-        qDebug() << "Sound card detected : " << sndCard.name;
+        qDebug() << "Find mpd output" << QString("(%1) : %2").arg(sndCard.id_mpd).arg(sndCard.name);
         sndCards.append(sndCard);
     }
 
