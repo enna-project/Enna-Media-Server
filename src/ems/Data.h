@@ -129,14 +129,21 @@ enum EMSPlayerAction { ACTION_ADD, ACTION_DEL, ACTION_DEL_ALL, ACTION_LIST,
 class EMSSndCard
 {
 public:
-    unsigned int id;
     QString name;
+    QString type;
+    unsigned int id_system;
+    unsigned int id_mpd;
+    unsigned int priority;
     bool enabled;
+    bool present;
 
     EMSSndCard()
     {
         enabled = false;
-        id = 1;
+        id_mpd = 1;
+        id_system = 0;
+        priority = 0;
+        present = false;
     }
 };
 

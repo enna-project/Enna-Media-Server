@@ -125,6 +125,7 @@ private:
 signals:
     void statusChanged(EMSPlayerStatus newStatus);
     void playlistChanged(EMSPlaylist newPlaylist);
+    void outputsChanged(QVector<EMSSndCard> outputs);
 
 public slots:
 

@@ -13,7 +13,7 @@
 // database/path
 #define EMS_DATABASE_PATH "database.sqlite"
 // database/create_script
-#define EMS_DATABASE_CREATE_SCRIPT "/usr/share/ems/database.sql"
+#define EMS_DATABASE_CREATE_SCRIPT EMS_INSTALL_PREFIX "/share/ems/database.sql"
 // database/version
 #define EMS_DATABASE_VERSION 1
 
@@ -49,6 +49,7 @@ else\
     settings.setValue(confValue, defaultValue);\
     var = defaultValue;\
 }\
-}while (0); \
+}while (0);
+
 
 #endif // DEFAULTSETTINGS_H

@@ -2,6 +2,7 @@
 #define SOUNDCARDMANAGER_H
 
 #include <QObject>
+#include <QVector>
 #include <QtDBus/QtDBus>
 
 #include "Data.h"
@@ -17,9 +18,17 @@ public:
 public slots:
     void dbusMessagePlugged(QString message);
     void dbusMessageUnplugged(QString message);
+    void mpdOutputsChanged(QVector<EMSSndCard>);
 
 private:
     QDBusConnection bus;
+    QVector<EMSSndCard> sndCards;
+    bool configured;
+
+    QVector<EMSSndCard> getMpdIDbyType(QString type, bool onlyPresent);
+    QStringList getTypeList();
+    void getInitialPresence();
+    void applyPolicy();
 
 };
 

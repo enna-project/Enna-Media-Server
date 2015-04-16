@@ -588,6 +588,38 @@ void Player::executeCmd(EMSPlayerCmd cmd)
                 emit playlistChanged(newPlaylist);
                 break;
             }
+            case ACTION_ENABLE_OUTPUT:
+            {
+                mutex.lock();
+                for(unsigned int i=0; i<outputs.size(); i++)
+                {
+                    if (outputs.at(i).id_mpd == cmd.uintValue)
+                    {
+                        EMSSndCard card = outputs.at(i);
+                        card.enabled = true;
+                        outputs.replace(i, card);
+                    }
+                }
+                emit outputsChanged(outputs);
+                mutex.unlock();
+                break;
+            }
+            case ACTION_DISABLE_OUTPUT:
+            {
+                mutex.lock();
+                for(unsigned int i=0; i<outputs.size(); i++)
+                {
+                    if (outputs.at(i).id_mpd == cmd.uintValue)
+                    {
+                        EMSSndCard card = outputs.at(i);
+                        card.enabled = false;
+                        outputs.replace(i, card);
+                    }
+                }
+                emit outputsChanged(outputs);
+                mutex.unlock();
+                break;
+            }
             default:
                 break;
         }
@@ -684,22 +716,24 @@ void Player::retrieveSndCardList()
     /* Request all outputs */
     mpd_send_outputs(conn);
 
-    mutex.lock();
-    outputs.clear();
-    mutex.unlock();
+    QVector<EMSSndCard> sndCards;
 
     while ((output = mpd_recv_output(conn)) != NULL)
     {
         EMSSndCard sndCard;
-        sndCard.id = mpd_output_get_id(output);
+        sndCard.id_mpd = mpd_output_get_id(output);
         sndCard.name = mpd_output_get_name(output);
         sndCard.enabled = mpd_output_get_enabled(output);
         mpd_output_free(output);
         qDebug() << "Sound card detected : " << sndCard.name;
-        mutex.lock();
-        outputs.append(sndCard);
-        mutex.unlock();
+        sndCards.append(sndCard);
     }
+
+    mutex.lock();
+    outputs = sndCards;
+    mutex.unlock();
+
+    emit outputsChanged(sndCards);
 
     if (!mpd_response_finish(conn))
     {
@@ -708,6 +742,7 @@ void Player::retrieveSndCardList()
         connectToMpd();
         return;
     }
+
 }
 
 /* ---------------------------------------------------------

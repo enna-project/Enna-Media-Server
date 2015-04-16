@@ -6,6 +6,7 @@
 #include "SmartmontoolsNotifier.h"
 #include "CdromManager.h"
 #include "MetadataManager.h"
+#include "SoundCardManager.h"
 
 /*
  * Derived form QCoreApplication
@@ -33,6 +34,9 @@ Application::Application(int & argc, char ** argv) :
 
     /* Add online database plugins */
     MetadataManager::instance()->registerAllPlugins();
+
+    /* Sound card manager */
+    m_soundCardManager = new SoundCardManager(this);
 
     /* Open Database */
     Database *db = Database::instance();
@@ -95,5 +99,7 @@ Application::~Application()
 
     /* Close properly the database */
     Database::instance()->close();
+
     delete m_scanner;
+    delete m_soundCardManager;
 }

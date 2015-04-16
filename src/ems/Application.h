@@ -10,6 +10,7 @@
 #include "DiscoveryServer.h"
 #include "LocalFileScanner.h"
 #include "SmartmontoolsNotifier.h"
+#include "SoundCardManager.h"
 
 class Application : public QCoreApplication
 {
@@ -27,6 +28,7 @@ private:
     WebSocketServer *m_webSocketServer;
     DiscoveryServer *m_discoveryServer;
     SmartmontoolsNotifier *m_smartmontools;
+    SoundCardManager *m_soundCardManager;
 
     /* Run detached from the main event loop */
     QThread m_cdromManagerWorker;
