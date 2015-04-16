@@ -37,6 +37,10 @@ DiscoveryServer::DiscoveryServer(quint16 port, QObject *parent) : QObject(parent
             m_serverAddress = address;
         }
     }
+    if (m_serverAddress.isNull())
+    {
+        m_serverAddress = QHostAddress::LocalHost;
+    }
 }
 
 DiscoveryServer::~DiscoveryServer()
