@@ -83,6 +83,16 @@ equals(EMS_PLUGIN_GRACENOTE, "yes") {
     SOURCES += GracenotePlugin.cpp
 }
 
+# INCLUDE PATH FOR LIBCDIO-PARANOIA
+# Starting from version 0.90, the library path  has
+# changed. So we check the version here in order to
+# define PARANOIA_INCLUDE_PATH. This define could
+# have the following values :"cdio" or "cdio/paranoia"
+LIBCDIO_INCLUDE_PATH = "$$system(pkg-config libcdio_paranoia --variable=includedir)/cdio"
+LIBCDIO_INCLUDE_PATH = "$$LIBCDIO_INCLUDE_PATH$$system(pkg-config libcdio_paranoia --atleast-version=0.90 && echo /paranoia)"
+INCLUDEPATH += $$LIBCDIO_INCLUDE_PATH
+message("Use libcdio paranoia header in $$LIBCDIO_INCLUDE_PATH")
+
 # INSTALL RULES
 #
 isEmpty(PREFIX) {

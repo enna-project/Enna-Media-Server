@@ -1,8 +1,8 @@
 #ifndef CDROMRIPPER_H
 #define CDROMRIPPER_H
 
-#include <cdio/cdda.h>
-#include <cdio/paranoia.h>
+#include <cdda.h>
+#include <paranoia.h>
 #include <QThread>
 #include <QTimer>
 #include <QMutex>
