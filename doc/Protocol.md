@@ -394,8 +394,11 @@ parameter.
     "id": "EMS_PLAYER",
     "action": "next"
 }
-
 ```
+
+For action play, the client can add field "pos" or "filename" to identify which
+track should be played. This is currently the only way to navigate in the
+current playlist.
 
 ### Playlist Management
 
