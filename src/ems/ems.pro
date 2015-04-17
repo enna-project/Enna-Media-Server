@@ -101,6 +101,14 @@ equals(EMS_PLUGIN_GRACENOTE, "yes") {
     message("Use libcdio paranoia header in $$LIBCDIO_INCLUDE_PATH")
 }
 
+# For Mac OS taglib package, package config give path with /taglib...
+macx {
+    TAGLIB_INCLUDE_PATH = "$$system(pkg-config taglib --variable=includedir)"
+    TAGLIB_INCLUDE_PATH ~= s/taglib$/
+    INCLUDEPATH += $$TAGLIB_INCLUDE_PATH
+    message("Use taglib headers in $$TAGLIB_INCLUDE_PATH")
+}
+
 # INSTALL RULES
 #
 isEmpty(PREFIX) {
