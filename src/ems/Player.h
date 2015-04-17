@@ -37,6 +37,7 @@ public:
     void play(unsigned int position);
     void play(EMSTrack track);
     void play();
+    void seek(unsigned int percent);
     void pause();
     void toggle();
     void stop();

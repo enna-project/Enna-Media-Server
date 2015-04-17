@@ -387,7 +387,7 @@ parameter.
  * `shuffle_off` : Set the shuffle state off
  * `repeat_on` : Set the repeat state on
  * `repeat_off` : Set the repeat state off
- * `seek`: Set the position of the track in seconds
+ * `seek`: Set the position of the track in seconds (use field "value" in %)
 
 ```json
 {

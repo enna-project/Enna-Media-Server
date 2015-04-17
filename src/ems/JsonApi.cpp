@@ -628,6 +628,19 @@ bool JsonApi::processMessagePlayer(const QJsonObject &message)
             Player::instance()->play();
         }
     }
+    else if (action == "seek")
+    {
+        if (!message["value"].isNull() && !message["value"].toString().isEmpty())
+        {
+            unsigned int percent = message["value"].toString().toUInt();
+            Player::instance()->seek(percent);
+        }
+        else
+        {
+            qCritical() << "Error: no value to seek.";
+            return false;
+        }
+    }
     else if (action == "pause")
     {
         Player::instance()->pause();

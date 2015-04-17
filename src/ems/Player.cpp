@@ -115,7 +115,7 @@ void Player::play(unsigned int position)
     mutex.lock();
     int size = playlist.tracks.size();
     mutex.unlock();
-    if (position >= size)
+    if (size < 0 || position >= (unsigned int)size)
     {
         qDebug() << "Asked to play a track after the end of the current playlist";
         return;
@@ -134,6 +134,30 @@ void Player::play()
 {
     EMSPlayerCmd cmd;
     cmd.action = ACTION_PLAY;
+    mutex.lock();
+    queue.enqueue(cmd);
+    mutex.unlock();
+    cmdAvailable.release(1);
+}
+
+void Player::seek(unsigned int percent)
+{
+    if (percent > 100)
+    {
+        qDebug() << "Invalide seek value, must be [O;100]";
+        return;
+    }
+
+    int currentSongId = getCurrentPos();
+    if (currentSongId < 0 || currentSongId >= playlist.tracks.size())
+    {
+        return;
+    }
+    unsigned int totalTime = playlist.tracks.at(currentSongId).duration;
+    EMSPlayerCmd cmd;
+    cmd.action = ACTION_SEEK;
+    cmd.uintValue = (totalTime*percent) / 100;
+
     mutex.lock();
     queue.enqueue(cmd);
     mutex.unlock();
@@ -469,6 +493,16 @@ void Player::executeCmd(EMSPlayerCmd cmd)
         case ACTION_PLAY:
         {
             mpd_send_play(conn);
+            break;
+        }
+        case ACTION_SEEK:
+        {
+            /* Get current position */
+            int songId = getCurrentPos();
+            if (songId >= 0)
+            {
+                mpd_send_seek_pos(conn, songId, cmd.uintValue);
+            }
             break;
         }
         case ACTION_PAUSE:
