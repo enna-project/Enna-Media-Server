@@ -3,7 +3,10 @@
 #include "CdromManager.h"
 #include "MetadataManager.h"
 #include "Player.h"
+
+#ifdef EMS_CDROM_RIPPER
 #include "CdromRipper.h"
+#endif
 
 #define INTERFACE "com.EnnaMediaServer.Cdrom"
 #define SIGNAL_NAME_INSERT "inserted"
@@ -340,6 +343,8 @@ void CdromManager::stopMonitor()
 
 void CdromManager::startRip()
 {
+#ifdef EMS_CDROM_RIPPER
+
     /* Get first available CDROM */
     QVector<EMSCdrom> cdroms;
     this->getAvailableCdroms(&cdroms);
@@ -357,6 +362,8 @@ void CdromManager::startRip()
         m_cdromRipper->setCdrom(cdrom);
         m_cdromRipper->start();
     }
+
+#endif
 }
 
 void CdromManager::ripProgress(EMSRipProgress ripProgress)
@@ -366,7 +373,10 @@ void CdromManager::ripProgress(EMSRipProgress ripProgress)
 
 void CdromManager::handleCdromRipperResults(const QString &result)
 {
-    qDebug() << "CdromManager handle cdrom ripper results: " << result;
-    delete m_cdromRipper;
-    m_cdromRipper = Q_NULLPTR;
+    if (m_cdromRipper)
+    {
+        qDebug() << "CdromManager handle cdrom ripper results: " << result;
+        delete m_cdromRipper;
+        m_cdromRipper = Q_NULLPTR;
+    }
 }

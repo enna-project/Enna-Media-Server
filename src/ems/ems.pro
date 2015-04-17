@@ -10,7 +10,7 @@ CONFIG += c++11 link_pkgconfig
 
 SUBDIRS +=
 
-PKGCONFIG += libmpdclient libcdio libcdio_cdda libcdio_paranoia flac flac++ sndfile taglib
+PKGCONFIG += libmpdclient libcdio flac flac++ sndfile taglib
 
 TEMPLATE = app
 TARGET = enna-media-server
@@ -41,7 +41,6 @@ HEADERS += Database.h \
            SndfilePlugin.h \
            DsdPlugin.h \
            CoverLocalPlugin.h \
-           CdromRipper.h \
            WavEncoder.h \
            FlacEncoder.h \
            TagLibPlugin.h \
@@ -67,7 +66,6 @@ SOURCES += Database.cpp \
            SndfilePlugin.cpp \
            DsdPlugin.cpp \
            CoverLocalPlugin.cpp \
-           CdromRipper.cpp \
            WavEncoder.cpp \
            FlacEncoder.cpp \
            TagLibPlugin.cpp \
@@ -83,15 +81,25 @@ equals(EMS_PLUGIN_GRACENOTE, "yes") {
     SOURCES += GracenotePlugin.cpp
 }
 
-# INCLUDE PATH FOR LIBCDIO-PARANOIA
-# Starting from version 0.90, the library path  has
-# changed. So we check the version here in order to
-# define PARANOIA_INCLUDE_PATH. This define could
-# have the following values :"cdio" or "cdio/paranoia"
-LIBCDIO_INCLUDE_PATH = "$$system(pkg-config libcdio_paranoia --variable=includedir)/cdio"
-LIBCDIO_INCLUDE_PATH = "$$LIBCDIO_INCLUDE_PATH$$system(pkg-config libcdio_paranoia --atleast-version=0.90 && echo /paranoia)"
-INCLUDEPATH += $$LIBCDIO_INCLUDE_PATH
-message("Use libcdio paranoia header in $$LIBCDIO_INCLUDE_PATH")
+# Check if we want to enable (default) or disable CD RIP module
+!equals(EMS_FEATURE_CDRIP, "no") {
+
+    PKGCONFIG += libcdio_paranoia
+    HEADERS += CdromRipper.h
+    SOURCES += CdromRipper.cpp
+    DEFINES += EMS_CDROM_RIPPER
+    message("Enable CDROM Ripper module")
+
+    # INCLUDE PATH FOR LIBCDIO-PARANOIA
+    # Starting from version 0.90, the library path  has
+    # changed. So we check the version here in order to
+    # define PARANOIA_INCLUDE_PATH. This define could
+    # have the following values :"cdio" or "cdio/paranoia"
+    LIBCDIO_INCLUDE_PATH = "$$system(pkg-config libcdio_paranoia --variable=includedir)/cdio"
+    LIBCDIO_INCLUDE_PATH = "$$LIBCDIO_INCLUDE_PATH$$system(pkg-config libcdio_paranoia --atleast-version=0.90 && echo /paranoia)"
+    INCLUDEPATH += $$LIBCDIO_INCLUDE_PATH
+    message("Use libcdio paranoia header in $$LIBCDIO_INCLUDE_PATH")
+}
 
 # INSTALL RULES
 #
