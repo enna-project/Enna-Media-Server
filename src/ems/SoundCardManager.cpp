@@ -186,6 +186,7 @@ void SoundCardManager::getInitialPresence()
 void SoundCardManager::dbusMessagePlugged(QString message)
 {
     unsigned int id = message.toUInt();
+    qDebug() << "Sound card plugged : systemd ID is " << message;
 
     for(int i=0; i<sndCards.size(); i++)
     {
@@ -202,6 +203,7 @@ void SoundCardManager::dbusMessagePlugged(QString message)
 void SoundCardManager::dbusMessageUnplugged(QString message)
 {
     unsigned int id = message.toUInt();
+    qDebug() << "Sound card unplugged : systemd ID is " << message;
 
     for(int i=0; i<sndCards.size(); i++)
     {
