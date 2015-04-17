@@ -30,6 +30,8 @@ public:
     void sendAuthRequest(EMSClient client);
     void sendRipProgress(EMSRipProgress ripProgress);
     void sendMenu();
+    void sendWifiConnected();
+    void sendWifiList();
 
 signals:
     void startCdromRip();

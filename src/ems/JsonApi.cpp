@@ -83,6 +83,45 @@ JsonApi::JsonApi(QWebSocket *webSocket, bool isLocal) :
         m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
 
     });
+        /* asynchronous update wifi connected */
+    auto connConnected = std::make_shared<QMetaObject::Connection>();
+    *connConnected = connect(NetworkCtl::instance(), &NetworkCtl::connectedChanged, [this,connConnected]()
+                             //*connStatus = connect(NetworkCtl::instance()->getTechnology("wifi"), &Technology::connectedChanged, this, [=]()
+    {
+        if(NetworkCtl::instance()->isWifiConnected())
+        {
+            EMSSsid* ssid=NetworkCtl::instance()->getConnectedWifi();
+            qDebug()<<"Connected to: "<<ssid->getName();
+            QJsonObject answer;
+            answer["msg"] = "EMS_NETWORK";
+            answer["connexion_result"] ="Connected";
+            answer["ssid"] = EMSSsidToJson(*ssid);
+            QJsonDocument doc(answer);
+            m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
+        }
+    });
+
+    /* asynchronous update wifi list */
+    auto conn = std::make_shared<QMetaObject::Connection>();
+    *conn = connect(NetworkCtl::instance(), &NetworkCtl::wifiListUpdated, [=]
+    {
+        QJsonArray jsonArray;
+        QJsonObject obj;
+        qDebug() << "Wifi updated";
+        QList<EMSSsid> ssidList = NetworkCtl::instance()->getWifiList();
+        for(int i = 0; i<ssidList.size();i++)
+        {
+            jsonArray << EMSSsidToJson(ssidList[i]);
+        }
+
+        obj["ssids"] = jsonArray;
+        QJsonObject answer;
+        answer["msg"] = "EMS_NETWORK";
+        answer["data"] = obj;
+        QJsonDocument doc(answer);
+        m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
+
+    });
 }
 JsonApi::~JsonApi()
 {
@@ -1670,5 +1709,40 @@ void JsonApi::sendMenu()
     obj["msg"] = "EMS_MENUS";
     obj["data"] = processMessageBrowseMenu(unused, ok);
     QJsonDocument doc(obj);
+    m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
+}
+
+void JsonApi::sendWifiConnected()
+{
+    if(NetworkCtl::instance()->isWifiConnected())
+    {
+        EMSSsid* ssid=NetworkCtl::instance()->getConnectedWifi();
+        qDebug()<<"Connected to: "<<ssid->getName();
+        QJsonObject connectedWifiJsonObj;
+        connectedWifiJsonObj["msg"] = "EMS_NETWORK";
+        connectedWifiJsonObj["connexion_result"] ="Connected";
+        connectedWifiJsonObj["ssid"] = EMSSsidToJson(*ssid);
+        QJsonDocument doc(connectedWifiJsonObj);
+        m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
+    }
+}
+
+void JsonApi::sendWifiList()
+{
+    QJsonArray jsonArray;
+    QJsonObject obj;
+    QList<EMSSsid> ssidList = NetworkCtl::instance()->getWifiList();
+    qDebug() << "Wifi List updated";
+
+    for(int i = 0; i<ssidList.size();i++)
+    {
+        jsonArray << EMSSsidToJson(ssidList[i]);
+    }
+
+    obj["ssids"] = jsonArray;
+    QJsonObject wifiListJsonObj;
+    wifiListJsonObj["msg"] = "EMS_NETWORK";
+    wifiListJsonObj["data"] = obj;
+    QJsonDocument doc(wifiListJsonObj);
     m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
 }

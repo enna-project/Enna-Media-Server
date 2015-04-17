@@ -29,6 +29,8 @@ private Q_SLOTS:
     void broadcastStatus(EMSPlayerStatus newStatus);
     void broadcastRipProgress(EMSRipProgress ripProgress);
     void broadcastMenuChange(EMSCdrom cdromChanged);
+    void broadcastWifiConnected();
+    void broadcastWifiList();
 
 private:
     QWebSocketServer *m_pWebSocketServer;
