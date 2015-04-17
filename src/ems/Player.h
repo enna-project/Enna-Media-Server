@@ -34,6 +34,7 @@ public:
     EMSPlayerStatus getStatus();
     void next();
     void prev();
+    void play(unsigned int position);
     void play(EMSTrack track);
     void play();
     void pause();

@@ -599,7 +599,34 @@ bool JsonApi::processMessagePlayer(const QJsonObject &message)
     }
     else if (action == "play")
     {
-        Player::instance()->play();
+        /* For play action, the client can add field "pos" or "filename"
+         * to specify which track should be played.
+         * The track must be in the playlist.
+         */
+        if (!message["pos"].isNull())
+        {
+            unsigned int pos = message["pos"].toString().toUInt();
+            Player::instance()->play(pos);
+        }
+        else if (!message["filename"].isNull())
+        {
+            QString filename = message["filename"].toString();
+            QVector<EMSTrack> trackList;
+            getTracksFromFilename(&trackList, filename);
+            if (trackList.size() > 0)
+            {
+                Player::instance()->play(trackList.first());
+            }
+            else
+            {
+                qCritical() << "Error: filename does not match any track.";
+                return false;
+            }
+        }
+        else
+        {
+            Player::instance()->play();
+        }
     }
     else if (action == "pause")
     {
