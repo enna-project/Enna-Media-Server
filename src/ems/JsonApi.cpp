@@ -603,12 +603,12 @@ bool JsonApi::processMessagePlayer(const QJsonObject &message)
          * to specify which track should be played.
          * The track must be in the playlist.
          */
-        if (!message["pos"].isNull())
+        if (!message["pos"].isNull() && !message["pos"].toString().isEmpty())
         {
             unsigned int pos = message["pos"].toString().toUInt();
             Player::instance()->play(pos);
         }
-        else if (!message["filename"].isNull())
+        else if (!message["filename"].isNull() && !message["filename"].toString().isEmpty())
         {
             QString filename = message["filename"].toString();
             QVector<EMSTrack> trackList;

@@ -112,6 +112,15 @@ void Player::play(EMSTrack track)
 
 void Player::play(unsigned int position)
 {
+    mutex.lock();
+    int size = playlist.tracks.size();
+    mutex.unlock();
+    if (position >= size)
+    {
+        qDebug() << "Asked to play a track after the end of the current playlist";
+        return;
+    }
+
     EMSPlayerCmd cmd;
     cmd.action = ACTION_PLAY_POS;
     cmd.uintValue = position;
@@ -454,8 +463,8 @@ void Player::executeCmd(EMSPlayerCmd cmd)
         }
         case ACTION_PLAY_POS:
         {
-            unsigned int pos = cmd.uintValue;
-            mpd_send_play_pos(conn, pos);
+            mpd_send_play_pos(conn, cmd.uintValue);
+            break;
         }
         case ACTION_PLAY:
         {
