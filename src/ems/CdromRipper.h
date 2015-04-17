@@ -21,6 +21,7 @@ public:
     ~CdromRipper();
 
     void setCdrom(const EMSCdrom &cdromProperties);
+    void setAudioFormat(const QString &audioFormat);
 
 private:
     bool identifyDrive();
@@ -42,6 +43,7 @@ private:
     EMSCdrom m_cdromProperties;
     EMSRipProgress m_emsRipProgress;
     QMutex m_emsRipProgressMutex;
+    QString m_audioFormat;
     lsn_t m_diskSectorQuantity;
 
     WavEncoder m_wavEncoder;

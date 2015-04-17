@@ -776,8 +776,6 @@ bool JsonApi::processMessageAuthentication(const QJsonObject &message)
 
 bool JsonApi::processMessageCDRip(const QJsonObject &message)
 {
-    Q_UNUSED(message);
-
     CdromManager *cdromManager = CdromManager::instance();
 
     if (cdromManager->isRipInProgress())
@@ -787,6 +785,7 @@ bool JsonApi::processMessageCDRip(const QJsonObject &message)
     }
     else
     {
+        cdromManager->setRipAudioFormat(message["audio_format"].toString());
         connect(this, &JsonApi::startCdromRip, cdromManager, &CdromManager::startRip);
         emit startCdromRip();
     }

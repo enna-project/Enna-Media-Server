@@ -29,6 +29,11 @@ void CdromRipper::setCdrom(const EMSCdrom &cdromProperties)
     m_cdromProperties = cdromProperties;
 }
 
+void CdromRipper::setAudioFormat(const QString &audioFormat)
+{
+    m_audioFormat = audioFormat;
+}
+
 /* ---------------------------------------------------------
  *                  THREAD MAIN FUNCTION
  * --------------------------------------------------------- */
@@ -196,16 +201,25 @@ bool CdromRipper::ripOneTrack(unsigned int indexTrack)
         }
         else
         {
-            // FLAC encoding
-            m_flacEncoder.setInputFilename(m_wavFilenameCurrentTrack);
-            m_flacEncoder.setOutputFilename(m_flacFilenameCurrentTrack);
-            if (!m_flacEncoder.encode(&(m_cdromProperties.tracks[indexTrack])))
+            if (m_audioFormat != "WAV")
             {
-                qCritical() << "CdromRipper: FLAC audio encoding failed";
-                free(audioTrackBuf);
-                return false;
+                // FLAC encoding
+                m_flacEncoder.setInputFilename(m_wavFilenameCurrentTrack);
+                m_flacEncoder.setOutputFilename(m_flacFilenameCurrentTrack);
+                if (!m_flacEncoder.encode(&(m_cdromProperties.tracks[indexTrack])))
+                {
+                    qCritical() << "CdromRipper: FLAC audio encoding failed";
+                    free(audioTrackBuf);
+                    return false;
+                }
+                m_flacEncoder.clearFilenames();
+
+                // remove the temporary WAV file
+                if (!QFile::remove(m_wavFilenameCurrentTrack))
+                {
+                    qCritical() << "CdromRipper: remove the WAV temporary file failed";
+                }
             }
-            m_flacEncoder.clearFilenames();
         }
     }
     else
@@ -269,6 +283,12 @@ bool CdromRipper::buildAudioFilenames(unsigned int indexTrack)
     QString filename;
     QString wavExtension = ".wav";
     QString flacExtension = ".flac";
+
+    // if the wanted audio format is not WAV, the wav file will be temporary
+    if (m_audioFormat != "WAV")
+    {
+        wavExtension += ".tmp";
+    }
 
     directoryPath += "/";
     directoryPath += artistName;

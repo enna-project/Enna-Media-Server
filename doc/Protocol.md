@@ -583,7 +583,8 @@ CD RIP
 
 The 'rip' command is sent to EMS when a CD has to be ripped on the disk.
 Two kinds of messages are required:
- * the 'rip' order (through a synchronous message to the EMS)
+ * the 'rip' order (through a synchronous message to the EMS), with the
+   indication of the audio format ("FLAC" or "WAV")
  * the 'rip' progression (through an asynchronous message from the EMS)
 
 ### Rip command
@@ -593,7 +594,8 @@ From a client to EMS:
 ```json
 {
     "msg": "EMS_CD_RIP",
-    "msg_id": "id"
+    "msg_id": "id",
+    "audio_format": "FLAC"
 }
 ```
 

@@ -17,6 +17,7 @@ class CdromManager : public QObject
     QVector<EMSCdrom> cdroms;
     QDBusConnection bus;
     CdromRipper *m_cdromRipper;
+    QString m_ripAudioFormat;
 
 public:
 
@@ -27,6 +28,7 @@ public:
     void getAvailableCdroms(QVector<EMSCdrom> *cdromsOut);
     bool getCdrom(QString device, EMSCdrom *cdromOut);
     bool isRipInProgress();
+    void setRipAudioFormat(const QString &ripAudioFormat);
 
     /* ---------------------------------
      *    Signleton pattern

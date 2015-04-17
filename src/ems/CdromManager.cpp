@@ -64,6 +64,11 @@ bool CdromManager::isRipInProgress()
     return true;
 }
 
+void CdromManager::setRipAudioFormat(const QString &ripAudioFormat)
+{
+    m_ripAudioFormat = ripAudioFormat;
+}
+
 /* ---------------------------------------------------------
  *                    INSERT/REMOVE HOOK
  * --------------------------------------------------------- */
@@ -360,6 +365,7 @@ void CdromManager::startRip()
         connect(m_cdromRipper, &CdromRipper::ripProgressChanged, this, &CdromManager::ripProgress);
 
         m_cdromRipper->setCdrom(cdrom);
+        m_cdromRipper->setAudioFormat(m_ripAudioFormat);
         m_cdromRipper->start();
     }
 
