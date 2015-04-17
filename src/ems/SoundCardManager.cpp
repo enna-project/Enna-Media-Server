@@ -12,8 +12,8 @@
 /* This file contain the logic for enabling/disabling output soundc card.
  *
  * -----------------------    UDEV AND MPD      ------------------------
- * The udev script send the ID of the sound card which is plugged (using
- * dbus signal).
+ * The udev rules send the device path of the sound card which is plugged
+ * using a dbugs signal. This path is formated like [*]/sound/card[ID]
  * The ID means that this card correspond to /sys/class/sound/card[ID]
  * The associated alsa device should be "hw:[ID]".
  *
@@ -185,8 +185,27 @@ void SoundCardManager::getInitialPresence()
  * --------------------------------------------------------- */
 void SoundCardManager::dbusMessagePlugged(QString message)
 {
-    unsigned int id = message.toUInt();
-    qDebug() << "Sound card plugged : systemd ID is " << message;
+    unsigned int id = 0;
+    /* First retrieve system ID from path like :
+     * pci0000:00/0000:00:1c.3/0000:05:00.0/usb2/2-1/2-1:1.0/sound/card1
+     */
+    QStringList parts = message.split('/');
+    if (parts.size() <= 0)
+    {
+        id = message.toUInt();
+    }
+    else
+    {
+        QString cardDevName = parts.last();
+        if(cardDevName.startsWith("card"))
+        {
+            cardDevName.remove("card");
+        }
+        id = cardDevName.toUInt();
+
+    }
+    qDebug() << "Sound card plugged : " << message;
+    qDebug() << "Sound card system ID is " << QString("%1").arg(id);
 
     for(int i=0; i<sndCards.size(); i++)
     {
@@ -202,8 +221,27 @@ void SoundCardManager::dbusMessagePlugged(QString message)
 
 void SoundCardManager::dbusMessageUnplugged(QString message)
 {
-    unsigned int id = message.toUInt();
-    qDebug() << "Sound card unplugged : systemd ID is " << message;
+    unsigned int id = 0;
+    /* First retrieve system ID from path like :
+     * pci0000:00/0000:00:1c.3/0000:05:00.0/usb2/2-1/2-1:1.0/sound/card1
+     */
+    QStringList parts = message.split('/');
+    if (parts.size() <= 0)
+    {
+        id = message.toUInt();
+    }
+    else
+    {
+        QString cardDevName = parts.last();
+        if(cardDevName.startsWith("card"))
+        {
+            cardDevName.remove("card");
+        }
+        id = cardDevName.toUInt();
+
+    }
+    qDebug() << "Sound card unplugged : " << message;
+    qDebug() << "Sound card system ID was " << QString("%1").arg(id);
 
     for(int i=0; i<sndCards.size(); i++)
     {

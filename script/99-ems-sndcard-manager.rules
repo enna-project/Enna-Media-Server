@@ -1,0 +1,6 @@
+SUBSYSTEM=="sound", ACTION=="add", DEVPATH=="/devices/*/sound/card?" RUN+="/usr/bin/dbus-send --system --type=signal /com/EnnaMediaServer/SoundCard com.EnnaMediaServer.SoundCard.plugged string:%E{DEVPATH}"
+
+SUBSYSTEM=="sound", ACTION=="remove", DEVPATH=="/devices/*/sound/card?" RUN+="/usr/bin/dbus-send --system --type=signal /com/EnnaMediaServer/SoundCard com.EnnaMediaServer.SoundCard.unplugged string:%E{DEVPATH}"
+
+
+

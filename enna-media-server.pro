@@ -15,6 +15,7 @@ isEmpty(PREFIX) {
 !equals(WITH_UDEV, "no") {
     udev.path = /etc/udev/rules.d
     udev.files = script/99-ems-cdrom-manager.rules
+    udev.files += script/99-ems-sndcard-manager.rules
     INSTALLS += udev
 }
 
