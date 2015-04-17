@@ -107,7 +107,6 @@ bool TagLibPlugin::update(EMSTrack *track)
         if (!title.isNull() && !title.isEmpty())
         {
             track->name = title.toCString();
-            qDebug() << "VDEHORS title is : " << track->name;
         }
     }
 
