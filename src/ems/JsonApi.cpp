@@ -122,14 +122,16 @@ bool JsonApi::processMessage(const QString &message)
     }
     else
     {
+        QJsonObject answer;
         QJsonObject answerData;
-
 
         switch (toMessageType(j.object()["msg"].toString()))
         {
         case EMS_BROWSE:
             qDebug() << "QUERY BROWSE:" << j.object()["url"].toString();
             answerData = processMessageBrowse(j.object(), ret);
+            /* Each query anwser have the same url */
+            answer["url"] = j.object()["url"].toString();
             break;
         case EMS_DISK:
             ret = processMessageDisk(j.object());
@@ -159,7 +161,6 @@ bool JsonApi::processMessage(const QString &message)
         if (!ret)
             return false;
 
-        QJsonObject answer;
         answer["msg"] = j.object()["msg"];
         answer["msg_id"] = j.object()["msg_id"];
         answer["uuid"] = j.object()["uuid"];
@@ -218,6 +219,7 @@ QJsonObject JsonApi::processMessageBrowse(const QJsonObject &message, bool &ok)
     default:
         return obj;
     }
+
     ok = true;
     return obj;
 }
