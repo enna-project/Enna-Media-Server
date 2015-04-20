@@ -5,6 +5,7 @@
 #include <QThread>
 #include "Database.h"
 #include "DirectoryWorker.h"
+#include "DirectoriesWatcher.h"
 
 class LocalFileScanner : public QObject
 {
@@ -14,6 +15,10 @@ public:
     ~LocalFileScanner();
 
     void locationAdd(const QString &location);
+    QVector<QString> getLocations() const;
+
+    void startDirectoriesWatcher();
+    bool isScanActive();
 
 private:
     QVector<QString> m_locations;
@@ -22,6 +27,7 @@ private:
     bool m_scanActive;
     unsigned long long m_startTime;
     QTime m_measureTime;
+    DirectoriesWatcher m_directoriesWatcher;
 
     void scanEnd();
 

@@ -80,6 +80,7 @@ Application::Application(int & argc, char ** argv) :
     m_scanner->moveToThread(&m_localFileScannerWorker);
     connect(&m_localFileScannerWorker, &QThread::started, m_scanner, &LocalFileScanner::startScan);
     connect(&m_localFileScannerWorker, &QThread::finished, m_scanner, &LocalFileScanner::stopScan);
+    m_scanner->startDirectoriesWatcher();
     m_localFileScannerWorker.start();
 }
 

@@ -143,6 +143,11 @@ void LocalFileScanner::locationAdd(const QString &location)
     m_locations.append(location);
 }
 
+QVector<QString> LocalFileScanner::getLocations() const
+{
+    return m_locations;
+}
+
 void LocalFileScanner::fileFound(QString filename, QString sha1)
 {
     EMSTrack track;
@@ -232,4 +237,12 @@ void LocalFileScanner::trackUpdated(EMSTrack track, bool complete)
     db->unlock();
 }
 
+void LocalFileScanner::startDirectoriesWatcher()
+{
+    m_directoriesWatcher.start(this);
+}
 
+bool LocalFileScanner::isScanActive()
+{
+    return m_scanActive;
+}

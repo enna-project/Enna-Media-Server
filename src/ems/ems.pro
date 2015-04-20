@@ -38,6 +38,7 @@ HEADERS += Database.h \
            MetadataPlugin.h \
            FlacPlugin.h \
            LocalFileScanner.h \
+           DirectoriesWatcher.h \
            SndfilePlugin.h \
            DsdPlugin.h \
            CoverLocalPlugin.h \
@@ -63,6 +64,7 @@ SOURCES += Database.cpp \
            MetadataManager.cpp \
            FlacPlugin.cpp \
            LocalFileScanner.cpp \
+           DirectoriesWatcher.cpp \
            SndfilePlugin.cpp \
            DsdPlugin.cpp \
            CoverLocalPlugin.cpp \
