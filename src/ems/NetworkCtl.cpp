@@ -122,8 +122,17 @@ QList<EMSSsid> NetworkCtl::getWifiList()
             {
                 if(service->type() == "wifi")
                 {
+                    QString name;
+                    if(!service->name().isEmpty())
+                    {
+                        name=service->name();
+                    }
+                    else // manage Hidden SSID
+                    {
+                        name="hidden SSID";
+                    }
                     EMSSsid ssidWifi(service->objectPath().path(),
-                                     service->name(),
+                                     name,
                                      service->type(),
                                      getStateString(service->state()),
                                      service->strength(),
