@@ -1148,7 +1148,20 @@ bool JsonApi::processMessageNetwork(const QJsonObject &message)
 {
     QString action = message["action"].toString();
     bool ok = false;
-    if(action == "connected_ssid_get")
+    if (action == "is_wifi_enabled")
+    {
+
+        QJsonObject answer;
+        bool wifiState = NetworkCtl::instance()->isWifiEnabled();
+
+        answer["msg"] = message["msg"];
+        answer["msg_id"] = message["msg_id"];
+        answer["uuid"] = message["uuid"];
+        answer["wifi_state"] = wifiState;
+        QJsonDocument doc(answer);
+        m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
+    }
+    else if (action == "connected_ssid_get")
     {
         //QJsonArray jsonArray;
         //QJsonObject ssid;
@@ -1164,7 +1177,7 @@ bool JsonApi::processMessageNetwork(const QJsonObject &message)
     }
     else if (action == "ssid_list_get")
     {
-        if(!NetworkCtl::instance()->isWifiEnabled())
+        if (!NetworkCtl::instance()->isWifiEnabled())
         {
             NetworkCtl::instance()->enableWifi(true);
             auto connEnable = std::make_shared<QMetaObject::Connection>();
@@ -1187,7 +1200,7 @@ bool JsonApi::processMessageNetwork(const QJsonObject &message)
             QJsonObject obj;
             qDebug() << "Wifi updated";
             QList<EMSSsid> ssidList = NetworkCtl::instance()->getWifiList();
-            for(int i = 0; i<ssidList.size();i++)
+            for (int i = 0; i<ssidList.size();i++)
             {
                 jsonArray << EMSSsidToJson(ssidList[i]);
             }
@@ -1204,19 +1217,19 @@ bool JsonApi::processMessageNetwork(const QJsonObject &message)
             disconnect(*conn);
         });
     }
-    else if(action == "wifi_connect")
+    else if (action == "wifi_connect")
     {
         QString ssid = message["ssid"].toString();
         QString password = message["password"].toString();
-        if(NetworkCtl::instance()->isWifiPresent())
+        if (NetworkCtl::instance()->isWifiPresent())
         {
-            if(!NetworkCtl::instance()->isWifiEnabled())
+            if (!NetworkCtl::instance()->isWifiEnabled())
             {
                 NetworkCtl::instance()->enableWifi(true);
             }
             bool connected = NetworkCtl::instance()->isWifiConnected();
             QString connSsid=NetworkCtl::instance()->getConnectedWifi()->getName();
-            if(!connected || (connected && ssid != connSsid))
+            if (!connected || (connected && ssid != connSsid))
             {
                 NetworkCtl::instance()->scanWifi();
                 //connexion to the desired wifi : ssid
@@ -1227,7 +1240,7 @@ bool JsonApi::processMessageNetwork(const QJsonObject &message)
                 *connWifiList = connect(NetworkCtl::instance(), &NetworkCtl::wifiListUpdated,[=]()
                 {
                     Service*  wifiService = NetworkCtl::instance()->getWifiByName(ssid);
-                    if(wifiService)
+                    if (wifiService)
                     {
                         wifiService->connect();
                         //ConnexionRequest connRequest(wifiService->objectPath().path(),wifiService->name(),STATE_START,password,TIMEOUT);
@@ -1249,7 +1262,7 @@ bool JsonApi::processMessageNetwork(const QJsonObject &message)
                 });
 
                 // Authentication for secured connexion with password
-                //auto connPassphrase = std::make_shared<QMetaObject::Connection>();
+
                 *connPassphrase = connect(NetworkCtl::instance()->getAgent(), &Agent::passphraseRequested, [=]()
                 {
                     qDebug() << "Authentication required";
@@ -1264,8 +1277,7 @@ bool JsonApi::processMessageNetwork(const QJsonObject &message)
                 });
 
                 //Authentication error manager
-                //auto connError = std::make_shared<QMetaObject::Connection>();
-                //auto connStatus = std::make_shared<QMetaObject::Connection>();
+
                 *connError = connect(NetworkCtl::instance()->getAgent(), &Agent::errorRaised,[=]()
                 {
                     //Agent::InputRequest *request = NetworkCtl::instance()->getAgent()->currentInputRequest();
