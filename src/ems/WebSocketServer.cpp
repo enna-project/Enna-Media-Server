@@ -88,17 +88,14 @@ void WebSocketServer::sendAuthRequestToLocalUI(const EMSClient client)
     qDebug() << "WebSocketServer: sent the 'authentication' request for " << client.uuid;
     qDebug() << "WebSocketServer: nb connected clients = " << m_clients.size();
 
-    // Search the websocket for the local UI,
-    while (client_it.hasNext())
+    foreach( JsonApi *api, m_clients.values() )
     {
-        client_it.next();
-        if (client_it.key()->peerAddress() == QHostAddress::LocalHost)
+        if (api)
         {
-            // and send the authentication request message
-            client_it.value()->sendAuthRequest(client);
-            return;
+            api->sendAuthRequest(client);
         }
     }
+
 }
 
 void WebSocketServer::processMessage(QString message)
