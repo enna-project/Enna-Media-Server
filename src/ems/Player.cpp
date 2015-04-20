@@ -655,7 +655,7 @@ void Player::executeCmd(EMSPlayerCmd cmd)
             case ACTION_ENABLE_OUTPUT:
             {
                 mutex.lock();
-                for(unsigned int i=0; i<outputs.size(); i++)
+                for(int i=0; i<outputs.size(); i++)
                 {
                     if (outputs.at(i).id_mpd == cmd.uintValue)
                     {
@@ -671,7 +671,7 @@ void Player::executeCmd(EMSPlayerCmd cmd)
             case ACTION_DISABLE_OUTPUT:
             {
                 mutex.lock();
-                for(unsigned int i=0; i<outputs.size(); i++)
+                for(int i=0; i<outputs.size(); i++)
                 {
                     if (outputs.at(i).id_mpd == cmd.uintValue)
                     {
