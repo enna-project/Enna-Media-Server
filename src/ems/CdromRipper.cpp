@@ -45,7 +45,7 @@ void CdromRipper::run()
 {
     QString result("Rip: OK");
 
-    if (!this->identifyDrive())
+    if (!identifyDrive())
     {
         qCritical() << "CdromRipper: rip aborted";
         return;
@@ -59,23 +59,23 @@ void CdromRipper::run()
         return;
     }
 
-    if (!this->openDrive())
+    if (!openDrive())
     {
         qCritical() << "CdromRipper: rip aborted";
         return;
     }
 
-    this->initializeParanoia();
-    this->computeDiskSectorQuantity();
+    initializeParanoia();
+    computeDiskSectorQuantity();
 
 
     unsigned int nbTracks = m_cdromProperties.tracks.size();
     for (unsigned int indexTrack = 0; indexTrack < nbTracks; ++indexTrack)
     {
-        this->ripOneTrack(indexTrack);
+        ripOneTrack(indexTrack);
     }
 
-    this->closeDrive();
+    closeDrive();
 
     qDebug() << "CdromRipper: end of the rip process";
     emit resultReady(result);
@@ -184,13 +184,13 @@ bool CdromRipper::ripOneTrack(unsigned int indexTrack)
         memcpy(writeIndex, p_readbuf, CDIO_CD_FRAMESIZE_RAW);
         writeIndex += CDIO_CD_FRAMESIZE_RAW;
 
-        this->buildRipProgressMessage(indexTrack, currentLsn,
+        buildRipProgressMessage(indexTrack, currentLsn,
                                       lsnBegin, lsnEnd);
 
         currentLsn++;
     }
 
-    if(this->buildAudioFilenames(indexTrack))
+    if(buildAudioFilenames(indexTrack))
     {
         // WAV encoding
         if (!m_wavEncoder.write(m_wavFilenameCurrentTrack, audioTrackBuf, bufferSize))
@@ -320,7 +320,7 @@ bool CdromRipper::buildAudioFilenames(unsigned int indexTrack)
     }
 
     // Create the discid file associated to this track
-    if (!this->writeDiscId(directoryPath))
+    if (!writeDiscId(directoryPath))
     {
         qCritical() << "CDromRipper: the 'disc_id' writing failed";
     }

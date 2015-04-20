@@ -352,7 +352,7 @@ void CdromManager::startRip()
 
     /* Get first available CDROM */
     QVector<EMSCdrom> cdroms;
-    this->getAvailableCdroms(&cdroms);
+    getAvailableCdroms(&cdroms);
 
     /* Start the thread */
     if ((cdroms.size() > 0) && (!this->isRipInProgress()))

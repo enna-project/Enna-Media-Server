@@ -79,7 +79,7 @@ void DiscoveryServer::readyRead()
     if (isClientAlreadyAccepted)
     {
         // Already accepted clients usecase:
-        this->sendAcceptAnswer(senderParam);
+        sendAcceptAnswer(senderParam);
         // Remove the client from the pending clients container
         m_pendingOrRejectedClients.remove(clientUuid);
     }
@@ -116,12 +116,12 @@ void DiscoveryServer::readyRead()
                 qWarning() << "Error Discovery: can not insert local client in db";
             }
             db->unlock();
-            this->sendAcceptAnswer(senderParam);
+            sendAcceptAnswer(senderParam);
         }
         else
         {
             // Remote unknown clients usecase
-            this->sendAuthenticationRequest(client);
+            sendAuthenticationRequest(client);
         }
     }
 }
@@ -148,7 +148,7 @@ void DiscoveryServer::sendDiscoveryAnswer(const ClientConnectionParam &clientPar
 
 void DiscoveryServer::sendAcceptAnswer(const ClientConnectionParam &clientParam)
 {
-    this->sendDiscoveryAnswer(clientParam, "accepted");
+    sendDiscoveryAnswer(clientParam, "accepted");
 }
 
 void DiscoveryServer::sendAuthenticationRequest(const EMSClient client)

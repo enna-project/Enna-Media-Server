@@ -24,46 +24,46 @@ bool FlacEncoder::encode(const EMSTrack *emsTrack)
     if (m_inputFilename.isEmpty() || m_outputFilename.isEmpty())
         return false;
 
-    this->initializeEncodingData();
+    initializeEncodingData();
 
-    if (!this->openWavInputFile())
+    if (!openWavInputFile())
         return false;
 
-    if (!this->readWavHeader())
+    if (!readWavHeader())
     {
-        this->closeEncoder();
+        closeEncoder();
         return false;
     }
 
-    if (!this->configureInternalEncoder())
+    if (!configureInternalEncoder())
     {
         qCritical() << "FlacEncoder: Flac encoder configuration failed";
-        this->closeEncoder();
+        closeEncoder();
         return false;
     }
 
-    if (!this->addMetadata(emsTrack))
+    if (!addMetadata(emsTrack))
     {
         qCritical() << "FlacEncoder: add metadata failed";
-        this->closeEncoder();
+        closeEncoder();
         return false;
     }
 
-    if (!this->initializeInternalEncoder())
+    if (!initializeInternalEncoder())
     {
         qCritical() << "FlacEncoder: internal encoder initialization failed";
-        this->closeEncoder();
+        closeEncoder();
         return false;
     }
 
-    if (!this->processEncoding())
+    if (!processEncoding())
     {
         qCritical() << "FlacEncoder: encoding process failed";
-        this->closeEncoder();
+        closeEncoder();
         return false;
     }
 
-    this->closeEncoder();
+    closeEncoder();
     return true;
 }
 

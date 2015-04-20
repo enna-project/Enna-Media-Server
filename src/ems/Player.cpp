@@ -376,7 +376,7 @@ void Player::connectToMpd()
     }
 
     /* Try to connect until it success */
-    while (!conn && !this->isInterruptionRequested())
+    while (!conn && !isInterruptionRequested())
     {
         qDebug() << "Connecting to " << QString("%1:%2... (timeout %3ms)").arg(host).arg(port).arg(timeout);
         conn = mpd_connection_new(host.toStdString().c_str(), port, timeout);
@@ -408,8 +408,8 @@ void Player::connectToMpd()
             qCritical() << "Retrying within " << QString("%1 ms").arg(retryPeriod);
             for (unsigned int i=0; i<retryPeriod; i++)
             {
-                if (!this->isInterruptionRequested())
-                    this->usleep(1000);
+                if (!isInterruptionRequested())
+                    usleep(1000);
                 else
                     break;
             }
@@ -839,7 +839,7 @@ void Player::run()
         bool cmdInQueue = cmdAvailable.tryAcquire(1, statusPeriod);
 
         /* Quit this thread if asked */
-        if (this->isInterruptionRequested())
+        if (isInterruptionRequested())
         {
             break;
         }
@@ -870,7 +870,7 @@ void Player::run()
 /* Kill this thread */
 void Player::kill()
 {
-    this->requestInterruption();
+    requestInterruption();
 
     /* Fake a cmd, to leave properly */
     mutex.lock();
