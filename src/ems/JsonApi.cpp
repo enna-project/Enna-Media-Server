@@ -362,7 +362,7 @@ QJsonObject JsonApi::processMessageBrowseLibraryArtists(QStringList &list, bool 
          const int listSize = albumsList.size();
          QJsonArray jsonArray;
          for (int i = 0; i < listSize; ++i)
-             jsonArray << EMSAlbumToJson(albumsList[i]);
+             jsonArray << EMSAlbumToJsonWithArtists(albumsList[i]);
          obj["albums"] = jsonArray;
          break;
     }
@@ -503,7 +503,7 @@ QJsonObject JsonApi::processMessageBrowseLibraryGenre(QStringList &list, bool &o
         const int listSize = albumsList.size();
         QJsonArray jsonArray;
         for (int i = 0; i < listSize; ++i)
-          jsonArray << EMSAlbumToJson(albumsList[i]);
+          jsonArray << EMSAlbumToJsonWithArtists(albumsList[i]);
         obj["albums"] = jsonArray;
         break;
     }
