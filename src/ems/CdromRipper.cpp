@@ -12,6 +12,8 @@
 CdromRipper::CdromRipper(QObject *parent)
     : QThread(parent)
 {
+    qRegisterMetaType<EMSRipProgress>("EMSRipProgress");
+
     m_ripProgressObserverTimer = new QTimer(this);
     connect(m_ripProgressObserverTimer, &QTimer::timeout, this, &CdromRipper::observeRipProgress);
     m_ripProgressObserverTimer->setInterval(1000); // in milliseconds
