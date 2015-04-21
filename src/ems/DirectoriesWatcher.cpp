@@ -122,6 +122,20 @@ void DirectoriesWatcher::handleDirectoryChanged(const QString &path)
         }
         this->printDebugWatchedDirectories();
 
+        // Record the size of each file
+        QDirIterator dirContent(path);
+        while (dirContent.hasNext())
+        {
+            dirContent.next();
+            if ((!dirContent.filePath().contains("/.")) && (!dirContent.filePath().contains("/..")))
+            {
+                if (dirContent.fileInfo().isFile())
+                {
+                    m_awaited_files.insert(dirContent.filePath(), dirContent.fileInfo().size());
+                }
+            }
+        }
+
         // 2-Update the timer
         if (m_fileScannerTrigger->isActive())
         {
@@ -166,9 +180,10 @@ void DirectoriesWatcher::startLocalFileScanner()
     qDebug() << "DirectoriesWatcher: " << TIME_RESERVE / 1000 << " seconds after the last directory change";
     if (m_localFileScanner)
     {
-        if (m_localFileScanner->isScanActive())
+        if (m_localFileScanner->isScanActive() || this->needToWaitOpenedFile())
         {
             qDebug() << "DirectoriesWatcher: the LocalFileScanner is already running";
+            qDebug() << "DirectoriesWatcher:     or some files are still opened.";
 
             // Restart the timer: rerun the LocalFileScanner in TIME_RESERVE milliseconds
             m_mutex.lock();
@@ -189,4 +204,32 @@ void DirectoriesWatcher::startLocalFileScanner()
             m_localFileScannerWorker.start();
         }
     }
+}
+
+bool DirectoriesWatcher::needToWaitOpenedFile()
+{
+    QVector<QString> closedFiles;
+
+    foreach(QString filename, m_awaited_files.keys())
+    {
+        // Compare the current size with the recorded size
+        QFileInfo fileInfo(filename);
+
+        if (fileInfo.size() == m_awaited_files.value(filename))
+        {
+            closedFiles.append(filename);
+        }
+        else
+        {
+            m_awaited_files[filename] = fileInfo.size();
+            qDebug() << "DirectoriesWatcher: wait the file: " << filename;
+        }
+    }
+
+    // Remove from the 'awaited files' the closed files
+    foreach(QString filename, closedFiles)
+    {
+        m_awaited_files.remove(filename);
+    }
+    return (!m_awaited_files.empty());
 }

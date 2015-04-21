@@ -8,6 +8,7 @@
 #include <QMutex>
 #include <QTimer>
 #include <QThread>
+#include <QSet>
 
 class LocalFileScanner;
 
@@ -25,10 +26,12 @@ public:
 private:
     void printDebugWatchedDirectories();
     void addDirectoryInWatcher(QString directory);
+    bool needToWaitOpenedFile();
 
     LocalFileScanner *m_localFileScanner;
     QVector<QString> m_rootDirectories;
     QFileSystemWatcher m_qtWatcher;
+    QMap<QString, qint64> m_awaited_files;
 
     // Timer to trigger the start of the localFileScanner
     QTimer *m_fileScannerTrigger;
