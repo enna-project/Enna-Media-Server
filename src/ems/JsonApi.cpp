@@ -469,7 +469,7 @@ QJsonObject JsonApi::processMessageBrowseLibraryGenre(QStringList &list, bool &o
         QJsonArray jsonArray;
         for (int i = 0; i < listSize; ++i)
             jsonArray << EMSGenreToJson(genresList[i]);
-        obj["tracks"] = jsonArray;
+        obj["genres"] = jsonArray;
         break;
     }
     case 2:
