@@ -68,6 +68,7 @@ private:
     QJsonObject EMSGenreToJson(const EMSGenre &genre) const;
     QJsonObject EMSAlbumToJson(const EMSAlbum &album) const;
     QJsonObject EMSAlbumToJsonWithArtists(const EMSAlbum &album) const;
+    QString EMSTrackTypeToString(EMSTrackType type) const;
     void getTracksFromFilename(QVector<EMSTrack> *trackList, QString filename);
     QString convertImageUrl(QString url) const;
     // To be implemented when if menu become dynamic

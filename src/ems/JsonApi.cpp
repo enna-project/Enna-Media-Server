@@ -952,12 +952,28 @@ QJsonObject JsonApi::EMSGenreToJson(const EMSGenre &genre) const
     return obj;
 }
 
+QString JsonApi::EMSTrackTypeToString(EMSTrackType type) const
+{
+    switch(type)
+    {
+    case TRACK_TYPE_CDROM:
+        return QString("cdrom");
+    case TRACK_TYPE_DB:
+        return QString("database");
+    case TRACK_TYPE_EXTERNAL:
+        return QString("file");
+    default:
+        return QString("unknown");
+    }
+}
+
 QJsonObject JsonApi::EMSTrackToJson(const EMSTrack &track) const
 {
     QJsonObject obj;
 
     obj["id"] = (qint64)track.id;
     obj["position"] = (int)track.position;
+    obj["type"] = EMSTrackTypeToString(track.type);
     obj["name"] = track.name;
     obj["filename"] = track.filename;
     obj["sha1"] = track.sha1;
