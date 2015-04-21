@@ -302,6 +302,8 @@ CdromManager::CdromManager(QObject *parent) : QObject(parent),
 {
     cdio_init();
 
+    qRegisterMetaType<EMSCdrom>("EMSCdrom");
+
     connect(this, SIGNAL(cdromTrackNeedUpdate(EMSTrack,QStringList)), MetadataManager::instance(), SLOT(update(EMSTrack,QStringList)));
     connect(MetadataManager::instance(), SIGNAL(updated(EMSTrack,bool)), this, SLOT(cdromTrackUpdated(EMSTrack,bool)));
 }
