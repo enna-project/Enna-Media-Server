@@ -68,20 +68,13 @@ Application::Application(int & argc, char ** argv) :
     m_smartmontools = new SmartmontoolsNotifier(this);
 
 
-    /* Re-scan locations to perform a database update */
-    m_scanner = new LocalFileScanner();
-
+    /* Scan locations to perform a database update */
     QString locations;
     EMS_LOAD_SETTINGS(locations, "main/locations",
                       QStandardPaths::standardLocations(QStandardPaths::MusicLocation)[0],
             String);
-    m_scanner->locationAdd(locations);
-
-    m_scanner->moveToThread(&m_localFileScannerWorker);
-    connect(&m_localFileScannerWorker, &QThread::started, m_scanner, &LocalFileScanner::startScan);
-    connect(&m_localFileScannerWorker, &QThread::finished, m_scanner, &LocalFileScanner::stopScan);
-    m_scanner->startDirectoriesWatcher();
-    m_localFileScannerWorker.start();
+    m_directoriesWatcher.addLocation(locations);
+    m_directoriesWatcher.start();
 }
 
 Application::~Application()
@@ -90,10 +83,6 @@ Application::~Application()
     m_cdromManagerWorker.quit();
     m_cdromManagerWorker.wait(100);
 
-    /* Stop the scanner */
-    m_localFileScannerWorker.quit();
-    m_localFileScannerWorker.wait(100);
-
     /* Stop the player thread */
     Player::instance()->kill();
     Player::instance()->wait(1000);
@@ -101,6 +90,5 @@ Application::~Application()
     /* Close properly the database */
     Database::instance()->close();
 
-    delete m_scanner;
     delete m_soundCardManager;
 }

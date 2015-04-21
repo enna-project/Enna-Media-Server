@@ -8,6 +8,7 @@
 DirectoriesWatcher::DirectoriesWatcher()
     : QObject()
 {
+    m_localFileScanner = new LocalFileScanner();
     m_fileScannerTrigger = new QTimer(this);
     m_fileScannerTrigger->setSingleShot(true);
 
@@ -17,38 +18,43 @@ DirectoriesWatcher::DirectoriesWatcher()
 
 DirectoriesWatcher::~DirectoriesWatcher()
 {
+    disconnect(&m_qtWatcher, &QFileSystemWatcher::directoryChanged,
+               this, &DirectoriesWatcher::handleDirectoryChanged);
+
+    // Stop the timer
     if (m_fileScannerTrigger)
     {
+        disconnect(m_fileScannerTrigger, &QTimer::timeout,
+                   this, &DirectoriesWatcher::startLocalFileScanner);
+
         m_fileScannerTrigger->stop();
         delete m_fileScannerTrigger;
     }
 
-    // Stop the current thread
+    // Stop the file scanner thread
     m_localFileScannerWorker.quit();
-    m_localFileScannerWorker.wait();
+    m_localFileScannerWorker.wait(100);
 
-    disconnect(m_fileScannerTrigger, &QTimer::timeout,
-               this, &DirectoriesWatcher::startLocalFileScanner);
-    disconnect(&m_qtWatcher, &QFileSystemWatcher::directoryChanged,
-               this, &DirectoriesWatcher::handleDirectoryChanged);
     disconnect(&m_localFileScannerWorker, &QThread::started,
                m_localFileScanner, &LocalFileScanner::startScan);
     disconnect(&m_localFileScannerWorker, &QThread::finished,
                m_localFileScanner, &LocalFileScanner::stopScan);
+
+    if (m_localFileScanner)
+    {
+        delete m_localFileScanner;
+    }
 }
 
-void DirectoriesWatcher::start(LocalFileScanner *localFileScanner)
+void DirectoriesWatcher::addLocation(const QString &location)
 {
-    if (!localFileScanner)
-    {
-        qCritical() << "DirectoriesWatcher: locaFileScanner is null";
-        return;
-    }
+    m_localFileScanner->locationAdd(location);
+}
 
+void DirectoriesWatcher::start()
+{
     connect(&m_qtWatcher, &QFileSystemWatcher::directoryChanged,
             this, &DirectoriesWatcher::handleDirectoryChanged);
-
-    m_localFileScanner = localFileScanner;
 
     // Initialize the localFileScanner thread
     m_localFileScanner->moveToThread(&m_localFileScannerWorker);
@@ -63,6 +69,10 @@ void DirectoriesWatcher::start(LocalFileScanner *localFileScanner)
         qDebug() << "DirectoriesWatcher: root_directory: " << loc;
     }
 
+    // Launch the first LocalFileScanner run to update the database
+    this->startLocalFileScanner();
+
+    // And now, initialize the directory list to watch.
     // Find all directories and subdirectories
     QVector<QString> allDirectories;
     foreach (QString rootDirectory, m_rootDirectories)

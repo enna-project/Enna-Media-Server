@@ -19,7 +19,8 @@ public:
     DirectoriesWatcher();
     ~DirectoriesWatcher();
 
-    void start(LocalFileScanner *localFileScanner);
+    void addLocation(const QString &location);
+    void start();
 
 private:
     void printDebugWatchedDirectories();

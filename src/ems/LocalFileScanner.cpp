@@ -237,11 +237,6 @@ void LocalFileScanner::trackUpdated(EMSTrack track, bool complete)
     db->unlock();
 }
 
-void LocalFileScanner::startDirectoriesWatcher()
-{
-    m_directoriesWatcher.start(this);
-}
-
 bool LocalFileScanner::isScanActive()
 {
     return m_scanActive;

@@ -8,9 +8,9 @@
 #include "HttpServer.h"
 #include "WebSocketServer.h"
 #include "DiscoveryServer.h"
-#include "LocalFileScanner.h"
 #include "SmartmontoolsNotifier.h"
 #include "SoundCardManager.h"
+#include "DirectoriesWatcher.h"
 
 class Application : public QCoreApplication
 {
@@ -23,17 +23,15 @@ public:
 private:
     short m_websocketPort;
     short m_httpPort;
-    LocalFileScanner *m_scanner;
     HttpServer *m_httpServer;
     WebSocketServer *m_webSocketServer;
     DiscoveryServer *m_discoveryServer;
     SmartmontoolsNotifier *m_smartmontools;
     SoundCardManager *m_soundCardManager;
+    DirectoriesWatcher m_directoriesWatcher;
 
     /* Run detached from the main event loop */
     QThread m_cdromManagerWorker;
-    QThread m_localFileScannerWorker;
-
 };
 
 #endif // APPLICATION_H
