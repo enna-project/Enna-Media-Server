@@ -357,7 +357,7 @@ void CdromManager::startRip()
     getAvailableCdroms(&cdroms);
 
     /* Start the thread */
-    if ((cdroms.size() > 0) && (!this->isRipInProgress()))
+    if ((cdroms.size() > 0) && (!isRipInProgress()))
     {
         EMSCdrom cdrom = cdroms.at(0);
         m_cdromRipper = new CdromRipper(this);

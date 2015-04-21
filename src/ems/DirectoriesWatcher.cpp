@@ -70,7 +70,7 @@ void DirectoriesWatcher::start()
     }
 
     // Launch the first LocalFileScanner run to update the database
-    this->startLocalFileScanner();
+    startLocalFileScanner();
 
     // And now, initialize the directory list to watch.
     // Find all directories and subdirectories
@@ -94,9 +94,9 @@ void DirectoriesWatcher::start()
     // Add all the directories and subdirectories in the Qt watcher
     foreach(QString dir, allDirectories)
     {
-        this->addDirectoryInWatcher(dir);
+        addDirectoryInWatcher(dir);
     }
-    this->printDebugWatchedDirectories();
+    printDebugWatchedDirectories();
 }
 
 void DirectoriesWatcher::handleDirectoryChanged(const QString &path)
@@ -117,10 +117,10 @@ void DirectoriesWatcher::handleDirectoryChanged(const QString &path)
             iterator.next();
             if (iterator.fileInfo().isDir() && (!alreadyWatched.contains(iterator.filePath())))
             {
-                this->addDirectoryInWatcher(iterator.filePath());
+                addDirectoryInWatcher(iterator.filePath());
             }
         }
-        this->printDebugWatchedDirectories();
+        printDebugWatchedDirectories();
 
         // Record the size of each file
         QDirIterator dirContent(path);
@@ -180,7 +180,7 @@ void DirectoriesWatcher::startLocalFileScanner()
     qDebug() << "DirectoriesWatcher: " << TIME_RESERVE / 1000 << " seconds after the last directory change";
     if (m_localFileScanner)
     {
-        if (m_localFileScanner->isScanActive() || this->needToWaitOpenedFile())
+        if (m_localFileScanner->isScanActive() || needToWaitOpenedFile())
         {
             qDebug() << "DirectoriesWatcher: the LocalFileScanner is already running";
             qDebug() << "DirectoriesWatcher:     or some files are still opened.";
