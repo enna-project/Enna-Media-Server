@@ -21,6 +21,11 @@ NetworkCtl::NetworkCtl(QObject *parent): QObject(parent)
 
 }
 
+static bool wifiSortByStrength(EMSSsid a, EMSSsid b)
+{
+    return a.getStrength() > b.getStrength();
+}
+
 QString NetworkCtl::getStateString(Service::ServiceState state)
 {
     switch (state) {
@@ -75,20 +80,20 @@ void NetworkCtl::listServices()
 
             if(service->state()==Service::ServiceState::OnlineState || service->state()==Service::ServiceState::ReadyState )
             {
-                qDebug() << "Interface : "<< service->ethernet()->interface();
-                qDebug() << "IP config : "<< service->ipv4()->method();
+                qDebug() << "Interface : " << service->ethernet()->interface();
+                qDebug() << "IP config : " << service->ipv4()->method();
                 if(service->type()!="ethernet")
                 {
                     qDebug() << "Security : "<< service->security().join(", ");
                 }
-                qDebug() << "Address : "<< service->ipv4()->address();
-                qDebug() << "Netmask : "<< service->ipv4()->netmask();
+                qDebug() << "Address : " << service->ipv4()->address();
+                qDebug() << "Netmask : " << service->ipv4()->netmask();
                 if(service->state()==Service::ServiceState::OnlineState)
                 {
-                    qDebug() << "Gateway : "<< service->ipv4()->gateway();
+                    qDebug() << "Gateway : " << service->ipv4()->gateway();
 
                 }
-                qDebug() << "MAC adress : "<< service->ethernet()->address();
+                qDebug() << "MAC adress : " << service->ethernet()->address();
             }
             qDebug() << endl;
         }
@@ -100,7 +105,7 @@ void NetworkCtl::scanWifi()
     if(isWifiPresent())
     {
         this->getTechnology("wifi")->scan();
-        qDebug()<< "scanning wifi" <<endl;
+        qDebug() << "scanning wifi" << endl;
     }
 
 }
@@ -140,6 +145,7 @@ QList<EMSSsid> NetworkCtl::getWifiList()
                     ssidList.append(ssidWifi);
                 }
             }
+            qSort(ssidList.begin(), ssidList.end(), wifiSortByStrength);
         }
     }
     return ssidList;
@@ -215,6 +221,44 @@ EMSSsid* NetworkCtl::getConnectedWifi()
         }
     }
     return ssidWifi;
+}
+
+EMSEthernet* NetworkCtl::getConnectedEthernet()
+{
+    EMSEthernet* ethParam = new EMSEthernet();
+    if(m_manager->services().isEmpty())
+    {
+        qDebug() << " No service listed ";
+    }
+    else
+    {
+        if(this->isEthernetPresent())
+        {
+            if(this->isEthernetConnected())
+            {
+                QString state;
+                foreach (Service *service, m_manager->services())
+                {
+                    state = getStateString(service->state());
+                    if(service->type() == "ethernet" && (state == "ready" || state=="online"))
+                    {
+
+                        ethParam->setPath(service->objectPath().path());
+                        ethParam->setInterface(service->ethernet()->interface());
+                        ethParam->setState(state);
+                        ethParam->setType(service->type());
+                        ethParam->setIpAddress(service->ipv4()->address());
+                    }
+                }
+            }
+            else
+            {
+                qDebug() << " Ethernet offline ";
+            }
+
+        }
+    }
+    return ethParam;
 }
 
 bool NetworkCtl::isWifiPresent()
@@ -470,6 +514,76 @@ void EMSSsid::setSecurity(QStringList securityList)
     m_securityList = securityList;
 }
 
+EMSEthernet::EMSEthernet(QString path, QString interface, QString type, QString state, QString ipAdress):
+    m_path(path),
+    m_interface(interface),
+    m_type(type),
+    m_state(state),
+    m_ipAdress(ipAdress)
+{
+
+}
+
+EMSEthernet::EMSEthernet()
+{
+
+}
+
+
+QString EMSEthernet::getPath() const
+{
+    return m_path;
+}
+QString EMSEthernet::getInterface() const
+{
+    return m_interface;
+}
+QString EMSEthernet::getType() const
+ {
+    return m_type;
+}
+QString EMSEthernet::getState() const
+{
+    return m_state;
+}
+QString EMSEthernet::getIpAddress() const
+{
+    return m_ipAdress;
+}
+
+void EMSEthernet::setPath(QString path)
+{
+    m_path = path;
+}
+
+void EMSEthernet::setInterface(QString interface)
+{
+    m_interface = interface;
+}
+
+void EMSEthernet::setType(QString type)
+{
+    m_type = type;
+}
+
+void EMSEthernet::setState(QString state)
+{
+    m_state = state;
+}
+
+void EMSEthernet::setIpAddress(QString ipAdress)
+{
+    m_ipAdress = ipAdress;
+}
+
+EMSEthernet::~EMSEthernet()
+{
+
+}
+
+
+
+
 ConnexionRequest::ConnexionRequest(QString path, QString name, QString passphrase, QString state, int timeout) :
     m_path(path),
     m_name(name),
@@ -526,7 +640,6 @@ ConnexionRequest::~ConnexionRequest()
 {
 
 }
-
 
 NetworkCtl::~NetworkCtl()
 {

@@ -1175,6 +1175,18 @@ bool JsonApi::processMessageNetwork(const QJsonObject &message)
         QJsonDocument doc(answer);
         m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
     }
+    else if (action == "connected_ethernet_get")
+    {
+        EMSEthernet* ethData=NetworkCtl::instance()->getConnectedEthernet();
+        //ssid << EMSSsidToJson(*ssid);
+        QJsonObject answer;
+        answer["msg"] = message["msg"];
+        answer["msg_id"] = message["msg_id"];
+        answer["uuid"] = message["uuid"];
+        answer["ethernet"] = EMSEthernetToJson(*ethData);
+        QJsonDocument doc(answer);
+        m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
+    }
     else if (action == "ssid_list_get")
     {
         if (!NetworkCtl::instance()->isWifiEnabled())
@@ -1540,6 +1552,18 @@ QJsonObject JsonApi::EMSSsidToJson(const EMSSsid &ssid) const
     obj["type"] = ssid.getType();
     obj["state"] = ssid.getState();
     obj["security"] = ssid.getSecurity().join(", ");
+
+    return obj;
+}
+
+QJsonObject JsonApi::EMSEthernetToJson(const EMSEthernet &ethData) const
+{
+    QJsonObject obj;
+    obj["type"] = ethData.getType();
+    obj["path"] = ethData.getPath();
+    obj["interface"] = ethData.getInterface();
+    obj["state"] = ethData.getState();
+    obj["ip_address"] = ethData.getIpAddress();
 
     return obj;
 }

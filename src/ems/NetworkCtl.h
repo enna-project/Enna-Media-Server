@@ -40,6 +40,36 @@ public:
     ~EMSSsid();
 };
 
+class EMSEthernet
+{
+    QString m_path;
+    QString m_interface;
+    QString m_type;
+    QString m_state;
+    QString m_ipAdress;
+
+public:
+
+
+    EMSEthernet(QString path, QString interface, QString type, QString state, QString ipAdress);
+    EMSEthernet();
+    //QList<SecurityType> toSecurityTypeList(const QStringList &listType);
+
+    QString getPath() const;
+    QString getInterface() const;
+    QString getType() const;
+    QString getState() const;
+    QString getIpAddress() const;
+
+    void setPath(QString path);
+    void setInterface(QString interface);
+    void setType(QString type);
+    void setState(QString state);
+    void setIpAddress(QString ipAdress);
+
+    ~EMSEthernet();
+};
+
 class EMSSsid;
 class NetworkCtl : public QObject
 {
@@ -61,6 +91,7 @@ public:
     QList<EMSSsid> getWifiList();
     Service* getWifiByName(QString wifiName);
     EMSSsid* getConnectedWifi();
+    EMSEthernet* getConnectedEthernet();
     bool isWifiPresent();
     bool isEthernetPresent();
 

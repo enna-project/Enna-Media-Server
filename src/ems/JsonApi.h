@@ -78,6 +78,7 @@ private:
     QJsonObject EMSPlaylistsListBySubdirToJson(EMSPlaylistsListBySubdir playlistsListBySubdir);
     QString EMSTrackTypeToString(EMSTrackType type) const;
     QJsonObject EMSSsidToJson(const EMSSsid &ssid) const;
+    QJsonObject EMSEthernetToJson(const EMSEthernet &ethDat) const;
     void getTracksFromFilename(QVector<EMSTrack> *trackList, QString filename);
     QString convertImageUrl(QString url);
     // To be implemented when if menu become dynamic
