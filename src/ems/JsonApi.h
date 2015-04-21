@@ -28,6 +28,7 @@ public:
     void sendPlaylist(EMSPlaylist newPlaylist);
     void sendAuthRequest(EMSClient client);
     void sendRipProgress(EMSRipProgress ripProgress);
+    void sendMenu();
 
 
 signals:

@@ -24,6 +24,10 @@ WebSocketServer::WebSocketServer(quint16 port, QObject *parent) :
               this, &WebSocketServer::broadcastPlaylist);
       connect(CdromManager::instance(), &CdromManager::ripProgressChanged,
               this, &WebSocketServer::broadcastRipProgress, Qt::DirectConnection);
+      connect(CdromManager::instance(), &CdromManager::cdromInserted,
+              this, &WebSocketServer::broadcastMenuChange, Qt::DirectConnection);
+      connect(CdromManager::instance(), &CdromManager::cdromEjected,
+              this, &WebSocketServer::broadcastMenuChange, Qt::DirectConnection);
   }
 }
 
@@ -78,6 +82,18 @@ void WebSocketServer::broadcastRipProgress(EMSRipProgress ripProgress)
         if (api)
         {
             api->sendRipProgress(ripProgress);
+        }
+    }
+}
+
+void WebSocketServer::broadcastMenuChange(EMSCdrom cdromChanged)
+{
+    Q_UNUSED(cdromChanged)
+    foreach( JsonApi *api, m_clients.values() )
+    {
+        if (api)
+        {
+            api->sendMenu();
         }
     }
 }

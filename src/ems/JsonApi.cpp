@@ -1084,3 +1084,14 @@ void JsonApi::sendRipProgress(EMSRipProgress ripProgress)
     QJsonDocument doc(ripProgressJsonObj);
     m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
 }
+
+void JsonApi::sendMenu()
+{
+    QJsonObject unused;
+    bool ok;
+    QJsonObject obj;
+    obj["msg"] = "EMS_MENUS";
+    obj["data"] = processMessageBrowseMenu(unused, ok);
+    QJsonDocument doc(obj);
+    m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
+}
