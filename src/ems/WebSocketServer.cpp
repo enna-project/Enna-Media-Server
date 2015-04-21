@@ -24,6 +24,10 @@ WebSocketServer::WebSocketServer(quint16 port, QObject *parent) :
               this, &WebSocketServer::broadcastPlaylist);
       connect(CdromManager::instance(), &CdromManager::ripProgressChanged,
               this, &WebSocketServer::broadcastRipProgress);
+      connect(CdromManager::instance(), &CdromManager::cdromInserted,
+              this, &WebSocketServer::broadcastMenuChange);
+      connect(CdromManager::instance(), &CdromManager::cdromEjected,
+              this, &WebSocketServer::broadcastMenuChange);
   }
 }
 
