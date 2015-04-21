@@ -34,7 +34,6 @@ HEADERS += Database.h \
            HttpServer.h \
            external/http-parser/http_parser.h \
            HttpClient.h \
-           CdromManager.h \
            MetadataManager.h \
            MetadataPlugin.h \
            FlacPlugin.h \
@@ -47,7 +46,6 @@ HEADERS += Database.h \
            FlacEncoder.h \
            TagLibPlugin.h \
            SoundCardManager.h \
-           CdromRipper.h \
            NetworkCtl.h
 
 SOURCES += Database.cpp \
@@ -75,7 +73,6 @@ SOURCES += Database.cpp \
            FlacEncoder.cpp \
            TagLibPlugin.cpp \
            SoundCardManager.cpp \
-           CdromRipper.cpp \
            NetworkCtl.cpp
 
 DISTFILES +=
