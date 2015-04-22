@@ -23,6 +23,17 @@ JsonApi::JsonApi(QWebSocket *webSocket) :
         httpPort = QString("%1").arg(port);
     }
 
+    QString str;
+    EMS_LOAD_SETTINGS(str, "main/music_extensions",
+                      EMS_MUSIC_EXTENSIONS, String);
+    // Remove space in strings
+    m_supportedFormat = str.split(",");
+    for (int i = 0;i < m_supportedFormat.size();i++)
+        m_supportedFormat.replace(i, m_supportedFormat.at(i).trimmed());
+
+    EMS_LOAD_SETTINGS(m_directoriesBasePath, "directories/path",
+                      EMS_DIRECTORIES_BASE_PATH, String);
+
     /* TODO: use the NetworkManager instead */
     QString ipAddr;
     QList<QHostAddress> ipAddrs = QNetworkInterface::allAddresses();
@@ -216,6 +227,9 @@ QJsonObject JsonApi::processMessageBrowse(const QJsonObject &message, bool &ok)
     case SCHEME_PLAYLIST:
         obj = processMessageBrowsePlaylist(message, ok);
         break;
+    case SCHEME_FILE:
+        obj = processMessageBrowseDirectory(message, ok);
+        break;
     default:
         return obj;
     }
@@ -249,6 +263,11 @@ QJsonObject JsonApi::processMessageBrowseMenu(const QJsonObject &message, bool &
     playlists["name"] = "Playlists";
     playlists["url_scheme"] = "playlist://";
 
+    QJsonObject directories;
+    directories["enabled"] = true;
+    directories["name"] = "Directories";
+    directories["url_scheme"] = "file://";
+
     QJsonObject settings;
     settings["enabled"] = true;
     settings["name"] = "Settings";
@@ -257,6 +276,7 @@ QJsonObject JsonApi::processMessageBrowseMenu(const QJsonObject &message, bool &
     arr.append(library);
     arr.append(cdda);
     arr.append(playlists);
+    arr.append(directories);
     arr.append(settings);
 
     menus["menus"] = arr;
@@ -569,6 +589,69 @@ QJsonObject JsonApi::processMessageBrowseCdrom(const QJsonObject &message, bool 
     return obj;
 }
 
+QJsonObject JsonApi::processMessageBrowseDirectory(const QJsonObject &message, bool &ok)
+{
+    QJsonObject obj;
+    QString url = message["url"].toString();
+
+    if (!url.startsWith("file://"))
+    {
+        ok = false;
+        return obj;
+    }
+
+    url.remove("file://");
+    if (url.isEmpty())
+        url = m_directoriesBasePath;
+
+    QDir dir(url);
+    dir.makeAbsolute();
+
+    if (!dir.exists())
+    {
+        ok = false;
+        return obj;
+    }
+
+    url = dir.absolutePath();
+
+    if (!url.startsWith(m_directoriesBasePath))
+    {
+        ok = false;
+        return obj;
+    }
+
+    dir.setNameFilters(m_supportedFormat);
+    dir.setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot);
+    dir.setSorting(QDir::DirsFirst);
+
+    QStringList allFiles = dir.entryList();
+    QJsonArray jsonArray;
+    for (int i=0; i< allFiles.size(); i++)
+    {
+        QJsonObject obj;
+        QString newUrl = url + QDir::separator() + allFiles[i];
+        obj["name"] = allFiles[i];
+
+        QFileInfo f(newUrl);
+
+        if (f.isDir())
+            obj["fileType"] = "directory";
+        else if (f.isFile())
+            obj["fileType"] = "music";
+        else
+            obj["fileType"] = "unknown";
+        obj["url"] = "file://" + newUrl;
+
+
+        jsonArray << obj;
+    }
+    obj["files"] = jsonArray;
+    ok = true;
+    return obj;
+}
+
+
 bool JsonApi::processMessageDisk(const QJsonObject &message)
 {
     Q_UNUSED(message);
@@ -810,6 +893,8 @@ JsonApi::UrlSchemeType JsonApi::urlSchemeGet(const QString &url) const
         return SCHEME_PLAYLIST;
     else if (scheme == "settings")
         return SCHEME_SETTINGS;
+    else if (scheme == "file")
+        return SCHEME_FILE;
     else
         return SCHEME_UNKNOWN;
 }

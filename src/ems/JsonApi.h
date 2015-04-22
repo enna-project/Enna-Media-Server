@@ -21,7 +21,7 @@ public:
     enum MessageType {EMS_BROWSE, EMS_PLAYER, EMS_PLAYLIST, EMS_DISK,
                       EMS_AUTH, EMS_CD_RIP, EMS_UNKNOWN};
     enum UrlSchemeType {SCHEME_MENU, SCHEME_LIBRARY, SCHEME_CDDA,
-                        SCHEME_PLAYLIST, SCHEME_SETTINGS, SCHEME_UNKNOWN};
+                        SCHEME_PLAYLIST, SCHEME_SETTINGS, SCHEME_FILE, SCHEME_UNKNOWN};
 
     /* Asynchronous messages */
     void sendStatus(EMSPlayerStatus status);
@@ -39,6 +39,8 @@ private:
     QString httpPort;
     QString httpSrvUrl;
     QString cacheDirectory;
+    QStringList m_supportedFormat;
+    QString m_directoriesBasePath;
 
     /* Queries handlers */
     JsonApi::MessageType toMessageType(const QString &type) const;
@@ -57,6 +59,7 @@ private:
     QJsonObject processMessageBrowseLibraryGenre(QStringList &list, bool &ok);
     QJsonObject processMessageBrowsePlaylist(const QJsonObject &message, bool &ok);
     QJsonObject processMessageBrowseCdrom(const QJsonObject &message, bool &ok);
+    QJsonObject processMessageBrowseDirectory(const QJsonObject &message, bool &ok);
     JsonApi::UrlSchemeType urlSchemeGet(const QString &url) const;
 
     QJsonObject EMSPlaylistToJson(EMSPlaylist playlist);

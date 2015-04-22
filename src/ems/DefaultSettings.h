@@ -38,6 +38,12 @@
 //File extensions used by the scanner to detect new files
 #define EMS_MUSIC_EXTENSIONS "*.flac, *.wav, *.dsf, *.dff, *.mp3, *.ogg"
 
+#ifdef Q_OS_MAC
+#define EMS_DIRECTORIES_BASE_PATH "/Volumes"
+#else
+#define EMS_DIRECTORIES_BASE_PATH "/media"
+#endif
+
 #define EMS_LOAD_SETTINGS(var, confValue, defaultValue, type) \
 do {\
 if (settings.contains(confValue))\
