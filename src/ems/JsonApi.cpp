@@ -1180,6 +1180,7 @@ void JsonApi::sendRipProgress(EMSRipProgress ripProgress)
     ripProgressJsonObj["msg"] = "EMS_CD_RIP";
     ripProgressJsonObj["overall_progress"] = (qint64)ripProgress.overall_progress;
     ripProgressJsonObj["track_in_progress"] = (qint64)ripProgress.track_in_progress;
+    ripProgressJsonObj["track_total"] = (qint64)ripProgress.track_total;
     ripProgressJsonObj["track_progress"] = (qint64)ripProgress.track_progress;
 
     QJsonDocument doc(ripProgressJsonObj);

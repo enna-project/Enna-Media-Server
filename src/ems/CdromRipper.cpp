@@ -72,6 +72,10 @@ void CdromRipper::run()
 
 
     unsigned int nbTracks = m_cdromProperties.tracks.size();
+    m_emsRipProgressMutex.lock();
+    m_emsRipProgress.track_total = nbTracks;
+    m_emsRipProgressMutex.unlock();
+
     for (unsigned int indexTrack = 0; indexTrack < nbTracks; ++indexTrack)
     {
         ripOneTrack(indexTrack);
