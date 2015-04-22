@@ -1,4 +1,5 @@
 #include <QFile>
+#include <QImage>
 #include "HttpClient.h"
 #include "CdromManager.h"
 #include "Data.h"
@@ -129,6 +130,7 @@ HttpClient::HttpClient(QTcpSocket *socket, QString cacheDirectory, QObject *pare
         QString url(m_parseUrl);
         QStringList arg = url.split('/');
         QString localFilePath;
+
         if (arg.size() > 1)
         {
             for (int i=1; i<arg.size(); i++)
@@ -146,6 +148,22 @@ HttpClient::HttpClient(QTcpSocket *socket, QString cacheDirectory, QObject *pare
         }
         else
         {
+            int resize = -1;
+            if(localFilePath.contains('?'))
+            {
+                QStringList parameters = localFilePath.split('?');
+                localFilePath = parameters.first();
+                for (int i=1; i<parameters.size(); i++)
+                {
+                    QString parameter = parameters.at(i);
+                    if (parameter.startsWith("resize="))
+                    {
+                        parameter.remove("resize=");
+                        resize = parameter.toInt();
+                    }
+                }
+            }
+
             localFilePath = m_cacheDirectory + QDir::separator() + localFilePath;
 
             /* Check the file is inside the cache directory */
@@ -164,11 +182,50 @@ HttpClient::HttpClient(QTcpSocket *socket, QString cacheDirectory, QObject *pare
                 QFile f(localFilePath);
                 if (f.open(QIODevice::ReadOnly))
                 {
+                    QString extension = QFileInfo(localFilePath).suffix().toLower();
                     QHash<QString, QString> headers;
-                    headers["Connection"] = "Close";
-                    headers["Content-Type"] = "image/" + QFileInfo(localFilePath).suffix().toLower();;
+                    QByteArray body;
 
-                    QByteArray body = f.readAll();
+                    headers["Connection"] = "Close";
+                    headers["Content-Type"] = "image/" + extension;
+
+                    if (resize > 0)
+                    {
+                        /* In order not to have one image per size in the cache, we choose the
+                         * closest power of two (supperior)
+                         */
+                        for (int i=2; i<=2048; i*=2)
+                        {
+                            if (resize < i || i == 2048)
+                            {
+                                resize = i;
+                                break;
+                            }
+                        }
+
+                        f.close();
+                        f.setFileName(localFilePath+QString("_resized_%1px").arg(resize));
+                        if (!f.exists())
+                        {
+                            qDebug() << "Resize image to " << QString("%1 pixels").arg(resize);
+                            f.open(QIODevice::ReadWrite);
+                            QImage img(localFilePath);
+                            img = img.scaled(resize,resize,Qt::KeepAspectRatioByExpanding,Qt::SmoothTransformation);
+                            img.save(&f, extension.toStdString().c_str(), 100);
+                            f.seek(0);
+                        }
+                        else
+                        {
+                            f.open(QIODevice::ReadOnly);
+                        }
+                        body = f.readAll();
+                        f.close();
+                    }
+                    else
+                    {
+                        body = f.readAll();
+                    }
+
                     int written = m_socket->write(buildHttpResponse(HTTP_200, headers, body));
                     if (written == -1)
                     {

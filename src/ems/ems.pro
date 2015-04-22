@@ -4,7 +4,8 @@
 
 QT += testlib
 QT += core network websockets sql dbus
-QT -= gui
+# For QImage
+QT += gui
 QT_CONFIG -= no-pkg-config
 CONFIG += c++11 link_pkgconfig
 
