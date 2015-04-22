@@ -32,6 +32,7 @@ private:
     QVector<QString> m_rootDirectories;
     QFileSystemWatcher m_qtWatcher;
     QMap<QString, qint64> m_awaited_files;
+    QMutex m_awaited_files_mutex;
 
     // Timer to trigger the start of the localFileScanner
     QTimer *m_fileScannerTrigger;

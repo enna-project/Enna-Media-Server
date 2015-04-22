@@ -123,6 +123,7 @@ void DirectoriesWatcher::handleDirectoryChanged(const QString &path)
         printDebugWatchedDirectories();
 
         // Record the size of each file
+        m_awaited_files_mutex.lock();
         QDirIterator dirContent(path);
         while (dirContent.hasNext())
         {
@@ -135,6 +136,7 @@ void DirectoriesWatcher::handleDirectoryChanged(const QString &path)
                 }
             }
         }
+        m_awaited_files_mutex.unlock();
 
         // 2-Update the timer
         if (m_fileScannerTrigger->isActive())
@@ -209,13 +211,16 @@ void DirectoriesWatcher::startLocalFileScanner()
 bool DirectoriesWatcher::needToWaitOpenedFile()
 {
     QVector<QString> closedFiles;
+    bool needToWait = false;
 
+    m_awaited_files_mutex.lock();
     foreach(QString filename, m_awaited_files.keys())
     {
         // Compare the current size with the recorded size
         QFileInfo fileInfo(filename);
 
-        if (fileInfo.size() == m_awaited_files.value(filename))
+        if ((!fileInfo.exists()) ||
+            (fileInfo.size() == m_awaited_files.value(filename)))
         {
             closedFiles.append(filename);
         }
@@ -231,5 +236,8 @@ bool DirectoriesWatcher::needToWaitOpenedFile()
     {
         m_awaited_files.remove(filename);
     }
-    return (!m_awaited_files.empty());
+    needToWait = !m_awaited_files.empty();
+    m_awaited_files_mutex.unlock();
+
+    return (needToWait);
 }
