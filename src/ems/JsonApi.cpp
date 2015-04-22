@@ -251,7 +251,7 @@ QJsonObject JsonApi::processMessageBrowseMenu(const QJsonObject &message, bool &
 
     QJsonObject cdda;
     cdda["enabled"] = true;
-    cdda["name"] = "Audio CD";
+    cdda["name"] = "Cdrom";
     cdda["url_scheme"] = "cdda://";
 
     QVector<EMSCdrom> cdroms;
