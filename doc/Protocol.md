@@ -436,6 +436,55 @@ the player playlist.
 }
 ```
 
+To get the list of playlists, the url shall not contain any playlist name nor
+playlist id.
+
+> Request :
+
+```json
+{
+    "id": "EMS_BROWSE",
+    "msg_id": id,
+    "uuid": "uuid",
+    "url": "playlist://"
+}
+```
+
+The answer is an array of playlists.
+
+> Answer :
+
+```json
+{
+    "id": "EMS_BROWSE",
+    "msg_id": "id",
+    "data": {
+        "playlists": [
+            {
+                "playlist_id": 0,
+                "playlist_name": "current",
+                "playlist_subdir": ""
+            },
+            {
+                "playlist_id": 0,
+                "playlist_name": "playlist_for_running",
+                "playlist_subdir": "my_music"
+            },
+            {
+                "playlist_id": 1,
+                "playlist_name": "christmas_playlist",
+                "playlist_subdir": "my_music"
+            },
+            {
+                "playlist_id": 2,
+                "playlist_name": "french_songs",
+                "playlist_subdir": "daddy_music"
+            }
+        ]
+    }
+}
+```
+
 To control playlist content, UI can use EMS_PLAYLIST keyword. There are two
 kinds of playlist : the current one (player) and the saved ones (database).
 The field `url` shoulbe be etiher :

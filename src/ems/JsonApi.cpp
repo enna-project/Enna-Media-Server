@@ -537,6 +537,7 @@ QJsonObject JsonApi::processMessageBrowseLibraryGenre(QStringList &list, bool &o
 QJsonObject JsonApi::processMessageBrowsePlaylist(const QJsonObject &message, bool &ok)
 {
     QJsonObject obj;
+    Database *db = Database::instance();
     QString url = message["url"].toString();
 
     if (url.isEmpty())
@@ -550,8 +551,27 @@ QJsonObject JsonApi::processMessageBrowsePlaylist(const QJsonObject &message, bo
     {
         EMSPlaylist playlist = Player::instance()->getCurentPlaylist();
         obj = EMSPlaylistToJson(playlist);
+        ok = true;
     }
-    ok = true;
+    else if (url == "")
+    {
+        // get list of all playlists stored in the database
+        QVector<EMSPlaylist> playlistsList;
+        db->lock();
+        db->getPlaylistsList(&playlistsList);
+        db->unlock();
+        const int listSize = playlistsList.size();
+
+        QJsonArray jsonArray;
+        // Add the current playlist in the answer
+        EMSPlaylist currentPlaylist = Player::instance()->getCurentPlaylist();
+        jsonArray << EMSPlaylistToJsonWithoutTrack(currentPlaylist);
+
+        for (int i = 0; i < listSize; ++i)
+            jsonArray << EMSPlaylistToJsonWithoutTrack(playlistsList[i]);
+        obj["playlists"] = jsonArray;
+        ok = true;
+    }
     return obj;
 }
 
@@ -1001,6 +1021,17 @@ QJsonObject JsonApi::EMSTrackToJson(const EMSTrack &track)
         genres << EMSGenreToJson(genre);
     }
     obj["genres"] = genres;
+
+    return obj;
+}
+
+QJsonObject JsonApi::EMSPlaylistToJsonWithoutTrack(EMSPlaylist playlist)
+{
+    QJsonObject obj;
+
+    obj["playlist_id"] = (qint64)playlist.id;
+    obj["playlist_subdir"] = playlist.subdir;
+    obj["playlist_name"] = playlist.name;
 
     return obj;
 }

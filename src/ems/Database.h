@@ -54,6 +54,8 @@ public:
     bool getGenreByName(EMSGenre *genre, QString name);
     void getGenresByTrackId(QVector<EMSGenre> *genresList, unsigned long long trackId);
 
+    void getPlaylistsList(QVector<EMSPlaylist> *playlistsList);
+
     /* Interface for discovery server */
     bool getAuthorizedClient(QString uuid, EMSClient *client);
     bool insertNewAuthorizedClient(EMSClient *client);

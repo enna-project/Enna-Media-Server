@@ -409,6 +409,10 @@ const QString select_album_data1 = \
 "SELECT id, name, cover "
 "FROM albums ";
 
+const QString select_playlist_data1 = \
+"SELECT id, name, subdir "
+"FROM playlists ";
+
 const QString select_album_genre_data1 = \
 "SELECT albums.id, albums.name, albums.cover "
 "FROM albums, tracks, tracks_genres, genres "
@@ -1062,6 +1066,35 @@ void Database::getGenresByTrackId(QVector<EMSGenre> *genresList, unsigned long l
         genre.name = q.value(2).toString();
         genre.picture = q.value(3).toString();
         genresList->append(genre);
+    }
+}
+
+/*****************************************************************************
+ *    BROWSING PLAYLISTS
+ ****************************************************************************/
+void Database::getPlaylistsList(QVector<EMSPlaylist> *playlistsList)
+{
+    if (!opened)
+    {
+        return;
+    }
+    QSqlQuery q(db);
+    q.prepare(select_playlist_data1 + ";");
+    if(!q.exec())
+    {
+        qCritical() << "Querying playlists list failed : " << q.lastError().text();
+        qDebug() << "Last query was : " << q.lastQuery();
+        return;
+    }
+    playlistsList->clear();
+    while (q.next())
+    {
+        // playlist.id, playlist.name, playlist.subdir
+        EMSPlaylist playlist;
+        playlist.id = q.value(0).toULongLong();
+        playlist.name = q.value(1).toString();
+        playlist.subdir = q.value(2).toString();
+        playlistsList->append(playlist);
     }
 }
 
