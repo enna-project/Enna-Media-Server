@@ -572,6 +572,23 @@ QJsonObject JsonApi::processMessageBrowsePlaylist(const QJsonObject &message, bo
         obj["playlists"] = jsonArray;
         ok = true;
     }
+    else
+    {
+        // get the list of tracks of PlaylistId
+        int playlistId = url.toInt();
+        EMSPlaylist playlist;
+        QVector<EMSTrack> tracksList;
+        db->lock();
+        db->getPlaylistById(&playlist, playlistId);
+        db->getTracksByPlaylist(&tracksList, playlistId);
+        db->unlock();
+        const int listSize = tracksList.size();
+        QJsonArray jsonArray;
+        obj = EMSPlaylistToJsonWithoutTrack(playlist);
+        for (int i = 0; i < listSize; ++i)
+            jsonArray << EMSTrackToJson(tracksList[i]);
+        obj["tracks"] = jsonArray;
+    }
     return obj;
 }
 

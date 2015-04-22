@@ -37,6 +37,7 @@ public:
     /* Interface for browsing */
     void getTracks(QVector<EMSTrack> *tracksList);
     void getTracksByAlbum(QVector<EMSTrack> *tracksList, unsigned long long albumId);
+    void getTracksByPlaylist(QVector<EMSTrack> *tracksList, unsigned long long tracklistId);
     bool getTrackById(EMSTrack *track, unsigned long long trackId);
     bool getTrackIdBySha1(unsigned long long *trackID, QString sha1);
     void getAlbumsList(QVector<EMSAlbum> *albumsList);
@@ -55,6 +56,7 @@ public:
     void getGenresByTrackId(QVector<EMSGenre> *genresList, unsigned long long trackId);
 
     void getPlaylistsList(QVector<EMSPlaylist> *playlistsList);
+    bool getPlaylistById(EMSPlaylist *playlist, unsigned long long playlistId);
 
     /* Interface for discovery server */
     bool getAuthorizedClient(QString uuid, EMSClient *client);

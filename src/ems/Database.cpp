@@ -369,6 +369,17 @@ const QString select_track_from_genre_data1 = \
 "       tracks.id = tracks_genres.track_id AND "
 "       genres.id = tracks_genres.genre_id ";
 
+const QString select_track_from_playlist_data1 = \
+"SELECT tracks.id, tracks.position, tracks.name, tracks.sha1, tracks.format, "
+"       tracks.sample_rate, tracks.duration, tracks.format_parameters, "
+"       albums.id, albums.name, albums.cover, "
+"       files.filename "
+"FROM   tracks, files, albums, playlists, playlists_tracks "
+"WHERE  tracks.album_id = albums.id AND "
+"       tracks.id = files.track_id AND "
+"       tracks.id = playlists_tracks.track_id AND "
+"       playlists.id = playlists_tracks.playlist_id ";
+
 const QString select_artist_from_track_data1 = \
 "SELECT tracks.id, artists.id, artists.name, artists.picture "
 "FROM   tracks, artists, tracks_artists "
@@ -396,6 +407,20 @@ const QString select_genre_from_artist_data1 = \
 "       genres.id = tracks_genres.genre_id AND "
 "       tracks.id = tracks_artists.track_id AND "
 "       artists.id = tracks_artists.artist_id ";
+
+const QString select_artist_from_playlistTrack_data1 = \
+"SELECT tracks.id, artists.id, artists.name, artists.picture "
+"FROM   tracks, artists, tracks_artists, playlists_tracks "
+"WHERE  tracks.id = tracks_artists.track_id AND "
+"       artists.id = tracks_artists.artist_id AND "
+"       playlists_tracks.track_id = tracks.id ";
+
+const QString select_genre_from_playlistTrack_data1 = \
+"SELECT tracks.id, genres.id, genres.name, genres.picture "
+"FROM   tracks, genres, tracks_genres, playlists_tracks "
+"WHERE  tracks.id = tracks_genres.track_id AND "
+"       genres.id = tracks_genres.genre_id AND"
+"       playlists_tracks.track_id = tracks.id ";
 
 const QString select_artist_data1 = \
 "SELECT id, name, picture "
@@ -708,6 +733,42 @@ void Database::getTracksByAlbum(QVector<EMSTrack> *tracksList, unsigned long lon
     /* Get all genres data */
     q.prepare(select_genre_from_track_data1 + " AND tracks.album_id = ? ORDER BY tracks.id;");
     q.bindValue(0, albumId);
+    storeGenresInTrackList(&q, tracksList);
+}
+
+void Database::getTracksByPlaylist(QVector<EMSTrack> *tracksList, unsigned long long playlistId)
+{
+    if (!opened)
+    {
+        return;
+    }
+
+    /* Get all the tracks data */
+    QSqlQuery q(db);
+    q.prepare(select_track_from_playlist_data1 + " AND playlists.id = ? GROUP BY playlists_tracks.track_id ORDER BY playlists_tracks.track_id;");
+    q.bindValue(0, playlistId);
+    if(!q.exec())
+    {
+        qCritical() << "Querying tracks list failed : " << q.lastError().text();
+        qDebug() << "Last query was : " << q.lastQuery();
+        return;
+    }
+    storeTrackList(&q, tracksList);
+
+    /* If no track, return now. */
+    if (tracksList->size() <= 0)
+    {
+        return;
+    }
+
+    /* Get all artists data */
+    q.prepare(select_artist_from_playlistTrack_data1 + " AND playlists_tracks.playlist_id = ? ORDER BY tracks.id;");
+    q.bindValue(0, playlistId);
+    storeArtistsInTrackList(&q, tracksList);
+
+    /* Get all genres data */
+    q.prepare(select_genre_from_playlistTrack_data1 + " AND playlists_tracks.playlist_id = ? ORDER BY tracks.id;");
+    q.bindValue(0, playlistId);
     storeGenresInTrackList(&q, tracksList);
 }
 
@@ -1072,6 +1133,26 @@ void Database::getGenresByTrackId(QVector<EMSGenre> *genresList, unsigned long l
 /*****************************************************************************
  *    BROWSING PLAYLISTS
  ****************************************************************************/
+bool Database::getPlaylistById(EMSPlaylist *playlist, unsigned long long playlistId)
+{
+    if (!opened)
+    {
+        return false;
+    }
+    QSqlQuery q(db);
+    q.prepare(select_playlist_data1 + " WHERE id = ?;");
+    q.bindValue(0, playlistId);
+    q.exec();
+    if (q.next())
+    {
+        playlist->id = q.value(0).toULongLong();
+        playlist->name = q.value(1).toString();
+        playlist->subdir = q.value(2).toString();
+        return true;
+    }
+    return false;
+}
+
 void Database::getPlaylistsList(QVector<EMSPlaylist> *playlistsList)
 {
     if (!opened)

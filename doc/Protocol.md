@@ -436,6 +436,37 @@ the player playlist.
 }
 ```
 
+In the same way, it's possible to get the content of a playlist, by indicating
+the id of the playlist in the url.
+
+> Request :
+
+```json
+{
+    "id": "EMS_BROWSE",
+    "msg_id": id,
+    "uuid": "uuid",
+    "url": "playlist://1"
+}
+```
+
+The answer is an array of tracks.
+
+> Answer :
+
+```json
+{
+    "id": "EMS_BROWSE",
+    "msg_id": "id",
+    "data": {
+        "playlist_id": 0,
+        "playlist_name": "christmas_playlist",
+        "playlist_subdir": "my_music",
+        "tracks": [... (see Track Json Object)]
+    },
+}
+```
+
 To get the list of playlists, the url shall not contain any playlist name nor
 playlist id.
 
