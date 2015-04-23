@@ -78,6 +78,7 @@ class NetworkCtl : public QObject
 private:
     Manager *m_manager;
     Agent *m_agent;
+    bool m_enablUpdate;
 
 public:
     Agent* getAgent() const
@@ -85,11 +86,22 @@ public:
         return m_agent;
     }
 
+    bool getEnableUpdate()
+    {
+        return m_enablUpdate;
+    }
+
+    void setEnableUpdate(bool enableUpdate)
+    {
+        m_enablUpdate = enableUpdate;
+    }
+
     static QString getStateString(Service::ServiceState state);
     QList<EMSSsid::SecurityType> toSecurityTypeList(const QStringList &listType);
     QStringList getSecurityTypeString(QList<EMSSsid::SecurityType> securityTypeList);
     QList<EMSSsid> getWifiList();
     Service* getWifiByName(QString wifiName);
+    Service* getEthByPath(QString ethPath);
     EMSSsid* getConnectedWifi();
     EMSEthernet* getConnectedEthernet();
     bool isWifiPresent();
@@ -108,9 +120,6 @@ public:
 
     void listServices();
     void listTechnologies();
-    //QString technologyName(Technology *technology) ;
-    //QList<Service*> getEthService(Connman* m_manager);
-    //void enableTechnology(Technology* technology,bool enable);
 
     /* Signleton pattern
      * See: http://www.qtcentre.org/wiki/index.php?title=Singleton_pattern
@@ -158,40 +167,6 @@ public slots:
 
 };
 
-/*
-class EMSSsid
-{
-    QString m_path;
-    QString m_name;
-    QString m_type;
-    QString m_state;
-    int m_strength;
-    QString m_security;
-
-public:
-    enum SecurityType {NONE, WEP, PSK, IEEE8021X, WPS, UNKNOWN};
-
-    EMSSsid(QString path,QString name, QString type, QString state, int strength,EMSSsid::SecurityType security);
-    EMSSsid();
-    //QList<SecurityType> toSecurityTypeList(const QStringList &listType);
-
-    QString getSecurityTypeString(SecurityType type);
-    QString getName() const;
-    QString getType() const;
-    QString getState() const;
-    int getStrength() const;
-    QString getPath() const;
-    QString getSecurity() const;
-
-    void setName(QString name);
-    void setType(QString type);
-    void setState(QString state);
-    void setStrength(int strength);
-    void setPath(QString path);
-    void setSecurity(QString security);
-    ~EMSSsid();
-};
-*/
 class ConnexionRequest
 {
     QString m_path;

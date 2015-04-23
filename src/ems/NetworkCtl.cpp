@@ -17,7 +17,7 @@ NetworkCtl::NetworkCtl(QObject *parent): QObject(parent)
     connect(m_manager,SIGNAL(connectedServiceChanged()),this, SIGNAL(connectedChanged()));
     //connect(this->getTechnology("wifi"),SIGNAL(scanCompleted()),this, SIGNAL(wifiListUpdated()));
     m_agent=new Agent("/com/EMS/Connman", m_manager);
-
+    m_enablUpdate = false;
 
 }
 
@@ -184,6 +184,38 @@ Service* NetworkCtl::getWifiByName(QString wifiName)
     return serviceRequested;
 }
 
+Service* NetworkCtl::getEthByPath(QString ethPath)
+{
+    Service* serviceRequested = NULL;
+    if(m_manager->services().isEmpty())
+    {
+        qDebug() << " No service listed ";
+    }
+    else
+    {
+        if(this->isEthernetPresent())
+        {
+            //qDebug() << "Acquiring wifi :"<< wifiName;
+            QListIterator<Service*> iter(m_manager->services());
+            Service* service;
+            bool found = false;
+            while(iter.hasNext() && !found)
+            {
+                service = iter.next();
+                if(service->type() == "ethernet" && service->objectPath().path() == ethPath)
+                {
+                   serviceRequested = service;
+                   found = true;
+                }
+            }
+        }
+        else
+        {
+            qDebug() << " No ethernet interface detected ";
+        }
+    }
+    return serviceRequested;
+}
 EMSSsid* NetworkCtl::getConnectedWifi()
 {
     EMSSsid* ssidWifi = new EMSSsid();
