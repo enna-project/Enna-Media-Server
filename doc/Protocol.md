@@ -531,9 +531,9 @@ The answer is an array of playlists.
 
 To control playlist content, UI can use EMS_PLAYLIST keyword. There are two
 kinds of playlist : the current one (player) and the saved ones (database).
-The field `url` shoulbe be etiher :
+The field `url` should be either :
  * `playlist://current`
- * `playlist://[PATH]/[id]`
+ * `playlist://[id]`
 
 The field `filename` can be :
  * `cdda://` : add a CDROM in the playlist
