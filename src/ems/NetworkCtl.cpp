@@ -15,10 +15,8 @@ NetworkCtl::NetworkCtl(QObject *parent): QObject(parent)
     m_manager = new Manager(this);
     connect(m_manager,SIGNAL(servicesChanged()),this, SIGNAL(wifiListUpdated()));
     connect(m_manager,SIGNAL(connectedServiceChanged()),this, SIGNAL(connectedChanged()));
-    //connect(this->getTechnology("wifi"),SIGNAL(scanCompleted()),this, SIGNAL(wifiListUpdated()));
     m_agent=new Agent("/com/EMS/Connman", m_manager);
     m_enablUpdate = false;
-
 }
 
 static bool wifiSortByStrength(EMSSsid a, EMSSsid b)
@@ -55,48 +53,6 @@ QString NetworkCtl::getStateString(Service::ServiceState state)
         break;
     default:
         return "unknown state";
-    }
-}
-
-
-void NetworkCtl::listServices()
-{
-    if(m_manager->services().isEmpty())
-    {
-        qDebug() << " No service listed ";
-    }
-    else
-    {
-        foreach (Service *service, m_manager->services())
-        {
-            qDebug() << "Service Path: "<< "[ " << service->objectPath().path().toLatin1().constData() << " ]" << endl;
-            qDebug() << "Name : "<< service->name();
-            qDebug() << "Type : "<< service->type();
-            qDebug() << "State : "<< getStateString(service->state());
-            if(service->type()!="ethernet")
-            {
-                qDebug() << "Strength : "<< service->strength();
-            }
-
-            if(service->state()==Service::ServiceState::OnlineState || service->state()==Service::ServiceState::ReadyState )
-            {
-                qDebug() << "Interface : " << service->ethernet()->interface();
-                qDebug() << "IP config : " << service->ipv4()->method();
-                if(service->type()!="ethernet")
-                {
-                    qDebug() << "Security : "<< service->security().join(", ");
-                }
-                qDebug() << "Address : " << service->ipv4()->address();
-                qDebug() << "Netmask : " << service->ipv4()->netmask();
-                if(service->state()==Service::ServiceState::OnlineState)
-                {
-                    qDebug() << "Gateway : " << service->ipv4()->gateway();
-
-                }
-                qDebug() << "MAC adress : " << service->ethernet()->address();
-            }
-            qDebug() << endl;
-        }
     }
 }
 
@@ -274,7 +230,6 @@ EMSEthernet* NetworkCtl::getConnectedEthernet()
                     state = getStateString(service->state());
                     if(service->type() == "ethernet" && (state == "ready" || state=="online"))
                     {
-
                         ethParam->setPath(service->objectPath().path());
                         ethParam->setInterface(service->ethernet()->interface());
                         ethParam->setState(state);
@@ -354,22 +309,6 @@ bool NetworkCtl::isEthernetEnabled()
     return false;
 }
 
-void NetworkCtl::listTechnologies()
-{
-    QList<Technology*> listTechno = m_manager->technologies();
-    QListIterator<Technology*> iter( listTechno );
-    while( iter.hasNext() )
-    {
-        Technology* tempTech = iter.next();
-        qDebug() << "Name: "<< tempTech->name();
-        qDebug() << "Type: "<<tempTech->type();
-        qDebug() << "Connected: "<<tempTech->isConnected();
-        qDebug() << "Powered: "<<tempTech->isPowered();
-        qDebug() << "Tethering: "<<tempTech->tetheringAllowed()<<endl;
-    }
-
-}
-
 Technology* NetworkCtl::getTechnology(QString technologyType)
 {
     Technology* result = NULL;
@@ -404,24 +343,6 @@ void NetworkCtl::enableEthernet(bool enable)
         qDebug() << "Disable " << technology->name();
 }
 
-/*
-QList<Service*> Connman::getEthService(Connman* m_manager)
-{
-    QList<Service*> ethServices;
-    if(!(m_manager->services().isEmpty()))
-    {
-        foreach (Service *service, m_manager->services())
-        {
-            if(service->type()==QString("ethernet"))
-            {
-                ethServices.append(service);
-            }
-        }
-    }
-    return ethServices;
-}
-*/
-
 EMSSsid::EMSSsid(QString path, QString name, QString type, QString state, int strength, QStringList securityList) :
     m_path(path),
     m_name(name),
@@ -432,6 +353,7 @@ EMSSsid::EMSSsid(QString path, QString name, QString type, QString state, int st
 {
 
 }
+
 EMSSsid::EMSSsid()
 {
     m_strength = 0;
@@ -456,7 +378,6 @@ QList<EMSSsid::SecurityType> NetworkCtl::toSecurityTypeList(const QStringList &l
     }
     return securityTypeList;
 }
-
 
 QStringList NetworkCtl::getSecurityTypeString(QList<EMSSsid::SecurityType> securityTypeList)
 {
@@ -516,6 +437,7 @@ QStringList EMSSsid::getSecurity() const
     return m_securityList;
 }
 
+// Set methods of EMSSsid class
 void EMSSsid::setName(QString name)
  {
      m_name = name;
@@ -613,70 +535,9 @@ EMSEthernet::~EMSEthernet()
 
 }
 
-
-
-
-ConnexionRequest::ConnexionRequest(QString path, QString name, QString passphrase, QString state, int timeout) :
-    m_path(path),
-    m_name(name),
-    m_passphrase(passphrase),
-    m_state(state),
-    m_timeout(timeout)
-{
-
-}
-
-ConnexionRequest::ConnexionRequest()
-{
-
-}
-
-QString ConnexionRequest::getName() const
-{
-    return m_name;
-}
-QString ConnexionRequest::getPath() const
-{
-    return m_path;
-}
-int ConnexionRequest::getTimeout() const
-{
-    return m_timeout;
-}
-QString ConnexionRequest::getPassphrase() const
-{
-    return m_passphrase;
-}
-
-void ConnexionRequest::setName(QString name)
-{
-    m_name=name;
-}
-
-void ConnexionRequest::setPath(QString path)
-{
-    m_path=path;
-}
-
-void ConnexionRequest::setTimeout(int timeout)
-{
-    m_timeout=timeout;
-}
-
-void ConnexionRequest::setPassphrase(QString passphrase)
-{
-    m_passphrase=passphrase;
-}
-
-ConnexionRequest::~ConnexionRequest()
-{
-
-}
-
 NetworkCtl::~NetworkCtl()
 {
 }
-
 
 EMSSsid::~EMSSsid()
 {

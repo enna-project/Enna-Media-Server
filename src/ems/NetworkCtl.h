@@ -118,9 +118,6 @@ public:
 
     Technology* getTechnology(QString technologyType);
 
-    void listServices();
-    void listTechnologies();
-
     /* Signleton pattern
      * See: http://www.qtcentre.org/wiki/index.php?title=Singleton_pattern
      */
@@ -162,32 +159,8 @@ signals:
     void connectedChanged();
 
 public slots:
-    //QVariantMap getProperties();
     void scanWifi();
 
 };
 
-class ConnexionRequest
-{
-    QString m_path;
-    QString m_name;
-    QString m_passphrase;
-    QString m_state;
-    int m_timeout;
-public:
-
-    ConnexionRequest(QString path, QString name, QString m_passphrase,QString state, int timeout);
-    ConnexionRequest();
-    QString getName() const;
-    QString getPath() const;
-    int getTimeout() const;
-    QString getPassphrase() const;
-
-    void setName(QString name);
-    void setPath(QString path);
-    void setTimeout(int timeout);
-    void setPassphrase(QString passphrase);
-
-    ~ConnexionRequest();
-};
 #endif // NETWORKCTL_H

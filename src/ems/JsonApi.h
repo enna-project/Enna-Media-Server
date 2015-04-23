@@ -87,7 +87,6 @@ private:
 public slots:
     bool processMessage(const QString &message);
     void ipChanged(QString newIp);
-    void connectWifi();
 };
 
 #endif // JSONAPI_H
