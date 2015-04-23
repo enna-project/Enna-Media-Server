@@ -258,7 +258,7 @@ bool Database::insertNewPlaylist(const QString &playlistSubdir, const QString &p
     {
         /* Insert the new playlist */
         q.prepare("INSERT INTO playlists "
-                  "  ( name, subdir) "
+                  "  (name, subdir) "
                   "VALUES "
                   "  (?,?);");
         q.bindValue(0, playlistName);
@@ -276,6 +276,93 @@ bool Database::insertNewPlaylist(const QString &playlistSubdir, const QString &p
         q.exec("ROLLBACK;");
         return false;
     }
+    /* All went well => COMMIT */
+    q.exec("COMMIT;");
+    return true;
+}
+
+bool Database::addTrackInPlaylist(unsigned long long playlistId, unsigned long long trackId)
+{
+    if (!opened)
+    {
+        return false;
+    }
+
+    qDebug() << "Add a track to the playlist " << playlistId << "in the database...";
+
+    /* Use transaction to get "atomic" behavior in case of failure */
+    QSqlQuery q(db);
+    if (!q.exec("BEGIN;"))
+    {
+        qCritical() << "Failed to begin a transaction : " << q.lastError().text();
+        return false;
+    }
+
+    if (!checkPlaylistExist(playlistId))
+    {
+        qCritical() << "Database: the playlist with id=" << playlistId << "does not exist";
+        q.exec("ROLLBACK;");
+        return false;
+    }
+
+    // Do not check if the track is already in the playlist:
+    //   for the moment, the SQLite database check that itself;
+    //   add several times the same tracks may be a future feature
+        /* Insert the new playlist */
+    q.prepare("INSERT INTO playlists_tracks "
+            "  (playlist_id, track_id) "
+            "VALUES "
+            "  (?,?);");
+    q.bindValue(0, playlistId);
+    q.bindValue(1, trackId);
+    if(!q.exec())
+    {
+        qCritical() << "Error while inserting new track in playlist : " << q.lastError().text();
+        qCritical() << "Last query was : " << q.lastQuery();
+        q.exec("ROLLBACK;");
+        return false;
+    }
+
+    /* All went well => COMMIT */
+    q.exec("COMMIT;");
+    return true;
+}
+
+bool Database::removeTrackFromPlaylist(unsigned long long playlistId, unsigned long long trackId)
+{
+    if (!opened)
+    {
+        return false;
+    }
+
+    qDebug() << "Remove a track from the playlist " << playlistId << "in the database...";
+
+    /* Use transaction to get "atomic" behavior in case of failure */
+    QSqlQuery q(db);
+    if (!q.exec("BEGIN;"))
+    {
+        qCritical() << "Failed to begin a transaction : " << q.lastError().text();
+        return false;
+    }
+
+    if (!checkPlaylistExist(playlistId))
+    {
+        qCritical() << "Database: the playlist with id=" << playlistId << "does not exist";
+        q.exec("ROLLBACK;");
+        return false;
+    }
+
+    q.prepare("DELETE FROM playlists_tracks WHERE playlist_id = ? AND track_id = ?;");
+    q.bindValue(0, playlistId);
+    q.bindValue(1, trackId);
+    if(!q.exec())
+    {
+        qCritical() << "Error while deleting track from playlist : " << q.lastError().text();
+        qCritical() << "Last query was : " << q.lastQuery();
+        q.exec("ROLLBACK;");
+        return false;
+    }
+
     /* All went well => COMMIT */
     q.exec("COMMIT;");
     return true;
@@ -1273,6 +1360,31 @@ bool Database::checkPlaylistExist(const QString &playlistSubdir,
         if (id != NULL)
             *id = q.value(0).toULongLong();
 
+    }
+    return isExist;
+}
+
+bool Database::checkPlaylistExist(unsigned long long id)
+{
+    if (!opened)
+    {
+        return false;
+    }
+    QSqlQuery q(db);
+    q.prepare(select_playlist_data1 + " WHERE id = ? ;");
+    q.bindValue(0, id);
+
+    if(!q.exec())
+    {
+        qCritical() << "Querying playlists list failed : " << q.lastError().text();
+        qDebug() << "Last query was : " << q.lastQuery();
+        return false;
+    }
+
+    bool isExist = false;
+    while (q.next())
+    {
+        isExist = true;
     }
     return isExist;
 }

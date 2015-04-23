@@ -859,6 +859,14 @@ bool JsonApi::processMessagePlaylist(const QJsonObject &message)
     }
     else /* Manage the saved playlist */
     {
+        bool ok = false;
+        unsigned long long playlistId = type.toUInt(&ok);
+        if (!ok)
+        {
+            qCritical() << "Error: extract the playlist Id from the url failed.";
+            return false;
+        }
+
         Database *db = Database::instance();
 
         if (action == "create")
@@ -876,6 +884,37 @@ bool JsonApi::processMessagePlaylist(const QJsonObject &message)
                 qDebug() << "JsonApi: the playlist allready exists";
             }
             db->unlock();
+        }
+        else if (action == "add" || action == "del")
+        {
+            QVector<EMSTrack> trackList;
+            getTracksFromFilename(&trackList, message["filename"].toString());
+            if (trackList.size() > 0)
+            {
+                db->lock();
+                for (int i=0; i<trackList.size(); i++)
+                {
+                    if (action == "add")
+                    {
+                        db->addTrackInPlaylist(playlistId, trackList.at(i).id);
+                    }
+                    else if (action == "del")
+                    {
+                        db->removeTrackFromPlaylist(playlistId, trackList.at(i).id);
+                    }
+                }
+                db->unlock();
+            }
+            else
+            {
+                qCritical() << "Error: filename does not match any track.";
+                return false;
+            }
+        }
+        else
+        {
+            qCritical() << "Error: unknown action " << action;
+            return false;
         }
     }
     return true;
