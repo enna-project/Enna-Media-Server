@@ -546,6 +546,7 @@ QJsonObject JsonApi::processMessageBrowsePlaylist(const QJsonObject &message, bo
         return obj;
     }
     url.remove("playlist://");
+    QStringList list =url.split("/");
 
     if (url == "current")
     {
@@ -553,41 +554,48 @@ QJsonObject JsonApi::processMessageBrowsePlaylist(const QJsonObject &message, bo
         obj = EMSPlaylistToJson(playlist);
         ok = true;
     }
-    else if (url == "")
-    {
-        // get list of all playlists stored in the database
-        QVector<EMSPlaylist> playlistsList;
-        db->lock();
-        db->getPlaylistsList(&playlistsList);
-        db->unlock();
-        const int listSize = playlistsList.size();
-
-        QJsonArray jsonArray;
-        // Add the current playlist in the answer
-        EMSPlaylist currentPlaylist = Player::instance()->getCurentPlaylist();
-        jsonArray << EMSPlaylistToJsonWithoutTrack(currentPlaylist);
-
-        for (int i = 0; i < listSize; ++i)
-            jsonArray << EMSPlaylistToJsonWithoutTrack(playlistsList[i]);
-        obj["playlists"] = jsonArray;
-        ok = true;
-    }
     else
     {
-        // get the list of tracks of PlaylistId
-        int playlistId = url.toInt();
-        EMSPlaylist playlist;
-        QVector<EMSTrack> tracksList;
-        db->lock();
-        db->getPlaylistById(&playlist, playlistId);
-        db->getTracksByPlaylist(&tracksList, playlistId);
-        db->unlock();
-        const int listSize = tracksList.size();
-        QJsonArray jsonArray;
-        obj = EMSPlaylistToJsonWithoutTrack(playlist);
-        for (int i = 0; i < listSize; ++i)
-            jsonArray << EMSTrackToJson(tracksList[i]);
-        obj["tracks"] = jsonArray;
+        switch (list.size())
+        {
+        case 1:
+        {
+            if (list[0] == "")
+            {
+                // get list of all playlists stored in the database
+                EMSPlaylistsListBySubdir playlistsListBySubdir;
+                db->lock();
+                db->getPlaylistsList(&playlistsListBySubdir);
+                db->unlock();
+
+                QJsonArray jsonArray;
+                obj =  EMSPlaylistsListBySubdirToJson(playlistsListBySubdir);
+                ok = true;
+            }
+            else
+            {
+                // get the list of tracks of PlaylistId
+                int playlistId = url.toInt();
+                EMSPlaylist playlist;
+                QVector<EMSTrack> tracksList;
+                db->lock();
+                db->getPlaylistById(&playlist, playlistId);
+                db->getTracksByPlaylist(&tracksList, playlistId);
+                db->unlock();
+                const int listSize = tracksList.size();
+                QJsonArray jsonArray;
+                obj = EMSPlaylistToJsonWithoutTrack(playlist);
+                for (int i = 0; i < listSize; ++i)
+                    jsonArray << EMSTrackToJson(tracksList[i]);
+                obj["tracks"] = jsonArray;
+                ok = true;
+            }
+            break;
+        }
+        default:
+            ok = false;
+            break;
+        }
     }
     return obj;
 }
@@ -1069,6 +1077,34 @@ QJsonObject JsonApi::EMSPlaylistToJson(EMSPlaylist playlist)
     obj["tracks"] = jsonArray;
 
     return obj;
+}
+
+QJsonObject JsonApi::EMSPlaylistsListBySubdirToJson(EMSPlaylistsListBySubdir playlistsListBySubdir)
+{
+    QJsonObject playlistsListObj;
+    QJsonArray listsJsonArray;
+    foreach (QString subdir, playlistsListBySubdir.keys())
+    {
+        QJsonObject subdirObj;
+        subdirObj["subdir"] = subdir;
+        QJsonArray jsonArray;
+        QVector<EMSPlaylist> playlists = playlistsListBySubdir.value(subdir);
+
+        foreach (EMSPlaylist playlist, playlists)
+        {
+            QJsonObject playlistJson;
+            playlistJson["playlist_id"] = (qint64)playlist.id;
+            playlistJson["playlist_name"] = playlist.name;
+
+            jsonArray << playlistJson;
+        }
+        subdirObj["playlists"] = jsonArray;
+
+        listsJsonArray << subdirObj;
+    }
+    playlistsListObj["playlists_by_subdir"] = listsJsonArray;
+
+    return playlistsListObj;
 }
 
 /* This function retrieve the list of track from a given filename.

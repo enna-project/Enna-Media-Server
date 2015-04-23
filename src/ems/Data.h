@@ -117,6 +117,8 @@ public:
     QVector<EMSTrack> tracks;
 };
 
+typedef QMap<QString, QVector<EMSPlaylist> > EMSPlaylistsListBySubdir;
+
 /* Player data
  * -------------------
  */

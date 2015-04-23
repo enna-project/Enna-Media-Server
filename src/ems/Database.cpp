@@ -438,6 +438,10 @@ const QString select_playlist_data1 = \
 "SELECT id, name, subdir "
 "FROM playlists ";
 
+const QString select_playlist_subdirs_data1 = \
+"SELECT DISTINCT subdir "
+"FROM playlists ";
+
 const QString select_album_genre_data1 = \
 "SELECT albums.id, albums.name, albums.cover "
 "FROM albums, tracks, tracks_genres, genres "
@@ -1153,29 +1157,48 @@ bool Database::getPlaylistById(EMSPlaylist *playlist, unsigned long long playlis
     return false;
 }
 
-void Database::getPlaylistsList(QVector<EMSPlaylist> *playlistsList)
+void Database::getPlaylistsList(EMSPlaylistsListBySubdir *playlistsListBySubdir)
 {
     if (!opened)
     {
         return;
     }
-    QSqlQuery q(db);
-    q.prepare(select_playlist_data1 + ";");
-    if(!q.exec())
+    QSqlQuery qSubdir(db);
+
+    qSubdir.prepare(select_playlist_subdirs_data1 + "ORDER BY subdir;");
+    if(!qSubdir.exec())
     {
-        qCritical() << "Querying playlists list failed : " << q.lastError().text();
-        qDebug() << "Last query was : " << q.lastQuery();
+        qCritical() << "Querying playlists list failed : " << qSubdir.lastError().text();
+        qDebug() << "Last query was : " << qSubdir.lastQuery();
         return;
     }
-    playlistsList->clear();
-    while (q.next())
+    playlistsListBySubdir->clear();
+    while (qSubdir.next())
     {
-        // playlist.id, playlist.name, playlist.subdir
-        EMSPlaylist playlist;
-        playlist.id = q.value(0).toULongLong();
-        playlist.name = q.value(1).toString();
-        playlist.subdir = q.value(2).toString();
-        playlistsList->append(playlist);
+        QVector<EMSPlaylist> playlistsList;
+        QString subdir = qSubdir.value(0).toString();
+
+        // Find the playlists of the subdir
+        QSqlQuery q(db);
+        q.prepare(select_playlist_data1 + "WHERE subdir = ?;");
+        q.bindValue(0, subdir);
+
+        if(!q.exec())
+        {
+            qCritical() << "Querying playlists list failed : " << q.lastError().text();
+            qDebug() << "Last query was : " << q.lastQuery();
+            return;
+        }
+        while (q.next())
+        {
+            EMSPlaylist playlist;
+            playlist.id = q.value(0).toULongLong();
+            playlist.name = q.value(1).toString();
+            playlist.subdir = q.value(2).toString();
+            playlistsList.append(playlist);
+        }
+
+        (*playlistsListBySubdir)[subdir] = playlistsList;
     }
 }
 

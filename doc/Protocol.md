@@ -487,32 +487,45 @@ The answer is an array of playlists.
 
 ```json
 {
-    "id": "EMS_BROWSE",
-    "msg_id": "id",
     "data": {
-        "playlists": [
+        "playlists_by_subdir": [
             {
-                "playlist_id": 0,
-                "playlist_name": "current",
-                "playlist_subdir": ""
+                "playlists": [
+                    {
+                        "playlist_id": 3,
+                        "playlist_name": "italian_songs"
+                    }
+                ],
+                "subdir": ""
             },
             {
-                "playlist_id": 0,
-                "playlist_name": "playlist_for_running",
-                "playlist_subdir": "my_music"
+                "playlists": [
+                    {
+                        "playlist_id": 2,
+                        "playlist_name": "french_songs"
+                    }
+                ],
+                "subdir": "daddy_music"
             },
             {
-                "playlist_id": 1,
-                "playlist_name": "christmas_playlist",
-                "playlist_subdir": "my_music"
-            },
-            {
-                "playlist_id": 2,
-                "playlist_name": "french_songs",
-                "playlist_subdir": "daddy_music"
+                "playlists": [
+                    {
+                        "playlist_id": 0,
+                        "playlist_name": "playlist_for_running"
+                    },
+                    {
+                        "playlist_id": 1,
+                        "playlist_name": "christmas_playlist"
+                    }
+                ],
+                "subdir": "my_music"
             }
         ]
-    }
+    },
+    "msg": "EMS_BROWSE",
+    "msg_id": "if",
+    "url": "playlist://",
+    "uuid": "uuid"
 }
 ```
 
