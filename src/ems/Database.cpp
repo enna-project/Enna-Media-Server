@@ -307,8 +307,7 @@ bool Database::addTrackInPlaylist(unsigned long long playlistId, unsigned long l
 
     // Do not check if the track is already in the playlist:
     //   for the moment, the SQLite database check that itself;
-    //   add several times the same tracks may be a future feature
-        /* Insert the new playlist */
+    //   add several times the same track may be a future feature
     q.prepare("INSERT INTO playlists_tracks "
             "  (playlist_id, track_id) "
             "VALUES "
