@@ -28,6 +28,9 @@ public:
     bool insertNewTrack(EMSTrack *newTrack);
     bool insertNewFilename(QString filename, unsigned long long trackId, unsigned long long timestamp);
 
+    /* Interface for playlist management (server-side actions) */
+    bool insertNewPlaylist(const QString& playlistSubdir, const QString &playlistName);
+
     /* Be careful when removing, you have to clean orphans tracks/albums after
      * Don't release the lock when adding/removing tracks/album
      */
@@ -57,6 +60,8 @@ public:
 
     void getPlaylistsList(EMSPlaylistsListBySubdir *playlistsListBySubdir);
     bool getPlaylistById(EMSPlaylist *playlist, unsigned long long playlistId);
+    bool checkPlaylistExist(const QString &playlistSubdir, const QString &playlistName,
+                            unsigned long long *id = NULL);
 
     /* Interface for discovery server */
     bool getAuthorizedClient(QString uuid, EMSClient *client);

@@ -859,7 +859,24 @@ bool JsonApi::processMessagePlaylist(const QJsonObject &message)
     }
     else /* Manage the saved playlist */
     {
-        ; //TODO!
+        Database *db = Database::instance();
+
+        if (action == "create")
+        {
+            QString playlistName = message["name"].toString();
+            QString playlistSubdir = message["subdir"].toString();
+            db->lock();
+            // check if the playlist already exists
+            if (!db->checkPlaylistExist(playlistSubdir, playlistName))
+            {
+                db->insertNewPlaylist(playlistSubdir, playlistName);
+            }
+            else
+            {
+                qDebug() << "JsonApi: the playlist allready exists";
+            }
+            db->unlock();
+        }
     }
     return true;
 }

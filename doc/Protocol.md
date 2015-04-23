@@ -8,7 +8,7 @@ list of available message:
 
  * `EMS_BROWSE`
  * `EMS_PLAYER`
- * `EMS_PLAYList`
+ * `EMS_PLAYLIST`
  * `EMS_DISK`
  * `EMS_MEDIA_INFO`
  * `EMS_AUTH`
@@ -559,6 +559,20 @@ Exemple :
     "url": "playlist://current",
     "action": "add",
     "filename": "file:///media/usb0/music/track01.flac"
+}
+```
+
+To create an new empty playlist, just indicate its name and its subdirectory.
+> Request :
+
+```json
+{
+    "msg": "EMS_PLAYLIST",
+    "msg_id": "id",
+    "uuid": "uuid",
+    "action": "create",
+    "subdir": "my_music",
+    "name": "birthday_playlist"
 }
 ```
 

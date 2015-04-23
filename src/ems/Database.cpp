@@ -237,6 +237,50 @@ bool Database::insertNewFilename(QString filename, unsigned long long trackId, u
     return true;
 }
 
+bool Database::insertNewPlaylist(const QString &playlistSubdir, const QString &playlistName)
+{
+    if (!opened)
+    {
+        return false;
+    }
+
+    qDebug() << "Inserting new playlist " << playlistName << "in the database...";
+
+    /* Use transaction to get "atomic" behavior in case of failure */
+    QSqlQuery q(db);
+    if (!q.exec("BEGIN;"))
+    {
+        qCritical() << "Failed to begin a transaction : " << q.lastError().text();
+        return false;
+    }
+
+    if (!checkPlaylistExist(playlistSubdir, playlistName))
+    {
+        /* Insert the new playlist */
+        q.prepare("INSERT INTO playlists "
+                  "  ( name, subdir) "
+                  "VALUES "
+                  "  (?,?);");
+        q.bindValue(0, playlistName);
+        q.bindValue(1, playlistSubdir);
+        if(!q.exec())
+        {
+            qCritical() << "Error while inserting new playlist : " << q.lastError().text();
+            qCritical() << "Last query was : " << q.lastQuery();
+            q.exec("ROLLBACK;");
+            return false;
+        }
+    }
+    else
+    {
+        q.exec("ROLLBACK;");
+        return false;
+    }
+    /* All went well => COMMIT */
+    q.exec("COMMIT;");
+    return true;
+}
+
 /*****************************************************************************
  *    KEEP THE DATABASE CLEAN !
  ****************************************************************************/
@@ -1200,6 +1244,37 @@ void Database::getPlaylistsList(EMSPlaylistsListBySubdir *playlistsListBySubdir)
 
         (*playlistsListBySubdir)[subdir] = playlistsList;
     }
+}
+
+bool Database::checkPlaylistExist(const QString &playlistSubdir,
+                                  const QString &playlistName,
+                                  unsigned long long *id)
+{
+    if (!opened)
+    {
+        return false;
+    }
+    QSqlQuery q(db);
+    q.prepare(select_playlist_data1 + " WHERE subdir = ? AND name = ? ;");
+    q.bindValue(0, playlistSubdir);
+    q.bindValue(1, playlistName);
+
+    if(!q.exec())
+    {
+        qCritical() << "Querying playlists list failed : " << q.lastError().text();
+        qDebug() << "Last query was : " << q.lastQuery();
+        return false;
+    }
+
+    bool isExist = false;
+    while (q.next())
+    {
+        isExist = true;
+        if (id != NULL)
+            *id = q.value(0).toULongLong();
+
+    }
+    return isExist;
 }
 
 /*****************************************************************************
