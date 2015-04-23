@@ -19,7 +19,7 @@ isEmpty(PREFIX) {
     INSTALLS += udev
 }
 
-script.path = $$PREFIX/bin
+script.path = $$PREFIX/sbin
 script.files = script/ems_cdrom_changed.sh
 INSTALLS += script
 
