@@ -367,6 +367,57 @@ bool Database::removeTrackFromPlaylist(unsigned long long playlistId, unsigned l
     return true;
 }
 
+bool Database::deletePlaylist(unsigned long long playlistId)
+{
+    if (!opened)
+    {
+        return false;
+    }
+
+    qDebug() << "Delete the playlist " << playlistId << "from the database...";
+
+    /* Use transaction to get "atomic" behavior in case of failure */
+    QSqlQuery q(db);
+    if (!q.exec("BEGIN;"))
+    {
+        qCritical() << "Failed to begin a transaction : " << q.lastError().text();
+        return false;
+    }
+
+    if (!checkPlaylistExist(playlistId))
+    {
+        qCritical() << "Database: the playlist with id=" << playlistId << "does not exist";
+        q.exec("ROLLBACK;");
+        return false;
+    }
+
+    // Delete the tracks from the playlist
+    q.prepare("DELETE FROM playlists_tracks WHERE playlist_id = ? ;");
+    q.bindValue(0, playlistId);
+    if(!q.exec())
+    {
+        qCritical() << "Error while deleting all the tracks from playlist : " << q.lastError().text();
+        qCritical() << "Last query was : " << q.lastQuery();
+        q.exec("ROLLBACK;");
+        return false;
+    }
+
+    // Remove the playlist from the list of playlists
+    q.prepare("DELETE FROM playlists WHERE id = ? ;");
+    q.bindValue(0, playlistId);
+    if(!q.exec())
+    {
+        qCritical() << "Error while deleting all the tracks from playlist : " << q.lastError().text();
+        qCritical() << "Last query was : " << q.lastQuery();
+        q.exec("ROLLBACK;");
+        return false;
+    }
+
+    /* All went well => COMMIT */
+    q.exec("COMMIT;");
+    return true;
+}
+
 /*****************************************************************************
  *    KEEP THE DATABASE CLEAN !
  ****************************************************************************/

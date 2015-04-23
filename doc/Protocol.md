@@ -546,6 +546,7 @@ directory, add all the files in the playlist.
 The field `action` can be :
  * `add` : add the track in the playlist
  * `del` : remove the track in the playlist
+           or delete the saved playlist if 'filename' is omitted
  * `clear` : delete all content in the playlist
 
 Exemple :

@@ -885,9 +885,16 @@ bool JsonApi::processMessagePlaylist(const QJsonObject &message)
             }
             db->unlock();
         }
+        else if (action == "del" && message["filename"].toString().isEmpty())
+        {
+            db->lock();
+            db->deletePlaylist(playlistId);
+            db->unlock();
+        }
         else if (action == "add" || action == "del")
         {
             QVector<EMSTrack> trackList;
+
             getTracksFromFilename(&trackList, message["filename"].toString());
             if (trackList.size() > 0)
             {

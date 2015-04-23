@@ -32,6 +32,7 @@ public:
     bool insertNewPlaylist(const QString& playlistSubdir, const QString &playlistName);
     bool addTrackInPlaylist(unsigned long long playlistId, unsigned long long trackId);
     bool removeTrackFromPlaylist(unsigned long long playlistId, unsigned long long trackId);
+    bool deletePlaylist(unsigned long long playlistId);
 
     /* Be careful when removing, you have to clean orphans tracks/albums after
      * Don't release the lock when adding/removing tracks/album
