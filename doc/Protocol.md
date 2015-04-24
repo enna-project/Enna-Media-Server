@@ -549,6 +549,8 @@ The field `action` can be :
            or delete the saved playlist if 'filename' is omitted
  * `clear` : delete all content in the playlist
  * `save` : save the current playlist in a new playlist in database
+ * `load` : load one saved playlist in the current playlist (the old current
+            playlist is removed)
 
 Exemple :
 
@@ -590,6 +592,25 @@ To save the current playlist, just indicate its name and its subdirectory.
     "subdir": "playlists_dirname",
     "name": "saved_current_playlist"
 }
+```
+
+To load (and play) a saved playlist in the current playlist.
+> Request :
+
+```json
+To save the current playlist, just indicate its name and its subdirectory.
+> Request :
+
+```json
+{
+    "msg": "EMS_PLAYLIST",
+    "msg_id": "id",
+    "uuid": "uuid",
+    "action": "load",
+    "url": "playlist://7"
+}
+```
+
 ```
 
 Disk management

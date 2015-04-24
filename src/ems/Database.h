@@ -44,7 +44,7 @@ public:
     /* Interface for browsing */
     void getTracks(QVector<EMSTrack> *tracksList);
     void getTracksByAlbum(QVector<EMSTrack> *tracksList, unsigned long long albumId);
-    void getTracksByPlaylist(QVector<EMSTrack> *tracksList, unsigned long long tracklistId);
+    void getTracksByPlaylist(QVector<EMSTrack> *tracksList, unsigned long long playlistId);
     bool getTrackById(EMSTrack *track, unsigned long long trackId);
     bool getTrackIdBySha1(unsigned long long *trackID, QString sha1);
     void getAlbumsList(QVector<EMSAlbum> *albumsList);

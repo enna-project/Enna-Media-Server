@@ -909,8 +909,27 @@ bool JsonApi::processMessagePlaylist(const QJsonObject &message)
             }
             db->unlock();
         }
+        else if (action == "load")
+        {
+            // Load one saved playlist into the current playlist
+            db->lock();
+            // 1- Get the tracks list
+            QVector<EMSTrack> trackList;
+            db->getTracksByPlaylist(&trackList, playlistId);
+            // 2- Delete the tracks of the current playlist
+            Player::instance()->removeAllTracks();
+            // 3- Add the tracks list to the current playlist
+            foreach (EMSTrack track, trackList)
+            {
+                Player::instance()->addTrack(track);
+            }
+            db->unlock();
+            // 4- Start the playlist reading
+            Player::instance()->play();
+        }
         else if (action == "del" && message["filename"].toString().isEmpty())
         {
+            // Delete the playlist
             db->lock();
             db->deletePlaylist(playlistId);
             db->unlock();
