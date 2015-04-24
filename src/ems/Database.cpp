@@ -844,7 +844,7 @@ void Database::getAlbumsList(QVector<EMSAlbum> *albumsList)
         return;
     }
     QSqlQuery q(db);
-    q.prepare(select_album_data1 + " ;");
+    q.prepare(select_album_data1 + " WHERE albums.id <> 0 ;");
     if(!q.exec())
     {
         qCritical() << "Querying album data failed : " << q.lastError().text();
