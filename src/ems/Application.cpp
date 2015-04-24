@@ -32,6 +32,19 @@ Application::Application(int & argc, char ** argv) :
     /* Read and save value for http port */
     EMS_LOAD_SETTINGS(m_httpPort, "main/http_port", EMS_HTTP_PORT, Int);
 
+    QString locations;
+    EMS_LOAD_SETTINGS(locations, "main/locations",
+                      QStandardPaths::standardLocations(QStandardPaths::MusicLocation)[0],
+            String);
+
+    QString cacheDirPath;
+    EMS_LOAD_SETTINGS(cacheDirPath, "main/cache_directory",
+                      QStandardPaths::standardLocations(QStandardPaths::CacheLocation)[0], String);
+
+    /* Make sure the path exists */
+    QDir().mkpath(locations);
+    QDir().mkpath(cacheDirPath);
+
     /* Add online database plugins */
     MetadataManager::instance()->registerAllPlugins();
 
@@ -67,12 +80,7 @@ Application::Application(int & argc, char ** argv) :
 
     m_smartmontools = new SmartmontoolsNotifier(this);
 
-
     /* Scan locations to perform a database update */
-    QString locations;
-    EMS_LOAD_SETTINGS(locations, "main/locations",
-                      QStandardPaths::standardLocations(QStandardPaths::MusicLocation)[0],
-            String);
     m_directoriesWatcher.addLocation(locations);
     m_directoriesWatcher.start();
 }
