@@ -211,7 +211,7 @@ bool GracenotePlugin::update(EMSTrack *track)
         if (track->type == TRACK_TYPE_CDROM || (track->format == "wav") || (track->format == "raw"))
         {
             qDebug() << "Gracenote: lookup using fingerprint of file " << track->filename;
-            lookupByFingerprint(track);
+            ret = lookupByFingerprint(track);
         }
     }
 
@@ -274,7 +274,7 @@ bool GracenotePlugin::lookupAlbumByQueryHandle(EMSTrack *track, gnsdk_musicid_qu
     {
         qDebug() << "No disc info for this album.";
         gnsdk_manager_gdo_release(findResult);
-        return true;
+        return false;
     }
 
     if (!checkChildTrackNumber)
@@ -415,7 +415,7 @@ bool GracenotePlugin::lookupTrackByQueryHandle(EMSTrack *track, gnsdk_musicid_qu
     {
         qDebug() << "No track found for track " << track->filename;
         gnsdk_manager_gdo_release(findResult);
-        return true;
+        return false;
     }
 
     /* Choose the first track */
@@ -481,7 +481,7 @@ bool GracenotePlugin::lookupByText(EMSTrack *track)
     {
         /* No match found... :'( */
         gnsdk_musicid_query_release(queryHandle);
-        return true;
+        return false;
     }
 
     /* Choose the first match */
