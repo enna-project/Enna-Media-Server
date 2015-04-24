@@ -40,6 +40,7 @@ var apiList = [
     '{ "msg": "EMS_PLAYLIST", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "action": "del", "url": "playlist://5", "filename": "library://music/tracks/55"}',
     '{ "msg": "EMS_PLAYLIST", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "action": "del", "url": "playlist://0", "filename": "library://music/albums/10"}',
     '{ "msg": "EMS_PLAYLIST", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "action": "del", "url": "playlist://0"}',
+    '{ "msg": "EMS_PLAYLIST", "msg_id": "42", "uuid": "110e8400-e29b-11d4-a716-446655440000", "action": "save", "subdir": "playlists_dirname", "name": "saved_current_playlist"}',
     '{ "msg": "EMS_AUTH", "msg_id": "42", "status": "accepted", "uuid": "110e8400-e29b-11d4-a716-446655440000", "hostname": "192.168.0.1", "username": "remoteClientName"}',
     '{ "msg": "EMS_CD_RIP", "msg_id": "42", "audio_format": "FLAC"}',
 ];

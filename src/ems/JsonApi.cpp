@@ -860,11 +860,16 @@ bool JsonApi::processMessagePlaylist(const QJsonObject &message)
     else /* Manage the saved playlist */
     {
         bool ok = false;
-        unsigned long long playlistId = type.toUInt(&ok);
-        if (!ok)
+        unsigned long long playlistId = 0;
+
+        if (action != "create" && action != "save")
         {
-            qCritical() << "Error: extract the playlist Id from the url failed.";
-            return false;
+            playlistId = type.toUInt(&ok);
+            if (!ok)
+            {
+                qCritical() << "Error: extract the playlist Id from the url failed.";
+                return false;
+            }
         }
 
         Database *db = Database::instance();
@@ -882,6 +887,25 @@ bool JsonApi::processMessagePlaylist(const QJsonObject &message)
             else
             {
                 qDebug() << "JsonApi: the playlist allready exists";
+            }
+            db->unlock();
+        }
+        else if (action == "save")
+        {
+            // Save the current playlist
+            QString playlistName = message["name"].toString();
+            QString playlistSubdir = message["subdir"].toString();
+            db->lock();
+            // create the playlist if does not already exist
+            if (!db->checkPlaylistExist(playlistSubdir, playlistName, &playlistId))
+            {
+                db->insertNewPlaylist(playlistSubdir, playlistName, &playlistId);
+            }
+            // append the tracks id of the current playlist
+            EMSPlaylist currentPlaylist = Player::instance()->getCurentPlaylist();
+            foreach (EMSTrack track, currentPlaylist.tracks)
+            {
+                db->addTrackInPlaylist(playlistId, track.id);
             }
             db->unlock();
         }

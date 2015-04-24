@@ -548,6 +548,7 @@ The field `action` can be :
  * `del` : remove the track in the playlist
            or delete the saved playlist if 'filename' is omitted
  * `clear` : delete all content in the playlist
+ * `save` : save the current playlist in a new playlist in database
 
 Exemple :
 
@@ -574,6 +575,20 @@ To create an new empty playlist, just indicate its name and its subdirectory.
     "action": "create",
     "subdir": "my_music",
     "name": "birthday_playlist"
+}
+```
+
+To save the current playlist, just indicate its name and its subdirectory.
+> Request :
+
+```json
+{
+    "msg": "EMS_PLAYLIST",
+    "msg_id": "id",
+    "uuid": "uuid",
+    "action": "save",
+    "subdir": "playlists_dirname",
+    "name": "saved_current_playlist"
 }
 ```
 

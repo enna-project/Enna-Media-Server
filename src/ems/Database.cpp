@@ -237,7 +237,9 @@ bool Database::insertNewFilename(QString filename, unsigned long long trackId, u
     return true;
 }
 
-bool Database::insertNewPlaylist(const QString &playlistSubdir, const QString &playlistName)
+bool Database::insertNewPlaylist(const QString &playlistSubdir,
+                                 const QString &playlistName,
+                                 unsigned long long *playlistId)
 {
     if (!opened)
     {
@@ -269,6 +271,11 @@ bool Database::insertNewPlaylist(const QString &playlistSubdir, const QString &p
             qCritical() << "Last query was : " << q.lastQuery();
             q.exec("ROLLBACK;");
             return false;
+        }
+        if (playlistId != NULL)
+        {
+            *playlistId = q.lastInsertId().toULongLong();
+            qDebug() << "Database: id of the new playlist: " << *playlistId;
         }
     }
     else

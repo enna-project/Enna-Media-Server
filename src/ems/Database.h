@@ -29,7 +29,8 @@ public:
     bool insertNewFilename(QString filename, unsigned long long trackId, unsigned long long timestamp);
 
     /* Interface for playlist management (server-side actions) */
-    bool insertNewPlaylist(const QString& playlistSubdir, const QString &playlistName);
+    bool insertNewPlaylist(const QString& playlistSubdir, const QString &playlistName,
+                           unsigned long long *playlistId = NULL);
     bool addTrackInPlaylist(unsigned long long playlistId, unsigned long long trackId);
     bool removeTrackFromPlaylist(unsigned long long playlistId, unsigned long long trackId);
     bool deletePlaylist(unsigned long long playlistId);
