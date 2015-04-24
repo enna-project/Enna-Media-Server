@@ -155,7 +155,7 @@ bool CdromRipper::ripOneTrack(unsigned int indexTrack)
     qDebug() << "CdromRipper: track begin: " << lsnBegin;
     qDebug() << "CdromRipper: track end  : " << lsnEnd;
     qDebug() << "CdromRipper: nbsectors  : " << nbSectors;
-    qDebug() << "CdromRipper: size (in octet): " << bufferSize;
+    qDebug() << "CdromRipper: size (in bytes): " << bufferSize;
 
     paranoia_seek(m_paranoiaStruc, lsnBegin, SEEK_SET);
 
