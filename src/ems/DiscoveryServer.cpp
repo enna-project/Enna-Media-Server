@@ -54,11 +54,10 @@ void DiscoveryServer::readyRead()
     buffer.resize(m_socket->pendingDatagramSize());
     ClientConnectionParam senderParam;
     QString clientUuid;
-    bool isLocalGUI = false;
+    QString clientHostname;
     bool isClientAlreadyAccepted = false;
     EMSClient client;
     Database *db = Database::instance();
-    QHostAddress loopbackAddr = QHostAddress::LocalHost;
 
     // Read data received
     m_socket->readDatagram(buffer.data(), buffer.size(),
@@ -73,12 +72,14 @@ void DiscoveryServer::readyRead()
     }
 
     clientUuid =  j.object()["uuid"].toString();
+    clientHostname = j.object()["hostname"].toString();
     qDebug() << "UUID :" << clientUuid;
 
     db->lock();
     isClientAlreadyAccepted = db->getAuthorizedClient(clientUuid, &client);
     db->unlock();
-    qDebug() << "Discovery: is client already accepted : " << isClientAlreadyAccepted;
+    qDebug() << "Discovery: is client " << clientHostname << " ["
+             << clientUuid << "] already accepted ?  " << isClientAlreadyAccepted;
 
     if (isClientAlreadyAccepted)
     {
@@ -97,22 +98,12 @@ void DiscoveryServer::readyRead()
     else
     {
         // Unknown clients usecase:
+        // Build the EMSClient data
+        client.uuid = clientUuid;
+        client.hostname = clientHostname;
 
         if ((senderParam.ip == m_serverAddress) ||
             (senderParam.ip == QHostAddress::LocalHost))
-        {
-            isLocalGUI = true;
-        }
-
-        // Build the EMSClient data
-        client.uuid = clientUuid;
-        if (isLocalGUI)
-            client.hostname = loopbackAddr.toString();
-        else
-            client.hostname = senderParam.ip.toString();
-
-        // Local client usecase: accept the client
-        if (isLocalGUI)
         {
             db->lock();
             if (!db->insertNewAuthorizedClient(&client))
@@ -137,8 +128,8 @@ void DiscoveryServer::sendDiscoveryAnswer(const ClientConnectionParam &clientPar
     // Create object containing the answer
     QJsonObject jobj;
     jobj["action"] = "EMS_DISCOVER";
-    jobj["status"] = status;
-    jobj["ip"] = m_serverAddress.toString();
+    jobj["status"] = "accepted";
+    jobj["ip"] = clientParam.ip.toString(); // Answer with the same IP as the one received on the udp socket
     jobj["port"] = settings.value("main/websocket_port").toInt();
     qDebug() << "EMS_DISCOVER (status: " << status
              << ") Client Addr: " << clientParam.ip.toString()
