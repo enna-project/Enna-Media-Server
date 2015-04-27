@@ -58,10 +58,11 @@ bool CdromManager::getCdrom(QString device, EMSCdrom *cdrom)
 
 bool CdromManager::isRipInProgress()
 {
-    if (Q_NULLPTR == m_cdromRipper)
-        return false;
-
-    return true;
+#ifdef EMS_CDROM_RIPPER
+    if (m_cdromRipper)
+        return true;
+#endif
+    return false;
 }
 
 void CdromManager::setRipAudioFormat(const QString &ripAudioFormat)
@@ -297,8 +298,7 @@ void CdromManager::dbusMessageRemove(QString message)
 CdromManager* CdromManager::_instance = 0;
 
 CdromManager::CdromManager(QObject *parent) : QObject(parent),
-                                              bus(QDBusConnection::systemBus()),
-                                              m_cdromRipper(Q_NULLPTR)
+                                              bus(QDBusConnection::systemBus())
 {
     cdio_init();
 
@@ -313,8 +313,9 @@ CdromManager::~CdromManager()
     disconnect(this, SIGNAL(cdromTrackNeedUpdate(EMSTrack,QStringList)), MetadataManager::instance(), SLOT(update(EMSTrack,QStringList)));
     disconnect(MetadataManager::instance(), SIGNAL(updated(EMSTrack,bool)), this, SLOT(cdromTrackUpdated(EMSTrack,bool)));
 
-    if (m_cdromRipper)
-        delete m_cdromRipper;
+#ifdef EMS_CDROM_RIPPER
+    delete m_cdromRipper;
+#endif
 }
 
 bool CdromManager::startMonitor()
@@ -379,12 +380,15 @@ void CdromManager::ripProgress(EMSRipProgress ripProgress)
     emit ripProgressChanged(ripProgress);
 }
 
-void CdromManager::handleCdromRipperResults(const QString &result)
+void CdromManager::handleCdromRipperResults(const QString &result )
 {
+#ifdef EMS_CDROM_RIPPER
+
     if (m_cdromRipper)
     {
         qDebug() << "CdromManager handle cdrom ripper results: " << result;
         delete m_cdromRipper;
         m_cdromRipper = Q_NULLPTR;
     }
+#endif
 }

@@ -5,8 +5,9 @@
 #include <QtDBus/QtDBus>
 
 #include "Data.h"
-
-class CdromRipper;
+#ifdef EMS_CDROM_RIPPER
+#include "CdromRipper.h"
+#endif
 
 class CdromManager : public QObject
 {
@@ -16,7 +17,9 @@ class CdromManager : public QObject
     QMutex mutex;
     QVector<EMSCdrom> cdroms;
     QDBusConnection bus;
-    CdromRipper *m_cdromRipper;
+#ifdef EMS_CDROM_RIPPER
+    CdromRipper *m_cdromRipper = nullptr;
+#endif
     QString m_ripAudioFormat;
 
 public:
