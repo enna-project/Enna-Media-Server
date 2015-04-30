@@ -29,8 +29,6 @@ public:
     void sendAuthRequest(EMSClient client);
     void sendRipProgress(EMSRipProgress ripProgress);
     void sendMenu();
-
-
 signals:
     void startCdromRip();
 
@@ -62,15 +60,17 @@ private:
     QJsonObject processMessageBrowseDirectory(const QJsonObject &message, bool &ok);
     JsonApi::UrlSchemeType urlSchemeGet(const QString &url) const;
 
+    void updateNewUrl(void);
+
     QJsonObject EMSPlaylistToJson(EMSPlaylist playlist);
-    QJsonObject EMSArtistToJson(const EMSArtist &artist) const;
-    QJsonObject EMSTrackToJson(const EMSTrack &track) const;
-    QJsonObject EMSGenreToJson(const EMSGenre &genre) const;
-    QJsonObject EMSAlbumToJson(const EMSAlbum &album) const;
-    QJsonObject EMSAlbumToJsonWithArtists(const EMSAlbum &album) const;
+    QJsonObject EMSArtistToJson(const EMSArtist &artist);
+    QJsonObject EMSTrackToJson(const EMSTrack &track);
+    QJsonObject EMSGenreToJson(const EMSGenre &genre);
+    QJsonObject EMSAlbumToJson(const EMSAlbum &album);
+    QJsonObject EMSAlbumToJsonWithArtists(const EMSAlbum &album);
     QString EMSTrackTypeToString(EMSTrackType type) const;
     void getTracksFromFilename(QVector<EMSTrack> *trackList, QString filename);
-    QString convertImageUrl(QString url) const;
+    QString convertImageUrl(QString url);
     // To be implemented when if menu become dynamic
     //QJsonObject buildJsonMenu();
 

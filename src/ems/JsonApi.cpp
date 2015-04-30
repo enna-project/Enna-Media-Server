@@ -34,6 +34,17 @@ JsonApi::JsonApi(QWebSocket *webSocket) :
     EMS_LOAD_SETTINGS(m_directoriesBasePath, "directories/path",
                       EMS_DIRECTORIES_BASE_PATH, String);
 
+
+    updateNewUrl();
+}
+
+JsonApi::~JsonApi()
+{
+
+}
+
+void JsonApi::updateNewUrl()
+{
     /* TODO: use the NetworkManager instead */
     QString ipAddr;
     QList<QHostAddress> ipAddrs = QNetworkInterface::allAddresses();
@@ -60,12 +71,6 @@ JsonApi::JsonApi(QWebSocket *webSocket) :
     {
         qCritical() << "Unable to get my own IP address";
     }
-
-}
-
-JsonApi::~JsonApi()
-{
-
 }
 
 void JsonApi::ipChanged(QString newIp)
@@ -80,7 +85,7 @@ void JsonApi::ipChanged(QString newIp)
     }
 }
 
-QString JsonApi::convertImageUrl(QString url) const
+QString JsonApi::convertImageUrl(QString url)
 {
     QString out;
 
@@ -104,7 +109,7 @@ QString JsonApi::convertImageUrl(QString url) const
             }
             uniformUrl += dir;
         }
-
+        updateNewUrl();
         if (!httpSrvUrl.isEmpty())
         {
             out = httpSrvUrl + "/" + url;
@@ -899,7 +904,7 @@ JsonApi::UrlSchemeType JsonApi::urlSchemeGet(const QString &url) const
         return SCHEME_UNKNOWN;
 }
 
-QJsonObject JsonApi::EMSArtistToJson(const EMSArtist &artist) const
+QJsonObject JsonApi::EMSArtistToJson(const EMSArtist &artist)
 {
     QJsonObject obj;
 
@@ -910,7 +915,7 @@ QJsonObject JsonApi::EMSArtistToJson(const EMSArtist &artist) const
     return obj;
 }
 
-QJsonObject JsonApi::EMSAlbumToJson(const EMSAlbum &album) const
+QJsonObject JsonApi::EMSAlbumToJson(const EMSAlbum &album)
 {
     QJsonObject obj;
 
@@ -921,7 +926,7 @@ QJsonObject JsonApi::EMSAlbumToJson(const EMSAlbum &album) const
     return obj;
 }
 
-QJsonObject JsonApi::EMSAlbumToJsonWithArtists(const EMSAlbum &album) const
+QJsonObject JsonApi::EMSAlbumToJsonWithArtists(const EMSAlbum &album)
 {
     Database *db = Database::instance();
     QVector<EMSArtist> artists;
@@ -941,7 +946,7 @@ QJsonObject JsonApi::EMSAlbumToJsonWithArtists(const EMSAlbum &album) const
     return obj;
 }
 
-QJsonObject JsonApi::EMSGenreToJson(const EMSGenre &genre) const
+QJsonObject JsonApi::EMSGenreToJson(const EMSGenre &genre)
 {
     QJsonObject obj;
 
@@ -967,7 +972,7 @@ QString JsonApi::EMSTrackTypeToString(EMSTrackType type) const
     }
 }
 
-QJsonObject JsonApi::EMSTrackToJson(const EMSTrack &track) const
+QJsonObject JsonApi::EMSTrackToJson(const EMSTrack &track)
 {
     QJsonObject obj;
 
