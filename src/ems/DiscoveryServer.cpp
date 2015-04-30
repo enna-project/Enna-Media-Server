@@ -128,8 +128,8 @@ void DiscoveryServer::sendDiscoveryAnswer(const ClientConnectionParam &clientPar
     // Create object containing the answer
     QJsonObject jobj;
     jobj["action"] = "EMS_DISCOVER";
-    jobj["status"] = "accepted";
-    jobj["ip"] = clientParam.ip.toString(); // Answer with the same IP as the one received on the udp socket
+    jobj["status"] = status;
+    jobj["ip"] = m_serverAddress.toString();// Answer with the same IP as the one received on the udp socket
     jobj["port"] = settings.value("main/websocket_port").toInt();
     qDebug() << "EMS_DISCOVER (status: " << status
              << ") Client Addr: " << clientParam.ip.toString()
