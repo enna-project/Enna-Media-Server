@@ -39,7 +39,7 @@ JsonApi::JsonApi(QWebSocket *webSocket) :
     QList<QHostAddress> ipAddrs = QNetworkInterface::allAddresses();
     for(int addrId=0; addrId<ipAddrs.count(); addrId++)
     {
-        //if(!ipAddrs[addrId].isLoopback())
+        if(!ipAddrs[addrId].isLoopback())
         {
             if (ipAddrs[addrId].protocol() == QAbstractSocket::IPv4Protocol )
             {
