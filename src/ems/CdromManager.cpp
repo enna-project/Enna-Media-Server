@@ -304,15 +304,12 @@ CdromManager::CdromManager(QObject *parent) : QObject(parent),
 
     qRegisterMetaType<EMSCdrom>("EMSCdrom");
 
-    connect(this, SIGNAL(cdromTrackNeedUpdate(EMSTrack,QStringList)), MetadataManager::instance(), SLOT(update(EMSTrack,QStringList)));
+    connect(this, SIGNAL(cdromTrackNeedUpdate(EMSTrack,QStringList)), MetadataManager::instance(), SLOT(update(EMSTrack,QStringList)), Qt::DirectConnection);
     connect(MetadataManager::instance(), SIGNAL(updated(EMSTrack,bool)), this, SLOT(cdromTrackUpdated(EMSTrack,bool)));
 }
 
 CdromManager::~CdromManager()
 {
-    disconnect(this, SIGNAL(cdromTrackNeedUpdate(EMSTrack,QStringList)), MetadataManager::instance(), SLOT(update(EMSTrack,QStringList)));
-    disconnect(MetadataManager::instance(), SIGNAL(updated(EMSTrack,bool)), this, SLOT(cdromTrackUpdated(EMSTrack,bool)));
-
 #ifdef EMS_CDROM_RIPPER
     delete m_cdromRipper;
 #endif
