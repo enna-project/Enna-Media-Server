@@ -47,6 +47,8 @@ Application::Application(int & argc, char ** argv) :
 
     /* Add online database plugins */
     MetadataManager::instance()->registerAllPlugins();
+    MetadataManager::instance()->moveToThread(&m_metadataManagerWorker);
+    m_metadataManagerWorker.start();
 
     /* Sound card manager */
     m_soundCardManager = new SoundCardManager(this);
@@ -90,6 +92,10 @@ Application::~Application()
     /* Stop the CDROM manager */
     m_cdromManagerWorker.quit();
     m_cdromManagerWorker.wait(100);
+
+    /* Stop the metadata manager */
+    m_metadataManagerWorker.quit();
+    m_metadataManagerWorker.wait(100);
 
     /* Stop the player thread */
     Player::instance()->kill();

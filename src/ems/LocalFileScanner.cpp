@@ -19,7 +19,7 @@ LocalFileScanner::LocalFileScanner(QObject *parent) : QObject(parent)
 
     m_scanActive = false;
 
-    connect(this, SIGNAL(trackNeedUpdate(EMSTrack, QStringList)), MetadataManager::instance(), SLOT(update(EMSTrack,QStringList)), Qt::DirectConnection);
+    connect(this, SIGNAL(trackNeedUpdate(EMSTrack, QStringList)), MetadataManager::instance(), SLOT(update(EMSTrack,QStringList)));
     connect(MetadataManager::instance(), SIGNAL(updated(EMSTrack,bool)), this, SLOT(trackUpdated(EMSTrack,bool)));
 }
 

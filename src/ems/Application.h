@@ -32,6 +32,7 @@ private:
 
     /* Run detached from the main event loop */
     QThread m_cdromManagerWorker;
+    QThread m_metadataManagerWorker;
 };
 
 #endif // APPLICATION_H
