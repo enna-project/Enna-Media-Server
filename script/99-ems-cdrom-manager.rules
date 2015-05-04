@@ -1,11 +1,7 @@
 # Run script which will configure the CDROM and send signal to EMS (inserted or removed)
 # Put this file in /etc/udev/rules.d if you have udev.
 # Inserted
-SUBSYSTEM=="block", KERNEL=="sr0", ACTION=="change",  ENV{ID_CDROM_MEDIA_CD}=="1", RUN+="/usr/sbin/ems_cdrom_changed.sh '%E{DEVNAME}' 'inserted'"
-SUBSYSTEM=="block", KERNEL=="sr0", ACTION=="change",  ENV{ID_CDROM_MEDIA_CD_R}=="1", RUN+="/usr/sbin/ems_cdrom_changed.sh '%E{DEVNAME}' 'inserted'"
-SUBSYSTEM=="block", KERNEL=="sr0", ACTION=="change",  ENV{ID_CDROM_MEDIA_CD_RW}=="1", RUN+="/usr/sbin/ems_cdrom_changed.sh '%E{DEVNAME}' 'inserted'"
+SUBSYSTEM=="block", KERNEL=="sr0", ACTION=="change",  ENV{ID_CDROM_MEDIA}=="1", RUN+="/usr/sbin/ems_cdrom_changed.sh '%E{DEVNAME}' 'inserted'"
 # Removed
-SUBSYSTEM=="block", KERNEL=="sr0", ACTION=="change",  ENV{ID_CDROM_MEDIA_CD}=="", RUN+="/usr/sbin/ems_cdrom_changed.sh '%E{DEVNAME}' 'removed'"
-SUBSYSTEM=="block", KERNEL=="sr0", ACTION=="change",  ENV{ID_CDROM_MEDIA_CD_R}=="", RUN+="/usr/sbin/ems_cdrom_changed.sh '%E{DEVNAME}' 'removed'"
-SUBSYSTEM=="block", KERNEL=="sr0", ACTION=="change",  ENV{ID_CDROM_MEDIA_CD_RW}=="", RUN+="/usr/sbin/ems_cdrom_changed.sh '%E{DEVNAME}' 'removed'"
+SUBSYSTEM=="block", KERNEL=="sr0", ACTION=="change",  ENV{ID_CDROM_MEDIA}=="", RUN+="/usr/sbin/ems_cdrom_changed.sh '%E{DEVNAME}' 'removed'"
 
