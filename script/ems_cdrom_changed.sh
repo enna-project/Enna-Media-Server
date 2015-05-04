@@ -20,6 +20,9 @@ if [ "${action}" = "inserted" ]; then
 	# Make sure MPD can read/ioctl the device
 	chmod 777 ${device}
 
+	# Warn EMS
+	dbus-send --system --type=signal /com/EnnaMediaServer/Cdrom com.EnnaMediaServer.Cdrom.inserted string:"${device}"
+
 	# Configure the CDROM
 	if which hdparm &> /dev/null; then
 		# Disable power management
@@ -31,8 +34,6 @@ if [ "${action}" = "inserted" ]; then
 		hdparm -E 10 ${device}
 	fi
 
-	# Warn EMS
-	dbus-send --system --type=signal /com/EnnaMediaServer/Cdrom com.EnnaMediaServer.Cdrom.inserted string:"${device}"
 	exit 0
 fi
 
