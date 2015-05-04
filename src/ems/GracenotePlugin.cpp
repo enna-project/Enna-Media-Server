@@ -205,10 +205,8 @@ bool GracenotePlugin::update(EMSTrack *track)
     /* If no data found, try to use "fingerprint" */
     if(track->album.name.isEmpty())
     {
-        /* Fingerprint lookup is for now only available for WAV files
-         * Or CDROM track.
-         */
-        if (track->type == TRACK_TYPE_CDROM || (track->format == "wav") || (track->format == "raw"))
+        /* Fingerprint lookup is for now only available for WAV files */
+        if ((track->format == "wav") || (track->format == "raw"))
         {
             qDebug() << "Gracenote: lookup using fingerprint of file " << track->filename;
             ret = lookupByFingerprint(track);
