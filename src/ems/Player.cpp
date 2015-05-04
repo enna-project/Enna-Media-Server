@@ -96,14 +96,8 @@ void Player::prev()
 void Player::play(EMSTrack track)
 {
     EMSPlayerCmd cmd;
-    cmd.action = ACTION_PLAY_POS;
-    int position = searchTrackInPlaylist(track);
-    if (position < 0)
-    {
-        qCritical() << "Asked to play a track which is not in the current playlist";
-        return;
-    }
-    cmd.uintValue = (unsigned int) position;
+    cmd.action = ACTION_PLAY_TRACK;
+    cmd.track = track;
     mutex.lock();
     queue.enqueue(cmd);
     mutex.unlock();
@@ -112,15 +106,6 @@ void Player::play(EMSTrack track)
 
 void Player::play(unsigned int position)
 {
-    mutex.lock();
-    int size = playlist.tracks.size();
-    mutex.unlock();
-    if (size < 0 || position >= (unsigned int)size)
-    {
-        qDebug() << "Asked to play a track after the end of the current playlist";
-        return;
-    }
-
     EMSPlayerCmd cmd;
     cmd.action = ACTION_PLAY_POS;
     cmd.uintValue = position;
@@ -487,7 +472,28 @@ void Player::executeCmd(EMSPlayerCmd cmd)
         }
         case ACTION_PLAY_POS:
         {
+            mutex.lock();
+            int size = playlist.tracks.size();
+            mutex.unlock();
+            if (size <= 0 || cmd.uintValue >= (unsigned int)size)
+            {
+                qDebug() << "Asked to play a track after the end of the current playlist";
+                error = true;
+                break;
+            }
             mpd_send_play_pos(conn, cmd.uintValue);
+            break;
+        }
+        case ACTION_PLAY_TRACK:
+        {
+            int position = searchTrackInPlaylist(cmd.track);
+            if (position < 0)
+            {
+                qDebug() << "Asked to play a track which is not in the current playlist";
+                error = true;
+                break;
+            }
+            mpd_send_play_pos(conn, position);
             break;
         }
         case ACTION_PLAY:
