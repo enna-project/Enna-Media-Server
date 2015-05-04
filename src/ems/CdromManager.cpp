@@ -127,6 +127,10 @@ void CdromManager::dbusMessageInsert(QString message)
         track.format = QString("cdda");
         track.sample_rate = 44100;
 
+        /* Set a default name waiting metadata */
+        track.name = QString("Track %1").arg(track.position);
+        track.album.name = QString("Unknown album");
+
         /* Add the new track in the list only if it is an audio track */
         track_format_t format = cdio_get_track_format(cdrom, i);
         if (format == TRACK_FORMAT_AUDIO)
@@ -192,11 +196,6 @@ void CdromManager::cdromTrackUpdated(EMSTrack track, bool complete)
         return;
     }
 
-    if (track.name.isEmpty())
-    {
-        track.name = QString("Track %1").arg(track.position);
-    }
-
     /* Retrieve the corresponding cdrom in the list of cdroms */
     mutex.lock();
     for (int i=0; i<cdroms.size(); i++)
@@ -215,30 +214,11 @@ void CdromManager::cdromTrackUpdated(EMSTrack track, bool complete)
 
         for(int i=0; i<cdrom.tracks.size(); i++)
         {
-            /* If an album has been found, make sure it is the same as for
-             * the other track.
-             */
-            if (!track.album.name.isEmpty())
-            {
-                if (cdrom.tracks.at(i).album.name.isEmpty())
-                {
-                    EMSTrack other = cdrom.tracks.at(i);
-                    other.album = track.album;
-                    other.genres = track.genres;
-                    other.artists = track.artists;
-                    cdrom.tracks.replace(i, other);
-                }
-            } else if (!cdrom.tracks.at(i).album.name.isEmpty())
-            {
-                track.album = cdrom.tracks.at(i).album;
-                track.genres = cdrom.tracks.at(i).genres;
-                track.artists = cdrom.tracks.at(i).artists;
-            }
-
-            /* Replace the new Cdrom */
+            /* Replace the new track */
             if(cdrom.tracks.at(i).position == track.position)
             {
                 cdrom.tracks.replace(i, track);
+                break;
             }
 
         }

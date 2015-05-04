@@ -159,20 +159,6 @@ bool GracenotePlugin::update(EMSTrack *track)
      * - track name
      * - track postion
      */
-    if (track->type == TRACK_TYPE_CDROM && track->position > 1) /* Try to use previously found album name */
-    {
-        EMSCdrom cdrom;
-        if (CdromManager::instance()->getCdrom(track->filename, &cdrom))
-        {
-            if (cdrom.tracks.size() > 0)
-            {
-                track->album = cdrom.tracks.first().album;
-                track->artists = cdrom.tracks.first().artists;
-                track->genres = cdrom.tracks.first().genres;
-            }
-
-        }
-    }
     int dataFilled = 0;
     if(!track->album.name.isEmpty())
     {
@@ -190,7 +176,7 @@ bool GracenotePlugin::update(EMSTrack *track)
             break;
         }
     }
-    if (dataFilled >= 2)
+    if (dataFilled >= 2 && track->type != TRACK_TYPE_CDROM)
     {
         qDebug() << "Gracenote: lookup using texts from other metadata plugins for file " << track->filename;
         ret = lookupByText(track);
@@ -203,7 +189,7 @@ bool GracenotePlugin::update(EMSTrack *track)
     }
 
     /* If no data found, try to use "fingerprint" */
-    if(track->album.name.isEmpty())
+    if(track->album.name.isEmpty() && track->type != TRACK_TYPE_CDROM)
     {
         /* Fingerprint lookup is for now only available for WAV files */
         if ((track->format == "wav") || (track->format == "raw"))
