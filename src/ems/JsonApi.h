@@ -69,6 +69,7 @@ private:
     QJsonObject EMSAlbumToJson(const EMSAlbum &album);
     QJsonObject EMSAlbumToJsonWithArtists(const EMSAlbum &album);
     QJsonObject EMSPlaylistToJsonWithoutTrack(EMSPlaylist playlist);
+    QJsonObject EMSPlaylistsListBySubdirToJson(EMSPlaylistsListBySubdir playlistsListBySubdir);
     QString EMSTrackTypeToString(EMSTrackType type) const;
     void getTracksFromFilename(QVector<EMSTrack> *trackList, QString filename);
     QString convertImageUrl(QString url);
