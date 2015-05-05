@@ -150,7 +150,8 @@ void CdromManager::dbusMessageInsert(QString message)
      * Code copied from libcdio/example/discid.c
      */
     unsigned start_sec = cdio_get_track_lba(cdrom, 1) / CDIO_CD_FRAMES_PER_SEC;
-    unsigned leadout_sec = cdio_get_track_lba(cdrom, CDIO_CDROM_LEADOUT_TRACK) / CDIO_CD_FRAMES_PER_SEC;
+    unsigned int leadout = cdio_get_track_lba(cdrom, CDIO_CDROM_LEADOUT_TRACK);
+    unsigned leadout_sec = leadout / CDIO_CD_FRAMES_PER_SEC;
     unsigned total = leadout_sec - start_sec;
     unsigned id = ((sum % 0xff) << 24 | total << 8 | trackNumber);
 
@@ -160,7 +161,7 @@ void CdromManager::dbusMessageInsert(QString message)
         lba_t lba = cdio_get_track_lba(cdrom, i);
         newCD.disc_id += QString().sprintf(" %ld", (long) lba);
     }
-    newCD.disc_id += QString().sprintf(" %u", leadout_sec);
+    newCD.disc_id += QString().sprintf(" %u", leadout);
     cdio_destroy(cdrom);
 
     qDebug() << "Computed DISCID is " << newCD.disc_id;

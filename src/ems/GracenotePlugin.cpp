@@ -130,7 +130,7 @@ bool GracenotePlugin::update(EMSTrack *track)
         /* The disc ID is formated like : ID TRACKNUM TOC DURATION */
         QString toc;
         QStringList parts = discid.split(' ');
-        for (int i=2; i<(parts.size()-1); i++)
+        for (int i=2; i<parts.size(); i++)
         {
             if (!toc.isEmpty())
             {
