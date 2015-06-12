@@ -8,8 +8,9 @@
 #include "Player.h"
 
 const QString JSON_OBJECT_LIBRARY_MUSIC = "{\"menus\": [{\"name\": \"Artists\",\"url\": \"library://music/artists\"},{\"name\": \"Albums\",\"url\": \"library://music/albums\"},{\"name\": \"Tracks\",\"url\": \"library://music/tracks\"},{\"name\": \"Genre\",\"url\": \"library://music/genres\"},{\"name\": \"Compositors\",\"url\": \"library://music/compositor\"}]}}";
-JsonApi::JsonApi(QWebSocket *webSocket) :
-    m_webSocket(webSocket)
+JsonApi::JsonApi(QWebSocket *webSocket, bool isLocal) :
+    m_webSocket(webSocket),
+    m_isLocal(isLocal)
 {
     QSettings settings;
 
@@ -48,14 +49,22 @@ void JsonApi::updateNewUrl()
     /* TODO: use the NetworkManager instead */
     QString ipAddr;
     QList<QHostAddress> ipAddrs = QNetworkInterface::allAddresses();
-    for(int addrId=0; addrId<ipAddrs.count(); addrId++)
+
+    if (m_isLocal)
     {
-        if(!ipAddrs[addrId].isLoopback())
+        ipAddr = QHostAddress(QHostAddress::LocalHost).toString();
+    }
+    else
+    {
+        for(int addrId=0; addrId<ipAddrs.count(); addrId++)
         {
-            if (ipAddrs[addrId].protocol() == QAbstractSocket::IPv4Protocol )
+            if(!ipAddrs[addrId].isLoopback())
             {
-                ipAddr = ipAddrs[addrId].toString();
-                break;
+                if (ipAddrs[addrId].protocol() == QAbstractSocket::IPv4Protocol )
+                {
+                    ipAddr = ipAddrs[addrId].toString();
+                    break;
+                }
             }
         }
     }
@@ -109,7 +118,7 @@ QString JsonApi::convertImageUrl(QString url)
             }
             uniformUrl += dir;
         }
-        updateNewUrl();
+
         if (!httpSrvUrl.isEmpty())
         {
             out = httpSrvUrl + "/" + url;

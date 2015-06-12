@@ -10,7 +10,7 @@ WebSocketServer::WebSocketServer(quint16 port, QObject *parent) :
   m_pWebSocketServer(Q_NULLPTR),
   m_clients()
 {
-  m_pWebSocketServer = new QWebSocketServer(QStringLiteral("Chat Server"),
+  m_pWebSocketServer = new QWebSocketServer(QStringLiteral("Enna Media Server"),
                                             QWebSocketServer::NonSecureMode,
                                             this);
   if (m_pWebSocketServer->listen(QHostAddress::Any, port))
@@ -40,12 +40,9 @@ WebSocketServer::~WebSocketServer()
 void WebSocketServer::onNewConnection()
 {
     QWebSocket *socket = m_pWebSocketServer->nextPendingConnection();
-
+    JsonApi *api = new JsonApi(socket, socket->peerAddress() == QHostAddress::LocalHost);
     connect(socket, &QWebSocket::disconnected, this, &WebSocketServer::socketDisconnected);
-
-    JsonApi *api = new JsonApi(socket);
     connect(socket, &QWebSocket::textMessageReceived, api, &JsonApi::processMessage);
-
     m_clients[socket] = api;
 }
 

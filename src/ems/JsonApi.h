@@ -15,7 +15,7 @@ class JsonApi : public QObject
 {
     Q_OBJECT
 public:
-    explicit JsonApi(QWebSocket *websScket);
+    explicit JsonApi(QWebSocket *websScket, bool isLocal);
     ~JsonApi();
 
     enum MessageType {EMS_BROWSE, EMS_PLAYER, EMS_PLAYLIST, EMS_DISK,
@@ -29,6 +29,7 @@ public:
     void sendAuthRequest(EMSClient client);
     void sendRipProgress(EMSRipProgress ripProgress);
     void sendMenu();
+
 signals:
     void startCdromRip();
 
@@ -39,6 +40,7 @@ private:
     QString cacheDirectory;
     QStringList m_supportedFormat;
     QString m_directoriesBasePath;
+    bool m_isLocal;
 
     /* Queries handlers */
     JsonApi::MessageType toMessageType(const QString &type) const;
