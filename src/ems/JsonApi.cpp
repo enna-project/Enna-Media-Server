@@ -1662,6 +1662,28 @@ void JsonApi::sendWifiConnected()
     }
 }
 
+void JsonApi::sendEthConnected()
+{
+    QJsonObject answer;
+    if(NetworkCtl::instance()->isEthernetConnected())
+    {
+        EMSEthernet* ethData=NetworkCtl::instance()->getConnectedEthernet();
+        answer["msg"] = "EMS_NETWORK";
+        answer["ethernet"] = EMSEthernetToJson(*ethData);
+        QJsonDocument doc(answer);
+        m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
+    }
+    else
+    {
+        qDebug()<<"Eth disconnected ";
+        EMSEthernet* ethParam = new EMSEthernet(" "," "," ","offline"," ");
+        answer["msg"] = "EMS_NETWORK";
+        answer["ethernet"] = EMSEthernetToJson(*ethParam);
+        QJsonDocument doc(answer);
+        m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
+    }
+}
+
 void JsonApi::sendWifiList()
 {
     if(NetworkCtl::instance()->getEnableUpdate())

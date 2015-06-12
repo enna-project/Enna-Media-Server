@@ -30,6 +30,7 @@ private Q_SLOTS:
     void broadcastRipProgress(EMSRipProgress ripProgress);
     void broadcastMenuChange(EMSCdrom cdromChanged);
     void broadcastWifiConnected();
+    void broadcastEthConnected();
     void broadcastWifiList();
 
 private:

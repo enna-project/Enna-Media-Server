@@ -156,7 +156,8 @@ private:
 signals:
     void requestScan();
     void wifiListUpdated();
-    void connectedChanged();
+    void wifiConnectedChanged();
+    void ethConnectedChanged();
 
 public slots:
     void scanWifi();

@@ -14,7 +14,8 @@ NetworkCtl::NetworkCtl(QObject *parent): QObject(parent)
 {
     m_manager = new Manager(this);
     connect(m_manager,SIGNAL(servicesChanged()),this, SIGNAL(wifiListUpdated()));
-    connect(m_manager,SIGNAL(connectedServiceChanged()),this, SIGNAL(connectedChanged()));
+    connect(this->getTechnology("wifi"),SIGNAL(connectedChanged()),this,SIGNAL(wifiConnectedChanged()));
+    connect(this->getTechnology("ethernet"),SIGNAL(connectedChanged()),this,SIGNAL(ethConnectedChanged()));
     m_agent=new Agent("/com/EMS/Connman", m_manager);
     m_enablUpdate = false;
 }

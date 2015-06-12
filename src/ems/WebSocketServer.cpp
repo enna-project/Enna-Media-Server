@@ -28,8 +28,10 @@ WebSocketServer::WebSocketServer(quint16 port, QObject *parent) :
               this, &WebSocketServer::broadcastMenuChange);
       connect(CdromManager::instance(), &CdromManager::cdromEjected,
               this, &WebSocketServer::broadcastMenuChange);
-      connect(NetworkCtl::instance(), &NetworkCtl::connectedChanged,
+      connect(NetworkCtl::instance(), &NetworkCtl::wifiConnectedChanged,
               this, &WebSocketServer::broadcastWifiConnected);
+      connect(NetworkCtl::instance(), &NetworkCtl::ethConnectedChanged,
+              this, &WebSocketServer::broadcastEthConnected);
       connect(NetworkCtl::instance(), &NetworkCtl::wifiListUpdated,
               this, &WebSocketServer::broadcastWifiList);
   }
@@ -106,6 +108,17 @@ void WebSocketServer::broadcastWifiConnected()
         if (api)
         {
             api->sendWifiConnected();
+        }
+    }
+}
+
+void WebSocketServer::broadcastEthConnected()
+{
+    foreach( JsonApi *api, m_clients.values() )
+    {
+        if (api)
+        {
+            api->sendEthConnected();
         }
     }
 }

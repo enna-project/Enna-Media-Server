@@ -31,6 +31,7 @@ public:
     void sendRipProgress(EMSRipProgress ripProgress);
     void sendMenu();
     void sendWifiConnected();
+    void sendEthConnected();
     void sendWifiList();
 
 signals:
