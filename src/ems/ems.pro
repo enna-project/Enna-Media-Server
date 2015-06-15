@@ -46,7 +46,7 @@ HEADERS += Database.h \
            FlacEncoder.h \
            TagLibPlugin.h \
            SoundCardManager.h \
-           NetworkCtl.h
+           Networkctl.h
 
 SOURCES += Database.cpp \
            DirectoryWorker.cpp \
@@ -73,9 +73,21 @@ SOURCES += Database.cpp \
            FlacEncoder.cpp \
            TagLibPlugin.cpp \
            SoundCardManager.cpp \
-           NetworkCtl.cpp
+           Networkctl.cpp
 
 DISTFILES +=
+
+equals(EMS_LIB_QCONNMAN, "yes") {
+    message("Enable qconnman library")
+    DEFINES += EMS_LIB_QCONNMAN
+    PKGCONFIG += qconnman
+    HEADERS += NetworkCtlConnman.h
+    SOURCES += NetworkCtlConnman.cpp
+} else {
+    HEADERS += NetworkCtlStub.h
+    SOURCES += NetworkCtlStub.cpp
+}
+
 
 equals(EMS_PLUGIN_GRACENOTE, "yes") {
     message("Enable Gracenote plugin")

@@ -10,7 +10,9 @@
 
 #include "Database.h"
 #include "Data.h"
-#include "NetworkCtl.h"
+#include "Networkctl.h"
+
+
 
 class JsonApi : public QObject
 {

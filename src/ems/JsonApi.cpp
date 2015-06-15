@@ -6,8 +6,7 @@
 #include "DefaultSettings.h"
 #include "JsonApi.h"
 #include "Player.h"
-#include "CdromManager.h"
-#include "NetworkCtl.h"
+
 
 
 #define TIMEOUT 10

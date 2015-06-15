@@ -1,76 +1,15 @@
-#ifndef NETWORKCTL_H
-#define NETWORKCTL_H
+#ifndef NETWORKCTLCONNMAN_H
+#define NETWORKCTLCONNMAN_H
 
 #include <QObject>
 #include <QList>
 #include <manager.h>
 #include <service.h>
 #include <QMutex>
-
-class EMSSsid
-{
-    QString m_path;
-    QString m_name;
-    QString m_type;
-    QString m_state;
-    int m_strength;
-    QStringList m_securityList;
-
-public:
-    enum SecurityType {NONE, WEP, PSK, IEEE8021X, WPS, UNKNOWN};
-
-    EMSSsid(QString path, QString name, QString type, QString state, int strength, QStringList securityList);
-    EMSSsid();
-    //QList<SecurityType> toSecurityTypeList(const QStringList &listType);
-
-
-    QString getName() const;
-    QString getType() const;
-    QString getState() const;
-    int getStrength() const;
-    QString getPath() const;
-    QStringList getSecurity() const;
-
-    void setName(QString name);
-    void setType(QString type);
-    void setState(QString state);
-    void setStrength(int strength);
-    void setPath(QString path);
-    void setSecurity(QStringList securityList);
-    ~EMSSsid();
-};
-
-class EMSEthernet
-{
-    QString m_path;
-    QString m_interface;
-    QString m_type;
-    QString m_state;
-    QString m_ipAdress;
-
-public:
-
-
-    EMSEthernet(QString path, QString interface, QString type, QString state, QString ipAdress);
-    EMSEthernet();
-    //QList<SecurityType> toSecurityTypeList(const QStringList &listType);
-
-    QString getPath() const;
-    QString getInterface() const;
-    QString getType() const;
-    QString getState() const;
-    QString getIpAddress() const;
-
-    void setPath(QString path);
-    void setInterface(QString interface);
-    void setType(QString type);
-    void setState(QString state);
-    void setIpAddress(QString ipAdress);
-
-    ~EMSEthernet();
-};
+#include "Networkctl.h"
 
 class EMSSsid;
+class EMSEthernet;
 class NetworkCtl : public QObject
 {
     Q_OBJECT
@@ -100,10 +39,13 @@ public:
     QList<EMSSsid::SecurityType> toSecurityTypeList(const QStringList &listType);
     QStringList getSecurityTypeString(QList<EMSSsid::SecurityType> securityTypeList);
     QList<EMSSsid> getWifiList();
+
     Service* getWifiByName(QString wifiName);
     Service* getEthByPath(QString ethPath);
+
     EMSSsid* getConnectedWifi();
     EMSEthernet* getConnectedEthernet();
+
     bool isWifiPresent();
     bool isEthernetPresent();
 
@@ -164,4 +106,4 @@ public slots:
 
 };
 
-#endif // NETWORKCTL_H
+#endif // NETWORKCTLCONNMAN_H
