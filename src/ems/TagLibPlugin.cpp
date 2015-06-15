@@ -3,7 +3,7 @@
 #include <taglib/tag.h>
 #include <taglib/fileref.h>
 
-void TagLibPlugin::addArtist(EMSTrack *track, const char *str)
+void TagLibPlugin::addArtist(EMSTrack *track, QString str)
 {
     EMSArtist artist;
     artist.name = str;
@@ -28,7 +28,7 @@ void TagLibPlugin::addArtist(EMSTrack *track, const char *str)
     }
 }
 
-void TagLibPlugin::addGenre(EMSTrack *track, const char *str)
+void TagLibPlugin::addGenre(EMSTrack *track, QString str)
 {
     EMSGenre genre;
     genre.name = str;
@@ -103,10 +103,11 @@ bool TagLibPlugin::update(EMSTrack *track)
     /* Get metatdata */
     if (track->name.isEmpty())
     {
-        TagLib::String title = file.tag()->title();
-        if (!title.isNull() && !title.isEmpty())
+        QString title = TStringToQString(file.tag()->title()).trimmed();
+
+        if (!title.isEmpty())
         {
-            track->name = title.toCString();
+            track->name = title;
         }
     }
 
@@ -117,11 +118,11 @@ bool TagLibPlugin::update(EMSTrack *track)
 
     if (track->album.name.isEmpty())
     {
-        track->album.name = file.tag()->album().toCString();
+        track->album.name = TStringToQString(file.tag()->album()).trimmed();
     }
 
-    addArtist(track, file.tag()->artist().toCString());
-    addGenre(track, file.tag()->genre().toCString());
+    addArtist(track, TStringToQString(file.tag()->artist()).trimmed());
+    addGenre(track, TStringToQString(file.tag()->genre()).trimmed());
 
     return true;
 }

@@ -15,8 +15,8 @@ public:
     bool update(EMSTrack *track);
 
 private:
-    void addArtist(EMSTrack *track, const char *str);
-    void addGenre(EMSTrack *track, const char *str);
+    void addArtist(EMSTrack *track, QString str);
+    void addGenre(EMSTrack *track, QString str);
 };
 
 #endif // TAGLIBPLUGIN_H
