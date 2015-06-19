@@ -11,7 +11,7 @@ CONFIG += c++11 link_pkgconfig
 
 SUBDIRS +=
 
-PKGCONFIG += libmpdclient libcdio flac flac++ sndfile taglib qconnman
+PKGCONFIG += libmpdclient libcdio flac flac++ sndfile taglib
 
 TEMPLATE = app
 TARGET = enna-media-server
@@ -77,6 +77,8 @@ SOURCES += Database.cpp \
 
 DISTFILES +=
 
+#if qconnman is checked compile NetworkCtlConnman class
+# if note compile the stub ( Network feature is disabled )
 equals(EMS_LIB_QCONNMAN, "yes") {
     message("Enable qconnman library")
     DEFINES += EMS_LIB_QCONNMAN

@@ -6,6 +6,22 @@
 #include <qdbusextratypes.h>
 #include "Networkctl.h"
 
+/*
+ * This file contains a STUB IMPLEMENTATION for NetworkCtl class,
+ * in order to enable conditional compilation for qconnman library
+ * qconnman library enables the control of connman dbus API
+ * and is required to use the network features in the app
+*/
+
+
+
+
+
+/*
+ * Implementation of class stub from qconnman library
+ * Functions are used in NetworkCtl class
+ * These functions do nothing but are required for the conditional compilation
+*/
 class Agent : public QObject
 {
     Q_OBJECT
@@ -47,6 +63,7 @@ private:
 
 };
 
+
 class Technology : public QObject
 {
 
@@ -86,6 +103,7 @@ Q_SIGNALS:
 public Q_SLOTS:
     void scan();
 };
+
 
 class EthernetData
 {
@@ -130,11 +148,13 @@ public:
     void setGateway(const QString &gateway);
 };
 
+
 class Service : public QObject
 {
     Q_OBJECT
 public:
     Service();
+    ~Service();
     enum ServiceState {
         UndefinedState,
         IdleState,
@@ -162,11 +182,12 @@ public Q_SLOTS:
     void connect();
     void disconnect();
 
-
 };
+
 
 class Manager{
     Manager();
+    ~Manager();
 public :
     QList<Agent*> agents() const;
     QList<Technology*> technologies() const;
@@ -174,10 +195,12 @@ public :
 };
 
 
+/*
+ * Implementation of NetworkCtl class stub
+ * some functions are used in JsonApi
+ * these functions do nothing
+*/
 
-
-
-class EMSSsid;
 class NetworkCtl : public QObject
 {
     Q_OBJECT

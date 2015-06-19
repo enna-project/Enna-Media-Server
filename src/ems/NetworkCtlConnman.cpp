@@ -8,6 +8,15 @@
 
 #include "NetworkCtlConnman.h"
 
+
+/*
+ * Implementation for NetworkCtl class, using qconnman
+ * Compiled when EMS_LIB_QCONNMAN=yes
+ *
+ * qconnman library enables the control of connman dbus API
+ * and is required to use the network features in the app
+*/
+
 NetworkCtl* NetworkCtl::_instance = 0;
 
 NetworkCtl::NetworkCtl(QObject *parent): QObject(parent)

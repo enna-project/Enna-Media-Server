@@ -1,11 +1,19 @@
 #include "NetworkCtlStub.h"
 
-
 #include <QDebug>
 #include <QDBusConnection>
 #include <QListIterator>
 #include <QMetaProperty>
 
+
+/*
+ * Stub implementation for NetworkCtl clas.
+ * Enable conditional compile for qconnman library
+ * Compiled when EMS_LIB_QCONNMAN=no
+ *
+ * qconnman library enables the control of connman dbus API
+ * and is required to use the network features in the app
+*/
 
 NetworkCtl* NetworkCtl::_instance = 0;
 
@@ -14,33 +22,6 @@ NetworkCtl::NetworkCtl(QObject *parent): QObject(parent)
 
 }
 
-Technology::Technology()
-{
-
-}
-
-Service::Service()
-{
-
-}
-
-bool Technology::isPowered() const
-{
-    return false;
-}
-
-static bool wifiSortByStrength(EMSSsid a, EMSSsid b)
-{
-    if(a.getName()!=NULL)
-    {
-
-    }
-    if(b.getName()!=NULL)
-    {
-
-    }
-    return false;
-}
 
 QString NetworkCtl::getStateString(Service::ServiceState state)
 {
@@ -94,7 +75,6 @@ bool NetworkCtl::isWifiPresent()
     return false;
 }
 
-
 bool NetworkCtl::isEthernetPresent()
 {
     return false;
@@ -139,5 +119,46 @@ void NetworkCtl::enableEthernet(bool enable)
 
 NetworkCtl::~NetworkCtl()
 {
+}
+
+/* Technology class from qconnman implementation for dependencies */
+void Technology::scan()
+{
+
+}
+
+Technology::Technology()
+{
+
+}
+
+bool Technology::isPowered() const
+{
+    return false;
+}
+
+Technology::~Technology()
+{
+}
+
+/* Service class from qconnman implementation for dependencies */
+Service::Service()
+{
+
+}
+
+void Service::connect()
+{
+
+}
+
+void Service::disconnect()
+{
+
+}
+
+Service::~Service()
+{
+
 }
 

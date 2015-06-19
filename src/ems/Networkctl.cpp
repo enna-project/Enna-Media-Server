@@ -1,6 +1,12 @@
 #include "Networkctl.h"
 
 
+/*
+ * Main NetworkCtl file used to implement shared class (EMSSID and EMSEthernet)
+ * used in NetworkCtlStub and NetworkCtlConnman
+*/
+
+
 EMSSsid::EMSSsid(QString path, QString name, QString type, QString state, int strength, QStringList securityList) :
     m_path(path),
     m_name(name),
@@ -37,6 +43,7 @@ int EMSSsid::getStrength() const
 {
     return m_strength;
 }
+
 QString EMSSsid::getPath() const
 {
     return m_path;
@@ -49,9 +56,9 @@ QStringList EMSSsid::getSecurity() const
 
 // Set methods of EMSSsid class
 void EMSSsid::setName(QString name)
- {
+{
      m_name = name;
- }
+}
 
 void EMSSsid::setType(QString type)
 {
@@ -96,7 +103,6 @@ EMSEthernet::EMSEthernet()
 {
 
 }
-
 
 QString EMSEthernet::getPath() const
 {
