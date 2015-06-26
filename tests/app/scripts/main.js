@@ -182,7 +182,7 @@ $(document).ready(function() {
     });
 
     $('#btconnect').on('click', function () {
-        ws = new WebSocket($('#urlinput').val());
+
         ws.onopen = function(evt) {
             $('#status_con').removeClass('label-danger');
             $('#status_con').addClass('label-success');
