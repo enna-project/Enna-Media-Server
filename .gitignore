@@ -40,3 +40,4 @@ enna-media-server*.tar.bz2
 /data/themes/default/default.edj
 /config.h.in
 emc
+moc_*
