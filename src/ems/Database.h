@@ -29,7 +29,7 @@ public:
     bool insertNewFilename(QString filename, unsigned long long trackId, unsigned long long timestamp);
 
     /* Interface for playlist management (server-side actions) */
-    bool insertNewPlaylist(const QString& playlistSubdir, const QString &playlistName,
+    bool insertNewPlaylist(const QString &playlistName,
                            unsigned long long *playlistId = NULL);
     bool addTrackInPlaylist(unsigned long long playlistId, unsigned long long trackId);
     bool removeTrackFromPlaylist(unsigned long long playlistId, unsigned long long trackId);
@@ -62,9 +62,9 @@ public:
     bool getGenreByName(EMSGenre *genre, QString name);
     void getGenresByTrackId(QVector<EMSGenre> *genresList, unsigned long long trackId);
 
-    void getPlaylistsList(EMSPlaylistsListBySubdir *playlistsListBySubdir);
+    void getPlaylistsList(EMSPlaylistsList *playlistsList);
     bool getPlaylistById(EMSPlaylist *playlist, unsigned long long playlistId);
-    bool checkPlaylistExist(const QString &playlistSubdir, const QString &playlistName,
+    bool checkPlaylistExist(const QString &playlistName,
                             unsigned long long *id = NULL);
     bool checkPlaylistExist(unsigned long long id);
 

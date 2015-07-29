@@ -567,7 +567,7 @@ QJsonObject JsonApi::processMessageBrowsePlaylist(const QJsonObject &message, bo
         return obj;
     }
     url.remove("playlist://");
-    QStringList list =url.split("/");
+    QStringList list = url.split("/");
 
     if (url == "current")
     {
@@ -584,13 +584,13 @@ QJsonObject JsonApi::processMessageBrowsePlaylist(const QJsonObject &message, bo
             if (list[0] == "")
             {
                 // get list of all playlists stored in the database
-                EMSPlaylistsListBySubdir playlistsListBySubdir;
+                EMSPlaylistsList playlistsList;
                 db->lock();
-                db->getPlaylistsList(&playlistsListBySubdir);
+                db->getPlaylistsList(&playlistsList);
                 db->unlock();
 
                 QJsonArray jsonArray;
-                obj =  EMSPlaylistsListBySubdirToJson(playlistsListBySubdir);
+                obj =  EMSPlaylistsListToJson(playlistsList);
                 ok = true;
             }
             else
@@ -882,18 +882,26 @@ bool JsonApi::processMessagePlaylist(const QJsonObject &message)
     {
         bool ok = false;
         unsigned long long playlistId = 0;
+        Database *db = Database::instance();
+
+
+        qDebug() << "type " << type << "Message url " << message["url"].toString();
+        // If playlistID is not a number in the string, retrieved the Playlist ID
+        // from the Playlist name string
+        playlistId = type.toUInt(&ok);
+        if (!ok)
+        {
+            db->checkPlaylistExist(type, &playlistId);
+        }
 
         if (action != "create" && action != "save")
         {
-            playlistId = type.toUInt(&ok);
-            if (!ok)
+            if (!playlistId)
             {
                 qCritical() << "Error: extract the playlist Id from the url failed.";
                 return false;
             }
         }
-
-        Database *db = Database::instance();
 
         if (action == "create")
         {
@@ -901,9 +909,9 @@ bool JsonApi::processMessagePlaylist(const QJsonObject &message)
             QString playlistSubdir = message["subdir"].toString();
             db->lock();
             // check if the playlist already exists
-            if (!db->checkPlaylistExist(playlistSubdir, playlistName))
+            if (!db->checkPlaylistExist(playlistName))
             {
-                db->insertNewPlaylist(playlistSubdir, playlistName);
+                db->insertNewPlaylist(playlistName);
             }
             else
             {
@@ -915,12 +923,11 @@ bool JsonApi::processMessagePlaylist(const QJsonObject &message)
         {
             // Save the current playlist
             QString playlistName = message["name"].toString();
-            QString playlistSubdir = message["subdir"].toString();
             db->lock();
             // create the playlist if does not already exist
-            if (!db->checkPlaylistExist(playlistSubdir, playlistName, &playlistId))
+            if (!db->checkPlaylistExist(playlistName, &playlistId))
             {
-                db->insertNewPlaylist(playlistSubdir, playlistName, &playlistId);
+                db->insertNewPlaylist(playlistName, &playlistId);
             }
             // append the tracks id of the current playlist
             EMSPlaylist currentPlaylist = Player::instance()->getCurentPlaylist();
@@ -1379,9 +1386,8 @@ QJsonObject JsonApi::EMSPlaylistToJsonWithoutTrack(EMSPlaylist playlist)
 {
     QJsonObject obj;
 
-    obj["playlist_id"] = (qint64)playlist.id;
-    obj["playlist_subdir"] = playlist.subdir;
-    obj["playlist_name"] = playlist.name;
+    obj["id"] = (qint64)playlist.id;
+    obj["name"] = playlist.name;
 
     return obj;
 }
@@ -1391,7 +1397,6 @@ QJsonObject JsonApi::EMSPlaylistToJson(EMSPlaylist playlist)
     QJsonObject obj;
 
     obj["playlist_id"] = (qint64)playlist.id;
-    obj["playlist_subdir"] = playlist.subdir;
     obj["playlist_name"] = playlist.name;
 
     QJsonArray jsonArray;
@@ -1404,32 +1409,17 @@ QJsonObject JsonApi::EMSPlaylistToJson(EMSPlaylist playlist)
     return obj;
 }
 
-QJsonObject JsonApi::EMSPlaylistsListBySubdirToJson(EMSPlaylistsListBySubdir playlistsListBySubdir)
+QJsonObject JsonApi::EMSPlaylistsListToJson(EMSPlaylistsList playlistsList)
 {
-    QJsonObject playlistsListObj;
-    QJsonArray listsJsonArray;
-    foreach (QString subdir, playlistsListBySubdir.keys())
+    QJsonObject obj;
+    QJsonArray playlists;
+    foreach(EMSPlaylist playlist, playlistsList)
     {
-        QJsonObject subdirObj;
-        subdirObj["subdir"] = subdir;
-        QJsonArray jsonArray;
-        QVector<EMSPlaylist> playlists = playlistsListBySubdir.value(subdir);
-
-        foreach (EMSPlaylist playlist, playlists)
-        {
-            QJsonObject playlistJson;
-            playlistJson["playlist_id"] = (qint64)playlist.id;
-            playlistJson["playlist_name"] = playlist.name;
-
-            jsonArray << playlistJson;
-        }
-        subdirObj["playlists"] = jsonArray;
-
-        listsJsonArray << subdirObj;
+        playlists << EMSPlaylistToJsonWithoutTrack(playlist);
     }
-    playlistsListObj["playlists_by_subdir"] = listsJsonArray;
+    obj["playlists"] = playlists;
 
-    return playlistsListObj;
+    return obj;
 }
 
 QJsonObject JsonApi::EMSSsidToJson(const EMSSsid &ssid) const

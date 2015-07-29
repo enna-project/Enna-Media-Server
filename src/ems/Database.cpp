@@ -237,8 +237,7 @@ bool Database::insertNewFilename(QString filename, unsigned long long trackId, u
     return true;
 }
 
-bool Database::insertNewPlaylist(const QString &playlistSubdir,
-                                 const QString &playlistName,
+bool Database::insertNewPlaylist(const QString &playlistName,
                                  unsigned long long *playlistId)
 {
     if (!opened)
@@ -256,15 +255,14 @@ bool Database::insertNewPlaylist(const QString &playlistSubdir,
         return false;
     }
 
-    if (!checkPlaylistExist(playlistSubdir, playlistName))
+    if (!checkPlaylistExist(playlistName))
     {
         /* Insert the new playlist */
         q.prepare("INSERT INTO playlists "
-                  "  (name, subdir) "
+                  "  (name) "
                   "VALUES "
-                  "  (?,?);");
+                  "  (?);");
         q.bindValue(0, playlistName);
-        q.bindValue(1, playlistSubdir);
         if(!q.exec())
         {
             qCritical() << "Error while inserting new playlist : " << q.lastError().text();
@@ -623,11 +621,7 @@ const QString select_album_data1 = \
 "FROM albums ";
 
 const QString select_playlist_data1 = \
-"SELECT id, name, subdir "
-"FROM playlists ";
-
-const QString select_playlist_subdirs_data1 = \
-"SELECT DISTINCT subdir "
+"SELECT id, name "
 "FROM playlists ";
 
 const QString select_album_genre_data1 = \
@@ -1339,59 +1333,36 @@ bool Database::getPlaylistById(EMSPlaylist *playlist, unsigned long long playlis
     {
         playlist->id = q.value(0).toULongLong();
         playlist->name = q.value(1).toString();
-        playlist->subdir = q.value(2).toString();
         return true;
     }
     return false;
 }
 
-void Database::getPlaylistsList(EMSPlaylistsListBySubdir *playlistsListBySubdir)
+void Database::getPlaylistsList(EMSPlaylistsList *playlistsList)
 {
     if (!opened)
     {
         return;
     }
-    QSqlQuery qSubdir(db);
-
-    qSubdir.prepare(select_playlist_subdirs_data1 + "ORDER BY subdir;");
-    if(!qSubdir.exec())
+    QSqlQuery q(db);
+    q.prepare(select_playlist_data1 + ";");
+    if(!q.exec())
     {
-        qCritical() << "Querying playlists list failed : " << qSubdir.lastError().text();
-        qDebug() << "Last query was : " << qSubdir.lastQuery();
+        qCritical() << "Querying playlists data failed : " << q.lastError().text();
         return;
     }
-    playlistsListBySubdir->clear();
-    while (qSubdir.next())
+    playlistsList->clear();
+    while (q.next())
     {
-        QVector<EMSPlaylist> playlistsList;
-        QString subdir = qSubdir.value(0).toString();
-
-        // Find the playlists of the subdir
-        QSqlQuery q(db);
-        q.prepare(select_playlist_data1 + "WHERE subdir = ?;");
-        q.bindValue(0, subdir);
-
-        if(!q.exec())
-        {
-            qCritical() << "Querying playlists list failed : " << q.lastError().text();
-            qDebug() << "Last query was : " << q.lastQuery();
-            return;
-        }
-        while (q.next())
-        {
-            EMSPlaylist playlist;
-            playlist.id = q.value(0).toULongLong();
-            playlist.name = q.value(1).toString();
-            playlist.subdir = q.value(2).toString();
-            playlistsList.append(playlist);
-        }
-
-        (*playlistsListBySubdir)[subdir] = playlistsList;
+        // playlists.id, playlists.name
+        EMSPlaylist playlist;
+        playlist.id = q.value(0).toULongLong();
+        playlist.name = q.value(1).toString();
+        playlistsList->append(playlist);
     }
 }
 
-bool Database::checkPlaylistExist(const QString &playlistSubdir,
-                                  const QString &playlistName,
+bool Database::checkPlaylistExist(const QString &playlistName,
                                   unsigned long long *id)
 {
     if (!opened)
@@ -1399,9 +1370,8 @@ bool Database::checkPlaylistExist(const QString &playlistSubdir,
         return false;
     }
     QSqlQuery q(db);
-    q.prepare(select_playlist_data1 + " WHERE subdir = ? AND name = ? ;");
-    q.bindValue(0, playlistSubdir);
-    q.bindValue(1, playlistName);
+    q.prepare(select_playlist_data1 + " WHERE name = ? ;");
+    q.bindValue(0, playlistName);
 
     if(!q.exec())
     {

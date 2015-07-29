@@ -112,12 +112,11 @@ class EMSPlaylist
 public:
     unsigned long long id; /* Unique identifier (primary key in db) */
     QString name; /* The name "current" is reserved for the Player playlist */
-    QString subdir;
 
     QVector<EMSTrack> tracks;
 };
 
-typedef QMap<QString, QVector<EMSPlaylist> > EMSPlaylistsListBySubdir;
+typedef QVector<EMSPlaylist> EMSPlaylistsList;
 
 /* Player data
  * -------------------

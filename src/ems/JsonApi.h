@@ -78,7 +78,7 @@ private:
     QJsonObject EMSAlbumToJson(const EMSAlbum &album);
     QJsonObject EMSAlbumToJsonWithArtists(const EMSAlbum &album);
     QJsonObject EMSPlaylistToJsonWithoutTrack(EMSPlaylist playlist);
-    QJsonObject EMSPlaylistsListBySubdirToJson(EMSPlaylistsListBySubdir playlistsListBySubdir);
+    QJsonObject EMSPlaylistsListToJson(EMSPlaylistsList playlistsList);
     QString EMSTrackTypeToString(EMSTrackType type) const;
     QJsonObject EMSSsidToJson(const EMSSsid &ssid) const;
     QJsonObject EMSEthernetToJson(const EMSEthernet &ethDat) const;
