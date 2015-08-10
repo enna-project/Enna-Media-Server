@@ -1104,10 +1104,10 @@ bool JsonApi::processMessageNetwork(const QJsonObject &message)
     }
     else if (action == "ssid_list_get")
     {
-        //asynchronous response connected on signal wifiListUpdated
+        // The signal &NetworkCtl::wifiListUpdated is triggered when scan is completed
+        // The answer is sent asynchronously after wifiListUpdated is received
         if (!NetworkCtl::instance()->isTechnologyEnabled("wifi"))
         {
-
             NetworkCtl::instance()->scanWifi();
         }
     }
@@ -1197,6 +1197,25 @@ bool JsonApi::processMessageNetwork(const QJsonObject &message)
             qCritical()<< "Error: No Wifi present.";
         }
     }
+    else if (action == "wifi_disconnect")
+        {
+            QString techName = "wifi";
+            QString ssid = message["ssid"].toString();
+            if (NetworkCtl::instance()->isTechnologyPresent(techName))
+            {
+                bool wifiConnected = NetworkCtl::instance()->isTechnologyConnected(techName);
+                QString connSsid=NetworkCtl::instance()->getConnectedWifi()->getName();
+                if (wifiConnected && (connSsid == ssid))
+                {
+                    Service* wifiService = NetworkCtl::instance()->getNetworkService(techName, "name", ssid);
+                    if(!wifiService->name().isEmpty())
+                    {
+                        wifiService->disconnect();
+                        qDebug()<<"Wifi disconnecting";
+                    }
+                }
+            }
+        }
 
     return ok;
 }
@@ -1587,22 +1606,26 @@ void JsonApi::sendMenu()
 
 void JsonApi::sendWifiConnected()
 {
+    QJsonObject connectedWifiJsonObj;
+    connectedWifiJsonObj["msg"] = "EMS_NETWORK";
+    connectedWifiJsonObj["technology"] = "wifi";
+
     if(NetworkCtl::instance()->isTechnologyConnected("wifi"))
     {
         EMSSsid* ssid=NetworkCtl::instance()->getConnectedWifi();
         qDebug()<<"Connected to: "<< ssid->getName();
-        QJsonObject connectedWifiJsonObj;
-        connectedWifiJsonObj["msg"] = "EMS_NETWORK";
+
         connectedWifiJsonObj["connexion_result"] ="connected";
         connectedWifiJsonObj["ssid"] = EMSSsidToJson(*ssid);
         QJsonDocument doc(connectedWifiJsonObj);
         m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
+        // enable automatic connection to the favorite network
+        NetworkCtl::instance()->enableFavAutoConnect(true);
     }
     else
     {
         qDebug()<<"Wifi disconnected ";
-        QJsonObject connectedWifiJsonObj;
-        connectedWifiJsonObj["msg"] = "EMS_NETWORK";
+
         connectedWifiJsonObj["connexion_result"] ="disconnected";
         QJsonDocument doc(connectedWifiJsonObj);
         m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
@@ -1611,22 +1634,26 @@ void JsonApi::sendWifiConnected()
 
 void JsonApi::sendEthConnected()
 {
-    QJsonObject answer;
+    QJsonObject connectedEthJsonObj;
+    connectedEthJsonObj["msg"] = "EMS_NETWORK";
+    connectedEthJsonObj["technology"] = "ethernet";
+
     if(NetworkCtl::instance()->isTechnologyConnected("ethernet"))
     {
         EMSEthernet* ethData=NetworkCtl::instance()->getConnectedEthernet();
-        answer["msg"] = "EMS_NETWORK";
-        answer["ethernet"] = EMSEthernetToJson(*ethData);
-        QJsonDocument doc(answer);
+        qDebug()<<"Connected to: "<< ethData->getPath();
+        connectedEthJsonObj["connection_result"] = "connected";
+        connectedEthJsonObj["ethernet"] = EMSEthernetToJson(*ethData);
+        QJsonDocument doc(connectedEthJsonObj);
         m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
     }
     else
     {
         qDebug()<<"Eth disconnected ";
         EMSEthernet* ethParam = new EMSEthernet(" "," ","offline");
-        answer["msg"] = "EMS_NETWORK";
-        answer["ethernet"] = EMSEthernetToJson(*ethParam);
-        QJsonDocument doc(answer);
+        connectedEthJsonObj["connection_result"] = "disconnected";
+        connectedEthJsonObj["ethernet"] = EMSEthernetToJson(*ethParam);
+        QJsonDocument doc(connectedEthJsonObj);
         m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
     }
 }
@@ -1652,9 +1679,4 @@ void JsonApi::sendWifiList()
         QJsonDocument doc(wifiListJsonObj);
         m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
     }
-    else
-    {
-        qDebug() << "Wifi List update disabled ";
-    }
-
 }
