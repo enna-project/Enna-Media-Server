@@ -40,29 +40,16 @@ public:
     QStringList getSecurityTypeString(QList<EMSSsid::SecurityType> securityTypeList);
     QList<EMSSsid> getWifiList();
 
-    Service* getWifiByName(QString wifiName);
-    Service* getEthByPath(QString ethPath);
+    //Service* getWifiByName(QString wifiName);
+    //Service* getEthByPath(QString ethPath);
 
     EMSSsid* getConnectedWifi();
     EMSEthernet* getConnectedEthernet();
     EMSNetworkConfig* getNetworkConfig(QString techName, QString techPath);
-
-    /*bool isWifiPresent();
-    bool isEthernetPresent();
-
-    bool isWifiConnected();
-    bool isEthernetConnected();
-
-    bool isWifiEnabled();
-    bool isEthernetEnabled();
-
-    void enableWifi(bool enable);
-    void enableEthernet(bool enable);*/
+    Service* getNetworkService( QString techName,QString searchType,QString idNetwork);
 
     bool isTechnologyConnected(QString techName);
-
     bool isTechnologyEnabled(QString techName);
-
     bool isTechnologyPresent(QString technName);
 
     void enableTechnology(bool enable, QString technName);

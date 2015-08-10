@@ -61,6 +61,11 @@ QStringList EMSSsid::getSecurity() const
     return m_securityList;
 }
 
+bool EMSSsid::getFavorite() const
+{
+    return m_favorite;
+}
+
 // Set methods of EMSSsid class
 void EMSSsid::setName(QString name)
 {
@@ -90,6 +95,11 @@ void EMSSsid::setPath(QString path)
 void EMSSsid::setSecurity(QStringList securityList)
 {
     m_securityList = securityList;
+}
+
+void EMSSsid::setFavorite(bool favorite)
+{
+    m_favorite = favorite;
 }
 
 EMSSsid::~EMSSsid()

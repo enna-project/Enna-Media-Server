@@ -1161,14 +1161,15 @@ bool JsonApi::processMessageNetwork(const QJsonObject &message)
     else if (action == "wifi_connect")
     {
         QString ssid = message["ssid"].toString();
+        QString techName = "wifi";
         QString password = message["password"].toString();
-        if (NetworkCtl::instance()->isTechnologyPresent("wifi"))
+        if (NetworkCtl::instance()->isTechnologyPresent(techName))
         {
-            if (!NetworkCtl::instance()->isTechnologyEnabled("wifi"))
+            if (!NetworkCtl::instance()->isTechnologyEnabled(techName))
             {
-                NetworkCtl::instance()->enableTechnology(true,"wifi");
+                NetworkCtl::instance()->enableTechnology(true,techName);
             }
-            bool connected = NetworkCtl::instance()->isTechnologyConnected("wifi");
+            bool connected = NetworkCtl::instance()->isTechnologyConnected(techName);
             QString connSsid=NetworkCtl::instance()->getConnectedWifi()->getName();
             if (!connected || (connected && ssid != connSsid))
             {
@@ -1180,12 +1181,10 @@ bool JsonApi::processMessageNetwork(const QJsonObject &message)
                 auto connPassphrase = std::make_shared<QMetaObject::Connection>();
                 *connWifiList = connect(NetworkCtl::instance(), &NetworkCtl::wifiListUpdated,[=]()
                 {
-                    Service*  wifiService = NetworkCtl::instance()->getWifiByName(ssid);
+                    Service*  wifiService = NetworkCtl::instance()->getNetworkService(techName,"name",ssid);
                     if (wifiService)
                     {
                         EMSEthernet* ethServiceEMS = NetworkCtl::instance()->getConnectedEthernet();
-                        Service*  ethService = NetworkCtl::instance()->getEthByPath(ethServiceEMS->getPath());
-                        //ethService->disconnect();
                         wifiService->connect();
                     }
                     else

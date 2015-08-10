@@ -31,6 +31,25 @@ NetworkCtl::NetworkCtl(QObject *parent): QObject(parent)
 
 static bool wifiSortByStrength(EMSSsid a, EMSSsid b)
 {
+    //connected and favorite wifi have to be in the top of the list
+    QString stateA = a.getState();
+    QString stateB = b.getState();
+    if(stateA == "online" || stateA == "ready" || stateA == "association" || stateA == "configuration")
+    {
+        return true;
+    }
+    if(stateB == "online" || stateB == "ready" || stateB == "association" || stateB == "configuration")
+    {
+        return false;
+    }
+    if(a.getFavorite())
+    {
+        return true;
+    }
+    if(b.getFavorite())
+    {
+        return false;
+    }
     return a.getStrength() > b.getStrength();
 }
 
@@ -96,31 +115,83 @@ QList<EMSSsid> NetworkCtl::getWifiList()
             {
                 if(service->type() == "wifi")
                 {
-                    QString name;
+                    //don't list hidden ssid
                     if(!service->name().isEmpty())
                     {
-                        name=service->name();
+                        EMSSsid ssidWifi(service->objectPath().path(),
+                                         service->name(),
+                                         service->type(),
+                                         getStateString(service->state()),
+                                         service->strength(),
+                                         getSecurityTypeString(toSecurityTypeList(service->security())),
+                                         service->isFavorite());
+                        ssidList.append(ssidWifi);
                     }
-                    else // manage Hidden SSID
-                    {
-                        name="hidden SSID";
-                    }
-                    EMSSsid ssidWifi(service->objectPath().path(),
-                                     name,
-                                     service->type(),
-                                     getStateString(service->state()),
-                                     service->strength(),
-                                     getSecurityTypeString(toSecurityTypeList(service->security())),
-                                     service->isFavorite());
-                    ssidList.append(ssidWifi);
                 }
             }
             qSort(ssidList.begin(), ssidList.end(), wifiSortByStrength);
+        }
+        else
+        {
+            qDebug()<< "No wifi detected" ;
         }
     }
     return ssidList;
 }
 
+Service* NetworkCtl::getNetworkService( QString techName,QString searchType,QString idNetwork)
+{
+    Service* serviceRequested = NULL;
+    if(m_manager->services().isEmpty())
+    {
+        qDebug() << " No service listed ";
+    }
+    else
+    {
+        if(isTechnologyPresent(techName))
+        {
+            qDebug() << "Acquiring "<< techName << " : "<< idNetwork;
+            QListIterator<Service*> iter(m_manager->services());
+            Service* service;
+            bool found = false;
+            //search network by path
+            if(searchType == "path")
+            {
+                while(iter.hasNext() && !found)
+                {
+                    service = iter.next();
+                    if(service->type() == techName && service->objectPath().path() == idNetwork)
+                    {
+                       serviceRequested = service;
+                       found = true;
+                    }
+                }
+            }
+            //search network by name
+            else if(searchType == "name")
+            {
+                while(iter.hasNext() && !found)
+                {
+                    service = iter.next();
+                    if(service->type() == techName && service->name() == idNetwork)
+                    {
+                       serviceRequested = service;
+                       found = true;
+                    }
+                }
+            }
+        }
+        else
+        {
+            qDebug() << " No " << techName <<" detected ";
+        }
+    }
+    return serviceRequested;
+}
+
+
+
+/*
 Service* NetworkCtl::getWifiByName(QString wifiName)
 {
     Service* serviceRequested = NULL;
@@ -185,7 +256,7 @@ Service* NetworkCtl::getEthByPath(QString ethPath)
         }
     }
     return serviceRequested;
-}
+}*/
 EMSSsid* NetworkCtl::getConnectedWifi()
 {
     EMSSsid* ssidWifi = new EMSSsid();
@@ -431,30 +502,6 @@ void NetworkCtl::enableTechnology(bool enable, QString techName)
         qDebug() << "No technology " << techName ;
     }
 }
-
-
-
-
-/*
-void NetworkCtl::enableWifi(bool enable)
-{
-    Technology* technology = getTechnology("wifi");
-    technology->setPowered(enable);
-    if(enable)
-        qDebug() << "Enable " << technology->name();
-    else
-        qDebug() << "Disable " << technology->name();
-}
-
-void NetworkCtl::enableEthernet(bool enable)
-{
-    Technology* technology = getTechnology("ethernet");
-    technology->setPowered(enable);
-    if(enable)
-        qDebug() << "Enable " << technology->name();
-    else
-        qDebug() << "Disable " << technology->name();
-}*/
 
 
 
