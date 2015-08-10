@@ -22,11 +22,16 @@ NetworkCtl* NetworkCtl::_instance = 0;
 NetworkCtl::NetworkCtl(QObject *parent): QObject(parent)
 {
     m_manager = new Manager(this);
+    m_agent=new Agent("/com/EMS/Connman", m_manager);
     connect(m_manager,SIGNAL(servicesChanged()),this, SIGNAL(wifiListUpdated()));
     connect(this->getTechnology("wifi"),SIGNAL(connectedChanged()),this,SIGNAL(wifiConnectedChanged()));
     connect(this->getTechnology("ethernet"),SIGNAL(connectedChanged()),this,SIGNAL(ethConnectedChanged()));
-    m_agent=new Agent("/com/EMS/Connman", m_manager);
+    connect(getAgent(),SIGNAL(errorRaised()),this,SIGNAL(agentErrorRaised()));
+    enableTechnology(true,"wifi");
+    enableTechnology(true, "ethernet");
     m_enablUpdate = false;
+    //Allow autoconnect to favorite networks on start
+    enableFavAutoConnect(true);
 }
 
 static bool wifiSortByStrength(EMSSsid a, EMSSsid b)

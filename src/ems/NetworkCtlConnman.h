@@ -94,6 +94,7 @@ signals:
     void wifiListUpdated();
     void wifiConnectedChanged();
     void ethConnectedChanged();
+    void agentErrorRaised();
 
 public slots:
     void scanWifi();
