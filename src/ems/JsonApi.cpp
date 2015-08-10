@@ -1184,7 +1184,6 @@ bool JsonApi::processMessageNetwork(const QJsonObject &message)
                     Service*  wifiService = NetworkCtl::instance()->getNetworkService(techName,"name",ssid);
                     if (wifiService)
                     {
-                        EMSEthernet* ethServiceEMS = NetworkCtl::instance()->getConnectedEthernet();
                         wifiService->connect();
                     }
                     else
