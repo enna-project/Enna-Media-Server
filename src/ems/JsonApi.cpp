@@ -1446,6 +1446,7 @@ QJsonObject JsonApi::EMSSsidToJson(const EMSSsid &ssid) const
     obj["type"] = ssid.getType();
     obj["state"] = ssid.getState();
     obj["security"] = ssid.getSecurity().join(", ");
+    obj["favorite"] = ssid.getFavorite();
 
     return obj;
 }
@@ -1651,7 +1652,7 @@ void JsonApi::sendWifiConnected()
         EMSSsid* ssid=NetworkCtl::instance()->getConnectedWifi();
         qDebug()<<"Connected to: "<< ssid->getName();
 
-        connectedWifiJsonObj["connexion_result"] ="connected";
+        connectedWifiJsonObj["connection_result"] ="connected";
         connectedWifiJsonObj["ssid"] = EMSSsidToJson(*ssid);
         QJsonDocument doc(connectedWifiJsonObj);
         m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
@@ -1662,7 +1663,7 @@ void JsonApi::sendWifiConnected()
     {
         qDebug()<<"Wifi disconnected ";
 
-        connectedWifiJsonObj["connexion_result"] ="disconnected";
+        connectedWifiJsonObj["connection_result"] ="disconnected";
         QJsonDocument doc(connectedWifiJsonObj);
         m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
     }
