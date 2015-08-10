@@ -40,9 +40,6 @@ public:
     QStringList getSecurityTypeString(QList<EMSSsid::SecurityType> securityTypeList);
     QList<EMSSsid> getWifiList();
 
-    //Service* getWifiByName(QString wifiName);
-    //Service* getEthByPath(QString ethPath);
-
     EMSSsid* getConnectedWifi();
     EMSEthernet* getConnectedEthernet();
     EMSNetworkConfig* getNetworkConfig(QString techName, QString techPath);
@@ -53,8 +50,9 @@ public:
     bool isTechnologyPresent(QString technName);
 
     void enableTechnology(bool enable, QString technName);
-
     Technology* getTechnology(QString technologyType);
+    //enable or disable autoconnect to favorite networks
+    void enableFavAutoConnect(bool enable);
 
     /* Signleton pattern
      * See: http://www.qtcentre.org/wiki/index.php?title=Singleton_pattern

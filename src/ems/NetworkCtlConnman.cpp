@@ -139,6 +139,21 @@ QList<EMSSsid> NetworkCtl::getWifiList()
     return ssidList;
 }
 
+void NetworkCtl::enableFavAutoConnect(bool enable)
+{
+    QListIterator<Service*> iter(m_manager->services());
+    Service* service;
+
+    while(iter.hasNext())
+    {
+        service = iter.next();
+        if(service->isFavorite())
+        {
+            service->setAutoConnect(enable);
+        }
+    }
+}
+
 Service* NetworkCtl::getNetworkService( QString techName,QString searchType,QString idNetwork)
 {
     Service* serviceRequested = NULL;
@@ -189,74 +204,6 @@ Service* NetworkCtl::getNetworkService( QString techName,QString searchType,QStr
     return serviceRequested;
 }
 
-
-
-/*
-Service* NetworkCtl::getWifiByName(QString wifiName)
-{
-    Service* serviceRequested = NULL;
-    if(m_manager->services().isEmpty())
-    {
-        qDebug() << " No service listed ";
-    }
-    else
-    {
-        if(this->isTechnologyPresent("wifi"))
-        {
-            qDebug() << "Acquiring wifi :"<< wifiName;
-            QListIterator<Service*> iter(m_manager->services());
-            Service* service;
-            bool found = false;
-            while(iter.hasNext() && !found)
-            {
-                service = iter.next();
-                if(service->type() == "wifi" && service->name() == wifiName)
-                {
-                   serviceRequested = service;
-                   found = true;
-                }
-            }
-        }
-        else
-        {
-            qDebug() << " No wifi detected ";
-        }
-    }
-    return serviceRequested;
-}
-
-Service* NetworkCtl::getEthByPath(QString ethPath)
-{
-    Service* serviceRequested = NULL;
-    if(m_manager->services().isEmpty())
-    {
-        qDebug() << " No service listed ";
-    }
-    else
-    {
-        if(this->isTechnologyPresent("ethernet"))
-        {
-            //qDebug() << "Acquiring wifi :"<< wifiName;
-            QListIterator<Service*> iter(m_manager->services());
-            Service* service;
-            bool found = false;
-            while(iter.hasNext() && !found)
-            {
-                service = iter.next();
-                if(service->type() == "ethernet" && service->objectPath().path() == ethPath)
-                {
-                   serviceRequested = service;
-                   found = true;
-                }
-            }
-        }
-        else
-        {
-            qDebug() << " No ethernet interface detected ";
-        }
-    }
-    return serviceRequested;
-}*/
 EMSSsid* NetworkCtl::getConnectedWifi()
 {
     EMSSsid* ssidWifi = new EMSSsid();
@@ -370,69 +317,6 @@ EMSNetworkConfig* NetworkCtl::getNetworkConfig(QString techName, QString techPat
     }
     return networkConfig;
 }
-
-/*
-bool NetworkCtl::isWifiPresent()
-{
-    bool result = false;
-    if(getTechnology("wifi"))
-    {
-        result = true;
-    }
-    return result;
-}
-
-
-bool NetworkCtl::isEthernetPresent()
-{
-    bool result = false;
-    if(getTechnology("ethernet"))
-    {
-        result = true;
-    }
-    return result;
-}
-
-bool NetworkCtl::isWifiConnected()
-{
-    Technology* technology=getTechnology("wifi");
-    if(technology)
-    {
-        return technology->isConnected();
-    }
-    return false;
-}
-
-bool NetworkCtl::isEthernetConnected()
-{
-    Technology* technology=getTechnology("ethernet");
-    if(technology)
-    {
-        return technology->isConnected();
-    }
-    return false;
-}
-
-bool NetworkCtl::isWifiEnabled()
-{
-    Technology* technology=getTechnology("wifi");
-    if(technology)
-    {
-        return technology->isPowered();
-    }
-    return false;
-}
-
-bool NetworkCtl::isEthernetEnabled()
-{
-    Technology* technology=getTechnology("ethernet");
-    if(technology)
-    {
-        return technology->isPowered();
-    }
-    return false;
-}
-*/
 
 bool NetworkCtl::isTechnologyPresent(QString technName)
 {

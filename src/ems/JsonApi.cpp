@@ -1066,26 +1066,19 @@ bool JsonApi::processMessageNetwork(const QJsonObject &message)
 {
     QString action = message["action"].toString();
     bool ok = false;
-    if (action == "is_wifi_enabled") // to delete
-    {
-        QJsonObject answer;
-        bool wifiState = NetworkCtl::instance()->isTechnologyEnabled("wifi");
-
-        answer["msg"] = message["msg"];
-        answer["msg_id"] = message["msg_id"];
-        answer["uuid"] = message["uuid"];
-        answer["wifi_state"] = wifiState;
-        QJsonDocument doc(answer);
-        m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
-    }
-    else if (action == "connected_ssid_get")
+    QJsonObject answer;
+    if (action == "connected_ssid_get")
     {
         EMSSsid* ssid=NetworkCtl::instance()->getConnectedWifi();
-        QJsonObject answer;
+        QString state = ssid->getState();
         answer["msg"] = message["msg"];
         answer["msg_id"] = message["msg_id"];
         answer["uuid"] = message["uuid"];
-        answer["connexion_result"] ="connected";
+        answer["technology"] = "wifi";
+        if(state == "ready" || state == "online")
+            answer["connection_result"] ="connected";
+        else
+            answer["connection_result"] ="disconnected";
         answer["ssid"] = EMSSsidToJson(*ssid);
         QJsonDocument doc(answer);
         m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
@@ -1093,10 +1086,13 @@ bool JsonApi::processMessageNetwork(const QJsonObject &message)
     else if (action == "connected_ethernet_get")
     {
         EMSEthernet* ethData=NetworkCtl::instance()->getConnectedEthernet();
-        QJsonObject answer;
+        QString state = ethData->getState();
         answer["msg"] = message["msg"];
         answer["msg_id"] = message["msg_id"];
         answer["uuid"] = message["uuid"];
+        answer["technology"] = "ethernet";
+        if(state == "ready" || state == "online")
+            answer["connection_result"] ="connected";
         answer["ethernet"] = EMSEthernetToJson(*ethData);
         QJsonDocument doc(answer);
         m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
@@ -1106,57 +1102,14 @@ bool JsonApi::processMessageNetwork(const QJsonObject &message)
         NetworkCtl::instance()->setEnableUpdate(message["update_enabled"].toBool());
         qDebug() << "Update enabled : " << message["update_enabled"].toBool();
     }
-    else if (action == "wifi_disable") // to delete
-    {
-        NetworkCtl::instance()->enableTechnology(false,"wifi");
-        qDebug() << "wifi disabled";
-    }
-    else if (action == "wifi_enable") // to delete
-    {
-        NetworkCtl::instance()->enableTechnology(true,"wifi");
-        qDebug() << "wifi enabled";
-    }
     else if (action == "ssid_list_get")
     {
+        //asynchronous response connected on signal wifiListUpdated
         if (!NetworkCtl::instance()->isTechnologyEnabled("wifi"))
         {
-            NetworkCtl::instance()->enableTechnology(true,"wifi");
-            auto connEnable = std::make_shared<QMetaObject::Connection>();
-            *connEnable = connect(NetworkCtl::instance()->getTechnology("wifi"), &Technology::poweredChanged, [=]
-            {
-                NetworkCtl::instance()->scanWifi();
-                NetworkCtl::instance()->getTechnology("wifi")->scan();
-                disconnect(*connEnable);
-            });
-        }
-        else
-        {
+
             NetworkCtl::instance()->scanWifi();
         }
-
-        auto conn = std::make_shared<QMetaObject::Connection>();
-        *conn = connect(NetworkCtl::instance(), &NetworkCtl::wifiListUpdated, [=]
-        {
-            QJsonArray jsonArray;
-            QJsonObject obj;
-            qDebug() << "Wifi updated";
-            QList<EMSSsid> ssidList = NetworkCtl::instance()->getWifiList();
-            for (int i = 0; i<ssidList.size();i++)
-            {
-                jsonArray << EMSSsidToJson(ssidList[i]);
-            }
-
-            obj["ssids"] = jsonArray;
-            QJsonObject answer;
-            answer["msg"] = message["msg"];
-            answer["msg_id"] = message["msg_id"];
-            answer["uuid"] = message["uuid"];
-            answer["data"] = obj;
-            QJsonDocument doc(answer);
-            m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
-
-            disconnect(*conn);
-        });
     }
     else if (action == "wifi_connect")
     {
