@@ -1066,11 +1066,10 @@ bool JsonApi::processMessageNetwork(const QJsonObject &message)
 {
     QString action = message["action"].toString();
     bool ok = false;
-    if (action == "is_wifi_enabled")
+    if (action == "is_wifi_enabled") // to delete
     {
-
         QJsonObject answer;
-        bool wifiState = NetworkCtl::instance()->isWifiEnabled();
+        bool wifiState = NetworkCtl::instance()->isTechnologyEnabled("wifi");
 
         answer["msg"] = message["msg"];
         answer["msg_id"] = message["msg_id"];
@@ -1107,21 +1106,21 @@ bool JsonApi::processMessageNetwork(const QJsonObject &message)
         NetworkCtl::instance()->setEnableUpdate(message["update_enabled"].toBool());
         qDebug() << "Update enabled : " << message["update_enabled"].toBool();
     }
-    else if (action == "wifi_disable")
+    else if (action == "wifi_disable") // to delete
     {
-        NetworkCtl::instance()->enableWifi(false);
+        NetworkCtl::instance()->enableTechnology(false,"wifi");
         qDebug() << "wifi disabled";
     }
-    else if (action == "wifi_enable")
+    else if (action == "wifi_enable") // to delete
     {
-        NetworkCtl::instance()->enableWifi(true);
+        NetworkCtl::instance()->enableTechnology(true,"wifi");
         qDebug() << "wifi enabled";
     }
     else if (action == "ssid_list_get")
     {
-        if (!NetworkCtl::instance()->isWifiEnabled())
+        if (!NetworkCtl::instance()->isTechnologyEnabled("wifi"))
         {
-            NetworkCtl::instance()->enableWifi(true);
+            NetworkCtl::instance()->enableTechnology(true,"wifi");
             auto connEnable = std::make_shared<QMetaObject::Connection>();
             *connEnable = connect(NetworkCtl::instance()->getTechnology("wifi"), &Technology::poweredChanged, [=]
             {
@@ -1163,13 +1162,13 @@ bool JsonApi::processMessageNetwork(const QJsonObject &message)
     {
         QString ssid = message["ssid"].toString();
         QString password = message["password"].toString();
-        if (NetworkCtl::instance()->isWifiPresent())
+        if (NetworkCtl::instance()->isTechnologyPresent("wifi"))
         {
-            if (!NetworkCtl::instance()->isWifiEnabled())
+            if (!NetworkCtl::instance()->isTechnologyEnabled("wifi"))
             {
-                NetworkCtl::instance()->enableWifi(true);
+                NetworkCtl::instance()->enableTechnology(true,"wifi");
             }
-            bool connected = NetworkCtl::instance()->isWifiConnected();
+            bool connected = NetworkCtl::instance()->isTechnologyConnected("wifi");
             QString connSsid=NetworkCtl::instance()->getConnectedWifi()->getName();
             if (!connected || (connected && ssid != connSsid))
             {
@@ -1450,9 +1449,7 @@ QJsonObject JsonApi::EMSEthernetToJson(const EMSEthernet &ethData) const
     QJsonObject obj;
     obj["type"] = ethData.getType();
     obj["path"] = ethData.getPath();
-    obj["interface"] = ethData.getInterface();
     obj["state"] = ethData.getState();
-    obj["ip_address"] = ethData.getIpAddress();
 
     return obj;
 }
@@ -1639,7 +1636,7 @@ void JsonApi::sendMenu()
 
 void JsonApi::sendWifiConnected()
 {
-    if(NetworkCtl::instance()->isWifiConnected())
+    if(NetworkCtl::instance()->isTechnologyConnected("wifi"))
     {
         EMSSsid* ssid=NetworkCtl::instance()->getConnectedWifi();
         qDebug()<<"Connected to: "<< ssid->getName();
@@ -1664,7 +1661,7 @@ void JsonApi::sendWifiConnected()
 void JsonApi::sendEthConnected()
 {
     QJsonObject answer;
-    if(NetworkCtl::instance()->isEthernetConnected())
+    if(NetworkCtl::instance()->isTechnologyConnected("ethernet"))
     {
         EMSEthernet* ethData=NetworkCtl::instance()->getConnectedEthernet();
         answer["msg"] = "EMS_NETWORK";
@@ -1675,7 +1672,7 @@ void JsonApi::sendEthConnected()
     else
     {
         qDebug()<<"Eth disconnected ";
-        EMSEthernet* ethParam = new EMSEthernet(" "," "," ","offline"," ");
+        EMSEthernet* ethParam = new EMSEthernet(" "," ","offline");
         answer["msg"] = "EMS_NETWORK";
         answer["ethernet"] = EMSEthernetToJson(*ethParam);
         QJsonDocument doc(answer);

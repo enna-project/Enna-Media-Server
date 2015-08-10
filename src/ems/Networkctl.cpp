@@ -7,20 +7,27 @@
 */
 
 
-EMSSsid::EMSSsid(QString path, QString name, QString type, QString state, int strength, QStringList securityList) :
+EMSSsid::EMSSsid(QString path, QString name, QString type, QString state, int strength, QStringList securityList, bool favorite) :
     m_path(path),
     m_name(name),
     m_type(type),
     m_state(state),
     m_strength(strength),
-    m_securityList(securityList)
+    m_securityList(securityList),
+    m_favorite(favorite)
 {
 
 }
 
 EMSSsid::EMSSsid()
 {
+    m_path = "";
+    m_name = "";
+    m_type = "";
+    m_state = "";
     m_strength = 0;
+    m_securityList = QStringList();
+    m_favorite = "";
 }
 
 // Get methods of EMSSsid class
@@ -89,12 +96,10 @@ EMSSsid::~EMSSsid()
 {
 }
 
-EMSEthernet::EMSEthernet(QString path, QString interface, QString type, QString state, QString ipAdress):
+EMSEthernet::EMSEthernet(QString path, QString type, QString state):
     m_path(path),
-    m_interface(interface),
     m_type(type),
-    m_state(state),
-    m_ipAdress(ipAdress)
+    m_state(state)
 {
 
 }
@@ -104,35 +109,26 @@ EMSEthernet::EMSEthernet()
 
 }
 
+// Get methods of EMSEthernet class
 QString EMSEthernet::getPath() const
 {
     return m_path;
 }
-QString EMSEthernet::getInterface() const
-{
-    return m_interface;
-}
+
 QString EMSEthernet::getType() const
  {
     return m_type;
 }
+
 QString EMSEthernet::getState() const
 {
     return m_state;
 }
-QString EMSEthernet::getIpAddress() const
-{
-    return m_ipAdress;
-}
 
+// Set methods of EMSEthernet class
 void EMSEthernet::setPath(QString path)
 {
     m_path = path;
-}
-
-void EMSEthernet::setInterface(QString interface)
-{
-    m_interface = interface;
 }
 
 void EMSEthernet::setType(QString type)
@@ -145,12 +141,91 @@ void EMSEthernet::setState(QString state)
     m_state = state;
 }
 
-void EMSEthernet::setIpAddress(QString ipAdress)
+EMSEthernet::~EMSEthernet()
 {
-    m_ipAdress = ipAdress;
+
 }
 
-EMSEthernet::~EMSEthernet()
+
+EMSNetworkConfig::EMSNetworkConfig(QString interface, QString macAddress, QString addressAllocation, QString ipAddress, QString netmask, QString gateway):
+    m_interface(interface),
+    m_macAdress(macAddress),
+    m_addressAllocation(addressAllocation),
+    m_ipAddress(ipAddress),
+    m_netmask(netmask),
+    m_gateway(gateway)
+{
+
+}
+
+EMSNetworkConfig::EMSNetworkConfig()
+{
+
+}
+
+// Get methods of EMSNetworkConfig class
+QString EMSNetworkConfig::getInterface() const
+{
+    return m_interface;
+}
+
+QString EMSNetworkConfig::getMacAddress() const
+{
+    return m_macAdress;
+}
+
+QString EMSNetworkConfig::getAddressAllocation() const
+{
+    return m_addressAllocation;
+}
+
+QString EMSNetworkConfig::getIpAddress() const
+{
+    return m_ipAddress;
+}
+
+QString EMSNetworkConfig::getNetmask() const
+{
+    return m_netmask;
+}
+
+QString EMSNetworkConfig::getGateway() const
+{
+    return m_gateway;
+}
+
+// Set methods of EMSNetworkConfig class
+void EMSNetworkConfig::setInterface(QString interface)
+{
+    m_interface = interface;
+}
+
+void EMSNetworkConfig::setMacAddress(QString macAddress)
+{
+    m_macAdress = macAddress;
+}
+
+void EMSNetworkConfig::setAddressAllocation(QString addressAllocation)
+{
+    m_addressAllocation = addressAllocation;
+}
+
+void EMSNetworkConfig::setIpAddress(QString ipAddress)
+{
+    m_ipAddress = ipAddress;
+}
+
+void EMSNetworkConfig::setNetmask(QString netmask)
+{
+    m_netmask = netmask;
+}
+
+void EMSNetworkConfig::setGateway(QString gateway)
+{
+    m_gateway = gateway;
+}
+
+EMSNetworkConfig::~EMSNetworkConfig()
 {
 
 }

@@ -45,8 +45,9 @@ public:
 
     EMSSsid* getConnectedWifi();
     EMSEthernet* getConnectedEthernet();
+    EMSNetworkConfig* getNetworkConfig(QString techName, QString techPath);
 
-    bool isWifiPresent();
+    /*bool isWifiPresent();
     bool isEthernetPresent();
 
     bool isWifiConnected();
@@ -56,7 +57,15 @@ public:
     bool isEthernetEnabled();
 
     void enableWifi(bool enable);
-    void enableEthernet(bool enable);
+    void enableEthernet(bool enable);*/
+
+    bool isTechnologyConnected(QString techName);
+
+    bool isTechnologyEnabled(QString techName);
+
+    bool isTechnologyPresent(QString technName);
+
+    void enableTechnology(bool enable, QString technName);
 
     Technology* getTechnology(QString technologyType);
 

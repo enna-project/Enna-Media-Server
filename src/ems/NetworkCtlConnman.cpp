@@ -68,12 +68,15 @@ QString NetworkCtl::getStateString(Service::ServiceState state)
 
 void NetworkCtl::scanWifi()
 {
-    if(isWifiPresent())
+    if(isTechnologyPresent("wifi"))
     {
-        this->getTechnology("wifi")->scan();
+        getTechnology("wifi")->scan();
         qDebug() << "scanning wifi" << endl;
     }
-
+    else
+    {
+        qDebug() << "No wifi detected" << endl;
+    }
 }
 
 QList<EMSSsid> NetworkCtl::getWifiList()
@@ -86,7 +89,7 @@ QList<EMSSsid> NetworkCtl::getWifiList()
     }
     else
     {
-        if(this->isWifiPresent())
+        if(isTechnologyPresent("wifi"))
         {
             qDebug()<< "Acquiring wifi list" ;
             foreach (Service *service, m_manager->services())
@@ -107,7 +110,8 @@ QList<EMSSsid> NetworkCtl::getWifiList()
                                      service->type(),
                                      getStateString(service->state()),
                                      service->strength(),
-                                     getSecurityTypeString(toSecurityTypeList(service->security())));
+                                     getSecurityTypeString(toSecurityTypeList(service->security())),
+                                     service->isFavorite());
                     ssidList.append(ssidWifi);
                 }
             }
@@ -126,7 +130,7 @@ Service* NetworkCtl::getWifiByName(QString wifiName)
     }
     else
     {
-        if(this->isWifiPresent())
+        if(this->isTechnologyPresent("wifi"))
         {
             qDebug() << "Acquiring wifi :"<< wifiName;
             QListIterator<Service*> iter(m_manager->services());
@@ -159,7 +163,7 @@ Service* NetworkCtl::getEthByPath(QString ethPath)
     }
     else
     {
-        if(this->isEthernetPresent())
+        if(this->isTechnologyPresent("ethernet"))
         {
             //qDebug() << "Acquiring wifi :"<< wifiName;
             QListIterator<Service*> iter(m_manager->services());
@@ -191,9 +195,9 @@ EMSSsid* NetworkCtl::getConnectedWifi()
     }
     else
     {
-        if(this->isWifiPresent())
+        if(this->isTechnologyPresent("wifi"))
         {
-            if(this->isWifiConnected())
+            if(this->isTechnologyConnected("wifi"))
             {
                 QString state;
                 foreach (Service *service, m_manager->services())
@@ -230,9 +234,9 @@ EMSEthernet* NetworkCtl::getConnectedEthernet()
     }
     else
     {
-        if(this->isEthernetPresent())
+        if(this->isTechnologyPresent("ethernet"))
         {
-            if(this->isEthernetConnected())
+            if(this->isTechnologyConnected("ethernet"))
             {
                 QString state;
                 foreach (Service *service, m_manager->services())
@@ -241,10 +245,8 @@ EMSEthernet* NetworkCtl::getConnectedEthernet()
                     if(service->type() == "ethernet" && (state == "ready" || state=="online"))
                     {
                         ethParam->setPath(service->objectPath().path());
-                        ethParam->setInterface(service->ethernet()->interface());
                         ethParam->setState(state);
                         ethParam->setType(service->type());
-                        ethParam->setIpAddress(service->ipv4()->address());
                     }
                 }
             }
@@ -258,6 +260,47 @@ EMSEthernet* NetworkCtl::getConnectedEthernet()
     return ethParam;
 }
 
+EMSNetworkConfig* NetworkCtl::getNetworkConfig(QString techName, QString techPath)
+{
+    EMSNetworkConfig* networkConfig = new EMSNetworkConfig();
+    if(m_manager->services().isEmpty())
+    {
+        qDebug() << " No service listed ";
+    }
+    else
+    {
+        if(this->isTechnologyPresent(techName))
+        {
+            if(this->isTechnologyConnected(techName))
+            {
+                QString state;
+                QString path;
+                foreach (Service *service, m_manager->services())
+                {
+                    path = service->objectPath().path();
+                    if(service->type() == techName && path == techPath)
+                    {
+                        networkConfig->setInterface(service->ethernet()->interface());
+                        networkConfig->setMacAddress(service->ethernet()->address());
+                        networkConfig->setNetmask(service->ipv4()->netmask());
+                        networkConfig->setAddressAllocation(service->ipv4()->method());
+                        networkConfig->setGateway(service->ipv4()->gateway());
+                        networkConfig->setIpAddress(service->ipv4()->address());
+                        qDebug() << "got informations for" << networkConfig->getIpAddress();
+                    }
+                }
+            }
+            else
+            {
+                qDebug() << techName << "not connected";
+            }
+
+        }
+    }
+    return networkConfig;
+}
+
+/*
 bool NetworkCtl::isWifiPresent()
 {
     bool result = false;
@@ -318,6 +361,37 @@ bool NetworkCtl::isEthernetEnabled()
     }
     return false;
 }
+*/
+
+bool NetworkCtl::isTechnologyPresent(QString technName)
+{
+    bool result = false;
+    if(getTechnology(technName))
+    {
+        result = true;
+    }
+    return result;
+}
+
+bool NetworkCtl::isTechnologyEnabled(QString techName)
+{
+    Technology* technology = getTechnology(techName);
+    if(technology)
+    {
+        return technology->isPowered();
+    }
+    return false;
+}
+
+bool NetworkCtl::isTechnologyConnected(QString techName)
+{
+    Technology* technology = getTechnology(techName);
+    if(technology)
+    {
+        return technology->isConnected();
+    }
+    return false;
+}
 
 Technology* NetworkCtl::getTechnology(QString technologyType)
 {
@@ -333,6 +407,35 @@ Technology* NetworkCtl::getTechnology(QString technologyType)
     return result;
 }
 
+void NetworkCtl::enableTechnology(bool enable, QString techName)
+{
+    if(techName == "wifi" || techName == "ethernet")
+    {
+        if(isTechnologyPresent(techName))
+        {
+            Technology* technology = getTechnology(techName);
+
+            technology->setPowered(enable);
+            if(enable)
+                qDebug() << "Enable " << technology->name();
+            else
+                qDebug() << "Disable " << technology->name();
+        }
+        else
+        {
+            qDebug() << techName << "is not available";
+        }
+    }
+    else
+    {
+        qDebug() << "No technology " << techName ;
+    }
+}
+
+
+
+
+/*
 void NetworkCtl::enableWifi(bool enable)
 {
     Technology* technology = getTechnology("wifi");
@@ -351,7 +454,7 @@ void NetworkCtl::enableEthernet(bool enable)
         qDebug() << "Enable " << technology->name();
     else
         qDebug() << "Disable " << technology->name();
-}
+}*/
 
 
 
