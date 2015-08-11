@@ -43,7 +43,7 @@ QList<EMSSsid> NetworkCtl::getWifiList()
     return ssidList;
 }
 
-Service* NetworkCtl::getWifiByName(QString wifiName)
+/*Service* NetworkCtl::getWifiByName(QString wifiName)
 {
     Service* serviceRequested = new Service();
     wifiName = " ";
@@ -55,7 +55,7 @@ Service* NetworkCtl::getEthByPath(QString ethPath)
     Service* serviceRequested = new Service();
     ethPath = " ";
     return serviceRequested;
-}
+}*/
 
 EMSSsid* NetworkCtl::getConnectedWifi()
 {
@@ -69,34 +69,21 @@ EMSEthernet* NetworkCtl::getPluggedEthernet()
     return ethParam;
 }
 
-bool NetworkCtl::isWifiPresent()
+bool NetworkCtl::isTechnologyPresent(QString techName)
 {
-
+    techName = "stub";
     return false;
 }
 
-bool NetworkCtl::isEthernetPresent()
+bool NetworkCtl::isTechnologyConnected(QString techName)
 {
+    techName = "stub";
     return false;
 }
 
-bool NetworkCtl::isWifiConnected()
+bool NetworkCtl::isTechnologyEnabled(QString techName)
 {
-    return false;
-}
-
-bool NetworkCtl::isEthernetConnected()
-{
-    return false;
-}
-
-bool NetworkCtl::isWifiEnabled()
-{
-    return false;
-}
-
-bool NetworkCtl::isEthernetEnabled()
-{
+    techName = "stub";
     return false;
 }
 
@@ -107,14 +94,29 @@ Technology* NetworkCtl::getTechnology(QString technologyType)
     return result;
 }
 
-void NetworkCtl::enableWifi(bool enable)
+void NetworkCtl::enableTechnology(bool enable,QString techName)
 {
-    enable = false;
+    if(enable)
+    {
+        techName = "stub";
+    }
 }
 
-void NetworkCtl::enableEthernet(bool enable)
+void NetworkCtl::enableFavAutoConnect(bool enable)
 {
-    enable = false;
+    if(enable)
+    {
+
+    }
+}
+
+Service* NetworkCtl::getNetworkService( QString techName,QString searchType,QString idNetwork)
+{
+    Service* serviceRequested = new Service();
+    techName = "stub";
+    searchType = "stub";
+    idNetwork = "stub";
+    return serviceRequested;
 }
 
 NetworkCtl::~NetworkCtl()
@@ -155,6 +157,16 @@ void Service::connect()
 void Service::disconnect()
 {
 
+}
+
+void Service::remove()
+{
+
+}
+
+QString Service::name() const
+{
+    return "stub";
 }
 
 Service::~Service()

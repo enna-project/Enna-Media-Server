@@ -177,6 +177,7 @@ public:
     bool isRoaming() const;
     EthernetData *ethernet() const;
     IPV4Data *ipv4() const;
+    void remove();
 
 public Q_SLOTS:
     void connect();
@@ -230,24 +231,18 @@ public:
     QList<EMSSsid::SecurityType> toSecurityTypeList(const QStringList &listType);
     QStringList getSecurityTypeString(QList<EMSSsid::SecurityType> securityTypeList);
     QList<EMSSsid> getWifiList();
-    Service* getWifiByName(QString wifiName);
-    Service* getEthByPath(QString ethPath);
+    Service* getNetworkService( QString techName,QString searchType,QString idNetwork);
     EMSSsid* getConnectedWifi();
     EMSEthernet* getPluggedEthernet();
-    bool isWifiPresent();
-    bool isEthernetPresent();
 
-    bool isWifiConnected();
-    bool isEthernetConnected();
+    bool isTechnologyConnected(QString techName);
+    bool isTechnologyEnabled(QString techName);
+    bool isTechnologyPresent(QString techName);
 
-    bool isWifiEnabled();
-    bool isEthernetEnabled();
-
-    void enableWifi(bool enable);
-    void enableEthernet(bool enable);
+    void enableTechnology(bool enable, QString techName);
 
     Technology* getTechnology(QString technologyType);
-
+    void enableFavAutoConnect(bool enable);
     /* Signleton pattern
      * See: http://www.qtcentre.org/wiki/index.php?title=Singleton_pattern
      */
