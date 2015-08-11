@@ -239,4 +239,3 @@ EMSNetworkConfig::~EMSNetworkConfig()
 {
 
 }
-

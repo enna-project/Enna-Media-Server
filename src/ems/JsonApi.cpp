@@ -1208,7 +1208,7 @@ bool JsonApi::processMessageNetwork(const QJsonObject &message)
                     if (wifiService)
                     {
                         wifiService->connect();
-                        qDebug() << "first connect sent to connman";
+                        qDebug() << "connect sent to connman";
 
                     }
                     else

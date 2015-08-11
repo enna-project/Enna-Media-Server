@@ -182,8 +182,8 @@ Service* NetworkCtl::getNetworkService( QString techName,QString searchType,QStr
                     service = iter.next();
                     if(service->type() == techName && service->objectPath().path() == idNetwork)
                     {
-                       serviceRequested = service;
-                       found = true;
+                        serviceRequested = service;
+                        found = true;
                     }
                 }
             }
@@ -195,8 +195,8 @@ Service* NetworkCtl::getNetworkService( QString techName,QString searchType,QStr
                     service = iter.next();
                     if(service->type() == techName && service->name() == idNetwork)
                     {
-                       serviceRequested = service;
-                       found = true;
+                        serviceRequested = service;
+                        found = true;
                     }
                 }
             }
@@ -259,21 +259,21 @@ EMSEthernet* NetworkCtl::getPluggedEthernet()
     {
         if(this->isTechnologyPresent("ethernet"))
         {
-                QString state;
-                foreach (Service *service, m_manager->services())
+            QString state;
+            foreach (Service *service, m_manager->services())
+            {
+                state = getStateString(service->state());
+                if(service->type() == "ethernet")
                 {
-                    state = getStateString(service->state());
-                    if(service->type() == "ethernet")
-                    {
-                        ethParam->setPath(service->objectPath().path());
-                        ethParam->setState(state);
-                        ethParam->setType(service->type());
-                    }
+                    ethParam->setPath(service->objectPath().path());
+                    ethParam->setState(state);
+                    ethParam->setType(service->type());
                 }
-                if(ethParam->getPath().isEmpty())
-                {
-                    qDebug() << " No ethernet plugged ";
-                }
+            }
+            if(ethParam->getPath().isEmpty())
+            {
+                qDebug() << " No ethernet plugged ";
+            }
         }
     }
     return ethParam;
@@ -319,10 +319,10 @@ EMSNetworkConfig* NetworkCtl::getNetworkConfig(QString techName, QString techPat
     return networkConfig;
 }
 
-bool NetworkCtl::isTechnologyPresent(QString technName)
+bool NetworkCtl::isTechnologyPresent(QString techName)
 {
     bool result = false;
-    if(getTechnology(technName))
+    if(getTechnology(techName))
     {
         result = true;
     }

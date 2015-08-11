@@ -47,9 +47,9 @@ public:
 
     bool isTechnologyConnected(QString techName);
     bool isTechnologyEnabled(QString techName);
-    bool isTechnologyPresent(QString technName);
+    bool isTechnologyPresent(QString techName);
 
-    void enableTechnology(bool enable, QString technName);
+    void enableTechnology(bool enable, QString techName);
     Technology* getTechnology(QString technologyType);
     //enable or disable autoconnect to favorite networks
     void enableFavAutoConnect(bool enable);
