@@ -29,7 +29,7 @@ NetworkCtl::NetworkCtl(QObject *parent): QObject(parent)
     connect(getAgent(),SIGNAL(errorRaised()),this,SIGNAL(agentErrorRaised()));
     enableTechnology(true,"wifi");
     enableTechnology(true, "ethernet");
-    m_enablUpdate = false;
+    m_enableUpdate = false;
     //Allow autoconnect to favorite networks on start
     enableFavAutoConnect(true);
 }
@@ -248,7 +248,7 @@ EMSSsid* NetworkCtl::getConnectedWifi()
     return ssidWifi;
 }
 
-EMSEthernet* NetworkCtl::getConnectedEthernet()
+EMSEthernet* NetworkCtl::getPluggedEthernet()
 {
     EMSEthernet* ethParam = new EMSEthernet();
     if(m_manager->services().isEmpty())
@@ -259,25 +259,21 @@ EMSEthernet* NetworkCtl::getConnectedEthernet()
     {
         if(this->isTechnologyPresent("ethernet"))
         {
-            if(this->isTechnologyConnected("ethernet"))
-            {
                 QString state;
                 foreach (Service *service, m_manager->services())
                 {
                     state = getStateString(service->state());
-                    if(service->type() == "ethernet" && (state == "ready" || state=="online"))
+                    if(service->type() == "ethernet")
                     {
                         ethParam->setPath(service->objectPath().path());
                         ethParam->setState(state);
                         ethParam->setType(service->type());
                     }
                 }
-            }
-            else
-            {
-                qDebug() << " Ethernet offline ";
-            }
-
+                if(ethParam->getPath().isEmpty())
+                {
+                    qDebug() << " No ethernet plugged ";
+                }
         }
     }
     return ethParam;

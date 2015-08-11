@@ -17,7 +17,7 @@ class NetworkCtl : public QObject
 private:
     Manager *m_manager;
     Agent *m_agent;
-    bool m_enablUpdate;
+    bool m_enableUpdate;
 
 public:
     Agent* getAgent() const
@@ -27,12 +27,12 @@ public:
 
     bool getEnableUpdate()
     {
-        return m_enablUpdate;
+        return m_enableUpdate;
     }
 
     void setEnableUpdate(bool enableUpdate)
     {
-        m_enablUpdate = enableUpdate;
+        m_enableUpdate = enableUpdate;
     }
 
     static QString getStateString(Service::ServiceState state);
@@ -41,7 +41,7 @@ public:
     QList<EMSSsid> getWifiList();
 
     EMSSsid* getConnectedWifi();
-    EMSEthernet* getConnectedEthernet();
+    EMSEthernet* getPluggedEthernet();
     EMSNetworkConfig* getNetworkConfig(QString techName, QString techPath);
     Service* getNetworkService( QString techName,QString searchType,QString idNetwork);
 

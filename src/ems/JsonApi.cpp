@@ -1057,10 +1057,16 @@ bool JsonApi::processMessageCDRip(const QJsonObject &message)
 
 
 /* Handle network query
- * The field action should be :
- * - getWifiList : First scan the wifi and then get the list of wifi
- *                 after wifiListUpdated signal reception.
- * - connectWifi
+ * - connected_ssid : sent by the player at opening (wifi connected or not)
+ * - connected_ethernet : sent by the player at opening (ethernet connected or not)
+ * - update_network : enable/ disable update of the wifi list
+ * - ssid_list_get : scan wifi, when scan is finished, signal wifiListUpdated is triggered
+ * - wifi_connect_passphrase : connect wpa/wpa2 network with passphrase
+ * - wifi_connect : connect favorite or non-secured network
+ * - wifi_disconnect : disconnect network
+ * - wifi_remove : remove from favorite Network
+ * - wifi_cancel_connect : when canceling connect, enable autoconnect again
+ *                        (autoconnect disable while connecting)
  */
 bool JsonApi::processMessageNetwork(const QJsonObject &message)
 {
@@ -1085,7 +1091,7 @@ bool JsonApi::processMessageNetwork(const QJsonObject &message)
     }
     else if (action == "connected_ethernet_get")
     {
-        EMSEthernet* ethData=NetworkCtl::instance()->getConnectedEthernet();
+        EMSEthernet* ethData=NetworkCtl::instance()->getPluggedEthernet();
         QString state = ethData->getState();
         answer["msg"] = message["msg"];
         answer["msg_id"] = message["msg_id"];
@@ -1093,6 +1099,8 @@ bool JsonApi::processMessageNetwork(const QJsonObject &message)
         answer["technology"] = "ethernet";
         if(state == "ready" || state == "online")
             answer["connection_result"] ="connected";
+        else
+            answer["connection_result"] ="disconnected";
         answer["ethernet"] = EMSEthernetToJson(*ethData);
         QJsonDocument doc(answer);
         m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
@@ -1677,7 +1685,7 @@ void JsonApi::sendEthConnected()
 
     if(NetworkCtl::instance()->isTechnologyConnected("ethernet"))
     {
-        EMSEthernet* ethData=NetworkCtl::instance()->getConnectedEthernet();
+        EMSEthernet* ethData=NetworkCtl::instance()->getPluggedEthernet();
         qDebug()<<"Connected to: "<< ethData->getPath();
         connectedEthJsonObj["connection_result"] = "connected";
         connectedEthJsonObj["ethernet"] = EMSEthernetToJson(*ethData);

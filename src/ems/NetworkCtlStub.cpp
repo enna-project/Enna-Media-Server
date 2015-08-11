@@ -63,7 +63,7 @@ EMSSsid* NetworkCtl::getConnectedWifi()
     return ssidWifi;
 }
 
-EMSEthernet* NetworkCtl::getConnectedEthernet()
+EMSEthernet* NetworkCtl::getPluggedEthernet()
 {
     EMSEthernet* ethParam = new EMSEthernet();
     return ethParam;
