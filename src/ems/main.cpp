@@ -50,7 +50,7 @@ static void EmsCustomLogWriter(QtMsgType type, const QMessageLogContext &context
 
 int main(int argc, char *argv[])
 {
-    //qInstallMessageHandler(EmsCustomLogWriter);
+    qInstallMessageHandler(EmsCustomLogWriter);
     Application a(argc, argv);
     
     return a.exec();
