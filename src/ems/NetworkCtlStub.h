@@ -177,6 +177,7 @@ public:
     bool isRoaming() const;
     EthernetData *ethernet() const;
     IPV4Data *ipv4() const;
+    void remove();
 
 public Q_SLOTS:
     void connect();
@@ -208,7 +209,7 @@ class NetworkCtl : public QObject
 private:
     Manager *m_manager;
     Agent *m_agent;
-    bool m_enablUpdate;
+    bool m_enableUpdate;
 
 public:
     Agent* getAgent() const
@@ -218,36 +219,30 @@ public:
 
     bool getEnableUpdate()
     {
-        return m_enablUpdate;
+        return m_enableUpdate;
     }
 
     void setEnableUpdate(bool enableUpdate)
     {
-        m_enablUpdate = enableUpdate;
+        m_enableUpdate = enableUpdate;
     }
 
     static QString getStateString(Service::ServiceState state);
     QList<EMSSsid::SecurityType> toSecurityTypeList(const QStringList &listType);
     QStringList getSecurityTypeString(QList<EMSSsid::SecurityType> securityTypeList);
     QList<EMSSsid> getWifiList();
-    Service* getWifiByName(QString wifiName);
-    Service* getEthByPath(QString ethPath);
+    Service* getNetworkService( QString techName,QString searchType,QString idNetwork);
     EMSSsid* getConnectedWifi();
-    EMSEthernet* getConnectedEthernet();
-    bool isWifiPresent();
-    bool isEthernetPresent();
+    EMSEthernet* getPluggedEthernet();
 
-    bool isWifiConnected();
-    bool isEthernetConnected();
+    bool isTechnologyConnected(QString techName);
+    bool isTechnologyEnabled(QString techName);
+    bool isTechnologyPresent(QString techName);
 
-    bool isWifiEnabled();
-    bool isEthernetEnabled();
-
-    void enableWifi(bool enable);
-    void enableEthernet(bool enable);
+    void enableTechnology(bool enable, QString techName);
 
     Technology* getTechnology(QString technologyType);
-
+    void enableFavAutoConnect(bool enable);
     /* Signleton pattern
      * See: http://www.qtcentre.org/wiki/index.php?title=Singleton_pattern
      */

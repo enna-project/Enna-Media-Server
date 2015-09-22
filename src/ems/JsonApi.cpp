@@ -1064,47 +1064,50 @@ bool JsonApi::processMessageCDRip(const QJsonObject &message)
 
 
 /* Handle network query
- * The field action should be :
- * - getWifiList : First scan the wifi and then get the list of wifi
- *                 after wifiListUpdated signal reception.
- * - connectWifi
+ * - connected_ssid : sent by the player at opening (wifi connected or not)
+ * - connected_ethernet : sent by the player at opening (ethernet connected or not)
+ * - update_network : enable/ disable update of the wifi list
+ * - ssid_list_get : scan wifi, when scan is finished, signal wifiListUpdated is triggered
+ * - wifi_connect_passphrase : connect wpa/wpa2 network with passphrase
+ * - wifi_connect : connect favorite or non-secured network
+ * - wifi_disconnect : disconnect network
+ * - wifi_remove : remove from favorite Network
+ * - wifi_cancel_connect : when canceling connect, enable autoconnect again
+ *                        (autoconnect disable while connecting)
  */
 bool JsonApi::processMessageNetwork(const QJsonObject &message)
 {
     QString action = message["action"].toString();
     bool ok = false;
-    if (action == "is_wifi_enabled")
-    {
-
-        QJsonObject answer;
-        bool wifiState = NetworkCtl::instance()->isWifiEnabled();
-
-        answer["msg"] = message["msg"];
-        answer["msg_id"] = message["msg_id"];
-        answer["uuid"] = message["uuid"];
-        answer["wifi_state"] = wifiState;
-        QJsonDocument doc(answer);
-        m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
-    }
-    else if (action == "connected_ssid_get")
+    QJsonObject answer;
+    if (action == "connected_ssid_get")
     {
         EMSSsid* ssid=NetworkCtl::instance()->getConnectedWifi();
-        QJsonObject answer;
+        QString state = ssid->getState();
         answer["msg"] = message["msg"];
         answer["msg_id"] = message["msg_id"];
         answer["uuid"] = message["uuid"];
-        answer["connexion_result"] ="connected";
+        answer["technology"] = "wifi";
+        if(state == "ready" || state == "online")
+            answer["connection_result"] ="connected";
+        else
+            answer["connection_result"] ="disconnected";
         answer["ssid"] = EMSSsidToJson(*ssid);
         QJsonDocument doc(answer);
         m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
     }
     else if (action == "connected_ethernet_get")
     {
-        EMSEthernet* ethData=NetworkCtl::instance()->getConnectedEthernet();
-        QJsonObject answer;
+        EMSEthernet* ethData=NetworkCtl::instance()->getPluggedEthernet();
+        QString state = ethData->getState();
         answer["msg"] = message["msg"];
         answer["msg_id"] = message["msg_id"];
         answer["uuid"] = message["uuid"];
+        answer["technology"] = "ethernet";
+        if(state == "ready" || state == "online")
+            answer["connection_result"] ="connected";
+        else
+            answer["connection_result"] ="disconnected";
         answer["ethernet"] = EMSEthernetToJson(*ethData);
         QJsonDocument doc(answer);
         m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
@@ -1114,147 +1117,157 @@ bool JsonApi::processMessageNetwork(const QJsonObject &message)
         NetworkCtl::instance()->setEnableUpdate(message["update_enabled"].toBool());
         qDebug() << "Update enabled : " << message["update_enabled"].toBool();
     }
-    else if (action == "wifi_disable")
-    {
-        NetworkCtl::instance()->enableWifi(false);
-        qDebug() << "wifi disabled";
-    }
-    else if (action == "wifi_enable")
-    {
-        NetworkCtl::instance()->enableWifi(true);
-        qDebug() << "wifi enabled";
-    }
     else if (action == "ssid_list_get")
     {
-        if (!NetworkCtl::instance()->isWifiEnabled())
-        {
-            NetworkCtl::instance()->enableWifi(true);
-            auto connEnable = std::make_shared<QMetaObject::Connection>();
-            *connEnable = connect(NetworkCtl::instance()->getTechnology("wifi"), &Technology::poweredChanged, [=]
-            {
-                NetworkCtl::instance()->scanWifi();
-                NetworkCtl::instance()->getTechnology("wifi")->scan();
-                disconnect(*connEnable);
-            });
-        }
-        else
+        // The signal &NetworkCtl::wifiListUpdated is triggered when scan is completed
+        // The answer is sent asynchronously after wifiListUpdated is received
+        if (NetworkCtl::instance()->isTechnologyEnabled("wifi"))
         {
             NetworkCtl::instance()->scanWifi();
         }
+    }
+    else if (action == "wifi_connect_passphrase") //passphrase sent from the player
+    {
+        QString techName = "wifi";
+        QString ssid = message["ssid"].toString();
+        QString passphrase = message["passphrase"].toString();
+        Agent* agent = NetworkCtl::instance()->getAgent();
 
-        auto conn = std::make_shared<QMetaObject::Connection>();
-        *conn = connect(NetworkCtl::instance(), &NetworkCtl::wifiListUpdated, [=]
+        auto connError = std::make_shared<QMetaObject::Connection>();
+        auto connPassphrase = std::make_shared<QMetaObject::Connection>();
+        auto connWifiList = std::make_shared<QMetaObject::Connection>();
+
+        //prevent connecting to a favorite network while trying to connect
+        NetworkCtl::instance()->enableFavAutoConnect(false);
+        NetworkCtl::instance()->scanWifi();
+
+        *connWifiList = connect(NetworkCtl::instance(), &NetworkCtl::wifiListUpdated,[=]()
         {
-            QJsonArray jsonArray;
-            QJsonObject obj;
-            qDebug() << "Wifi updated";
-            QList<EMSSsid> ssidList = NetworkCtl::instance()->getWifiList();
-            for (int i = 0; i<ssidList.size();i++)
+            Service* wifiService = NetworkCtl::instance()->getNetworkService(techName, "name", ssid);
+            if (wifiService)
             {
-                jsonArray << EMSSsidToJson(ssidList[i]);
+                wifiService->connect();
+                qDebug() << "connect with password sent to connman";
             }
+            else
+            {
+                qDebug() << "Wrong SSID";
+                answer["msg"] = message["msg"];
+                answer["msg_id"] = message["msg_id"];
+                answer["uuid"] = message["uuid"];
+                answer["technology"] = "wifi";
+                answer["connection_result"] = "error";
+                answer["connection_error"] = "wrong ssid";
+                QJsonDocument doc(answer);
+                m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
 
-            obj["ssids"] = jsonArray;
+                disconnect(*connPassphrase);
+                disconnect(*connError);
+            }
+            disconnect(*connWifiList);
+        });
+
+        *connPassphrase = connect(NetworkCtl::instance()->getAgent(), &Agent::passphraseRequested, [=]()
+        {
+            qDebug() << "Authentication required";
+            Agent::InputRequest *request = NetworkCtl::instance()->getAgent()->currentInputRequest();
+            qDebug() << "Password sent to connman agent : " << passphrase;
+            request->response.passphrase = passphrase;
+            disconnect(*connPassphrase);
+        });
+
+        *connError = connect(agent, &Agent::errorRaised,[=]()
+        {
+            Agent::ErrorRequest *requestErr = agent->currentErrorRequest();
             QJsonObject answer;
             answer["msg"] = message["msg"];
             answer["msg_id"] = message["msg_id"];
             answer["uuid"] = message["uuid"];
-            answer["data"] = obj;
+            answer["technology"] = "wifi";
+            answer["connection_result"] = "error";
+            answer["connection_error"] = requestErr->error;
             QJsonDocument doc(answer);
             m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
+            qDebug() << "error raised sent after setting passwd : " << requestErr->error;
 
-            disconnect(*conn);
+            disconnect(*connError);
         });
+        qDebug() << "passphrase received";
     }
     else if (action == "wifi_connect")
     {
+        QString techName = "wifi";
         QString ssid = message["ssid"].toString();
-        QString password = message["password"].toString();
-        if (NetworkCtl::instance()->isWifiPresent())
+        if (NetworkCtl::instance()->isTechnologyPresent(techName))
         {
-            if (!NetworkCtl::instance()->isWifiEnabled())
-            {
-                NetworkCtl::instance()->enableWifi(true);
-            }
-            bool connected = NetworkCtl::instance()->isWifiConnected();
+            bool wifiConnected = NetworkCtl::instance()->isTechnologyConnected(techName);
             QString connSsid=NetworkCtl::instance()->getConnectedWifi()->getName();
-            if (!connected || (connected && ssid != connSsid))
+
+            if (!wifiConnected || (wifiConnected && ssid != connSsid))
             {
+                NetworkCtl::instance()->enableFavAutoConnect(false);
                 NetworkCtl::instance()->scanWifi();
-                //connexion to the desired wifi : ssid
+
                 auto connWifiList = std::make_shared<QMetaObject::Connection>();
-                auto connError = std::make_shared<QMetaObject::Connection>();
-                auto connStatus = std::make_shared<QMetaObject::Connection>();
-                auto connPassphrase = std::make_shared<QMetaObject::Connection>();
                 *connWifiList = connect(NetworkCtl::instance(), &NetworkCtl::wifiListUpdated,[=]()
                 {
-                    Service*  wifiService = NetworkCtl::instance()->getWifiByName(ssid);
+                    Service* wifiService = NetworkCtl::instance()->getNetworkService(techName, "name", ssid);
                     if (wifiService)
                     {
-                        EMSEthernet* ethServiceEMS = NetworkCtl::instance()->getConnectedEthernet();
-                        Service*  ethService = NetworkCtl::instance()->getEthByPath(ethServiceEMS->getPath());
-                        //ethService->disconnect();
                         wifiService->connect();
+                        qDebug() << "connect sent to connman";
+
                     }
                     else
                     {
                         qDebug() << "Wrong SSID";
-                        disconnect(*connPassphrase);
-                        disconnect(*connError);
-                        disconnect(*connStatus);
                         disconnect(*connWifiList);
                     }
                     disconnect(*connWifiList);
                 });
-
-                // Authentication for secured connexion with password
-                *connPassphrase = connect(NetworkCtl::instance()->getAgent(), &Agent::passphraseRequested, [=]()
-                {
-                    qDebug() << "Authentication required";
-                    Agent::InputRequest *request = NetworkCtl::instance()->getAgent()->currentInputRequest();
-                    request->response.passphrase = password;
-                    qDebug() << "Password sent";
-
-                    disconnect(*connWifiList);
-                    disconnect(*connPassphrase);
-                });
-
-                //Authentication error manager
-                *connError = connect(NetworkCtl::instance()->getAgent(), &Agent::errorRaised,[=]()
-                {
-                    Agent::ErrorRequest *requestErr = NetworkCtl::instance()->getAgent()->currentErrorRequest();
-                    QJsonObject answer;
-                    answer["msg"] = message["msg"];
-                    answer["msg_id"] = message["msg_id"];
-                    answer["uuid"] = message["uuid"];
-                    answer["connexion_result"] = requestErr->error;
-                    QJsonDocument doc(answer);
-                    m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
-
-                    disconnect(*connStatus);
-                    disconnect(*connWifiList);
-                    disconnect(*connPassphrase);
-                    disconnect(*connError);
-                });
             }
-            else // already conected to ssid
-            {
-                qDebug()<<"Wifi already conected";
-                QJsonObject answer;
-                answer["msg"] = message["msg"];
-                answer["msg_id"] = message["msg_id"];
-                answer["uuid"] = message["uuid"];
-                answer["connexion_result"] ="Already connected";
-                QJsonDocument doc(answer);
-                m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
-            }
-        }
-        else
-        {
-            qCritical()<< "Error: No Wifi present.";
         }
     }
-
+    else if (action == "wifi_disconnect")
+    {
+        QString techName = "wifi";
+        QString ssid = message["ssid"].toString();
+        if (NetworkCtl::instance()->isTechnologyPresent(techName))
+        {
+            bool wifiConnected = NetworkCtl::instance()->isTechnologyConnected(techName);
+            QString connSsid=NetworkCtl::instance()->getConnectedWifi()->getName();
+            if (wifiConnected && (connSsid == ssid))
+            {
+                Service* wifiService = NetworkCtl::instance()->getNetworkService(techName, "name", ssid);
+                if(!wifiService->name().isEmpty())
+                {
+                    wifiService->disconnect();
+                    qDebug()<<"Wifi disconnecting";
+                }
+            }
+        }
+    }
+    else if (action == "wifi_remove")
+    {
+        QString techName = "wifi";
+        QString ssid = message["ssid"].toString();
+        if (NetworkCtl::instance()->isTechnologyPresent(techName))
+        {
+            Service* wifiService = NetworkCtl::instance()->getNetworkService(techName, "name", ssid);
+            if(!wifiService->name().isEmpty())
+            {
+                wifiService->remove();
+                qDebug()<<"Wifi removed";
+                NetworkCtl::instance()->scanWifi();
+            }
+        }
+    }
+    else if (action == "wifi_cancel_connect")
+    {
+        // enable autoconnect to favorite networks after canceling connection request
+        NetworkCtl::instance()->enableFavAutoConnect(true);
+        qDebug()<<"Favorite network autoconnect";
+    }
     return ok;
 }
 
@@ -1431,6 +1444,7 @@ QJsonObject JsonApi::EMSSsidToJson(const EMSSsid &ssid) const
     obj["type"] = ssid.getType();
     obj["state"] = ssid.getState();
     obj["security"] = ssid.getSecurity().join(", ");
+    obj["favorite"] = ssid.getFavorite();
 
     return obj;
 }
@@ -1440,9 +1454,7 @@ QJsonObject JsonApi::EMSEthernetToJson(const EMSEthernet &ethData) const
     QJsonObject obj;
     obj["type"] = ethData.getType();
     obj["path"] = ethData.getPath();
-    obj["interface"] = ethData.getInterface();
     obj["state"] = ethData.getState();
-    obj["ip_address"] = ethData.getIpAddress();
 
     return obj;
 }
@@ -1629,23 +1641,27 @@ void JsonApi::sendMenu()
 
 void JsonApi::sendWifiConnected()
 {
-    if(NetworkCtl::instance()->isWifiConnected())
+    QJsonObject connectedWifiJsonObj;
+    connectedWifiJsonObj["msg"] = "EMS_NETWORK";
+    connectedWifiJsonObj["technology"] = "wifi";
+
+    if(NetworkCtl::instance()->isTechnologyConnected("wifi"))
     {
         EMSSsid* ssid=NetworkCtl::instance()->getConnectedWifi();
         qDebug()<<"Connected to: "<< ssid->getName();
-        QJsonObject connectedWifiJsonObj;
-        connectedWifiJsonObj["msg"] = "EMS_NETWORK";
-        connectedWifiJsonObj["connexion_result"] ="connected";
+
+        connectedWifiJsonObj["connection_result"] ="connected";
         connectedWifiJsonObj["ssid"] = EMSSsidToJson(*ssid);
         QJsonDocument doc(connectedWifiJsonObj);
         m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
+        // enable automatic connection to the favorite network
+        NetworkCtl::instance()->enableFavAutoConnect(true);
     }
     else
     {
         qDebug()<<"Wifi disconnected ";
-        QJsonObject connectedWifiJsonObj;
-        connectedWifiJsonObj["msg"] = "EMS_NETWORK";
-        connectedWifiJsonObj["connexion_result"] ="disconnected";
+
+        connectedWifiJsonObj["connection_result"] ="disconnected";
         QJsonDocument doc(connectedWifiJsonObj);
         m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
     }
@@ -1653,22 +1669,26 @@ void JsonApi::sendWifiConnected()
 
 void JsonApi::sendEthConnected()
 {
-    QJsonObject answer;
-    if(NetworkCtl::instance()->isEthernetConnected())
+    QJsonObject connectedEthJsonObj;
+    connectedEthJsonObj["msg"] = "EMS_NETWORK";
+    connectedEthJsonObj["technology"] = "ethernet";
+
+    if(NetworkCtl::instance()->isTechnologyConnected("ethernet"))
     {
-        EMSEthernet* ethData=NetworkCtl::instance()->getConnectedEthernet();
-        answer["msg"] = "EMS_NETWORK";
-        answer["ethernet"] = EMSEthernetToJson(*ethData);
-        QJsonDocument doc(answer);
+        EMSEthernet* ethData=NetworkCtl::instance()->getPluggedEthernet();
+        qDebug()<<"Connected to: "<< ethData->getPath();
+        connectedEthJsonObj["connection_result"] = "connected";
+        connectedEthJsonObj["ethernet"] = EMSEthernetToJson(*ethData);
+        QJsonDocument doc(connectedEthJsonObj);
         m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
     }
     else
     {
         qDebug()<<"Eth disconnected ";
-        EMSEthernet* ethParam = new EMSEthernet(" "," "," ","offline"," ");
-        answer["msg"] = "EMS_NETWORK";
-        answer["ethernet"] = EMSEthernetToJson(*ethParam);
-        QJsonDocument doc(answer);
+        EMSEthernet* ethParam = new EMSEthernet(" "," ","offline");
+        connectedEthJsonObj["connection_result"] = "disconnected";
+        connectedEthJsonObj["ethernet"] = EMSEthernetToJson(*ethParam);
+        QJsonDocument doc(connectedEthJsonObj);
         m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
     }
 }
@@ -1694,9 +1714,4 @@ void JsonApi::sendWifiList()
         QJsonDocument doc(wifiListJsonObj);
         m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
     }
-    else
-    {
-        qDebug() << "Wifi List update disabled ";
-    }
-
 }

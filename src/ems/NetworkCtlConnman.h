@@ -17,7 +17,7 @@ class NetworkCtl : public QObject
 private:
     Manager *m_manager;
     Agent *m_agent;
-    bool m_enablUpdate;
+    bool m_enableUpdate;
 
 public:
     Agent* getAgent() const
@@ -27,12 +27,12 @@ public:
 
     bool getEnableUpdate()
     {
-        return m_enablUpdate;
+        return m_enableUpdate;
     }
 
     void setEnableUpdate(bool enableUpdate)
     {
-        m_enablUpdate = enableUpdate;
+        m_enableUpdate = enableUpdate;
     }
 
     static QString getStateString(Service::ServiceState state);
@@ -40,25 +40,19 @@ public:
     QStringList getSecurityTypeString(QList<EMSSsid::SecurityType> securityTypeList);
     QList<EMSSsid> getWifiList();
 
-    Service* getWifiByName(QString wifiName);
-    Service* getEthByPath(QString ethPath);
-
     EMSSsid* getConnectedWifi();
-    EMSEthernet* getConnectedEthernet();
+    EMSEthernet* getPluggedEthernet();
+    EMSNetworkConfig* getNetworkConfig(QString techName, QString techPath);
+    Service* getNetworkService( QString techName,QString searchType,QString idNetwork);
 
-    bool isWifiPresent();
-    bool isEthernetPresent();
+    bool isTechnologyConnected(QString techName);
+    bool isTechnologyEnabled(QString techName);
+    bool isTechnologyPresent(QString techName);
 
-    bool isWifiConnected();
-    bool isEthernetConnected();
-
-    bool isWifiEnabled();
-    bool isEthernetEnabled();
-
-    void enableWifi(bool enable);
-    void enableEthernet(bool enable);
-
+    void enableTechnology(bool enable, QString techName);
     Technology* getTechnology(QString technologyType);
+    //enable or disable autoconnect to favorite networks
+    void enableFavAutoConnect(bool enable);
 
     /* Signleton pattern
      * See: http://www.qtcentre.org/wiki/index.php?title=Singleton_pattern
@@ -100,6 +94,7 @@ signals:
     void wifiListUpdated();
     void wifiConnectedChanged();
     void ethConnectedChanged();
+    void agentErrorRaised();
 
 public slots:
     void scanWifi();

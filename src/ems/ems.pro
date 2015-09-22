@@ -85,6 +85,8 @@ equals(EMS_LIB_QCONNMAN, "yes") {
     PKGCONFIG += qconnman
     HEADERS += NetworkCtlConnman.h
     SOURCES += NetworkCtlConnman.cpp
+    HEADERS -= NetworkCtlStub.h
+    SOURCES -= NetworkCtlStub.cpp
 } else {
     HEADERS += NetworkCtlStub.h
     SOURCES += NetworkCtlStub.cpp
