@@ -955,7 +955,7 @@ bool JsonApi::processMessagePlaylist(const QJsonObject &message)
             // 4- Start the playlist reading
             Player::instance()->play();
         }
-        else if (action == "del" && message["filename"].toString().isEmpty())
+        else if (action == "del" && message["name"].toString().isEmpty())
         {
             // Delete the playlist
             db->lock();
