@@ -894,6 +894,7 @@ bool JsonApi::processMessagePlaylist(const QJsonObject &message)
             db->checkPlaylistExist(type, &playlistId);
         }
 
+
         if (action != "create" && action != "save")
         {
             if (!playlistId)
@@ -961,6 +962,23 @@ bool JsonApi::processMessagePlaylist(const QJsonObject &message)
             db->lock();
             db->deletePlaylist(playlistId);
             db->unlock();
+
+            // get list of all playlists stored in the database
+            EMSPlaylistsList playlistsList;
+            db->lock();
+            db->getPlaylistsList(&playlistsList);
+            db->unlock();
+
+            QJsonObject obj;
+            QJsonObject answer;
+
+            obj =  EMSPlaylistsListToJson(playlistsList);
+            answer["msg"] = "EMS_PLAYLIST";
+            answer["data"] = obj;
+
+            QJsonDocument doc(answer);
+            m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
+
         }
         else if (action == "add" || action == "del")
         {
