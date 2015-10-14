@@ -7,7 +7,7 @@
 #include <QSettings>
 #include <QStandardPaths>
 #include "DefaultSettings.h"
-
+#include <QtCore/QDataStream>
 
 CdromRipper::CdromRipper(QObject *parent)
     : QThread(parent)
