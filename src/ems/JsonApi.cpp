@@ -956,7 +956,7 @@ bool JsonApi::processMessagePlaylist(const QJsonObject &message)
             // 4- Start the playlist reading
             Player::instance()->play();
         }
-        else if (action == "del" && message["name"].toString().isEmpty())
+        else if (action == "del" && message["filename"].toString().isEmpty())
         {
             // Delete the playlist
             db->lock();
@@ -983,6 +983,8 @@ bool JsonApi::processMessagePlaylist(const QJsonObject &message)
         else if (action == "add" || action == "del")
         {
             QVector<EMSTrack> trackList;
+            EMSPlaylist playlist;
+            QVector<EMSTrack> playlisTrackList;
 
             getTracksFromFilename(&trackList, message["filename"].toString());
             if (trackList.size() > 0)
@@ -997,9 +999,23 @@ bool JsonApi::processMessagePlaylist(const QJsonObject &message)
                     else if (action == "del")
                     {
                         db->removeTrackFromPlaylist(playlistId, trackList.at(i).id);
+                        db->getPlaylistById(&playlist,playlistId);
+                        db->getTracksByPlaylist(&playlisTrackList,playlistId);
                     }
                 }
                 db->unlock();
+
+                QJsonObject obj;
+                QJsonObject answer;
+
+                playlist.tracks = playlisTrackList;
+
+                obj =  EMSPlaylistToJson(playlist);
+                answer["msg"] = "EMS_PLAYLIST";
+                answer["data"] = obj;
+
+                QJsonDocument doc(answer);
+                m_webSocket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
             }
             else
             {
