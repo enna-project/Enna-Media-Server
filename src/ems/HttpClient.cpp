@@ -251,11 +251,12 @@ HttpClient::HttpClient(QTcpSocket *socket, QString cacheDirectory, QObject *pare
 
 HttpClient::~HttpClient()
 {
-
+    m_socket->deleteLater();
 }
 
 void HttpClient::CloseConnection()
 {
+    m_socket->close();
     deleteLater();
 }
 
