@@ -127,6 +127,10 @@ HttpClient::HttpClient(QTcpSocket *socket, QString cacheDirectory, QObject *pare
     connect(socket, &QTcpSocket::readyRead, [=]{
         parseRequest();
 
+        //parser need more data, wait for it
+        if (!m_parsingDone)
+            return;
+
         QString url(m_parseUrl);
         QStringList arg = url.split('/');
         QString localFilePath;
