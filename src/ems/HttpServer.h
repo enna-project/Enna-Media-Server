@@ -19,8 +19,6 @@ public:
 
 private:
     QTcpServer *m_tcpServer;
-    QList<HttpClient *>m_clients;
-    void parseRequest(QTcpSocket *socket);
     QString m_cacheDirectory;
 
 private slots:

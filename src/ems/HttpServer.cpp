@@ -38,8 +38,8 @@ bool HttpServer::start(quint16 port)
         while (m_tcpServer->hasPendingConnections())
         {
             QTcpSocket *socket = m_tcpServer->nextPendingConnection();
-            HttpClient *client = new HttpClient(socket, m_cacheDirectory, m_tcpServer);
-            m_clients << client;
+            //memory is freed when connection is closed automatically
+            new HttpClient(socket, m_cacheDirectory, m_tcpServer);
         }
     });
 
